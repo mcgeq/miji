@@ -19,7 +19,7 @@ export interface SettlementRecord {
   totalAmount: number;
   currency: string;
   participantMembers: string[];
-  settlementDetails: any;
+  settlementDetails: unknown;
   optimizedTransfers: TransferSuggestion[];
   status: 'pending' | 'completed' | 'cancelled';
   initiatedBy: string;

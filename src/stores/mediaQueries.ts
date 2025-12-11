@@ -37,6 +37,6 @@ export const useMediaQueriesStore = defineStore('media', {
      * @example store.media.isSmallScreen → boolean
      */
     isSmallScreen: state => state.isMobile || state.isTablet,
-    isDesktop: state => !state.isMobile && !state.isTablet,
+    isDesktop: state => !(state.isMobile || state.isTablet),
   },
 });

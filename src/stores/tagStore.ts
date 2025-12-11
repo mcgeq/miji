@@ -5,16 +5,15 @@
 // File:           tags.svelte.ts
 // Description:    About Tags Store and State
 // Create   Date:  2025-06-23 22:38:59
-// Last Modified:  2025-06-28 12:43:50
+// Last Modified:  2025-12-11 20:22:11
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-import { ref } from 'vue';
+import type { Tags } from '../schema/tags';
 import { TagsSchema } from '../schema/tags';
 import { DateUtils } from '../utils/date';
 import { uuid } from '../utils/uuid';
 import { createWithDefaults } from '../utils/zodFactory';
-import type { Tags } from '../schema/tags';
 
 type SortByField = 'createdAt' | 'name';
 type SortOrder = 'asc' | 'desc';
@@ -113,7 +112,7 @@ function searchTags(options: TagFilterOptions = {}) {
     sortBy = 'createdAt',
     order = 'desc',
     offset = 0,
-    limit = Infinity,
+    limit = Number.POSITIVE_INFINITY,
   } = options;
 
   let results = Array.from(tags.value.values());

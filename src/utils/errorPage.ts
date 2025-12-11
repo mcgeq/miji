@@ -144,15 +144,117 @@ export interface ErrorPageConfig {
 
 const DEFAULT_CONFIG: Required<Omit<ErrorPageConfig, 'onRetry' | 'details'>> &
   Pick<ErrorPageConfig, 'onRetry' | 'details'> = {
-    title: 'App Loading Error',
-    message: 'Failed to start the application. Please restart the app.',
-    details: undefined,
-    showDetails: false,
-    showReloadButton: true,
-    showRetryButton: false,
-    onRetry: undefined,
-    customClasses: {},
-  };
+  title: 'App Loading Error',
+  message: 'Failed to start the application. Please restart the app.',
+  details: undefined,
+  showDetails: false,
+  showReloadButton: true,
+  showRetryButton: false,
+  onRetry: undefined,
+  customClasses: {},
+};
+
+/**
+ * Creates error details element
+ */
+function createErrorDetails(
+  error: unknown,
+  config: Required<Omit<ErrorPageConfig, 'onRetry' | 'details'>> &
+    Pick<ErrorPageConfig, 'onRetry' | 'details'>,
+): HTMLElement | null {
+  if (!config.showDetails) {
+    return null;
+  }
+
+  const details = document.createElement('div');
+  details.className = config.customClasses.details || 'bootstrap-error-page-details';
+
+  const errorText =
+    config.details ||
+    (error instanceof Error
+      ? `${error.name}: ${error.message}\n\n${error.stack || ''}`
+      : String(error));
+
+  const errorLines = errorText.split('\n').map(line => {
+    const pre = document.createElement('pre');
+    pre.style.margin = '0';
+    pre.style.fontFamily = 'inherit';
+    pre.textContent = line;
+    return pre.outerHTML;
+  });
+  details.innerHTML = errorLines.join('');
+
+  return details;
+}
+
+/**
+ * Creates button container with reload and retry buttons
+ */
+function createButtons(
+  config: Required<Omit<ErrorPageConfig, 'onRetry' | 'details'>> &
+    Pick<ErrorPageConfig, 'onRetry' | 'details'>,
+): HTMLElement | null {
+  const buttonContainer = document.createElement('div');
+
+  if (config.showReloadButton) {
+    const reloadButton = document.createElement('button');
+    reloadButton.className = config.customClasses.reloadButton || 'bootstrap-error-page-button';
+    reloadButton.textContent = 'Reload';
+    reloadButton.onclick = () => window.location.reload();
+    buttonContainer.appendChild(reloadButton);
+  }
+
+  if (config.showRetryButton && config.onRetry) {
+    const retryButton = document.createElement('button');
+    retryButton.className =
+      config.customClasses.retryButton ||
+      'bootstrap-error-page-button bootstrap-error-page-button-secondary';
+    retryButton.textContent = 'Retry';
+    retryButton.onclick = () => config.onRetry?.();
+    buttonContainer.appendChild(retryButton);
+  }
+
+  return buttonContainer.children.length > 0 ? buttonContainer : null;
+}
+
+/**
+ * Creates the main content structure
+ */
+function createContent(
+  error: unknown,
+  config: Required<Omit<ErrorPageConfig, 'onRetry' | 'details'>> &
+    Pick<ErrorPageConfig, 'onRetry' | 'details'>,
+): HTMLElement {
+  const content = document.createElement('div');
+  content.className = config.customClasses.content || 'bootstrap-error-page-content';
+
+  const icon = document.createElement('div');
+  icon.className = 'bootstrap-error-page-icon';
+  icon.textContent = '⚠️';
+  content.appendChild(icon);
+
+  const title = document.createElement('h1');
+  title.className = config.customClasses.title || 'bootstrap-error-page-title';
+  title.textContent = config.title;
+  content.appendChild(title);
+
+  const message = document.createElement('p');
+  message.className = config.customClasses.message || 'bootstrap-error-page-message';
+  message.textContent = config.message;
+  content.appendChild(message);
+
+  const details = createErrorDetails(error, config);
+  if (details) {
+    content.appendChild(details);
+  }
+
+  const buttons = createButtons(config);
+  if (buttons) {
+    content.appendChild(buttons);
+  }
+
+  return content;
+}
 
 /**
  * Creates and displays a bootstrap error page
@@ -163,100 +265,18 @@ const DEFAULT_CONFIG: Required<Omit<ErrorPageConfig, 'onRetry' | 'details'>> &
 export function showBootstrapErrorPage(error: unknown, config: ErrorPageConfig = {}): HTMLElement {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
-  // Inject inline styles first (ensures display even if CSS fails to load)
   injectErrorPageStyles();
 
-  // Clear existing content
   if (document.body) {
     document.body.innerHTML = '';
   }
 
-  // Create error page container
   const container = document.createElement('div');
   container.className = finalConfig.customClasses.container || 'bootstrap-error-page';
 
-  // Create error page content
-  const content = document.createElement('div');
-  content.className = finalConfig.customClasses.content || 'bootstrap-error-page-content';
+  const content = createContent(error, finalConfig);
   container.appendChild(content);
 
-  // Error icon (optional)
-  const icon = document.createElement('div');
-  icon.className = 'bootstrap-error-page-icon';
-  icon.textContent = '⚠️';
-  content.appendChild(icon);
-
-  // Error title
-  const title = document.createElement('h1');
-  title.className = finalConfig.customClasses.title || 'bootstrap-error-page-title';
-  title.textContent = finalConfig.title;
-  content.appendChild(title);
-
-  // Error message
-  const message = document.createElement('p');
-  message.className = finalConfig.customClasses.message || 'bootstrap-error-page-message';
-  message.textContent = finalConfig.message;
-  content.appendChild(message);
-
-  // Error details (if enabled)
-  if (finalConfig.showDetails) {
-    const details = document.createElement('div');
-    details.className = finalConfig.customClasses.details || 'bootstrap-error-page-details';
-
-    const errorText =
-      finalConfig.details ||
-      (error instanceof Error
-        ? `${error.name}: ${error.message}\n\n${error.stack || ''}`
-        : String(error));
-
-    // Format error text for display
-    const errorLines = errorText.split('\n').map(line => {
-      const pre = document.createElement('pre');
-      pre.style.margin = '0';
-      pre.style.fontFamily = 'inherit';
-      pre.textContent = line;
-      return pre.outerHTML;
-    });
-    details.innerHTML = errorLines.join('');
-
-    content.appendChild(details);
-  }
-
-  // Button container
-  const buttonContainer = document.createElement('div');
-
-  // Reload button
-  if (finalConfig.showReloadButton) {
-    const reloadButton = document.createElement('button');
-    reloadButton.className =
-      finalConfig.customClasses.reloadButton || 'bootstrap-error-page-button';
-    reloadButton.textContent = 'Reload';
-    reloadButton.onclick = () => {
-      window.location.reload();
-    };
-    buttonContainer.appendChild(reloadButton);
-  }
-
-  // Retry button
-  if (finalConfig.showRetryButton && finalConfig.onRetry) {
-    const retryButton = document.createElement('button');
-    retryButton.className =
-      finalConfig.customClasses.retryButton ||
-      'bootstrap-error-page-button bootstrap-error-page-button-secondary';
-    retryButton.textContent = 'Retry';
-    retryButton.onclick = () => {
-      if (finalConfig.onRetry) {
-        finalConfig.onRetry();
-      }
-    };
-    buttonContainer.appendChild(retryButton);
-  }
-
-  if (buttonContainer.children.length > 0) {
-    content.appendChild(buttonContainer);
-  }
-
-  // Append to body
   if (document.body) {
     document.body.appendChild(container);
   }

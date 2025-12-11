@@ -4,7 +4,7 @@
  * 提供运行时类型验证，确保 API 响应符合预期的 Zod schema
  */
 
-import type { ZodType, ZodError } from 'zod';
+import type { ZodError, ZodType } from 'zod';
 import { AppError } from '@/errors/appError';
 
 /** API 验证错误代码 */
@@ -28,11 +28,7 @@ export enum ApiValidationErrorCode {
  * const todo = validateApiResponse(response, TodoSchema, 'fetchTodo');
  * ```
  */
-export function validateApiResponse<T>(
-  data: unknown,
-  schema: ZodType<T>,
-  context: string,
-): T {
+export function validateApiResponse<T>(data: unknown, schema: ZodType<T>, context: string): T {
   const result = schema.safeParse(data);
 
   if (!result.success) {

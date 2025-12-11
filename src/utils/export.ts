@@ -12,7 +12,7 @@
  * @param value - 要转义的值
  * @returns 转义后的字符串
  */
-function escapeCSVValue(value: any): string {
+function escapeCSVValue(value: unknown): string {
   if (value == null) return '';
 
   const str = String(value);
@@ -62,7 +62,11 @@ function downloadBlob(blob: Blob, filename: string) {
  * @param filename - 文件名（不含扩展名）
  * @param headers - 可选的自定义表头
  */
-export function exportToCSV(data: any[], filename: string, headers?: string[]) {
+export function exportToCSV<T extends Record<string, unknown>>(
+  data: T[],
+  filename: string,
+  headers?: string[],
+) {
   if (data.length === 0) {
     console.warn('No data to export');
     return;
@@ -89,8 +93,8 @@ export function exportToCSV(data: any[], filename: string, headers?: string[]) {
  * @param filename - 文件名（不含扩展名）
  * @param fieldMapping - 字段映射（键: 字段名, 值: 中文表头）
  */
-export function exportToCSVWithMapping(
-  data: any[],
+export function exportToCSVWithMapping<T extends Record<string, unknown>>(
+  data: T[],
   filename: string,
   fieldMapping: Record<string, string>,
 ) {
@@ -119,7 +123,11 @@ export function exportToCSVWithMapping(
  * 导出为Excel格式（简单版）
  * 注意：这是一个简化实现，实际项目中建议使用 xlsx 库
  */
-export function exportToExcel(data: any[], filename: string, _sheetName = 'Sheet1') {
+export function exportToExcel<T extends Record<string, unknown>>(
+  data: T[],
+  filename: string,
+  _sheetName = 'Sheet1',
+) {
   if (data.length === 0) {
     console.warn('No data to export');
     return;
@@ -158,8 +166,8 @@ export function exportToExcel(data: any[], filename: string, _sheetName = 'Sheet
 /**
  * 导出为Excel（带字段映射）
  */
-export function exportToExcelWithMapping(
-  data: any[],
+export function exportToExcelWithMapping<T extends Record<string, unknown>>(
+  data: T[],
   filename: string,
   fieldMapping: Record<string, string>,
   _sheetName = 'Sheet1',
@@ -212,7 +220,7 @@ export function exportToPDF(title: string, content: HTMLElement | string) {
 
   const htmlContent = typeof content === 'string' ? content : content.outerHTML;
 
-  printWindow.document.write(`
+  const htmlDoc = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -247,8 +255,14 @@ export function exportToPDF(title: string, content: HTMLElement | string) {
         ${htmlContent}
       </body>
     </html>
-  `);
+  `;
 
+  // Use modern approach to avoid deprecated document.write()
+  printWindow.document.open();
+  printWindow.document.documentElement.innerHTML = htmlDoc.substring(
+    htmlDoc.indexOf('<html>') + 6,
+    htmlDoc.lastIndexOf('</html>'),
+  );
   printWindow.document.close();
 
   // 等待内容加载后打印
@@ -261,8 +275,8 @@ export function exportToPDF(title: string, content: HTMLElement | string) {
 /**
  * 导出表格数据为PDF
  */
-export function exportTableToPDF(
-  data: any[],
+export function exportTableToPDF<T extends Record<string, unknown>>(
+  data: T[],
   filename: string,
   headers: string[] | Record<string, string>,
 ) {
@@ -296,10 +310,17 @@ export function exportTableToPDF(
 // ==================== 图表导出 ====================
 
 /**
+ * ECharts 实例接口
+ */
+interface EChartsInstance {
+  getDataURL: (options: { type: string; pixelRatio: number; backgroundColor: string }) => string;
+}
+
+/**
  * 导出ECharts图表为图片
  */
 export function exportChartImage(
-  chartInstance: any,
+  chartInstance: EChartsInstance,
   filename: string,
   type: 'png' | 'jpeg' = 'png',
 ) {
@@ -375,7 +396,7 @@ export function formatAmountForExport(amount: number, currency = 'CNY'): string 
 /**
  * 交易记录导出模板
  */
-export interface TransactionExportData {
+export interface TransactionExportData extends Record<string, unknown> {
   serialNum: string;
   date: string;
   type: string;
@@ -402,7 +423,7 @@ export function exportTransactions(transactions: TransactionExportData[], filena
 /**
  * 分摊记录导出模板
  */
-export interface SplitRecordExportData {
+export interface SplitRecordExportData extends Record<string, unknown> {
   serialNum: string;
   transactionSerialNum: string;
   memberName: string;
@@ -433,7 +454,7 @@ export function exportSplitRecords(records: SplitRecordExportData[], filename = 
 /**
  * 结算记录导出模板
  */
-export interface SettlementRecordExportData {
+export interface SettlementRecordExportData extends Record<string, unknown> {
   serialNum: string;
   type: string;
   totalAmount: number;

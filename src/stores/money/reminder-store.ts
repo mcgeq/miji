@@ -1,12 +1,12 @@
 // src/stores/money/reminder-store.ts
 import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
-import { MoneyDb } from '@/services/money/money';
-import { toast } from '@/utils/toast';
 import type { PageQuery } from '@/schema/common';
 import type { BilReminder, BilReminderCreate, BilReminderUpdate } from '@/schema/money';
 import type { PagedResult } from '@/services/money/baseManager';
 import type { BilReminderFilters } from '@/services/money/billReminder';
+import { MoneyDb } from '@/services/money/money';
+import { toast } from '@/utils/toast';
 
 // ==================== Store Constants ====================
 
@@ -71,7 +71,7 @@ export const useReminderStore = defineStore('money-reminders', {
       const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
       return state.reminders.filter(r => {
-        if (!r.enabled || !r.remindDate) return false;
+        if (!(r.enabled && r.remindDate)) return false;
         const nextDate = new Date(r.remindDate);
         return nextDate >= now && nextDate <= sevenDaysLater;
       });
@@ -92,7 +92,7 @@ export const useReminderStore = defineStore('money-reminders', {
       this.error = null;
       try {
         return await operation();
-      } catch (error: any) {
+      } catch (error: unknown) {
         const appError = AppError.wrap('ReminderStore', error, errorCode, errorMsg);
         this.error = appError;
         if (showToast) {
@@ -251,7 +251,10 @@ export const useReminderStore = defineStore('money-reminders', {
 
       return this.withLoadingSafe(
         async () => {
-          const updatedReminder = await MoneyDb.updateBilReminderActive(serialNum, !reminder.enabled);
+          const updatedReminder = await MoneyDb.updateBilReminderActive(
+            serialNum,
+            !reminder.enabled,
+          );
 
           // 更新 reminders 数组
           const index = this.reminders.findIndex(r => r.serialNum === serialNum);

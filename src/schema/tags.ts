@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { DateTimeSchema, DescriptionSchema, NameSchema, SerialNumSchema } from './common';
 import type { UsageDetail } from './common';
+import { DateTimeSchema, DescriptionSchema, NameSchema, SerialNumSchema } from './common';
 
 export const TagsSchema = z.object({
   serialNum: SerialNumSchema,

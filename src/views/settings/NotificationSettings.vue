@@ -1,170 +1,4 @@
-<template>
-  <div class="notification-settings">
-    <!-- 页面标题 -->
-    <div class="settings-header">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-2xl font-bold">通知设置</h2>
-          <p class="text-sm text-gray-500 mt-2">管理应用的通知权限和偏好设置</p>
-        </div>
-        <Button variant="outline" @click="$router.push('/notification-dashboard')">
-          <component :is="BarChart3" class="w-4 h-4 mr-2" />
-          查看统计
-        </Button>
-      </div>
-    </div>
-
-    <!-- 权限状态卡片 -->
-    <Card class="permission-card mt-6">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <component :is="Bell" class="w-5 h-5" />
-            <h3 class="font-semibold">通知权限</h3>
-          </div>
-          <Badge :color="statusColor">{{ statusText }}</Badge>
-        </div>
-      </template>
-
-      <div class="space-y-4">
-        <!-- 权限说明 -->
-        <p class="text-sm text-gray-600">
-          {{
-            hasPermission
-              ? '通知权限已授予，您将收到及时的提醒通知'
-              : '需要通知权限才能及时提醒您的待办、账单和健康事项'
-          }}
-        </p>
-
-        <!-- 错误提示 -->
-        <Alert v-if="error" type="error" @close="clearError">{{ error }}</Alert>
-
-        <!-- 权限操作按钮 -->
-        <div class="flex space-x-3">
-          <Button
-            v-if="!hasPermission"
-            @click="handleRequestPermission"
-            :loading="isProcessing"
-            variant="primary"
-          >
-            <component :is="Unlock" class="w-4 h-4 mr-2" />
-            授予权限
-          </Button>
-
-          <Button @click="handleOpenSettings" :loading="isProcessing" variant="outline">
-            <component :is="Settings" class="w-4 h-4 mr-2" />
-            系统设置
-          </Button>
-
-          <Button @click="checkPermission" :loading="checking" variant="ghost">
-            <component :is="RefreshCw" class="w-4 h-4 mr-2" />
-            刷新状态
-          </Button>
-        </div>
-      </div>
-    </Card>
-
-    <!-- 通知类型设置 -->
-    <Card class="notification-types-card mt-6">
-      <template #header>
-        <h3 class="font-semibold">通知类型</h3>
-      </template>
-
-      <div class="space-y-4">
-        <!-- 通知类型列表 -->
-        <div v-for="type in notificationTypes" :key="type.value" class="notification-type-item">
-          <div class="flex items-start justify-between">
-            <div class="flex items-start space-x-3 flex-1">
-              <component :is="type.icon" class="w-5 h-5 mt-0.5 text-gray-500" />
-              <div class="flex-1">
-                <div class="flex items-center space-x-2">
-                  <span class="font-medium">{{ type.label }}</span>
-                  <Badge v-if="!hasPermission" color="gray" size="sm">需要权限</Badge>
-                </div>
-                <p class="text-sm text-gray-500 mt-1">{{ type.description }}</p>
-              </div>
-            </div>
-            <Switch
-              :model-value="settings[type.key] as boolean"
-              @update:model-value="(val) => { (settings as any)[type.key] = val; handleSettingChange(); }"
-              :disabled="!hasPermission || loading"
-            />
-          </div>
-        </div>
-      </div>
-    </Card>
-
-    <!-- 免打扰设置 -->
-    <Card class="dnd-settings-card mt-6">
-      <template #header>
-        <div class="flex items-center space-x-2">
-          <component :is="Moon" class="w-5 h-5" />
-          <h3 class="font-semibold">免打扰设置</h3>
-        </div>
-      </template>
-
-      <div class="space-y-6">
-        <!-- 免打扰时段 -->
-        <div class="dnd-hours">
-          <label class="block text-sm font-medium mb-3">免打扰时段</label>
-          <div class="flex items-center space-x-4">
-            <div class="flex-1">
-              <label class="text-xs text-gray-500 mb-1 block">开始时间</label>
-              <input
-                v-model="settings.quietHoursStart"
-                type="time"
-                class="input-time w-full"
-                :disabled="!hasPermission || loading"
-                @change="handleSettingChange"
-              />
-            </div>
-            <span class="text-gray-400 mt-6">-</span>
-            <div class="flex-1">
-              <label class="text-xs text-gray-500 mb-1 block">结束时间</label>
-              <input
-                v-model="settings.quietHoursEnd"
-                type="time"
-                class="input-time w-full"
-                :disabled="!hasPermission || loading"
-                @change="handleSettingChange"
-              />
-            </div>
-          </div>
-          <p class="text-xs text-gray-500 mt-2">在此时间段内将不会收到通知（紧急通知除外）</p>
-        </div>
-
-        <!-- 免打扰日期 -->
-        <div class="dnd-days">
-          <label class="block text-sm font-medium mb-3">免打扰日期</label>
-          <div class="flex flex-wrap gap-2">
-            <Button
-              v-for="day in weekDays"
-              :key="day.value"
-              :variant="isDaySelected(day.value) ? 'primary' : 'outline'"
-              size="sm"
-              @click="toggleDay(day.value)"
-              :disabled="!hasPermission || loading"
-            >
-              {{ day.label }}
-            </Button>
-          </div>
-          <p class="text-xs text-gray-500 mt-2">选中的日期将不会收到通知（紧急通知除外）</p>
-        </div>
-      </div>
-    </Card>
-
-    <!-- 操作按钮 -->
-    <div class="actions mt-6 flex justify-end space-x-3">
-      <Button @click="handleReset" variant="outline" :disabled="loading">重置</Button>
-      <Button @click="handleSave" variant="primary" :loading="loading" :disabled="!hasPermission">
-        保存设置
-      </Button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-  import { onMounted, reactive, ref } from 'vue';
   import { useNotificationPermission } from '@/composables/useNotificationPermission';
   import {
     NotificationType,
@@ -414,6 +248,171 @@
     await loadSettings();
   });
 </script>
+
+<template>
+  <div class="notification-settings">
+    <!-- 页面标题 -->
+    <div class="settings-header">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-bold">通知设置</h2>
+          <p class="text-sm text-gray-500 mt-2">管理应用的通知权限和偏好设置</p>
+        </div>
+        <Button variant="outline" @click="$router.push('/notification-dashboard')">
+          <component :is="BarChart3" class="w-4 h-4 mr-2" />
+          查看统计
+        </Button>
+      </div>
+    </div>
+
+    <!-- 权限状态卡片 -->
+    <Card class="permission-card mt-6">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <component :is="Bell" class="w-5 h-5" />
+            <h3 class="font-semibold">通知权限</h3>
+          </div>
+          <Badge :color="statusColor">{{ statusText }}</Badge>
+        </div>
+      </template>
+
+      <div class="space-y-4">
+        <!-- 权限说明 -->
+        <p class="text-sm text-gray-600">
+          {{
+            hasPermission
+              ? '通知权限已授予，您将收到及时的提醒通知'
+              : '需要通知权限才能及时提醒您的待办、账单和健康事项'
+          }}
+        </p>
+
+        <!-- 错误提示 -->
+        <Alert v-if="error" type="error" @close="clearError">{{ error }}</Alert>
+
+        <!-- 权限操作按钮 -->
+        <div class="flex space-x-3">
+          <Button
+            v-if="!hasPermission"
+            @click="handleRequestPermission"
+            :loading="isProcessing"
+            variant="primary"
+          >
+            <component :is="Unlock" class="w-4 h-4 mr-2" />
+            授予权限
+          </Button>
+
+          <Button @click="handleOpenSettings" :loading="isProcessing" variant="outline">
+            <component :is="Settings" class="w-4 h-4 mr-2" />
+            系统设置
+          </Button>
+
+          <Button @click="checkPermission" :loading="checking" variant="ghost">
+            <component :is="RefreshCw" class="w-4 h-4 mr-2" />
+            刷新状态
+          </Button>
+        </div>
+      </div>
+    </Card>
+
+    <!-- 通知类型设置 -->
+    <Card class="notification-types-card mt-6">
+      <template #header>
+        <h3 class="font-semibold">通知类型</h3>
+      </template>
+
+      <div class="space-y-4">
+        <!-- 通知类型列表 -->
+        <div v-for="type in notificationTypes" :key="type.value" class="notification-type-item">
+          <div class="flex items-start justify-between">
+            <div class="flex items-start space-x-3 flex-1">
+              <component :is="type.icon" class="w-5 h-5 mt-0.5 text-gray-500" />
+              <div class="flex-1">
+                <div class="flex items-center space-x-2">
+                  <span class="font-medium">{{ type.label }}</span>
+                  <Badge v-if="!hasPermission" color="gray" size="sm">需要权限</Badge>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">{{ type.description }}</p>
+              </div>
+            </div>
+            <Switch
+              :model-value="settings[type.key] as boolean"
+              @update:model-value="(val) => { (settings as any)[type.key] = val; handleSettingChange(); }"
+              :disabled="!hasPermission || loading"
+            />
+          </div>
+        </div>
+      </div>
+    </Card>
+
+    <!-- 免打扰设置 -->
+    <Card class="dnd-settings-card mt-6">
+      <template #header>
+        <div class="flex items-center space-x-2">
+          <component :is="Moon" class="w-5 h-5" />
+          <h3 class="font-semibold">免打扰设置</h3>
+        </div>
+      </template>
+
+      <div class="space-y-6">
+        <!-- 免打扰时段 -->
+        <div class="dnd-hours">
+          <label class="block text-sm font-medium mb-3">免打扰时段</label>
+          <div class="flex items-center space-x-4">
+            <div class="flex-1">
+              <label class="text-xs text-gray-500 mb-1 block">开始时间</label>
+              <input
+                v-model="settings.quietHoursStart"
+                type="time"
+                class="input-time w-full"
+                :disabled="!hasPermission || loading"
+                @change="handleSettingChange"
+              />
+            </div>
+            <span class="text-gray-400 mt-6">-</span>
+            <div class="flex-1">
+              <label class="text-xs text-gray-500 mb-1 block">结束时间</label>
+              <input
+                v-model="settings.quietHoursEnd"
+                type="time"
+                class="input-time w-full"
+                :disabled="!hasPermission || loading"
+                @change="handleSettingChange"
+              />
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">在此时间段内将不会收到通知（紧急通知除外）</p>
+        </div>
+
+        <!-- 免打扰日期 -->
+        <div class="dnd-days">
+          <label class="block text-sm font-medium mb-3">免打扰日期</label>
+          <div class="flex flex-wrap gap-2">
+            <Button
+              v-for="day in weekDays"
+              :key="day.value"
+              :variant="isDaySelected(day.value) ? 'primary' : 'outline'"
+              size="sm"
+              @click="toggleDay(day.value)"
+              :disabled="!hasPermission || loading"
+            >
+              {{ day.label }}
+            </Button>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">选中的日期将不会收到通知（紧急通知除外）</p>
+        </div>
+      </div>
+    </Card>
+
+    <!-- 操作按钮 -->
+    <div class="actions mt-6 flex justify-end space-x-3">
+      <Button @click="handleReset" variant="outline" :disabled="loading">重置</Button>
+      <Button @click="handleSave" variant="primary" :loading="loading" :disabled="!hasPermission">
+        保存设置
+      </Button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
   .notification-settings {

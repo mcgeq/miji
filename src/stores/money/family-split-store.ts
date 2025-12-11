@@ -161,8 +161,8 @@ export const useFamilySplitStore = defineStore('family-split', {
         // console.log('Fetching split rules for ledger:', ledgerSerialNum);
         // 临时模拟数据
         this.splitRules = [];
-      } catch (error: any) {
-        this.error = error.message || '获取分摊规则失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '获取分摊规则失败';
         throw error;
       } finally {
         this.loading = false;
@@ -197,8 +197,8 @@ export const useFamilySplitStore = defineStore('family-split', {
 
         this.splitRules.push(rule);
         return rule;
-      } catch (error: any) {
-        this.error = error.message || '创建分摊规则失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '创建分摊规则失败';
         throw error;
       } finally {
         this.loading = false;
@@ -234,8 +234,8 @@ export const useFamilySplitStore = defineStore('family-split', {
 
         this.splitRules[index] = updatedRule;
         return updatedRule;
-      } catch (error: any) {
-        this.error = error.message || '更新分摊规则失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '更新分摊规则失败';
         throw error;
       } finally {
         this.loading = false;
@@ -255,8 +255,8 @@ export const useFamilySplitStore = defineStore('family-split', {
         // console.log('Deleting split rule:', serialNum);
 
         this.splitRules = this.splitRules.filter(r => r.serialNum !== serialNum);
-      } catch (error: any) {
-        this.error = error.message || '删除分摊规则失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '删除分摊规则失败';
         throw error;
       } finally {
         this.loading = false;
@@ -391,8 +391,8 @@ export const useFamilySplitStore = defineStore('family-split', {
         await this.createDebtRelationsFromSplit(record);
 
         return record;
-      } catch (error: any) {
-        this.error = error.message || '创建分摊记录失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '创建分摊记录失败';
         throw error;
       } finally {
         this.loading = false;
@@ -419,7 +419,7 @@ export const useFamilySplitStore = defineStore('family-split', {
         // 临时模拟数据
         this.settlementSuggestions = [];
         return this.settlementSuggestions;
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('获取结算建议失败:', error);
         throw error;
       }

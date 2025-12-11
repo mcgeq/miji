@@ -1,8 +1,8 @@
 // src/stores/money/currency-store.ts
 import { defineStore } from 'pinia';
+import type { Currency, CurrencyCrate, CurrencyUpdate } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
 import { emitStoreEvent } from './store-events';
-import type { Currency, CurrencyCrate, CurrencyUpdate } from '@/schema/common';
 
 interface CurrencyStoreState {
   currencies: Currency[];
@@ -63,7 +63,7 @@ export const useCurrencyStore = defineStore('money-currencies', {
      * 获取货币列表（带缓存）
      */
     async fetchCurrencies(force = false) {
-      if (!force && !this.isCurrenciesCacheExpired && this.currencies.length > 0) {
+      if (!(force || this.isCurrenciesCacheExpired) && this.currencies.length > 0) {
         return;
       }
 
@@ -79,8 +79,8 @@ export const useCurrencyStore = defineStore('money-currencies', {
         if (defaultCurrency) {
           this.defaultCurrency = defaultCurrency;
         }
-      } catch (error: any) {
-        this.error = error.message || '获取货币列表失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '获取货币列表失败';
         throw error;
       } finally {
         this.loading = false;
@@ -107,8 +107,8 @@ export const useCurrencyStore = defineStore('money-currencies', {
         emitStoreEvent('currency:created', { code: currency.code });
 
         return currency;
-      } catch (error: any) {
-        this.error = error.message || '创建货币失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '创建货币失败';
         throw error;
       } finally {
         this.loading = false;
@@ -142,8 +142,8 @@ export const useCurrencyStore = defineStore('money-currencies', {
         emitStoreEvent('currency:updated', { code });
 
         return updatedCurrency;
-      } catch (error: any) {
-        this.error = error.message || '更新货币失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '更新货币失败';
         throw error;
       } finally {
         this.loading = false;
@@ -168,8 +168,8 @@ export const useCurrencyStore = defineStore('money-currencies', {
 
         // 发送货币删除事件
         emitStoreEvent('currency:deleted', { code });
-      } catch (error: any) {
-        this.error = error.message || '删除货币失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '删除货币失败';
         throw error;
       } finally {
         this.loading = false;

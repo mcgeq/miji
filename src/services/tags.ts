@@ -64,28 +64,35 @@ export class TagMapper {
 }
 
 /**
- * 标签数据库操作类
+ * 标签数据库操作
  */
-export class TagDb {
-  private static tagMapper = new TagMapper();
+const tagMapper = new TagMapper();
 
-  static async listTags(): Promise<Tags[]> {
-    return TagDb.tagMapper.list();
-  }
-
-  static async getTag(serialNum: string): Promise<Tags | null> {
-    return TagDb.tagMapper.getById(serialNum);
-  }
-
-  static async createTag(data: TagCreate): Promise<Tags> {
-    return TagDb.tagMapper.create(data);
-  }
-
-  static async updateTag(serialNum: string, data: TagUpdate): Promise<Tags> {
-    return TagDb.tagMapper.update(serialNum, data);
-  }
-
-  static async deleteTag(serialNum: string): Promise<void> {
-    return TagDb.tagMapper.delete(serialNum);
-  }
+export async function listTags(): Promise<Tags[]> {
+  return tagMapper.list();
 }
+
+export async function getTag(serialNum: string): Promise<Tags | null> {
+  return tagMapper.getById(serialNum);
+}
+
+export async function createTag(data: TagCreate): Promise<Tags> {
+  return tagMapper.create(data);
+}
+
+export async function updateTag(serialNum: string, data: TagUpdate): Promise<Tags> {
+  return tagMapper.update(serialNum, data);
+}
+
+export async function deleteTag(serialNum: string): Promise<void> {
+  return tagMapper.delete(serialNum);
+}
+
+// Legacy export for backward compatibility
+export const TagDb = {
+  listTags,
+  getTag,
+  createTag,
+  updateTag,
+  deleteTag,
+};

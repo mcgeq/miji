@@ -33,7 +33,7 @@ import type { CacheEntry, TTLCacheOptions } from './types';
  * // 自定义 TTL
  * cache.set('temp', tempData, 1000); // 1秒后过期
  */
-export class TTLCache<T = any> {
+export class TTLCache<T = unknown> {
   private cache = new Map<string, CacheEntry<T>>();
   private readonly options: Required<TTLCacheOptions>;
 

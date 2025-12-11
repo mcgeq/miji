@@ -1,9 +1,3 @@
-import { PeriodDailyRecordMapper } from './period_daily_record';
-import { PeriodRecordMapper } from './period_record';
-import { PeriodSettingsMapper } from './period_settings';
-import type { PagedResult } from '../money/baseManager';
-import type { PeriodDailyRecordFilter } from './period_daily_record';
-import type { PeriodRecordFilter } from './period_record';
 import type { PageQuery } from '@/schema/common';
 import type {
   PeriodDailyRecordCreate,
@@ -16,33 +10,45 @@ import type {
   PeriodSettingsCreate,
   PeriodSettingsUpdate,
 } from '@/schema/health/period';
+import type { PagedResult } from '../money/baseManager';
+import type { PeriodDailyRecordFilter } from './period_daily_record';
+import { PeriodDailyRecordMapper } from './period_daily_record';
+import type { PeriodRecordFilter } from './period_record';
+import { PeriodRecordMapper } from './period_record';
+import { PeriodSettingsMapper } from './period_settings';
 
-export class HealthsDb {
-  private static periodRecordMapper = new PeriodRecordMapper();
-  private static periodDailyRecordMapper = new PeriodDailyRecordMapper();
-  private static periodSettingsMapper = new PeriodSettingsMapper();
+/**
+ * 健康数据数据库服务 - 使用映射器模式
+ *
+ * 这是一个门面（Facade）类，聚合了健康相关的数据访问映射器
+ * 提供统一的健康数据访问入口点
+ */
+class HealthsDbService {
+  private periodRecordMapper = new PeriodRecordMapper();
+  private periodDailyRecordMapper = new PeriodDailyRecordMapper();
+  private periodSettingsMapper = new PeriodSettingsMapper();
 
   // =================== PeriodRecord ===================
-  static async getPeriodRecord(serialNum: string): Promise<PeriodRecords | null> {
+  async getPeriodRecord(serialNum: string): Promise<PeriodRecords | null> {
     return this.periodRecordMapper.getById(serialNum);
   }
 
-  static async createPeriodRecord(periodRecord: PeriodRecordCreate): Promise<PeriodRecords> {
+  async createPeriodRecord(periodRecord: PeriodRecordCreate): Promise<PeriodRecords> {
     return this.periodRecordMapper.create(periodRecord);
   }
 
-  static async updatePeriodRecord(
+  async updatePeriodRecord(
     serialNum: string,
     periodRecord: PeriodRecordUpdate,
   ): Promise<PeriodRecords> {
     return this.periodRecordMapper.update(serialNum, periodRecord);
   }
 
-  static async deletePeriodRecord(serialNum: string): Promise<void> {
+  async deletePeriodRecord(serialNum: string): Promise<void> {
     return this.periodRecordMapper.deleteById(serialNum);
   }
 
-  static async listPagedPeriodRecord(
+  async listPagedPeriodRecord(
     query: PageQuery<PeriodRecordFilter> = {
       currentPage: 1,
       pageSize: 10,
@@ -55,28 +61,28 @@ export class HealthsDb {
   // =================== PeriodRecord ===================
 
   // =================== PeriodDailyRecord ===================
-  static async getPeriodDailyRecord(serialNum: string): Promise<PeriodDailyRecords | null> {
+  async getPeriodDailyRecord(serialNum: string): Promise<PeriodDailyRecords | null> {
     return this.periodDailyRecordMapper.getById(serialNum);
   }
 
-  static async createPeriodDailyRecord(
+  async createPeriodDailyRecord(
     periodRecord: PeriodDailyRecordCreate,
   ): Promise<PeriodDailyRecords> {
     return this.periodDailyRecordMapper.create(periodRecord);
   }
 
-  static async updatePeriodDailyRecord(
+  async updatePeriodDailyRecord(
     serialNum: string,
     periodRecord: PeriodDailyRecordUpdate,
   ): Promise<PeriodDailyRecords> {
     return this.periodDailyRecordMapper.update(serialNum, periodRecord);
   }
 
-  static async deletePeriodDailyRecord(serialNum: string): Promise<void> {
+  async deletePeriodDailyRecord(serialNum: string): Promise<void> {
     return this.periodDailyRecordMapper.deleteById(serialNum);
   }
 
-  static async listPagedPeriodDailyRecord(
+  async listPagedPeriodDailyRecord(
     query: PageQuery<PeriodDailyRecordFilter> = {
       currentPage: 1,
       pageSize: 10,
@@ -90,23 +96,26 @@ export class HealthsDb {
   // =================== PeriodDailyRecord ===================
 
   // =================== PeriodSettings ===================
-  static async getPeriodSettings(serialNum: string): Promise<PeriodSettings | null> {
+  async getPeriodSettings(serialNum: string): Promise<PeriodSettings | null> {
     return this.periodSettingsMapper.getById(serialNum);
   }
 
-  static async createPeriodSettings(periodSettings: PeriodSettingsCreate): Promise<PeriodSettings> {
+  async createPeriodSettings(periodSettings: PeriodSettingsCreate): Promise<PeriodSettings> {
     return this.periodSettingsMapper.create(periodSettings);
   }
 
-  static async updatePeriodSettings(
+  async updatePeriodSettings(
     serialNum: string,
     periodSettings: PeriodSettingsUpdate,
   ): Promise<PeriodSettings> {
     return this.periodSettingsMapper.update(serialNum, periodSettings);
   }
 
-  static async deletePeriodSettings(serialNum: string): Promise<void> {
+  async deletePeriodSettings(serialNum: string): Promise<void> {
     return this.periodSettingsMapper.deleteById(serialNum);
   }
   // =================== PeriodSettings ===================
 }
+
+// 导出单例实例
+export const HealthsDb = new HealthsDbService();

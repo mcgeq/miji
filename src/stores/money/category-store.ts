@@ -1,7 +1,7 @@
 // src/stores/money/category-store.ts
 import { defineStore } from 'pinia';
-import { MoneyDb } from '@/services/money/money';
 import type { Category, SubCategory } from '@/schema/money/category';
+import { MoneyDb } from '@/services/money/money';
 
 interface CategoryStoreState {
   categories: Category[];
@@ -86,7 +86,7 @@ export const useCategoryStore = defineStore('money-categories', {
      * 获取分类列表（带缓存）
      */
     async fetchCategories(force = false) {
-      if (!force && !this.isCategoriesCacheExpired && this.categories.length > 0) {
+      if (!(force || this.isCategoriesCacheExpired) && this.categories.length > 0) {
         return;
       }
 
@@ -96,8 +96,8 @@ export const useCategoryStore = defineStore('money-categories', {
       try {
         this.categories = await MoneyDb.listCategory();
         this.lastFetchedCategories = new Date();
-      } catch (error: any) {
-        this.error = error.message || '获取分类列表失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '获取分类列表失败';
         throw error;
       } finally {
         this.loading = false;
@@ -108,7 +108,7 @@ export const useCategoryStore = defineStore('money-categories', {
      * 获取子分类列表（带缓存）
      */
     async fetchSubCategories(force = false) {
-      if (!force && !this.isSubCategoriesCacheExpired && this.subCategories.length > 0) {
+      if (!(force || this.isSubCategoriesCacheExpired) && this.subCategories.length > 0) {
         return;
       }
 
@@ -118,8 +118,8 @@ export const useCategoryStore = defineStore('money-categories', {
       try {
         this.subCategories = await MoneyDb.listSubCategory();
         this.lastFetchedSubCategories = new Date();
-      } catch (error: any) {
-        this.error = error.message || '获取子分类列表失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '获取子分类列表失败';
         throw error;
       } finally {
         this.loading = false;

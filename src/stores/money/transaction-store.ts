@@ -1,10 +1,6 @@
 // src/stores/money/transaction-store.ts
 import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
-import { MoneyDb } from '@/services/money/money';
-import { Lg } from '@/utils/debugLog';
-import { toast } from '@/utils/toast';
-import { emitStoreEvent } from './store-events';
 import type { PageQuery } from '@/schema/common';
 import type {
   Transaction,
@@ -13,12 +9,16 @@ import type {
   TransferCreate,
 } from '@/schema/money';
 import type { PagedResult } from '@/services/money/baseManager';
+import { MoneyDb } from '@/services/money/money';
 import type {
   InstallmentPlanResponse,
   TransactionFilters,
   TransactionStatsRequest,
   TransactionStatsResponse,
 } from '@/services/money/transactions';
+import { Lg } from '@/utils/debugLog';
+import { toast } from '@/utils/toast';
+import { emitStoreEvent } from './store-events';
 
 // ==================== Store Constants ====================
 const STORE_MODULE = 'TransactionStore';
@@ -189,24 +189,24 @@ export const useTransactionStore = defineStore('money-transactions', {
      */
     async fetchTransactionsPaged(query: PageQuery<TransactionFilters>) {
       Lg.i(STORE_MODULE, '获取分页交易列表', { page: query.currentPage, pageSize: query.pageSize });
-      
+
       // 取消上一个未完成的请求
       this.cancelCurrentRequest();
-      
+
       // 创建新的 AbortController
       const abortController = new AbortController();
       this.currentAbortController = abortController;
-      
+
       return this.withLoadingSafe(
         async () => {
           const result = await MoneyDb.listTransactionsPaged(query);
-          
+
           // 检查请求是否已被取消
           if (abortController.signal.aborted) {
             Lg.w(STORE_MODULE, '请求已被取消');
             return;
           }
-          
+
           // 不可变更新：创建新对象
           this.transactionsPaged = { ...result };
           // 保存查询条件用于优化刷新
@@ -548,10 +548,10 @@ export const useTransactionStore = defineStore('money-transactions', {
      */
     $reset() {
       Lg.i(STORE_MODULE, '重置 store 状态');
-      
+
       // 取消未完成的请求
       this.cancelCurrentRequest();
-      
+
       const initialState = createInitialState();
       this.transactions = initialState.transactions;
       this.transactionsPaged = initialState.transactionsPaged;

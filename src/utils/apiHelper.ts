@@ -12,13 +12,13 @@ import { toast } from './toast';
 export interface ApiError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 /**
  * 统一错误处理
  */
-export function handleApiError(error: any, customMessage?: string): void {
+export function handleApiError(error: unknown, customMessage?: string): void {
   console.error('API错误:', error);
 
   let errorMessage = customMessage || '操作失败';
@@ -26,10 +26,12 @@ export function handleApiError(error: any, customMessage?: string): void {
   // 解析不同类型的错误
   if (typeof error === 'string') {
     errorMessage = error;
-  } else if (error?.message) {
-    errorMessage = error.message;
-  } else if (error?.error) {
-    errorMessage = error.error;
+  } else if (error && typeof error === 'object') {
+    if ('message' in error && typeof error.message === 'string') {
+      errorMessage = error.message;
+    } else if ('error' in error && typeof error.error === 'string') {
+      errorMessage = error.error;
+    }
   }
 
   // 显示错误提示
@@ -84,7 +86,7 @@ export async function cachedApiCall<T>(
 // ==================== 请求去重 ====================
 
 class RequestDeduplicator {
-  private pending: Map<string, Promise<any>> = new Map();
+  private pending: Map<string, Promise<unknown>> = new Map();
 
   /**
    * 执行请求，如果相同请求正在进行中则等待
@@ -120,13 +122,13 @@ export const requestDeduplicator = new RequestDeduplicator();
 export interface LoadingState {
   loading: Ref<boolean>;
   error: Ref<string | null>;
-  data: Ref<any>;
+  data: Ref<unknown>;
 }
 
 /**
  * 创建加载状态
  */
-export function useLoadingState<T = any>(initialData?: T) {
+export function useLoadingState<T = unknown>(initialData?: T) {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const data = ref<T | null>(initialData || null) as Ref<T | null>;
@@ -142,8 +144,12 @@ export function useLoadingState<T = any>(initialData?: T) {
       const result = await apiCall();
       data.value = result;
       return result;
-    } catch (err: any) {
-      error.value = err?.message || '操作失败';
+    } catch (err: unknown) {
+      const errorMessage =
+        err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : '操作失败';
+      error.value = errorMessage;
       handleApiError(err);
       return null;
     } finally {
@@ -174,7 +180,7 @@ export function useLoadingState<T = any>(initialData?: T) {
 export interface OfflineQueueItem {
   id: string;
   method: string;
-  params: any;
+  params: unknown;
   timestamp: number;
   retryCount: number;
 }
@@ -186,7 +192,7 @@ class OfflineQueue {
   /**
    * 添加到离线队列
    */
-  add(method: string, params: any): void {
+  add(method: string, params: unknown): void {
     const item: OfflineQueueItem = {
       id: `${method}_${Date.now()}`,
       method,
@@ -303,7 +309,7 @@ export function useNetworkStatus() {
  */
 export function createOptimizedApiCall<T>(
   method: string,
-  apiCall: (params: any) => Promise<T>,
+  apiCall: (params: unknown) => Promise<T>,
   options?: {
     cache?: boolean;
     cacheExpires?: number;
@@ -311,7 +317,7 @@ export function createOptimizedApiCall<T>(
     errorMessage?: string;
   },
 ) {
-  return async (params: any): Promise<T | null> => {
+  return async (params: unknown): Promise<T | null> => {
     const cacheKey = options?.cache ? cacheKeys.api(method, params) : '';
 
     const executeCall = async () => {

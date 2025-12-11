@@ -133,7 +133,7 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
     try {
       const response = await invoke<{
         success: boolean;
-        data: any;
+        data: BudgetAllocationResponse;
         message?: string;
       }>('budget_allocation_create', {
         budgetSerialNum,
@@ -148,8 +148,8 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
       await fetchAllocations(budgetSerialNum);
 
       return response.data;
-    } catch (err: any) {
-      error.value = err.message || '创建分配失败';
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : '创建分配失败';
       throw err;
     } finally {
       loading.value = false;
@@ -169,7 +169,7 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
     try {
       const response = await invoke<{
         success: boolean;
-        data: any;
+        data: BudgetAllocationResponse;
         message?: string;
       }>('budget_allocation_update', {
         serialNum,
@@ -187,8 +187,8 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
       }
 
       return response.data;
-    } catch (err: any) {
-      error.value = err.message || '更新分配失败';
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : '更新分配失败';
       throw err;
     } finally {
       loading.value = false;
@@ -219,8 +219,8 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
       if (index !== -1) {
         allocations.value.splice(index, 1);
       }
-    } catch (err: any) {
-      error.value = err.message || '删除分配失败';
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : '删除分配失败';
       throw err;
     } finally {
       loading.value = false;
@@ -237,7 +237,7 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
     try {
       const response = await invoke<{
         success: boolean;
-        data: any;
+        data: BudgetAllocationResponse;
         message?: string;
       }>('budget_allocation_get', {
         serialNum,
@@ -249,8 +249,8 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
 
       currentAllocation.value = response.data;
       return response.data;
-    } catch (err: any) {
-      error.value = err.message || '获取分配详情失败';
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : '获取分配详情失败';
       throw err;
     } finally {
       loading.value = false;
@@ -267,7 +267,7 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
     try {
       const response = await invoke<{
         success: boolean;
-        data: any[];
+        data: BudgetAllocationResponse[];
         message?: string;
       }>('budget_allocations_list', {
         budgetSerialNum,
@@ -278,11 +278,25 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
       }
 
       allocations.value = response.data;
-    } catch (err: any) {
-      error.value = err.message || '获取分配列表失败';
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : '获取分配列表失败';
       throw err;
     } finally {
       loading.value = false;
+    }
+  }
+
+  /**
+   * 更新本地分配数据
+   */
+  function updateLocalAllocation(
+    allocationSerialNum: string | undefined,
+    updatedData: BudgetAllocationResponse,
+  ) {
+    if (!allocationSerialNum) return;
+    const index = allocations.value.findIndex(a => a.serialNum === allocationSerialNum);
+    if (index !== -1) {
+      allocations.value[index] = updatedData;
     }
   }
 
@@ -306,22 +320,15 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
         throw new Error(response.message || '记录使用失败');
       }
 
-      // 更新本地数据
-      if (data.allocationSerialNum) {
-        const index = allocations.value.findIndex(a => a.serialNum === data.allocationSerialNum);
-        if (index !== -1) {
-          allocations.value[index] = response.data;
-        }
-      }
+      updateLocalAllocation(data.allocationSerialNum, response.data);
 
-      // 检查是否触发预警
       if (response.data.isWarning) {
         await checkAlerts(data.budgetSerialNum);
       }
 
       return response.data;
-    } catch (err: any) {
-      error.value = err.message || '记录使用失败';
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : '记录使用失败';
       throw err;
     } finally {
       loading.value = false;
@@ -351,8 +358,8 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
 
       const [canSpend, reason] = response.data;
       return { canSpend, reason: reason || undefined };
-    } catch (err: any) {
-      return { canSpend: false, reason: err.message };
+    } catch (err: unknown) {
+      return { canSpend: false, reason: err instanceof Error ? err.message : '检查消费失败' };
     }
   }
 
@@ -375,7 +382,7 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
 
       alerts.value = response.data;
       return response.data;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('检查预警失败:', err);
       return [];
     }

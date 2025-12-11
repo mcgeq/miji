@@ -1,7 +1,7 @@
+import type { Currency, CurrencyCrate, CurrencyUpdate } from '@/schema/common';
 import { invokeCommand } from '@/types/api';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper } from './baseManager';
-import type { Currency, CurrencyCrate, CurrencyUpdate } from '@/schema/common';
 
 /**
  * 货币数据映射器

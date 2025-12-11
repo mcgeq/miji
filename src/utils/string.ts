@@ -27,15 +27,12 @@ import { camelCase, lowerFirst, snakeCase } from 'es-toolkit';
  * toCamelCase([{ user_name: 'Alice' }, { user_name: 'Bob' }])
  * // [{ userName: 'Alice' }, { userName: 'Bob' }]
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function toCamelCase<T = any>(obj: any): T {
+export function toCamelCase<T = unknown>(obj: unknown): T {
   if (Array.isArray(obj)) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return obj.map(toCamelCase) as any;
+    return obj.map(toCamelCase) as T;
   }
   if (obj !== null && typeof obj === 'object') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const newObj: Record<string, any> = {};
+    const newObj: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       // 使用 es-toolkit 的 camelCase 进行转换
       const camelKey = camelCase(key);
@@ -43,7 +40,7 @@ export function toCamelCase<T = any>(obj: any): T {
     }
     return newObj as T;
   }
-  return obj;
+  return obj as T;
 }
 
 /**
@@ -87,20 +84,17 @@ export function lowercaseFirstLetter(word: string): string {
  * toSnakeCaseObject({ userName: 'Alice', createdAt: '2025-01-01' })
  * // { user_name: 'Alice', created_at: '2025-01-01' }
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function toSnakeCaseObject<T = any>(obj: any): T {
+export function toSnakeCaseObject<T = unknown>(obj: unknown): T {
   if (Array.isArray(obj)) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return obj.map(toSnakeCaseObject) as any;
+    return obj.map(toSnakeCaseObject) as T;
   }
   if (obj !== null && typeof obj === 'object') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const newObj: Record<string, any> = {};
+    const newObj: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       const snakeKey = snakeCase(key);
       newObj[snakeKey] = toSnakeCaseObject(value);
     }
     return newObj as T;
   }
-  return obj;
+  return obj as T;
 }

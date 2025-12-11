@@ -99,7 +99,7 @@ export interface BudgetAllocationResponse {
 
   // 分配规则
   allocationType: AllocationType;
-  ruleConfig?: Record<string, any>;
+  ruleConfig?: Record<string, unknown>;
 
   // 超支控制
   allowOverspend: boolean;
@@ -134,7 +134,7 @@ export interface BudgetAllocationCreateRequest {
 
   // 分配规则
   allocationType?: AllocationType;
-  ruleConfig?: Record<string, any>;
+  ruleConfig?: Record<string, unknown>;
 
   // 超支控制
   allowOverspend?: boolean;
@@ -160,7 +160,7 @@ export interface BudgetAllocationUpdateRequest {
   percentage?: number;
 
   allocationType?: AllocationType;
-  ruleConfig?: Record<string, any>;
+  ruleConfig?: Record<string, unknown>;
 
   allowOverspend?: boolean;
   overspendLimitType?: OverspendLimitType;
@@ -304,5 +304,5 @@ export interface AllocationFormData {
  * 表单验证规则
  */
 export interface AllocationFormRules {
-  [key: string]: any;
+  [key: string]: unknown;
 }

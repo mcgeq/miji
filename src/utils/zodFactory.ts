@@ -1,7 +1,7 @@
+import type { ZodObject, ZodRawShape, z } from 'zod';
+import type { RepeatPeriod } from '../schema/common';
 import { RepeatPeriodSchema } from '../schema/common';
 import { Lg } from './debugLog';
-import type { RepeatPeriod } from '../schema/common';
-import type { z, ZodObject, ZodRawShape } from 'zod';
 
 /**
  * 通用对象工厂：根据 Zod Schema 和默认值生成合法对象
@@ -22,7 +22,8 @@ export function createWithDefaults<T extends ZodRawShape, Schema extends ZodObje
 
   for (const key in defaults) {
     const value = defaults[key];
-    resolvedDefaults[key] = typeof value === 'function' ? (value as () => any)() : value;
+    const resolvedValue = typeof value === 'function' ? value() : value;
+    resolvedDefaults[key] = resolvedValue as (typeof resolvedDefaults)[typeof key];
   }
 
   const merged: Partial<z.infer<Schema>> = {

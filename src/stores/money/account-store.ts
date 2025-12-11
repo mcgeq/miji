@@ -1,12 +1,12 @@
 // src/stores/money/account-store.ts
 import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
+import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
+import type { AccountFilters } from '@/services/money/accounts';
 import { MoneyDb } from '@/services/money/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import { onStoreEvent, type EventCleanup } from './store-events';
-import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
-import type { AccountFilters } from '@/services/money/accounts';
+import { type EventCleanup, onStoreEvent } from './store-events';
 
 // ==================== Store Constants ====================
 const STORE_MODULE = 'AccountStore';
@@ -84,7 +84,7 @@ export const useAccountStore = defineStore('money-accounts', {
      * 检查单个账户金额是否隐藏
      */
     isAccountAmountHidden: state => (serialNum: string) => {
-      return state.accountAmountHidden[serialNum] || false;
+      return state.accountAmountHidden[serialNum] ?? false;
     },
 
     /**
@@ -395,7 +395,9 @@ export const useAccountStore = defineStore('money-accounts', {
     cleanupEventListeners() {
       if (this.eventCleanups.length > 0) {
         Lg.i(STORE_MODULE, '清理事件监听器', { count: this.eventCleanups.length });
-        this.eventCleanups.forEach(cleanup => cleanup());
+        this.eventCleanups.forEach(cleanup => {
+          cleanup();
+        });
         this.eventCleanups = [];
       }
     },
@@ -407,10 +409,10 @@ export const useAccountStore = defineStore('money-accounts', {
      */
     $reset() {
       Lg.i(STORE_MODULE, '重置 store 状态');
-      
+
       // 先清理事件监听器
       this.cleanupEventListeners();
-      
+
       const initialState = createInitialState();
       this.accounts = initialState.accounts;
       this.loading = initialState.loading;

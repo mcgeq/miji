@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import type { Intensity, SymptomsType } from '@/schema/common';
 import { DateSchema, DateTimeSchema, SerialNumSchema } from '@/schema/common';
 import type { PeriodPhase } from './period_daily_records';
-import type { Intensity, SymptomsType } from '@/schema/common';
 
 export const PeriodRecordsSchema = z.object({
   serialNum: SerialNumSchema,

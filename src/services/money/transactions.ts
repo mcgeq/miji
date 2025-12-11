@@ -1,8 +1,3 @@
-import { invokeCommand } from '@/types/api';
-import { DateUtils } from '@/utils/date';
-import { Lg } from '@/utils/debugLog';
-import { BaseMapper } from './baseManager';
-import type { PagedResult } from './baseManager';
 import type { IncomeExpense, PageQuery } from '@/schema/common';
 import type {
   Transaction,
@@ -10,6 +5,11 @@ import type {
   TransactionUpdate,
   TransferCreate,
 } from '@/schema/money';
+import { invokeCommand } from '@/types/api';
+import { DateUtils } from '@/utils/date';
+import { Lg } from '@/utils/debugLog';
+import type { PagedResult } from './baseManager';
+import { BaseMapper } from './baseManager';
 
 // 分期付款相关类型定义
 export interface InstallmentPlanResponse {

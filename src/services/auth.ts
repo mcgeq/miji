@@ -1,8 +1,3 @@
-import { TokenStatus } from '@/schema/user';
-import { loginUser, useAuthStore } from '@/stores/auth';
-import { invokeCommand, isBusinessError, isSystemError } from '@/types/api';
-import { DateUtils } from '../utils/date';
-import { Lg } from '../utils/debugLog';
 import type {
   CreateUserRequest,
   TokenResponse,
@@ -10,7 +5,12 @@ import type {
   User,
   UserQuery,
 } from '@/schema/user';
+import { TokenStatus } from '@/schema/user';
+import { useAuthStore } from '@/stores/auth';
 import type { Credentials, CredentialsLogin } from '@/types';
+import { invokeCommand, isBusinessError, isSystemError } from '@/types/api';
+import { DateUtils } from '../utils/date';
+import { Lg } from '../utils/debugLog';
 
 // 认证相关的业务错误类
 export class AuthError extends Error {
@@ -50,7 +50,8 @@ export async function login(credentials: CredentialsLogin, rememberMe = false): 
       role: user.role,
     });
     // Update auth store
-    await loginUser(user, tokenResponse, rememberMe);
+    const authStore = useAuthStore();
+    await authStore.login(user, tokenResponse, rememberMe);
     const now = DateUtils.getLocalISODateTimeWithOffset();
     const updateUser: UpdateUserRequest = {
       lastActiveAt: now,
@@ -104,7 +105,8 @@ export async function register(credentials: Credentials, rememberMe = false): Pr
         userId: result.email,
         role: result.role,
       });
-      await loginUser(result, tokenResponse);
+      const authStore = useAuthStore();
+      await authStore.login(result, tokenResponse);
     }
 
     return result;

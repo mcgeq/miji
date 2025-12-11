@@ -38,7 +38,11 @@ const isArray = Array.isArray;
 /**
  * 差异结果类型
  */
-export type DiffResult = typeof UNCHANGED | Record<string | number | symbol, any> | any[] | any;
+export type DiffResult =
+  | typeof UNCHANGED
+  | Record<string | number | symbol, unknown>
+  | unknown[]
+  | unknown;
 
 /**
  * 差异比较选项
@@ -61,58 +65,85 @@ function isIgnored(path: (string | number | symbol)[], ignoreKeys: string[]): bo
 }
 
 /**
- * 深度比较两个值，返回差异
- *
- * 只返回新对象中存在且值不同的字段，适合 API 部分更新
- *
- * @param oldValue - 旧值
- * @param newValue - 新值
- * @param options - 配置选项
- * @param path - 当前路径（内部使用）
- * @returns 差异对象，如果无变化返回 UNCHANGED
+ * 比较 null/undefined
  */
-export function deepDiff(
-  oldValue: any,
-  newValue: any,
-  options: DiffOptions = {},
-  path: (string | number | symbol)[] = [],
-): DiffResult {
-  const { ignoreKeys = [] } = options;
-
-  // 当前路径被忽略，直接返回新值
-  if (isIgnored(path, ignoreKeys)) {
-    return newValue;
-  }
-
-  // 使用 es-toolkit 的 isEqual 快速判断相等
-  if (isEqual(oldValue, newValue)) {
-    return UNCHANGED;
-  }
-
-  // null/undefined 处理
+function diffNullable(oldValue: unknown, newValue: unknown): DiffResult | null {
   if (oldValue == null || newValue == null) {
     return (oldValue == null && newValue != null) || (newValue == null && oldValue != null)
       ? newValue
       : UNCHANGED;
   }
+  return null;
+}
 
-  // Date 对象比较
+/**
+ * 比较 Date 对象
+ */
+function diffDates(oldValue: unknown, newValue: unknown): DiffResult | null {
   if (isDate(oldValue) && isDate(newValue)) {
     return oldValue.getTime() === newValue.getTime() ? UNCHANGED : newValue;
   }
+  return null;
+}
 
-  // RegExp 对象比较
+/**
+ * 比较 RegExp 对象
+ */
+function diffRegExps(oldValue: unknown, newValue: unknown): DiffResult | null {
   if (isRegExp(oldValue) && isRegExp(newValue)) {
     return oldValue.source === newValue.source && oldValue.flags === newValue.flags
       ? UNCHANGED
       : newValue;
   }
+  return null;
+}
 
-  // Function 处理
+/**
+ * 比较 Function
+ */
+function diffFunctions(
+  oldValue: unknown,
+  newValue: unknown,
+  options: DiffOptions,
+): DiffResult | null {
   if (isFunction(oldValue) || isFunction(newValue)) {
     return options.ignoreFunctions ? UNCHANGED : oldValue !== newValue ? newValue : UNCHANGED;
   }
+  return null;
+}
 
+/**
+ * 检查并处理基本类型差异
+ */
+function diffPrimitives(
+  oldValue: unknown,
+  newValue: unknown,
+  options: DiffOptions,
+): DiffResult | null {
+  // 使用 es-toolkit 的 isEqual 快速判断相等
+  if (isEqual(oldValue, newValue)) {
+    return UNCHANGED;
+  }
+
+  // 依次检查各种特殊类型
+  return (
+    diffNullable(oldValue, newValue) ??
+    diffDates(oldValue, newValue) ??
+    diffRegExps(oldValue, newValue) ??
+    diffFunctions(oldValue, newValue, options) ??
+    null
+  );
+}
+
+/**
+ * 检查并处理复杂类型差异
+ */
+function diffComplexTypes(
+  oldValue: unknown,
+  newValue: unknown,
+  options: DiffOptions,
+  path: (string | number | symbol)[],
+): DiffResult | null {
   // 数组比较
   if (isArray(oldValue) && isArray(newValue)) {
     return diffArray(oldValue, newValue, options, path);
@@ -133,6 +164,45 @@ export function deepDiff(
     return diffObject(oldValue, newValue, options, path);
   }
 
+  return null;
+}
+
+/**
+ * 深度比较两个值，返回差异
+ *
+ * 只返回新对象中存在且值不同的字段，适合 API 部分更新
+ *
+ * @param oldValue - 旧值
+ * @param newValue - 新值
+ * @param options - 配置选项
+ * @param path - 当前路径（内部使用）
+ * @returns 差异对象，如果无变化返回 UNCHANGED
+ */
+export function deepDiff(
+  oldValue: unknown,
+  newValue: unknown,
+  options: DiffOptions = {},
+  path: (string | number | symbol)[] = [],
+): DiffResult {
+  const { ignoreKeys = [] } = options;
+
+  // 当前路径被忽略，直接返回新值
+  if (isIgnored(path, ignoreKeys)) {
+    return newValue;
+  }
+
+  // 检查基本类型
+  const primitiveResult = diffPrimitives(oldValue, newValue, options);
+  if (primitiveResult !== null) {
+    return primitiveResult;
+  }
+
+  // 检查复杂类型
+  const complexResult = diffComplexTypes(oldValue, newValue, options, path);
+  if (complexResult !== null) {
+    return complexResult;
+  }
+
   // 其他类型直接比较
   return oldValue !== newValue ? newValue : UNCHANGED;
 }
@@ -141,13 +211,13 @@ export function deepDiff(
  * 比较数组差异
  */
 function diffArray(
-  oldArr: any[],
-  newArr: any[],
+  oldArr: unknown[],
+  newArr: unknown[],
   options: DiffOptions,
   path: (string | number | symbol)[],
-): typeof UNCHANGED | any[] {
+): typeof UNCHANGED | unknown[] {
   const maxLength = Math.max(oldArr.length, newArr.length);
-  const result: any[] = [];
+  const result: unknown[] = [];
   let hasChanges = false;
 
   for (let i = 0; i < maxLength; i++) {
@@ -187,14 +257,18 @@ function diffObject(
   newObj: object,
   options: DiffOptions,
   path: (string | number | symbol)[],
-): Record<string | number | symbol, any> | typeof UNCHANGED {
+): Record<string | number | symbol, unknown> | typeof UNCHANGED {
   const { includeNonEnumerable = false } = options;
   const newKeys = includeNonEnumerable ? Reflect.ownKeys(newObj) : Object.keys(newObj);
-  const result: Record<string | number | symbol, any> = {};
+  const result: Record<string | number | symbol, unknown> = {};
 
   for (const key of newKeys) {
-    const oldVal = Object.hasOwn(oldObj, key) ? (oldObj as any)[key] : undefined;
-    const newVal = Object.hasOwn(newObj, key) ? (newObj as any)[key] : undefined;
+    const oldVal = Object.hasOwn(oldObj, key)
+      ? (oldObj as Record<string | number | symbol, unknown>)[key]
+      : undefined;
+    const newVal = Object.hasOwn(newObj, key)
+      ? (newObj as Record<string | number | symbol, unknown>)[key]
+      : undefined;
 
     const diff = deepDiff(oldVal, newVal, options, [...path, key]);
     if (diff !== UNCHANGED) {
@@ -210,7 +284,7 @@ function diffObject(
  *
  * 使用 es-toolkit 的 difference 优化性能
  */
-function diffSet(oldSet: Set<any>, newSet: Set<any>): typeof UNCHANGED | object {
+function diffSet(oldSet: Set<unknown>, newSet: Set<unknown>): typeof UNCHANGED | object {
   const oldArr = [...oldSet];
   const newArr = [...newSet];
 
@@ -232,13 +306,13 @@ function diffSet(oldSet: Set<any>, newSet: Set<any>): typeof UNCHANGED | object 
  * 比较 Map 差异
  */
 function diffMap(
-  oldMap: Map<any, any>,
-  newMap: Map<any, any>,
+  oldMap: Map<unknown, unknown>,
+  newMap: Map<unknown, unknown>,
   options: DiffOptions = {},
   path: (string | number | symbol)[] = [],
-): typeof UNCHANGED | Record<string, any> {
+): typeof UNCHANGED | Record<string, unknown> {
   const allKeys = new Set([...oldMap.keys(), ...newMap.keys()]);
-  const changes: Record<string, any> = {};
+  const changes: Record<string, unknown> = {};
 
   for (const key of allKeys) {
     const oldVal = oldMap.get(key);

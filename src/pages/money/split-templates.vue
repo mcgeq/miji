@@ -1,47 +1,47 @@
 <script setup lang="ts">
-import Button from '@/components/ui/Button.vue';
-import SplitRuleConfigurator from '@/features/money/components/SplitRuleConfigurator.vue';
-import SplitTemplateList from '@/features/money/components/SplitTemplateList.vue';
-import SplitTemplateModal from '@/features/money/components/SplitTemplateModal.vue';
-import { Permission } from '@/types/auth';
+  import Button from '@/components/ui/Button.vue';
+  import SplitRuleConfigurator from '@/features/money/components/SplitRuleConfigurator.vue';
+  import SplitTemplateList from '@/features/money/components/SplitTemplateList.vue';
+  import SplitTemplateModal from '@/features/money/components/SplitTemplateModal.vue';
+  import { Permission } from '@/types/auth';
 
-definePage({
-  name: 'split-templates',
-  meta: {
-    requiresAuth: true,
-    permissions: [Permission.TRANSACTION_VIEW],
-    title: '分摆模板管理',
-    icon: 'layout-template',
-  },
-});
+  definePage({
+    name: 'split-templates',
+    meta: {
+      requiresAuth: true,
+      permissions: [Permission.TRANSACTION_VIEW],
+      title: '分摆模板管理',
+      icon: 'layout-template',
+    },
+  });
 
-const showTemplateModal = ref(false);
-const showConfigurator = ref(false);
-const selectedTemplate = ref(null);
+  const showTemplateModal = ref(false);
+  const showConfigurator = ref(false);
+  const selectedTemplate = ref<unknown>(null);
 
-// 打开模板编辑
-function handleEditTemplate(template: any) {
-  selectedTemplate.value = template;
-  showTemplateModal.value = true;
-}
+  // 打开模板编辑
+  function handleEditTemplate(template: unknown) {
+    selectedTemplate.value = template;
+    showTemplateModal.value = true;
+  }
 
-// 打开规则配置器
-function handleConfigureRule() {
-  showConfigurator.value = true;
-}
+  // 打开规则配置器
+  function handleConfigureRule() {
+    showConfigurator.value = true;
+  }
 
-// 关闭模态框
-function handleCloseModal() {
-  showTemplateModal.value = false;
-  showConfigurator.value = false;
-  selectedTemplate.value = null;
-}
+  // 关闭模态框
+  function handleCloseModal() {
+    showTemplateModal.value = false;
+    showConfigurator.value = false;
+    selectedTemplate.value = null;
+  }
 
-// 保存模板
-function handleSaveTemplate() {
-  // TODO: 保存模板逻辑
-  handleCloseModal();
-}
+  // 保存模板
+  function handleSaveTemplate() {
+    // TODO: 保存模板逻辑
+    handleCloseModal();
+  }
 </script>
 
 <template>
@@ -53,19 +53,12 @@ function handleSaveTemplate() {
         <h1 class="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-2 truncate">
           分摊模板管理
         </h1>
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          创建和管理分摊规则模板
-        </p>
+        <p class="text-sm text-gray-600 dark:text-gray-400">创建和管理分摊规则模板</p>
       </div>
 
       <!-- 右侧操作区域 -->
       <div class="flex items-center gap-3 shrink-0">
-        <Button
-          variant="primary"
-          size="sm"
-          class="w-full sm:w-auto"
-          @click="handleConfigureRule"
-        >
+        <Button variant="primary" size="sm" class="w-full sm:w-auto" @click="handleConfigureRule">
           <span class="hidden sm:inline">创建新模板</span>
           <span class="sm:hidden">新建</span>
         </Button>
@@ -73,10 +66,7 @@ function handleSaveTemplate() {
     </div>
 
     <!-- 模板列表 -->
-    <SplitTemplateList
-      @edit-template="handleEditTemplate"
-      @configure-rule="handleConfigureRule"
-    />
+    <SplitTemplateList @edit-template="handleEditTemplate" @configure-rule="handleConfigureRule" />
 
     <!-- 模板编辑模态框 -->
     <SplitTemplateModal

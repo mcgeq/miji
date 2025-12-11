@@ -101,7 +101,17 @@ const mockTemplates: Array<{
   },
 ];
 
-const mockRecords: any[] = [];
+interface MockRecord {
+  serial_num: string;
+  transaction_serial_num: string;
+  family_ledger_serial_num: string;
+  rule_type: string;
+  total_amount: number;
+  split_details: SplitMember[];
+  created_at: string;
+}
+
+const mockRecords: MockRecord[] = [];
 
 // Mock Service 实现
 export const mockSplitService = {
@@ -116,7 +126,7 @@ export const mockSplitService = {
       name: data.name,
       description: data.description || '',
       rule_type: data.rule_type,
-      is_default: data.is_default || false,
+      is_default: data.is_default ?? false,
       is_template: true,
       family_ledger_serial_num: data.family_ledger_serial_num,
       participants: data.participants || [],
@@ -134,7 +144,7 @@ export const mockSplitService = {
   /**
    * 获取分摊模板列表
    */
-  async listTemplates(params: any = {}) {
+  async listTemplates(params: { rule_type?: string; page?: number; page_size?: number } = {}) {
     console.log('📋 Mock: 获取模板列表', params);
 
     let filtered = [...mockTemplates];
@@ -155,7 +165,7 @@ export const mockSplitService = {
   /**
    * 更新分摊模板
    */
-  async updateTemplate(serialNum: string, data: any) {
+  async updateTemplate(serialNum: string, data: Partial<SplitTemplateCreateRequest>) {
     console.log('✏️ Mock: 更新模板', serialNum, data);
 
     const index = mockTemplates.findIndex(t => t.serial_num === serialNum);
@@ -223,7 +233,7 @@ export const mockSplitService = {
 
     if (params.status && params.status !== 'all') {
       filtered = filtered.filter(r => {
-        const allPaid = r.split_details.every((d: any) => d.is_paid);
+        const allPaid = r.split_details.every(d => d.is_paid);
         return params.status === 'completed' ? allPaid : !allPaid;
       });
     }
@@ -231,8 +241,8 @@ export const mockSplitService = {
     // 模拟统计
     const statistics = {
       total_records: filtered.length,
-      completed_records: filtered.filter(r => r.split_details.every((d: any) => d.is_paid)).length,
-      pending_records: filtered.filter(r => !r.split_details.every((d: any) => d.is_paid)).length,
+      completed_records: filtered.filter(r => r.split_details.every(d => d.is_paid)).length,
+      pending_records: filtered.filter(r => !r.split_details.every(d => d.is_paid)).length,
       total_amount: filtered.reduce((sum, r) => sum + r.total_amount, 0),
       paid_amount: 0,
       unpaid_amount: 0,
@@ -262,14 +272,14 @@ export const mockSplitService = {
           ...record,
           statistics: {
             total_members: record.split_details.length,
-            paid_members: record.split_details.filter((d: any) => d.is_paid).length,
-            unpaid_members: record.split_details.filter((d: any) => !d.is_paid).length,
+            paid_members: record.split_details.filter(d => d.is_paid).length,
+            unpaid_members: record.split_details.filter(d => !d.is_paid).length,
             paid_amount: record.split_details
-              .filter((d: any) => d.is_paid)
-              .reduce((sum: number, d: any) => sum + d.amount, 0),
+              .filter(d => d.is_paid)
+              .reduce((sum, d) => sum + d.amount, 0),
             unpaid_amount: record.split_details
-              .filter((d: any) => !d.is_paid)
-              .reduce((sum: number, d: any) => sum + d.amount, 0),
+              .filter(d => !d.is_paid)
+              .reduce((sum, d) => sum + d.amount, 0),
             paid_percentage: 0,
           },
         },
@@ -293,9 +303,7 @@ export const mockSplitService = {
     const record = mockRecords.find(r => r.serial_num === data.serial_num);
 
     if (record) {
-      const detail = record.split_details.find(
-        (d: any) => d.member_serial_num === data.member_serial_num,
-      );
+      const detail = record.split_details.find(d => d.member_serial_num === data.member_serial_num);
 
       if (detail) {
         detail.is_paid = data.is_paid;

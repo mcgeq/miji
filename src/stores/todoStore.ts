@@ -1,15 +1,15 @@
 // src/stores/todoStore.ts
 import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
+import type { DateRange, PageQuery, Status } from '@/schema/common';
 import { SortDirection, StatusSchema } from '@/schema/common';
+import type { Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
+import type { PagedMapResult, PagedResult } from '@/services/money/baseManager';
+import type { TodoFilters } from '@/services/todo';
 import { TodoDb } from '@/services/todos';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import type { DateRange, PageQuery, Status } from '@/schema/common';
-import type { Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
-import type { PagedMapResult, PagedResult } from '@/services/money/baseManager';
-import type { TodoFilters } from '@/services/todo';
 
 // ==================== Store Constants ====================
 const STORE_MODULE = 'TodoStore';
@@ -129,7 +129,7 @@ export const useTodoStore = defineStore('todos', {
       const { status, dateRange, parentId } = state.filters;
 
       // 无筛选条件时直接返回
-      if (!status && !dateRange && parentId === undefined) {
+      if (!(status || dateRange) && parentId === undefined) {
         return todos;
       }
 

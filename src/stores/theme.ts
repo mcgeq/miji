@@ -36,15 +36,15 @@ const THEME_OPTIONS: readonly ThemeOption[] = Object.freeze([
 function isDevelopment(): boolean {
   return (
     import.meta.env?.DEV === true ||
-      import.meta.env?.MODE === 'development' ||
-        (typeof window !== 'undefined' && window.location?.hostname === 'localhost')
+    import.meta.env?.MODE === 'development' ||
+    (typeof window !== 'undefined' && window.location?.hostname === 'localhost')
   );
 }
 
 /**
  * 安全的控制台日志输出
  */
-function safeLog(message: string, data?: any): void {
+function safeLog(message: string, data?: unknown): void {
   if (isDevelopment()) {
     console.warn(message, data || '');
   }

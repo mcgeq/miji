@@ -39,7 +39,7 @@ const isDebugEnabled =
 const logLevel = (import.meta.env.VITE_LOG_LEVEL as LogType) || 'info';
 
 // 时间戳格式化
-function getTimestamp(locale: string = 'en-US'): string {
+function getTimestamp(locale = 'en-US'): string {
   const formatter = new Intl.DateTimeFormat(locale, {
     hour12: false,
     hour: '2-digit',
@@ -95,8 +95,8 @@ function formatData(data: unknown): {
 // 核心日志函数
 function debugLog(
   label: string,
+  args: unknown[],
   type: LogType = 'info',
-  args: any[],
   options: {
     locale?: string;
     collapse?: boolean;
@@ -106,8 +106,8 @@ function debugLog(
 ) {
   if (!isDebugEnabled || levelPriority[type] > levelPriority[logLevel]) return;
 
-  const emoji = emojiMap[type]!;
-  const style = styleMap[type]!;
+  const emoji = emojiMap[type] || '•';
+  const style = styleMap[type] || 'color: #000; font-family: monospace;';
   const timestamp = getTimestamp(options.locale);
   const category = options.category ? `${options.category.toUpperCase()}/` : '';
   const prefix = `%c[${timestamp}] ${emoji} ${category}${label.toUpperCase()}`;
@@ -115,22 +115,30 @@ function debugLog(
   // ------------------------------
   // 1. 调用 tauri-plugin-log 输出日志（核心）
   // ------------------------------
-  // 直接传递原始参数（tauri 支持多参数和对象格式化）
+  // Format all args into a single message for Tauri (it only accepts 1-2 params)
+  const formattedArgs = args
+    .map(arg => {
+      const { formatted } = formatData(arg);
+      return formatted;
+    })
+    .join(' ');
+  const tauriMessage = `${prefix} ${formattedArgs}`;
+
   switch (type) {
     case 'trace':
-      trace(prefix, ...args);
+      trace(tauriMessage);
       break;
     case 'debug':
-      debug(prefix, ...args);
+      debug(tauriMessage);
       break;
     case 'info':
-      info(prefix, ...args);
+      info(tauriMessage);
       break;
     case 'warn':
-      warn(prefix, ...args);
+      warn(tauriMessage);
       break;
     case 'error':
-      error(prefix, ...args);
+      error(tauriMessage);
       break;
   }
   // ------------------------------
@@ -184,8 +192,8 @@ function debugLog(
 
 // 快捷调用
 export const Lg = {
-  i: (label: string, ...args: unknown[]) => debugLog(label, 'info', args),
-  w: (label: string, ...args: unknown[]) => debugLog(label, 'warn', args),
-  e: (label: string, ...args: unknown[]) => debugLog(label, 'error', args),
-  d: (label: string, ...args: unknown[]) => debugLog(label, 'debug', args),
+  i: (label: string, ...args: unknown[]) => debugLog(label, args, 'info'),
+  w: (label: string, ...args: unknown[]) => debugLog(label, args, 'warn'),
+  e: (label: string, ...args: unknown[]) => debugLog(label, args, 'error'),
+  d: (label: string, ...args: unknown[]) => debugLog(label, args, 'debug'),
 };

@@ -10,6 +10,13 @@ import {
 import { init, use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 
+// Extend Window interface for echarts
+declare global {
+  interface Window {
+    echarts?: unknown;
+  }
+}
+
 // 注册必要的组件
 use([
   CanvasRenderer,
@@ -37,7 +44,7 @@ export function initECharts() {
       if (window.echarts) {
         // 重写 console.warn 来过滤 ECharts 相关的警告
         const originalWarn = console.warn;
-        console.warn = function (...args) {
+        console.warn = (...args) => {
           const message = args.join(' ');
           if (message.includes('[ECharts] Instance') && message.includes('has been disposed')) {
             return; // 忽略这个特定的警告
@@ -231,9 +238,11 @@ export const chartUtils = {
   formatAmount: (value: number): string => {
     if (value >= 100000000) {
       return `${(value / 100000000).toFixed(1)}亿`;
-    } else if (value >= 10000) {
+    }
+    if (value >= 10000) {
       return `${(value / 10000).toFixed(1)}万`;
-    } else if (value >= 1000) {
+    }
+    if (value >= 1000) {
       return `${(value / 1000).toFixed(1)}千`;
     }
     return value.toFixed(0);

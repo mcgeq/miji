@@ -70,28 +70,35 @@ export class ProjectMapper {
 }
 
 /**
- * 项目数据库操作类
+ * 项目数据库操作
  */
-export class ProjectDb {
-  private static projectMapper = new ProjectMapper();
+const projectMapper = new ProjectMapper();
 
-  static async listProjects(): Promise<Projects[]> {
-    return ProjectDb.projectMapper.list();
-  }
-
-  static async getProject(serialNum: string): Promise<Projects | null> {
-    return ProjectDb.projectMapper.getById(serialNum);
-  }
-
-  static async createProject(data: ProjectCreate): Promise<Projects> {
-    return ProjectDb.projectMapper.create(data);
-  }
-
-  static async updateProject(serialNum: string, data: ProjectUpdate): Promise<Projects> {
-    return ProjectDb.projectMapper.update(serialNum, data);
-  }
-
-  static async deleteProject(serialNum: string): Promise<void> {
-    return ProjectDb.projectMapper.delete(serialNum);
-  }
+export async function listProjects(): Promise<Projects[]> {
+  return projectMapper.list();
 }
+
+export async function getProject(serialNum: string): Promise<Projects | null> {
+  return projectMapper.getById(serialNum);
+}
+
+export async function createProject(data: ProjectCreate): Promise<Projects> {
+  return projectMapper.create(data);
+}
+
+export async function updateProject(serialNum: string, data: ProjectUpdate): Promise<Projects> {
+  return projectMapper.update(serialNum, data);
+}
+
+export async function deleteProject(serialNum: string): Promise<void> {
+  return projectMapper.delete(serialNum);
+}
+
+// Legacy export for backward compatibility
+export const ProjectDb = {
+  listProjects,
+  getProject,
+  createProject,
+  updateProject,
+  deleteProject,
+};

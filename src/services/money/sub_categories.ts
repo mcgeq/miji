@@ -1,7 +1,7 @@
+import type { SubCategory, SubCategoryCreate, SubCategoryUpdate } from '@/schema/money/category';
 import { invokeCommand } from '@/types/api';
 import { Lg } from '@/utils/debugLog';
 import { BaseMapper } from './baseManager';
-import type { SubCategory, SubCategoryCreate, SubCategoryUpdate } from '@/schema/money/category';
 
 /**
  * 货币数据映射器

@@ -1,7 +1,3 @@
-import { invokeCommand } from '@/types/api';
-import { Lg } from '@/utils/debugLog';
-import { BaseMapper } from './baseManager';
-import type { PagedResult } from './baseManager';
 import type { DateRange, PageQuery } from '@/schema/common';
 import type {
   FamilyLedger,
@@ -20,6 +16,10 @@ import type {
   FamilyMemberCreate,
   FamilyMemberUpdate,
 } from '@/schema/money';
+import { invokeCommand } from '@/types/api';
+import { Lg } from '@/utils/debugLog';
+import type { PagedResult } from './baseManager';
+import { BaseMapper } from './baseManager';
 
 // 查询过滤器接口
 export interface FamilyMemberFilters {
@@ -208,7 +208,7 @@ export class FamilyLedgerMapper extends BaseMapper<
   /**
    * 获取账本统计信息
    */
-  async getStats(serialNum: string): Promise<any> {
+  async getStats(serialNum: string): Promise<unknown> {
     try {
       const result = await invokeCommand('family_ledger_stats', {
         serialNum,
@@ -474,7 +474,6 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<
       return result;
     } catch (error) {
       this.handleError('listByLedger', error);
-      return [];
     }
   }
 
@@ -490,7 +489,6 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<
       return result;
     } catch (error) {
       this.handleError('listByTransaction', error);
-      return [];
     }
   }
 
@@ -509,7 +507,6 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<
       return result;
     } catch (error) {
       this.handleError('batchCreate', error);
-      return [];
     }
   }
 
@@ -559,7 +556,6 @@ export class FamilyLedgerTransactionMapper extends BaseMapper<
       return await this.listByTransaction(transactionSerialNum);
     } catch (error) {
       this.handleError('updateTransactionLedgers', error);
-      return [];
     }
   }
 }

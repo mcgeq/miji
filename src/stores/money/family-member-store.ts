@@ -1,13 +1,13 @@
 // src/stores/money/family-member-store.ts
 import { defineStore } from 'pinia';
-import { MoneyDb } from '@/services/money/money';
-import { emitStoreEvent } from './store-events';
 import type {
   FamilyMember,
   FamilyMemberCreate,
   FamilyMemberUpdate,
   MemberFinancialStats,
 } from '@/schema/money';
+import { MoneyDb } from '@/services/money/money';
+import { emitStoreEvent } from './store-events';
 
 interface FamilyMemberStoreState {
   members: FamilyMember[];
@@ -145,8 +145,8 @@ export const useFamilyMemberStore = defineStore('family-member', {
           // 获取所有成员
           this.members = await MoneyDb.listFamilyMembers();
         }
-      } catch (error: any) {
-        this.error = error.message || '获取成员列表失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '获取成员列表失败';
         throw error;
       } finally {
         this.loading = false;
@@ -178,8 +178,8 @@ export const useFamilyMemberStore = defineStore('family-member', {
         }
 
         return member;
-      } catch (error: any) {
-        this.error = error.message || '创建成员失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '创建成员失败';
         throw error;
       } finally {
         this.loading = false;
@@ -203,8 +203,8 @@ export const useFamilyMemberStore = defineStore('family-member', {
         }
 
         return updatedMember;
-      } catch (error: any) {
-        this.error = error.message || '更新成员失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '更新成员失败';
         throw error;
       } finally {
         this.loading = false;
@@ -231,8 +231,8 @@ export const useFamilyMemberStore = defineStore('family-member', {
         if (this.currentLedgerSerialNum) {
           await this.updateLedgerMemberCount(this.currentLedgerSerialNum);
         }
-      } catch (error: any) {
-        this.error = error.message || '删除成员失败';
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '删除成员失败';
         throw error;
       } finally {
         this.loading = false;
@@ -277,7 +277,7 @@ export const useFamilyMemberStore = defineStore('family-member', {
 
         this.memberStats[serialNum] = stats;
         return stats;
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('获取成员统计失败:', error);
         throw error;
       }
@@ -304,8 +304,9 @@ export const useFamilyMemberStore = defineStore('family-member', {
         // console.log('Inviting user:', email, role);
         // 临时模拟邀请逻辑
         // 实际实现中应该发送邀请邮件或通知
-      } catch (error: any) {
-        this.error = error.message || '邀请用户失败';
+        await Promise.resolve();
+      } catch (error: unknown) {
+        this.error = error instanceof Error ? error.message : '邀请用户失败';
         throw error;
       } finally {
         this.loading = false;

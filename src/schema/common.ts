@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import type { ZodObject, ZodType } from 'zod';
+import { z } from 'zod';
 
 export const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 export const alphanumericRegex = /^[a-z0-9]+$/;

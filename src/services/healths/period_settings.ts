@@ -1,12 +1,12 @@
-import { invokeCommand } from '@/types/api';
-import { BaseMapper } from '../money/baseManager';
 import type {
   PeriodSettings,
   PeriodSettingsCreate,
   PeriodSettingsUpdate,
 } from '@/schema/health/period';
+import { invokeCommand } from '@/types/api';
+import { BaseMapper } from '../money/baseManager';
 
-export interface PeriodSettingsFilter {}
+export type PeriodSettingsFilter = Record<string, never>;
 
 /**
  * 账户数据映射器

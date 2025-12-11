@@ -21,10 +21,10 @@ export interface TTLCacheOptions {
   /** 最大缓存条目数，默认无限制 */
   maxSize?: number;
   /** 缓存条目过期时的回调 */
-  onExpire?: (key: string, value: any) => void;
+  onExpire?: (key: string, value: unknown) => void;
 }
 
 /**
  * 缓存键生成器类型
  */
-export type CacheKeyGenerator<T extends any[] = any[]> = (...args: T) => string;
+export type CacheKeyGenerator<T extends unknown[] = unknown[]> = (...args: T) => string;

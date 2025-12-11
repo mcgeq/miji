@@ -177,6 +177,86 @@ export function calculateWeightedSplit(totalAmount: number, weights: number[]): 
 }
 
 /**
+ * 验证均摊配置
+ */
+function validateEqualSplit(
+  totalAmount: number,
+  details: SplitDetailCreate[],
+  errors: string[],
+): void {
+  const expectedAmount = totalAmount / details.length;
+  for (const detail of details) {
+    if (Math.abs(detail.amount - expectedAmount) > 0.02) {
+      errors.push(`均摊金额不均等: 期望${expectedAmount}, 实际${detail.amount}`);
+      break;
+    }
+  }
+}
+
+/**
+ * 验证百分比分摊配置
+ */
+function validatePercentageSplit(
+  totalAmount: number,
+  details: SplitDetailCreate[],
+  errors: string[],
+): void {
+  const totalPercentage = details.reduce((sum, d) => sum + (d.percentage || 0), 0);
+  if (Math.abs(totalPercentage - 100) > 0.01) {
+    errors.push(`比例总和必须为100%，当前为${totalPercentage}%`);
+  }
+
+  for (const detail of details) {
+    if (detail.percentage) {
+      const expectedAmount = (totalAmount * detail.percentage) / 100;
+      if (Math.abs(detail.amount - expectedAmount) > 0.01) {
+        errors.push(`比例金额计算错误: 期望${expectedAmount}, 实际${detail.amount}`);
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * 验证固定金额分摊配置
+ */
+function validateFixedAmountSplit(
+  totalAmount: number,
+  details: SplitDetailCreate[],
+  errors: string[],
+): void {
+  const calculatedTotal = details.reduce((sum, d) => sum + d.amount, 0);
+  if (Math.abs(totalAmount - calculatedTotal) > 0.01) {
+    errors.push(`固定金额总和(${calculatedTotal})必须等于交易金额(${totalAmount})`);
+  }
+}
+
+/**
+ * 验证权重分摊配置
+ */
+function validateWeightedSplit(
+  totalAmount: number,
+  details: SplitDetailCreate[],
+  errors: string[],
+): void {
+  const totalWeight = details.reduce((sum, d) => sum + (d.weight || 0), 0);
+  if (totalWeight <= 0) {
+    errors.push('权重总和必须大于0');
+    return;
+  }
+
+  for (const detail of details) {
+    if (detail.weight) {
+      const expectedAmount = (totalAmount * detail.weight) / totalWeight;
+      if (Math.abs(detail.amount - expectedAmount) > 0.01) {
+        errors.push(`权重金额计算错误: 期望${expectedAmount}, 实际${detail.amount}`);
+        break;
+      }
+    }
+  }
+}
+
+/**
  * 验证分摊配置
  */
 export function validateSplitConfig(
@@ -195,67 +275,18 @@ export function validateSplitConfig(
   }
 
   switch (ruleType) {
-    case 'EQUAL': {
-      // 均摊：验证金额是否基本相等
-      const expectedAmount = totalAmount / details.length;
-      for (const detail of details) {
-        if (Math.abs(detail.amount - expectedAmount) > 0.02) {
-          errors.push(`均摊金额不均等: 期望${expectedAmount}, 实际${detail.amount}`);
-          break;
-        }
-      }
+    case 'EQUAL':
+      validateEqualSplit(totalAmount, details, errors);
       break;
-    }
-
-    case 'PERCENTAGE': {
-      // 百分比：验证总和为100%
-      const totalPercentage = details.reduce((sum, d) => sum + (d.percentage || 0), 0);
-      if (Math.abs(totalPercentage - 100) > 0.01) {
-        errors.push(`比例总和必须为100%，当前为${totalPercentage}%`);
-      }
-
-      // 验证金额计算正确性
-      for (const detail of details) {
-        if (detail.percentage) {
-          const expectedAmount = (totalAmount * detail.percentage) / 100;
-          if (Math.abs(detail.amount - expectedAmount) > 0.01) {
-            errors.push(`比例金额计算错误: 期望${expectedAmount}, 实际${detail.amount}`);
-            break;
-          }
-        }
-      }
+    case 'PERCENTAGE':
+      validatePercentageSplit(totalAmount, details, errors);
       break;
-    }
-
-    case 'FIXED_AMOUNT': {
-      // 固定金额：验证总和等于交易金额
-      const calculatedTotal = details.reduce((sum, d) => sum + d.amount, 0);
-      if (Math.abs(totalAmount - calculatedTotal) > 0.01) {
-        errors.push(`固定金额总和(${calculatedTotal})必须等于交易金额(${totalAmount})`);
-      }
+    case 'FIXED_AMOUNT':
+      validateFixedAmountSplit(totalAmount, details, errors);
       break;
-    }
-
-    case 'WEIGHTED': {
-      // 权重：验证权重总和大于0
-      const totalWeight = details.reduce((sum, d) => sum + (d.weight || 0), 0);
-      if (totalWeight <= 0) {
-        errors.push('权重总和必须大于0');
-      }
-
-      // 验证金额计算正确性
-      for (const detail of details) {
-        if (detail.weight) {
-          const expectedAmount = (totalAmount * detail.weight) / totalWeight;
-          if (Math.abs(detail.amount - expectedAmount) > 0.01) {
-            errors.push(`权重金额计算错误: 期望${expectedAmount}, 实际${detail.amount}`);
-            break;
-          }
-        }
-      }
+    case 'WEIGHTED':
+      validateWeightedSplit(totalAmount, details, errors);
       break;
-    }
-
     default:
       errors.push(`不支持的分摊类型: ${ruleType}`);
   }

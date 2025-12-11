@@ -15,7 +15,7 @@
     TrendingUp,
     XCircle,
   } from 'lucide-vue-next';
-  import { computed, onMounted, ref } from 'vue';
+  import { type Component, computed, onMounted, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import Badge from '@/components/ui/Badge.vue';
   import Button from '@/components/ui/Button.vue';
@@ -129,7 +129,7 @@
   }
 
   function getStatusIcon(status: string) {
-    const iconMap: Record<string, any> = {
+    const iconMap: Record<string, Component> = {
       Sent: Check,
       Failed: XCircle,
       Pending: Clock,
@@ -194,7 +194,7 @@
     <div class="mb-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <Button variant="ghost" @click="handleGoBack" class="flex-shrink-0">
+          <Button variant="ghost" @click="handleGoBack" class="shrink-0">
             <component :is="ArrowLeft" class="w-4 h-4" />
           </Button>
           <div>
@@ -453,7 +453,7 @@
             class="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <div
-              class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+              class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
               :class="{
                 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400': log.status === 'Sent',
                 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400': log.status === 'Failed',

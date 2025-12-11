@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 /////////////////////////
 // API 响应类型
 /////////////////////////
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   code: string; // 6 位错误码
   data?: T;
@@ -30,7 +30,7 @@ export class BusinessError extends Error {
     public details?: Record<string, string[] | string>,
     public requestInfo?: {
       command?: string;
-      args?: any;
+      args?: unknown;
     },
   ) {
     super(description);
@@ -62,7 +62,10 @@ export function isSystemError(error: unknown): error is SystemError {
 /////////////////////////
 function handleApiResponse<T>(response: ApiResponse<T>): T {
   if (!response.success) {
-    const error = response.error!;
+    if (!response.error) {
+      throw new SystemError('API response failed but no error details provided');
+    }
+    const error = response.error;
     // 如果是验证错误且 details 是对象，自动映射到字段
     let details: Record<string, string[] | string> | undefined;
     if (
@@ -80,7 +83,7 @@ function handleApiResponse<T>(response: ApiResponse<T>): T {
 // 专门处理可能返回空数据的命令
 export async function invokeCommandWithEmptyResponse(
   command: string,
-  args?: Record<string, any>,
+  args?: Record<string, unknown>,
 ): Promise<void> {
   await invokeCommand<void>(command, args);
 }
@@ -104,7 +107,7 @@ export function handleApiError(error: unknown): never {
 // API 调用工具函数
 export async function invokeCommand<T = void>(
   command: string,
-  args?: Record<string, any>,
+  args?: Record<string, unknown>,
   timeout = 5000,
 ): Promise<T> {
   try {

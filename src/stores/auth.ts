@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia';
 import { clearAuthCache } from '@/router/guards/auth.guard';
+import type { AuthUser, TokenResponse, User } from '@/schema/user';
 import { refreshToken as refreshTokenApi, verifyToken } from '@/services/auth';
+import type { Permission } from '@/types/auth';
 import { Role, RolePermissions } from '@/types/auth';
 import { authAudit } from '@/utils/auth-audit';
 import { Lg } from '@/utils/debugLog';
 import { toAuthUser } from '../utils/user';
-import type { AuthUser, TokenResponse, User } from '@/schema/user';
-import type { Permission } from '@/types/auth';
 
 // =============================================================================
 // Pinia Store with Tauri Persistence
@@ -77,8 +77,9 @@ export const useAuthStore = defineStore(
         // 设置角色和权限
         // 注意：User 类型可能还没有 role 和 permissions 字段
         // 这里使用类型断言，如果字段不存在则使用默认值
-        const rawRole = (userData as any).role;
-        const userPermissions = ((userData as any).permissions as Permission[]) || [];
+        const userDataRecord = userData as Record<string, unknown>;
+        const rawRole = userDataRecord.role as string | undefined;
+        const userPermissions = (userDataRecord.permissions as Permission[]) || [];
 
         // 将角色转换为小写以匹配枚举值（后端可能返回 'User' 而不是 'user'）
         const normalizedRole = rawRole?.toLowerCase() as Role;
@@ -150,42 +151,49 @@ export const useAuthStore = defineStore(
     }
 
     /**
+     * 检查 token 过期状态并在需要时刷新
+     */
+    async function handleTokenExpiry(currentTime: number): Promise<boolean> {
+      if (!tokenExpiresAt.value || tokenExpiresAt.value < currentTime) {
+        await logout();
+        return false;
+      }
+
+      const timeUntilExpiry = tokenExpiresAt.value - currentTime;
+      if (timeUntilExpiry < 5 * 60) {
+        Lg.i('Auth', 'Token expires soon, attempting refresh...', {
+          expiresIn: `${Math.round(timeUntilExpiry / 60)} minutes`,
+        });
+
+        try {
+          await refreshToken();
+          Lg.i('Auth', 'Token refreshed successfully');
+        } catch (error) {
+          Lg.w('Auth', 'Token refresh failed:', error);
+        }
+      }
+
+      return true;
+    }
+
+    /**
      * 检查认证状态
      */
     async function checkAuthStatus(): Promise<boolean> {
       try {
-        if (!user.value || !token.value) {
+        if (!(user.value && token.value)) {
           return false;
         }
 
         const currentTime = Date.now() / 1000;
 
-        // 记住我模式：检查 token 是否过期
         if (rememberMe.value) {
-          if (!tokenExpiresAt.value || tokenExpiresAt.value < currentTime) {
-            await logout();
+          const isValid = await handleTokenExpiry(currentTime);
+          if (!isValid) {
             return false;
-          }
-
-          // Token自动刷新：如果在5分钟内过期，尝试刷新
-          const timeUntilExpiry = tokenExpiresAt.value - currentTime;
-          if (timeUntilExpiry < 5 * 60) {
-            // 5分钟
-            Lg.i('Auth', 'Token expires soon, attempting refresh...', {
-              expiresIn: `${Math.round(timeUntilExpiry / 60)} minutes`,
-            });
-
-            try {
-              await refreshToken();
-              Lg.i('Auth', 'Token refreshed successfully');
-            } catch (error) {
-              Lg.w('Auth', 'Token refresh failed:', error);
-              // 刷新失败不立即登出，继续使用旧token直到完全过期
-            }
           }
         }
 
-        // 验证 token
         const tokenStatus = await verifyToken(token.value);
         if (tokenStatus !== 'Valid') {
           await logout();
@@ -209,7 +217,7 @@ export const useAuthStore = defineStore(
      * - 刷新失败不立即登出，继续使用旧Token直到完全过期
      */
     async function refreshToken(): Promise<void> {
-      if (!token.value || !user.value) {
+      if (!(token.value && user.value)) {
         throw new Error('No token or user to refresh');
       }
 
@@ -303,7 +311,7 @@ export const useAuthStore = defineStore(
      * 更新用户资料
      */
     async function updateProfile(profileData: Partial<AuthUser>) {
-      if (!user.value || !token.value) {
+      if (!(user.value && token.value)) {
         throw new Error('用户未登录');
       }
 
@@ -315,7 +323,7 @@ export const useAuthStore = defineStore(
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token.value}`,
+            Authorization: `Bearer ${token.value}`,
           },
           body: JSON.stringify(profileData),
         });
@@ -343,7 +351,7 @@ export const useAuthStore = defineStore(
      * 上传头像
      */
     async function uploadAvatar(file: File) {
-      if (!user.value || !token.value) {
+      if (!(user.value && token.value)) {
         throw new Error('用户未登录');
       }
 
@@ -384,7 +392,7 @@ export const useAuthStore = defineStore(
      * 验证邮箱
      */
     async function verifyEmailAddress(verificationCode: string) {
-      if (!user.value || !token.value) {
+      if (!(user.value && token.value)) {
         throw new Error('用户未登录');
       }
 
@@ -395,7 +403,7 @@ export const useAuthStore = defineStore(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token.value}`,
+            Authorization: `Bearer ${token.value}`,
           },
           body: JSON.stringify({ code: verificationCode }),
         });
@@ -424,7 +432,7 @@ export const useAuthStore = defineStore(
      * 发送邮箱验证码
      */
     async function sendEmailVerification() {
-      if (!user.value || !token.value) {
+      if (!(user.value && token.value)) {
         throw new Error('用户未登录');
       }
 
@@ -456,7 +464,7 @@ export const useAuthStore = defineStore(
      * 修改密码
      */
     async function changePassword(currentPassword: string, newPassword: string) {
-      if (!user.value || !token.value) {
+      if (!(user.value && token.value)) {
         throw new Error('用户未登录');
       }
 
@@ -467,7 +475,7 @@ export const useAuthStore = defineStore(
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token.value}`,
+            Authorization: `Bearer ${token.value}`,
           },
           body: JSON.stringify({
             currentPassword,

@@ -10,9 +10,10 @@
 // -----------------------------------------------------------------------------
 
 import { format } from 'date-fns';
-import { isNaN } from 'es-toolkit/compat';
+import { isNaN as isNaNCompat } from 'es-toolkit/compat';
 import type { DateRange } from '@/schema/common';
 
+// biome-ignore lint/complexity/noStaticOnlyClass: Utility class pattern is intentional
 export class DateUtils {
   /**
    * 获取当前本地时间的ISO格式字符串，可选偏移时间。
@@ -71,16 +72,16 @@ export class DateUtils {
    * @returns 当前时间的Date实例
    */
   static getCurrentDate(): Date {
-    return new Date(this.getLocalISODateTimeWithOffset());
+    return new Date(DateUtils.getLocalISODateTimeWithOffset());
   }
 
   /**
    * 计算两个日期之间的天数（不包含首尾）
-   * 
+   *
    * @param startDate - 开始日期（YYYY-MM-DD）
    * @param endDate - 结束日期（YYYY-MM-DD）
    * @returns 天数差（不包含首尾两天）
-   * 
+   *
    * @example
    * DateUtils.daysBetween('2025-01-01', '2025-01-05'); // 4
    */
@@ -93,30 +94,30 @@ export class DateUtils {
 
   /**
    * 计算两个日期之间的天数（包含首尾两天）
-   * 
+   *
    * @param startDate - 开始日期（YYYY-MM-DD 或 ISO 格式）
    * @param endDate - 结束日期（YYYY-MM-DD 或 ISO 格式）
    * @returns 天数差（包含首尾两天），如果日期无效则返回 0
-   * 
+   *
    * @example
    * // 计算经期持续天数
    * DateUtils.daysBetweenInclusive('2025-01-01', '2025-01-05'); // 5 天
    * DateUtils.daysBetweenInclusive('2025-11-22', '2025-11-28'); // 7 天
-   * 
+   *
    * @example
    * // 处理无效日期
    * DateUtils.daysBetweenInclusive('', '2025-01-05'); // 0
    * DateUtils.daysBetweenInclusive('2025-01-01', ''); // 0
-   * 
+   *
    * @performance
    * 优化后的实现，避免重复计算和函数调用
    */
   static daysBetweenInclusive(startDate: string, endDate: string): number {
     // 提前验证，避免无效的 Date 对象创建
-    if (!startDate || !endDate) {
+    if (!(startDate && endDate)) {
       return 0;
     }
-    
+
     // 直接计算，避免调用 daysBetween（减少一次函数调用）
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -202,7 +203,7 @@ export class DateUtils {
   static parseToISO(dt: string) {
     // Check if dt is undefined or empty
     if (!dt || typeof dt !== 'string') {
-      return this.getLocalISODateTimeWithOffset(); // Fallback to current time if invalid
+      return DateUtils.getLocalISODateTimeWithOffset(); // Fallback to current time if invalid
     }
 
     // Split ISO-like string into date and time parts
@@ -226,7 +227,7 @@ export class DateUtils {
       Number.isNaN(min) ||
       Number.isNaN(ss)
     ) {
-      return this.getLocalISODateTimeWithOffset(); // Fallback if any part is invalid
+      return DateUtils.getLocalISODateTimeWithOffset(); // Fallback if any part is invalid
     }
 
     // 创建 Date 对象基于用户选择的时间
@@ -277,8 +278,10 @@ export class DateUtils {
 
     // 解析简化时间，需要先把空格替换成T并补充秒和时区才能用Date解析
     // 这里先解析年月日和小时分钟，忽略秒和时区
-    const [datePart, timePart] = partialDateTime.split(' ');
-    if (!datePart || !timePart) return false;
+    const parts = partialDateTime.split(' ');
+    if (parts.length !== 2) return false;
+
+    const [datePart, timePart] = parts;
 
     const [year, month, day] = datePart.split('-').map(Number);
     const [hour, minute] = timePart.split(':').map(Number);
@@ -318,7 +321,7 @@ export class DateUtils {
    */
   static formatDateTime(dateStr: string) {
     const dt = dateStr.split('T');
-    const t = dt[1].split('\.')[0];
+    const t = dt[1].split('.')[0];
     return `${dt[0]} ${t}`;
   }
 
@@ -352,11 +355,11 @@ export class DateUtils {
     if (dateStr == null) {
       baseDate = new Date();
     } else {
-      if (dateStr === '' || isNaN(new Date(dateStr).getTime())) {
+      if (dateStr === '' || isNaNCompat(new Date(dateStr).getTime())) {
         baseDate = new Date();
       } else {
         baseDate = new Date(dateStr);
-        if (isNaN(baseDate.getTime())) {
+        if (isNaNCompat(baseDate.getTime())) {
           baseDate = new Date();
         }
       }
@@ -453,9 +456,9 @@ export class DateUtils {
     }
 
     // 3. 格式化日期、时间、时区偏移
-    const datePart = this.formatDatePart(now);
-    const timePart = this.formatTimePart(now);
-    const timeZone = this.formatTimeZone(now);
+    const datePart = DateUtils.formatDatePart(now);
+    const timePart = DateUtils.formatTimePart(now);
+    const timeZone = DateUtils.formatTimeZone(now);
 
     return `${datePart}T${timePart}${timeZone}`;
   }
@@ -544,7 +547,7 @@ export class DateUtils {
    * @returns 周最后一天的Date对象
    */
   static getEndOfWeek(date: Date): Date {
-    const startOfWeek = this.getStartOfWeek(new Date(date));
+    const startOfWeek = DateUtils.getStartOfWeek(new Date(date));
     return new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000);
   }
 

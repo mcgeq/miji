@@ -23,7 +23,7 @@ import { memoize, once } from 'es-toolkit';
  * expensiveCalc(5); // 计算并缓存
  * expensiveCalc(5); // 从缓存返回
  */
-export function memoizeFunction<T extends (...args: any[]) => any>(fn: T): T {
+export function memoizeFunction<T extends (...args: unknown[]) => unknown>(fn: T): T {
   return memoize(fn);
 }
 
@@ -38,7 +38,7 @@ export function memoizeFunction<T extends (...args: any[]) => any>(fn: T): T {
  * initialize(); // 输出 "Init"
  * initialize(); // 什么都不做
  */
-export function onceFunction<T extends (...args: any[]) => any>(fn: T): T {
+export function onceFunction<T extends (...args: unknown[]) => unknown>(fn: T): T {
   return once(fn);
 }
 
@@ -55,7 +55,11 @@ export function onceFunction<T extends (...args: any[]) => any>(fn: T): T {
  *   }
  * }
  */
-export function CacheResult(_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+export function CacheResult(
+  _target: unknown,
+  _propertyKey: string,
+  descriptor: PropertyDescriptor,
+) {
   const originalMethod = descriptor.value;
   descriptor.value = memoize(originalMethod);
   return descriptor;

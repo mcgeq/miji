@@ -101,7 +101,7 @@ export const familyMemberService = {
       nickname: data.nickname,
       role: data.role || 'Member',
       permissions: data.permissions || '[]',
-      is_primary: data.isPrimary || false,
+      is_primary: data.isPrimary,
       avatar_url: data.avatarUrl,
       color_code: data.colorCode,
     });

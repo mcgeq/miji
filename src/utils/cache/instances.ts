@@ -77,7 +77,7 @@ export const cacheKeys = {
    * const key = cacheKeys.api('getUser', { id: '123' });
    * // 'api:getUser:{"id":"123"}'
    */
-  api: (method: string, params?: any) => {
+  api: (method: string, params?: unknown) => {
     if (params) {
       return `api:${method}:${JSON.stringify(params)}`;
     }

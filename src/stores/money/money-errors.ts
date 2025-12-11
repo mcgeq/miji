@@ -22,7 +22,7 @@ export enum MoneyStoreErrorCode {
  * Money Store 错误类
  */
 export class MoneyStoreError extends AppError {
-  constructor(code: MoneyStoreErrorCode | AppErrorCode, message: string, details?: any) {
+  constructor(code: MoneyStoreErrorCode | AppErrorCode, message: string, details?: unknown) {
     let severity: AppErrorSeverity;
     switch (code) {
       case MoneyStoreErrorCode.DATABASE_OPERATION_FAILED:

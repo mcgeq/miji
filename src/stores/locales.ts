@@ -37,15 +37,15 @@ const SUPPORTED_LOCALE_CODES = SUPPORTED_LOCALES.map(l => l.code);
 function isDevelopment(): boolean {
   return (
     import.meta.env?.DEV === true ||
-      import.meta.env?.MODE === 'development' ||
-        (typeof window !== 'undefined' && window.location?.hostname === 'localhost')
+    import.meta.env?.MODE === 'development' ||
+    (typeof window !== 'undefined' && window.location?.hostname === 'localhost')
   );
 }
 
 /**
  * 安全的控制台日志输出
  */
-function safeLog(message: string, data?: any): void {
+function safeLog(message: string, data?: unknown): void {
   if (isDevelopment()) {
     console.warn(message, data || '');
   }
@@ -185,7 +185,7 @@ export const useLocaleStore = defineStore(
 
         // @tauri-store/pinia 会自动加载持久化的数据
         // 如果没有保存的语言或语言不受支持，使用浏览器语言
-        if (!currentLocale.value || !isSupportedLocale(currentLocale.value)) {
+        if (!(currentLocale.value && isSupportedLocale(currentLocale.value))) {
           const browserLocale = getBrowserLocale();
           await setLocale(browserLocale);
         } else {

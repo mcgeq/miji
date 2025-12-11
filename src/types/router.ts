@@ -33,5 +33,3 @@ declare module 'vue-router' {
     keepAlive?: boolean;
   }
 }
-
-export {};

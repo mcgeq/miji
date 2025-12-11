@@ -5,16 +5,15 @@
 // File:           projects.svelte.ts
 // Description:    About Project Store
 // Create   Date:  2025-06-23 23:29:52
-// Last Modified:  2025-06-28 12:43:08
+// Last Modified:  2025-12-11 20:22:23
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
-import { ref } from 'vue';
+import type { Projects } from '../schema/todos';
 import { ProjectSchema } from '../schema/todos';
 import { DateUtils } from '../utils/date';
 import { uuid } from '../utils/uuid';
 import { createWithDefaults } from '../utils/zodFactory';
-import type { Projects } from '../schema/todos';
 
 type ProjectSortByField = 'createdAt' | 'name';
 type SortOrder = 'asc' | 'desc';
@@ -118,7 +117,7 @@ function searchProjects(options: ProjectFilterOptions = {}) {
     sortBy = 'createdAt',
     order = 'desc',
     offset = 0,
-    limit = Infinity,
+    limit = Number.POSITIVE_INFINITY,
   } = options;
 
   let results = Array.from(projects.value.values());

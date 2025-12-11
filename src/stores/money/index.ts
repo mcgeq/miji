@@ -38,9 +38,8 @@ export { useMoneyConfigStore } from './money-config-store';
 export { handleMoneyStoreError, MoneyStoreError, MoneyStoreErrorCode } from './money-errors';
 
 export { useReminderStore } from './reminder-store';
+export type { EventCleanup, StoreEvents } from './store-events';
 // 事件系统导出
 export { emitStoreEvent, onStoreEvent, storeEventBus } from './store-events';
-
-export type { EventCleanup, StoreEvents } from './store-events';
 
 export { useTransactionStore } from './transaction-store';

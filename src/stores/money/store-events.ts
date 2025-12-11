@@ -30,7 +30,7 @@ export interface StoreEvents {
   // 批量交易事件（避免事件风暴）
   'transactions:batch-created': {
     transactionSerialNums: string[];
-    accountSerialNums: string[];  // 受影响的账户列表（去重）
+    accountSerialNums: string[]; // 受影响的账户列表（去重）
   };
   'transactions:batch-updated': {
     transactionSerialNums: string[];
@@ -107,7 +107,8 @@ export type EventCleanup = () => void;
  * 用于 Store 之间的通信
  */
 class StoreEventBus {
-  private handlers: Map<keyof StoreEvents, Set<(data: any) => void | Promise<void>>> = new Map();
+  private handlers: Map<keyof StoreEvents, Set<(data: unknown) => void | Promise<void>>> =
+    new Map();
 
   on<K extends keyof StoreEvents>(
     event: K,
@@ -116,7 +117,7 @@ class StoreEventBus {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
-    this.handlers.get(event)!.add(handler);
+    this.handlers.get(event)?.add(handler as (data: unknown) => void | Promise<void>);
   }
 
   off<K extends keyof StoreEvents>(
@@ -125,7 +126,7 @@ class StoreEventBus {
   ): void {
     const handlers = this.handlers.get(event);
     if (handlers) {
-      handlers.delete(handler);
+      handlers.delete(handler as (data: unknown) => void | Promise<void>);
     }
   }
 

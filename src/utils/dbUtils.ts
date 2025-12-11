@@ -21,8 +21,15 @@ export class DatabaseError extends Error {
  * Query cache Interface
  */
 interface QueryCache {
-  data: any;
+  data: unknown;
   timestamp: number;
+}
+
+// Extend Window interface for Tauri
+declare global {
+  interface Window {
+    __TAURI__?: unknown;
+  }
 }
 
 /**
@@ -79,7 +86,7 @@ export class DatabaseManager {
     });
 
     // Detect environment - in Tauri we can use window.__TAURI__ to check
-    this.isProduction = typeof window !== 'undefined' && !!(window as any).__TAURI__;
+    this.isProduction = typeof window !== 'undefined' && !!window.__TAURI__;
 
     // Start connection cleanup timer
     this.startCleanupTimer();
@@ -172,6 +179,40 @@ export class DatabaseManager {
   }
 
   /**
+   * 尝试获取空闲连接
+   */
+  private async tryGetIdleConnection(): Promise<PooledConnection | null> {
+    for (const pooledConn of this.connectionPool) {
+      if (!pooledConn.inUse && (await this.checkConnectionHealth(pooledConn.connection))) {
+        pooledConn.inUse = true;
+        pooledConn.lastUsed = Date.now();
+        return pooledConn;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 尝试创建新连接
+   */
+  private async tryCreateNewConnection(): Promise<PooledConnection | null> {
+    if (this.connectionPool.length + this.pendingConnections < this.MAX_POOL_SIZE) {
+      this.pendingConnections++;
+      try {
+        const pooledConn = await this.createConnection();
+        pooledConn.inUse = true;
+        this.connectionPool.push(pooledConn);
+        this.pendingConnections--;
+        return pooledConn;
+      } catch (error) {
+        this.pendingConnections--;
+        throw error;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Get a database connection from pool (优化版本，解决死锁问题)
    */
   public async getConnection(): Promise<Database> {
@@ -183,38 +224,22 @@ export class DatabaseManager {
       const handleConnection = async () => {
         try {
           // 首先尝试获取空闲连接
-          for (const pooledConn of this.connectionPool) {
-            if (!pooledConn.inUse && (await this.checkConnectionHealth(pooledConn.connection))) {
-              pooledConn.inUse = true;
-              pooledConn.lastUsed = Date.now();
-              clearTimeout(timeoutId);
-
-              // 返回包装后的连接，自动处理释放
-              resolve(this.wrapConnection(pooledConn));
-              return;
-            }
+          const idleConn = await this.tryGetIdleConnection();
+          if (idleConn) {
+            clearTimeout(timeoutId);
+            resolve(this.wrapConnection(idleConn));
+            return;
           }
 
           // 如果没有空闲连接且池未满，创建新连接
-          if (this.connectionPool.length + this.pendingConnections < this.MAX_POOL_SIZE) {
-            this.pendingConnections++;
-
-            try {
-              const pooledConn = await this.createConnection();
-              pooledConn.inUse = true;
-              this.connectionPool.push(pooledConn);
-              this.pendingConnections--;
-
-              clearTimeout(timeoutId);
-              resolve(this.wrapConnection(pooledConn));
-              return;
-            } catch (error) {
-              this.pendingConnections--;
-              throw error;
-            }
+          const newConn = await this.tryCreateNewConnection();
+          if (newConn) {
+            clearTimeout(timeoutId);
+            resolve(this.wrapConnection(newConn));
+            return;
           }
 
-          // 等待空闲连接，使用更智能的等待策略
+          // 等待空闲连接
           this.waitForAvailableConnection()
             .then(pooledConn => {
               clearTimeout(timeoutId);
@@ -230,7 +255,6 @@ export class DatabaseManager {
         }
       };
 
-      // 立即执行异步逻辑
       handleConnection();
     });
   }
@@ -287,9 +311,9 @@ export class DatabaseManager {
             return Promise.resolve();
           };
         }
-        return (target as any)[prop];
+        return Reflect.get(target, prop);
       },
-    });
+    }) as Database;
   }
 
   /**
@@ -350,14 +374,18 @@ export class DatabaseManager {
   /**
    * Execute Query (自动管理连接)
    */
-  public async select<T = any>(sql: string, params: any[] = [], useCache = false): Promise<T> {
+  public async select<T = unknown>(
+    sql: string,
+    params: unknown[] = [],
+    useCache = false,
+  ): Promise<T> {
     // 参数验证
     this.validateQuery(sql, params);
 
     if (!useCache) {
       const conn = await this.getConnection();
       try {
-        return await this.executeQuery(conn, 'select', sql, params);
+        return (await this.executeQuery(conn, 'select', sql, params)) as T;
       } finally {
         await conn.close(); // 使用包装后的close方法
       }
@@ -370,13 +398,13 @@ export class DatabaseManager {
     if (cached) {
       Lg.d('DatabaseManager', 'Cache hit query: ', sql);
       this.cacheHits++;
-      return cached.data;
+      return cached.data as T;
     }
 
     this.cacheMisses++;
     const conn = await this.getConnection();
     try {
-      const result = await this.executeQuery(conn, 'select', sql, params);
+      const result = (await this.executeQuery(conn, 'select', sql, params)) as T;
       this.queryCache.set(cacheKey, {
         data: result,
         timestamp: Date.now(),
@@ -390,7 +418,7 @@ export class DatabaseManager {
   /**
    * Execute update (自动管理连接)
    */
-  public async execute(sql: string, params: any[] = []): Promise<any> {
+  public async execute(sql: string, params: unknown[] = []): Promise<unknown> {
     // 参数验证
     this.validateQuery(sql, params);
 
@@ -406,7 +434,7 @@ export class DatabaseManager {
   /**
    * 查询参数验证
    */
-  private validateQuery(sql: string, params: any[]): void {
+  private validateQuery(sql: string, params: unknown[]): void {
     if (!sql || typeof sql !== 'string') {
       throw new DatabaseError(
         'SQL query must be a non-empty string',
@@ -548,7 +576,7 @@ export class DatabaseManager {
   /**
    * Batch Execute (优化版本，更好的错误处理)
    */
-  public async executeBatch(operations: Array<{ sql: string; params: any[] }>): Promise<void> {
+  public async executeBatch(operations: Array<{ sql: string; params: unknown[] }>): Promise<void> {
     if (operations.length === 0) return;
 
     await this.transaction(async conn => {
@@ -584,8 +612,8 @@ export class DatabaseManager {
     conn: Database,
     method: 'select' | 'execute',
     sql: string,
-    params: any[],
-  ): Promise<any> {
+    params: unknown[],
+  ): Promise<unknown> {
     try {
       // Log level based on environment
       const logLevel = this.isProduction ? 'd' : 'i';
@@ -643,125 +671,152 @@ export class DatabaseManager {
   }
 
   /**
-   * 提取错误信息
+   * 从错误对象中提取标准字段
    */
-  private extractErrorMessage(error: any): string {
-    if (!error) {
-      return 'Unknown error occurred';
-    }
-
-    // 尝试不同的错误信息提取方式
-    if (typeof error === 'string') {
-      return error;
-    }
-
-    if (error.message && typeof error.message === 'string') {
-      return error.message;
-    }
-
-    if (error.msg && typeof error.msg === 'string') {
-      return error.msg;
-    }
-
-    if (error.error && typeof error.error === 'string') {
-      return error.error;
-    }
-
-    if (error.description && typeof error.description === 'string') {
-      return error.description;
+  private extractStandardErrorFields(err: Record<string, unknown>): string | null {
+    const fields = ['message', 'msg', 'error', 'description'];
+    for (const field of fields) {
+      if (err[field] && typeof err[field] === 'string') {
+        return err[field] as string;
+      }
     }
 
     // Tauri特定错误格式
-    if (error.kind && error.message) {
-      return `${error.kind}: ${error.message}`;
+    if (err.kind && err.message) {
+      return `${err.kind}: ${err.message}`;
     }
 
-    // 尝试JSON序列化
+    return null;
+  }
+
+  /**
+   * 尝试序列化错误对象
+   */
+  private trySerializeError(error: unknown): string | null {
     try {
       const serialized = JSON.stringify(error);
       if (serialized && serialized !== '{}') {
         return `Error object: ${serialized}`;
       }
-    } catch (_) {
-      // JSON序列化失败，继续其他方式
+    } catch {
+      return null;
     }
+    return null;
+  }
 
-    // 检查错误对象的属性
-    if (typeof error === 'object') {
-      const keys = Object.keys(error);
-      if (keys.length > 0) {
-        const errorDetails = keys.map(key => `${key}: ${error[key]}`).join(', ');
-        return `Error details: ${errorDetails}`;
-      }
+  /**
+   * 从对象属性提取错误信息
+   */
+  private extractFromObjectProperties(err: Record<string, unknown>): string | null {
+    const keys = Object.keys(err);
+    if (keys.length > 0) {
+      const errorDetails = keys.map(key => `${key}: ${err[key]}`).join(', ');
+      return `Error details: ${errorDetails}`;
     }
 
     // 使用toString方法
-    if (error.toString && typeof error.toString === 'function') {
-      const toStringResult = error.toString();
+    if ('toString' in err && typeof err.toString === 'function') {
+      const toStringResult = String(err.toString());
       if (toStringResult && toStringResult !== '[object Object]') {
         return toStringResult;
       }
+    }
+
+    return null;
+  }
+
+  /**
+   * 提取错误信息
+   */
+  private extractErrorMessage(error: unknown): string {
+    if (!error) {
+      return 'Unknown error occurred';
+    }
+
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const err = error as Record<string, unknown>;
+
+      return (
+        this.extractStandardErrorFields(err) ||
+        this.trySerializeError(error) ||
+        this.extractFromObjectProperties(err) ||
+        `Unidentifiable error (type: ${typeof error})`
+      );
     }
 
     return `Unidentifiable error (type: ${typeof error})`;
   }
 
   /**
-   * 提取错误代码
+   * 从错误对象中提取代码字段
    */
-  private extractErrorCode(error: any): string {
-    if (!error) {
-      return 'DB_UNKNOWN_ERROR';
+  private extractCodeFields(err: Record<string, unknown>): string | null {
+    if (err.code && typeof err.code === 'string') {
+      return `DB_${err.code.toUpperCase()}`;
     }
+    if (err.errno && typeof err.errno === 'number') {
+      return `DB_ERRNO_${err.errno}`;
+    }
+    if (err.kind && typeof err.kind === 'string') {
+      return `DB_${err.kind.toUpperCase()}`;
+    }
+    return null;
+  }
 
-    // 检查常见的错误代码字段
-    if (error.code && typeof error.code === 'string') {
-      return `DB_${error.code.toUpperCase()}`;
-    }
+  /**
+   * 根据错误消息推断错误代码
+   */
+  private inferErrorCodeFromMessage(message: string): string {
+    const errorMap: Record<string, string> = {
+      constraint: 'DB_CONSTRAINT_VIOLATION',
+      locked: 'DB_LOCKED',
+      busy: 'DB_LOCKED',
+      timeout: 'DB_TIMEOUT',
+      'no such table': 'DB_TABLE_NOT_FOUND',
+      'no such column': 'DB_COLUMN_NOT_FOUND',
+      'syntax error': 'DB_SYNTAX_ERROR',
+      'foreign key': 'DB_FOREIGN_KEY_ERROR',
+      unique: 'DB_UNIQUE_VIOLATION',
+    };
 
-    if (error.errno && typeof error.errno === 'number') {
-      return `DB_ERRNO_${error.errno}`;
-    }
-
-    if (error.kind && typeof error.kind === 'string') {
-      return `DB_${error.kind.toUpperCase()}`;
-    }
-
-    // 检查SQLite特定错误
-    const message = this.extractErrorMessage(error).toLowerCase();
-
-    if (message.includes('constraint')) {
-      return 'DB_CONSTRAINT_VIOLATION';
-    }
-    if (message.includes('locked') || message.includes('busy')) {
-      return 'DB_LOCKED';
-    }
-    if (message.includes('timeout')) {
-      return 'DB_TIMEOUT';
-    }
-    if (message.includes('no such table')) {
-      return 'DB_TABLE_NOT_FOUND';
-    }
-    if (message.includes('no such column')) {
-      return 'DB_COLUMN_NOT_FOUND';
-    }
-    if (message.includes('syntax error')) {
-      return 'DB_SYNTAX_ERROR';
-    }
-    if (message.includes('foreign key')) {
-      return 'DB_FOREIGN_KEY_ERROR';
-    }
-    if (message.includes('unique')) {
-      return 'DB_UNIQUE_VIOLATION';
+    for (const [key, code] of Object.entries(errorMap)) {
+      if (message.includes(key)) {
+        return code;
+      }
     }
 
     return 'DB_QUERY_FAILED';
   }
 
   /**
+   * 提取错误代码
+   */
+  private extractErrorCode(error: unknown): string {
+    if (!error) {
+      return 'DB_UNKNOWN_ERROR';
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const err = error as Record<string, unknown>;
+      const codeField = this.extractCodeFields(err);
+      if (codeField) {
+        return codeField;
+      }
+    }
+
+    // 检查SQLite特定错误
+    const message = this.extractErrorMessage(error).toLowerCase();
+    return this.inferErrorCodeFromMessage(message);
+  }
+
+  /**
    * Generate cache key
    */
-  private getCacheKey(sql: string, params: any[]): string {
+  private getCacheKey(sql: string, params: unknown[]): string {
     return `${sql}:${JSON.stringify(params)}`;
   }
 
@@ -895,14 +950,14 @@ export const db = {
   /**
    * Execute query
    */
-  select: <T = any>(sql: string, params: any[] = [], useCache = false): Promise<T> => {
+  select: <T = unknown>(sql: string, params: unknown[] = [], useCache = false): Promise<T> => {
     return DatabaseManager.getInstance().select<T>(sql, params, useCache);
   },
 
   /**
    * Execute update
    */
-  execute: (sql: string, params: any[] = []): Promise<any> => {
+  execute: (sql: string, params: unknown[] = []): Promise<unknown> => {
     return DatabaseManager.getInstance().execute(sql, params);
   },
 
@@ -916,7 +971,7 @@ export const db = {
   /**
    * Batch execute
    */
-  executeBatch: (operations: Array<{ sql: string; params: any[] }>): Promise<void> => {
+  executeBatch: (operations: Array<{ sql: string; params: unknown[] }>): Promise<void> => {
     return DatabaseManager.getInstance().executeBatch(operations);
   },
 

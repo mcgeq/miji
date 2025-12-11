@@ -123,7 +123,7 @@ export function createFrontendSplashscreen(config: SplashscreenConfig = {}): HTM
  */
 export function closeFrontendSplashscreen(
   splashscreen: HTMLElement | null,
-  fadeDuration: number = 500,
+  fadeDuration = 500,
 ): void {
   if (!splashscreen) {
     return;

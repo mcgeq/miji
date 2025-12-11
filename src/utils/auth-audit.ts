@@ -2,8 +2,9 @@
  * 权限审计日志系统
  * 记录所有权限相关的操作和检查
  */
-import { Lg } from './debugLog';
+
 import type { Permission, Role } from '@/types/auth';
+import { Lg } from './debugLog';
 
 export interface AuditLogEntry {
   /** 时间戳 */
@@ -23,7 +24,7 @@ export interface AuditLogEntry {
   /** 目标资源 */
   resource?: string;
   /** 额外信息 */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class AuthAuditLogger {
@@ -34,7 +35,7 @@ class AuthAuditLogger {
   /**
    * 记录登录事件
    */
-  logLogin(userId: string, role: Role, metadata?: Record<string, any>) {
+  logLogin(userId: string, role: Role, metadata?: Record<string, unknown>) {
     this.addLog({
       type: 'login',
       userId,
@@ -48,7 +49,7 @@ class AuthAuditLogger {
   /**
    * 记录登出事件
    */
-  logLogout(userId: string, metadata?: Record<string, any>) {
+  logLogout(userId: string, metadata?: Record<string, unknown>) {
     this.addLog({
       type: 'logout',
       userId,
@@ -66,7 +67,7 @@ class AuthAuditLogger {
     userRole: Role,
     permissions: Permission[],
     resource?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ) {
     this.addLog({
       type: 'permission_check',
@@ -97,7 +98,7 @@ class AuthAuditLogger {
     permissions: Permission[],
     effectivePermissions: Permission[],
     resource?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ) {
     this.addLog({
       type: 'permission_denied',
@@ -124,7 +125,7 @@ class AuthAuditLogger {
   /**
    * 记录角色变更
    */
-  logRoleChange(userId: string, oldRole: Role, newRole: Role, metadata?: Record<string, any>) {
+  logRoleChange(userId: string, oldRole: Role, newRole: Role, metadata?: Record<string, unknown>) {
     this.addLog({
       type: 'role_change',
       userId,

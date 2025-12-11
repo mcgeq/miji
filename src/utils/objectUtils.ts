@@ -94,7 +94,7 @@ export function omitFields<T extends object, K extends keyof T>(obj: T, keys: K[
 export function transformKeys<T extends object>(
   obj: T,
   transformer: (key: string) => string,
-): Record<string, any> {
+): Record<string, unknown> {
   return mapKeys(obj, (_, key) => transformer(String(key)));
 }
 
@@ -111,9 +111,11 @@ export function transformKeys<T extends object>(
  */
 export function transformValues<T extends object, R>(
   obj: T,
-  transformer: (value: any, key: string) => R,
+  transformer: (value: unknown, key: string) => R,
 ): Record<keyof T, R> {
-  return mapValues(obj, transformer as any) as Record<keyof T, R>;
+  return mapValues(obj, (value: T[keyof T], key: keyof T) =>
+    transformer(value, String(key)),
+  ) as Record<keyof T, R>;
 }
 
 // ==================== 对象比较 ====================
@@ -128,7 +130,7 @@ export function transformValues<T extends object, R>(
  * deepEqual({ a: 1, b: { c: 2 } }, { a: 1, b: { c: 2 } }); // true
  * deepEqual([1, 2, 3], [1, 2, 3]); // true
  */
-export function deepEqual(a: any, b: any): boolean {
+export function deepEqual(a: unknown, b: unknown): boolean {
   return isEqual(a, b);
 }
 
@@ -145,7 +147,7 @@ export function deepEqual(a: any, b: any): boolean {
  * isEmptyValue(undefined); // true
  * isEmptyValue({ a: 1 }); // false
  */
-export function isEmptyValue(value: any): boolean {
+export function isEmptyValue(value: unknown): boolean {
   return isEmpty(value);
 }
 
@@ -193,8 +195,8 @@ export function getObjectDiff<T extends object>(oldObj: T, newObj: Partial<T>): 
  * const flat = flattenObject(nested);
  * // { a: 1, 'b.c': 2, 'b.d.e': 3 }
  */
-export function flattenObject(obj: Record<string, any>, prefix = ''): Record<string, any> {
-  const result: Record<string, any> = {};
+export function flattenObject(obj: Record<string, unknown>, prefix = ''): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
 
   for (const key in obj) {
     if (Object.hasOwn(obj, key)) {
@@ -202,7 +204,7 @@ export function flattenObject(obj: Record<string, any>, prefix = ''): Record<str
       const newKey = prefix ? `${prefix}.${key}` : key;
 
       if (value && typeof value === 'object' && !Array.isArray(value)) {
-        Object.assign(result, flattenObject(value, newKey));
+        Object.assign(result, flattenObject(value as Record<string, unknown>, newKey));
       } else {
         result[newKey] = value;
       }
@@ -222,8 +224,8 @@ export function flattenObject(obj: Record<string, any>, prefix = ''): Record<str
  * const nested = unflattenObject(flat);
  * // { a: 1, b: { c: 2, d: { e: 3 } } }
  */
-export function unflattenObject(obj: Record<string, any>): Record<string, any> {
-  const result: Record<string, any> = {};
+export function unflattenObject(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
 
   for (const key in obj) {
     if (Object.hasOwn(obj, key)) {
@@ -235,7 +237,7 @@ export function unflattenObject(obj: Record<string, any>): Record<string, any> {
         if (!current[k]) {
           current[k] = {};
         }
-        current = current[k];
+        current = current[k] as Record<string, unknown>;
       }
 
       current[keys[keys.length - 1]] = obj[key];
@@ -262,8 +264,8 @@ export function safeUpdate<T extends object>(target: T, updates: Partial<T>): T 
   const result = cloneDeep(target);
 
   for (const key in updates) {
-    if (Object.hasOwn(target, key)) {
-      result[key] = updates[key]!;
+    if (Object.hasOwn(target, key) && updates[key] !== undefined) {
+      result[key] = updates[key] as T[Extract<keyof T, string>];
     }
   }
 

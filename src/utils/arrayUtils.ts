@@ -70,8 +70,8 @@ export function uniqueArray<T>(arr: T[]): T[] {
  * uniqueArrayBy(users, 'id') // [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }]
  * uniqueArrayBy(users, u => u.id) // 同上
  */
-export function uniqueArrayBy<T>(arr: T[], iteratee: ((item: T) => any) | keyof T): T[] {
-  return uniqBy(arr, iteratee as any);
+export function uniqueArrayBy<T>(arr: T[], iteratee: ((item: T) => unknown) | keyof T): T[] {
+  return uniqBy(arr, iteratee as (item: T) => unknown);
 }
 
 // ==================== 数组分组 ====================
@@ -98,7 +98,7 @@ export function groupArrayBy<T, K extends PropertyKey>(
   arr: T[],
   iteratee: ((item: T) => K) | keyof T,
 ): Record<K, T[]> {
-  return groupBy(arr, iteratee as any);
+  return groupBy(arr, iteratee as (item: T) => K);
 }
 
 // ==================== 数组排序 ====================
@@ -123,9 +123,9 @@ export function groupArrayBy<T, K extends PropertyKey>(
  */
 export function sortArray<T extends object>(
   arr: T[],
-  iteratees: Array<((item: T) => any) | keyof T>,
+  iteratees: Array<((item: T) => unknown) | keyof T>,
 ): T[] {
-  return sortBy(arr, iteratees as any);
+  return sortBy(arr, iteratees as Array<(item: T) => unknown>);
 }
 
 // ==================== 数组分区 ====================
@@ -389,7 +389,11 @@ export function minValue(arr: number[]): number {
  */
 export function maxBy<T>(arr: T[], key: keyof T): T | undefined {
   if (arr.length === 0) return undefined;
-  return arr.reduce((max, item) => ((item[key] as any) > (max[key] as any) ? item : max));
+  return arr.reduce((max, item) => {
+    const itemVal = item[key];
+    const maxVal = max[key];
+    return itemVal > maxVal ? item : max;
+  });
 }
 
 /**
@@ -408,7 +412,11 @@ export function maxBy<T>(arr: T[], key: keyof T): T | undefined {
  */
 export function minBy<T>(arr: T[], key: keyof T): T | undefined {
   if (arr.length === 0) return undefined;
-  return arr.reduce((min, item) => ((item[key] as any) < (min[key] as any) ? item : min));
+  return arr.reduce((min, item) => {
+    const itemVal = item[key];
+    const minVal = min[key];
+    return itemVal < minVal ? item : min;
+  });
 }
 
 // ==================== 数组分页 ====================

@@ -1,12 +1,12 @@
 // src/stores/money/budget-store.ts
 import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
-import { MoneyDb } from '@/services/money/money';
-import { toast } from '@/utils/toast';
 import type { PageQuery } from '@/schema/common';
 import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
 import type { PagedResult } from '@/services/money/baseManager';
 import type { BudgetFilters } from '@/services/money/budgets';
+import { MoneyDb } from '@/services/money/money';
+import { toast } from '@/utils/toast';
 
 // ==================== Store Constants ====================
 
@@ -78,7 +78,7 @@ export const useBudgetStore = defineStore('money-budgets', {
       this.error = null;
       try {
         return await operation();
-      } catch (error: any) {
+      } catch (error: unknown) {
         const appError = AppError.wrap('BudgetStore', error, errorCode, errorMsg);
         this.error = appError;
         if (showToast) {
