@@ -1,204 +1,196 @@
 <script setup lang="ts">
-import { Camera, Trash2, Upload } from 'lucide-vue-next';
-import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
-import { Modal } from '@/components/ui';
-import { useAuthStore } from '@/stores/auth';
-import { Lg } from '@/utils/debugLog';
-import { toast } from '@/utils/toast';
+  import { Camera, Trash2, Upload } from 'lucide-vue-next';
+  import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
+  import { Modal } from '@/components/ui';
+  import { useAuthStore } from '@/stores/auth';
+  import { Lg } from '@/utils/debugLog';
+  import { toast } from '@/utils/toast';
 
-interface Props {
-  isOpen: boolean;
-}
-
-interface Emits {
-  (e: 'close'): void;
-  (e: 'updated', avatarUrl: string): void;
-}
-
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
-
-const authStore = useAuthStore();
-const user = computed(() => authStore.user);
-
-const fileInput = ref<HTMLInputElement>();
-const previewUrl = ref<string>('');
-const selectedFile = ref<File | null>(null);
-const isUploading = ref(false);
-const dragActive = ref(false);
-
-// 确认对话框状态
-const showDeleteConfirm = ref(false);
-
-// 文件选择处理
-function handleFileSelect(event: Event) {
-  const input = event.target as HTMLInputElement;
-  if (input.files && input.files[0]) {
-    const file = input.files[0];
-    handleFile(file);
-  }
-}
-
-// 处理文件
-function handleFile(file: File) {
-  // 验证文件类型
-  if (!file.type.startsWith('image/')) {
-    toast.warning('请选择图片文件');
-    return;
+  interface Props {
+    isOpen: boolean;
   }
 
-  // 验证文件大小（限制为 5MB）
-  if (file.size > 5 * 1024 * 1024) {
-    toast.warning('图片大小不能超过 5MB');
-    return;
+  interface Emits {
+    (e: 'close'): void;
+    (e: 'updated', avatarUrl: string): void;
   }
 
-  selectedFile.value = file;
+  const props = defineProps<Props>();
+  const emit = defineEmits<Emits>();
 
-  // 创建预览URL
-  const reader = new FileReader();
-  reader.onload = e => {
-    previewUrl.value = e.target?.result as string;
-  };
-  reader.readAsDataURL(file);
-}
+  const authStore = useAuthStore();
+  const user = computed(() => authStore.user);
 
-// 拖拽处理
-function handleDragOver(event: DragEvent) {
-  event.preventDefault();
-  dragActive.value = true;
-}
+  const fileInput = ref<HTMLInputElement>();
+  const previewUrl = ref<string>('');
+  const selectedFile = ref<File | null>(null);
+  const isUploading = ref(false);
+  const dragActive = ref(false);
 
-function handleDragLeave(event: DragEvent) {
-  event.preventDefault();
-  dragActive.value = false;
-}
+  // 确认对话框状态
+  const showDeleteConfirm = ref(false);
 
-function handleDrop(event: DragEvent) {
-  event.preventDefault();
-  dragActive.value = false;
-
-  const files = event.dataTransfer?.files;
-  if (files && files[0]) {
-    handleFile(files[0]);
+  // 文件选择处理
+  function handleFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.[0]) {
+      const file = input.files[0];
+      handleFile(file);
+    }
   }
-}
 
-// 触发文件选择
-function triggerFileSelect() {
-  fileInput.value?.click();
-}
+  // 处理文件
+  function handleFile(file: File) {
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      toast.warning('请选择图片文件');
+      return;
+    }
 
-// 清除选择的文件
-function clearSelection() {
-  selectedFile.value = null;
-  previewUrl.value = '';
-  if (fileInput.value) {
-    fileInput.value.value = '';
+    // 验证文件大小（限制为 5MB）
+    if (file.size > 5 * 1024 * 1024) {
+      toast.warning('图片大小不能超过 5MB');
+      return;
+    }
+
+    selectedFile.value = file;
+
+    // 创建预览URL
+    const reader = new FileReader();
+    reader.onload = e => {
+      previewUrl.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   }
-}
 
-// 上传头像
-async function handleUpload() {
-  if (!selectedFile.value)
-    return;
-
-  try {
-    isUploading.value = true;
-
-    // 这里应该调用 auth store 的 uploadAvatar 方法
-    // const avatarUrl = await authStore.uploadAvatar(selectedFile.value);
-
-    // 模拟上传（实际应用中删除这部分）
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const avatarUrl = previewUrl.value; // 实际应该是服务器返回的URL
-
-    emit('updated', avatarUrl);
-    emit('close');
-    clearSelection();
-    toast.success('头像上传成功');
-  } catch (error) {
-    toast.error('头像上传失败');
-    Lg.e('Settings', error);
-  } finally {
-    isUploading.value = false;
+  // 拖拽处理
+  function handleDragOver(event: DragEvent) {
+    event.preventDefault();
+    dragActive.value = true;
   }
-}
 
-// 显示删除确认对话框
-function showDeleteConfirmDialog() {
-  showDeleteConfirm.value = true;
-}
+  function handleDragLeave(event: DragEvent) {
+    event.preventDefault();
+    dragActive.value = false;
+  }
 
-// 确认删除头像
-async function confirmDeleteAvatar() {
-  try {
-    isUploading.value = true;
+  function handleDrop(event: DragEvent) {
+    event.preventDefault();
+    dragActive.value = false;
 
-    // 调用 API 删除头像
-    // await authStore.updateProfile({ avatarUrl: null });
+    const files = event.dataTransfer?.files;
+    if (files?.[0]) {
+      handleFile(files[0]);
+    }
+  }
 
-    // 模拟删除操作
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  // 触发文件选择
+  function triggerFileSelect() {
+    fileInput.value?.click();
+  }
 
-    emit('updated', '');
-    emit('close');
-    toast.success('头像删除成功');
-  } catch (error) {
-    Lg.e('Settings', '删除头像失败:', error);
-    toast.error('删除头像失败，请重试');
-  } finally {
-    isUploading.value = false;
+  // 清除选择的文件
+  function clearSelection() {
+    selectedFile.value = null;
+    previewUrl.value = '';
+    if (fileInput.value) {
+      fileInput.value.value = '';
+    }
+  }
+
+  // 上传头像
+  async function handleUpload() {
+    if (!selectedFile.value) return;
+
+    try {
+      isUploading.value = true;
+
+      // 这里应该调用 auth store 的 uploadAvatar 方法
+      // const avatarUrl = await authStore.uploadAvatar(selectedFile.value);
+
+      // 模拟上传（实际应用中删除这部分）
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const avatarUrl = previewUrl.value; // 实际应该是服务器返回的URL
+
+      emit('updated', avatarUrl);
+      emit('close');
+      clearSelection();
+      toast.success('头像上传成功');
+    } catch (error) {
+      toast.error('头像上传失败');
+      Lg.e('Settings', error);
+    } finally {
+      isUploading.value = false;
+    }
+  }
+
+  // 显示删除确认对话框
+  function showDeleteConfirmDialog() {
+    showDeleteConfirm.value = true;
+  }
+
+  // 确认删除头像
+  async function confirmDeleteAvatar() {
+    try {
+      isUploading.value = true;
+
+      // 调用 API 删除头像
+      // await authStore.updateProfile({ avatarUrl: null });
+
+      // 模拟删除操作
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      emit('updated', '');
+      emit('close');
+      toast.success('头像删除成功');
+    } catch (error) {
+      Lg.e('Settings', '删除头像失败:', error);
+      toast.error('删除头像失败，请重试');
+    } finally {
+      isUploading.value = false;
+      showDeleteConfirm.value = false;
+    }
+  }
+
+  // 取消删除
+  function cancelDeleteAvatar() {
     showDeleteConfirm.value = false;
   }
-}
 
-// 取消删除
-function cancelDeleteAvatar() {
-  showDeleteConfirm.value = false;
-}
-
-// 关闭Modal
-function handleClose() {
-  if (!isUploading.value) {
-    clearSelection();
-    emit('close');
+  // 关闭Modal
+  function handleClose() {
+    if (!isUploading.value) {
+      clearSelection();
+      emit('close');
+    }
   }
-}
 
-// 获取当前显示的头像URL，修复类型错误
-const currentAvatarUrl = computed(() => {
-  return previewUrl.value || user.value?.avatarUrl || '';
-});
+  // 获取当前显示的头像URL，修复类型错误
+  const currentAvatarUrl = computed(() => {
+    return previewUrl.value || user.value?.avatarUrl || '';
+  });
 
-// 获取用户名首字母
-const userInitial = computed(() => {
-  return user.value?.name?.charAt(0)?.toUpperCase() || '?';
-});
+  // 获取用户名首字母
+  const userInitial = computed(() => {
+    return user.value?.name?.charAt(0)?.toUpperCase() || '?';
+  });
 </script>
 
 <template>
-  <Modal
-    :open="props.isOpen"
-    title="编辑头像"
-    size="md"
-    :show-footer="false"
-    @close="handleClose"
-  >
+  <Modal :open="props.isOpen" title="编辑头像" size="md" :show-footer="false" @close="handleClose">
     <!-- 当前头像显示 -->
     <div class="flex justify-center mb-6">
       <div class="relative">
-        <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+        <div
+          class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center"
+        >
           <img
             v-if="currentAvatarUrl"
             :src="currentAvatarUrl"
             :alt="user?.name || '用户头像'"
             class="w-full h-full object-cover"
-          >
-          <div
-            v-else
-            class="text-4xl font-semibold text-gray-500 dark:text-gray-400"
-          >
+          />
+          <div v-else class="text-4xl font-semibold text-gray-500 dark:text-gray-400">
             {{ userInitial }}
           </div>
         </div>
@@ -228,19 +220,17 @@ const userInitial = computed(() => {
         accept="image/*"
         class="hidden"
         @change="handleFileSelect"
-      >
+      />
 
       <div class="flex flex-col items-center gap-3">
-        <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+        <div
+          class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+        >
           <Upload class="w-6 h-6 text-gray-600 dark:text-gray-300" />
         </div>
         <div>
-          <p class="text-sm font-medium text-gray-900 dark:text-white">
-            点击或拖拽上传图片
-          </p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            支持 JPG、PNG、GIF，最大 5MB
-          </p>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">点击或拖拽上传图片</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">支持 JPG、PNG、GIF，最大 5MB</p>
         </div>
       </div>
     </div>

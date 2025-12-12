@@ -1,66 +1,66 @@
 <script setup lang="ts">
-import { Folder, Tag, X } from 'lucide-vue-next';
-import ProjectSelector from '@/features/todos/components/ProjectSelector.vue';
-import TagSelector from '@/features/todos/components/TagSelector.vue';
-import { useTodoAssociations } from '@/features/todos/composables/useTodoAssociations';
+  import { Folder, Tag, X } from 'lucide-vue-next';
+  import ProjectSelector from '@/features/todos/components/ProjectSelector.vue';
+  import TagSelector from '@/features/todos/components/TagSelector.vue';
+  import { useTodoAssociations } from '@/features/todos/composables/useTodoAssociations';
 
-const props = defineProps<{
-  todoId: string;
-}>();
+  const props = defineProps<{
+    todoId: string;
+  }>();
 
-// 选择器显示状态
-const showProjectSelector = ref(false);
-const showTagSelector = ref(false);
+  // 选择器显示状态
+  const showProjectSelector = ref(false);
+  const showTagSelector = ref(false);
 
-// 使用关联管理 composable
-const {
-  selectedProjects,
-  selectedTags,
-  loading,
-  error,
-  addProject,
-  removeProject,
-  addTag,
-  removeTag,
-  getProjectName,
-  getTagName,
-  getProjectColor,
-} = useTodoAssociations(props.todoId);
+  // 使用关联管理 composable
+  const {
+    selectedProjects,
+    selectedTags,
+    loading,
+    error,
+    addProject,
+    removeProject,
+    addTag,
+    removeTag,
+    getProjectName,
+    getTagName,
+    getProjectColor,
+  } = useTodoAssociations(props.todoId);
 
-// 处理项目操作（带错误提示）
-async function handleAddProject(projectId: string) {
-  try {
-    await addProject(projectId);
-  } catch (err) {
-    // 可以集成 toast 通知
-    console.error('添加项目失败:', err);
+  // 处理项目操作（带错误提示）
+  async function handleAddProject(projectId: string) {
+    try {
+      await addProject(projectId);
+    } catch (err) {
+      // 可以集成 toast 通知
+      console.error('添加项目失败:', err);
+    }
   }
-}
 
-async function handleRemoveProject(projectId: string) {
-  try {
-    await removeProject(projectId);
-  } catch (err) {
-    console.error('移除项目失败:', err);
+  async function handleRemoveProject(projectId: string) {
+    try {
+      await removeProject(projectId);
+    } catch (err) {
+      console.error('移除项目失败:', err);
+    }
   }
-}
 
-// 处理标签操作（带错误提示）
-async function handleAddTag(tagId: string) {
-  try {
-    await addTag(tagId);
-  } catch (err) {
-    console.error('添加标签失败:', err);
+  // 处理标签操作（带错误提示）
+  async function handleAddTag(tagId: string) {
+    try {
+      await addTag(tagId);
+    } catch (err) {
+      console.error('添加标签失败:', err);
+    }
   }
-}
 
-async function handleRemoveTag(tagId: string) {
-  try {
-    await removeTag(tagId);
-  } catch (err) {
-    console.error('移除标签失败:', err);
+  async function handleRemoveTag(tagId: string) {
+    try {
+      await removeTag(tagId);
+    } catch (err) {
+      console.error('移除标签失败:', err);
+    }
   }
-}
 </script>
 
 <template>
@@ -71,9 +71,7 @@ async function handleRemoveTag(tagId: string) {
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="error" class="text-sm text-red-600 dark:text-red-400">
-      {{ error }}
-    </div>
+    <div v-else-if="error" class="text-sm text-red-600 dark:text-red-400">{{ error }}</div>
 
     <!-- 正常内容 -->
     <template v-else>
@@ -110,9 +108,7 @@ async function handleRemoveTag(tagId: string) {
 
       <!-- 已关联的项目 -->
       <div v-if="selectedProjects.length > 0" class="space-y-1.5">
-        <div class="text-xs font-medium text-gray-500 dark:text-gray-400">
-          关联的项目
-        </div>
+        <div class="text-xs font-medium text-gray-500 dark:text-gray-400">关联的项目</div>
         <div class="flex flex-wrap gap-1.5">
           <button
             v-for="projectId in selectedProjects"
@@ -138,9 +134,7 @@ async function handleRemoveTag(tagId: string) {
 
       <!-- 已关联的标签 -->
       <div v-if="selectedTags.length > 0" class="space-y-1.5">
-        <div class="text-xs font-medium text-gray-500 dark:text-gray-400">
-          已添加的标签
-        </div>
+        <div class="text-xs font-medium text-gray-500 dark:text-gray-400">已添加的标签</div>
         <div class="flex flex-wrap gap-1.5">
           <button
             v-for="tagId in selectedTags"
@@ -177,5 +171,5 @@ async function handleRemoveTag(tagId: string) {
 </template>
 
 <style scoped>
-/* 所有样式已使用 Tailwind CSS 4 */
+  /* 所有样式已使用 Tailwind CSS 4 */
 </style>

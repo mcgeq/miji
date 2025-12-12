@@ -23,16 +23,17 @@
     todo: Todo;
     subtasks?: Todo[];
   }>();
-  const emit = defineEmits([
-    'editTitle',
-    'editDueDate',
-    'editRepeat',
-    'close',
-    'update',
-    'createSubtask',
-    'updateSubtask',
-    'deleteSubtask',
-  ]);
+
+  const emit = defineEmits<{
+    editTitle: [];
+    editDueDate: [];
+    editRepeat: [];
+    close: [];
+    update: [update: TodoUpdate];
+    createSubtask: [parentId: string, title: string];
+    updateSubtask: [serialNum: string, partial: TodoUpdate];
+    deleteSubtask: [serialNum: string];
+  }>();
 
   const options = [
     { icon: Pencil, label: '编辑标题', action: 'editTitle' },
@@ -41,7 +42,17 @@
   ];
 
   function handleOption(action: string) {
-    emit(action as any);
+    switch (action) {
+      case 'editTitle':
+        emit('editTitle');
+        break;
+      case 'editDueDate':
+        emit('editDueDate');
+        break;
+      case 'editRepeat':
+        emit('editRepeat');
+        break;
+    }
     emit('close');
   }
 
@@ -49,8 +60,8 @@
     emit('update', update);
   }
 
-  function onCreateSubtask(subtask: any) {
-    emit('createSubtask', subtask);
+  function onCreateSubtask(parentId: string, title: string) {
+    emit('createSubtask', parentId, title);
   }
 
   function onUpdateSubtask(serialNum: string, partial: TodoUpdate) {

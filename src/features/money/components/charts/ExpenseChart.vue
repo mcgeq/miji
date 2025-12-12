@@ -1,53 +1,51 @@
 <script setup lang="ts">
-import { LucidePieChart } from 'lucide-vue-next';
+  import { LucidePieChart } from 'lucide-vue-next';
 
-// 简化的支出分析图表组件
-interface ExpenseData {
-  category: string;
-  amount: number;
-  color?: string;
-}
+  // 简化的支出分析图表组件
+  interface ExpenseData {
+    category: string;
+    amount: number;
+    color?: string;
+  }
 
-interface Props {
-  data: ExpenseData[];
-  title?: string;
-  height?: string;
-}
+  interface Props {
+    data: ExpenseData[];
+    title?: string;
+    height?: string;
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  title: '支出分析',
-  height: '300px',
-});
+  const props = withDefaults(defineProps<Props>(), {
+    title: '支出分析',
+    height: '300px',
+  });
 
-// 计算总金额
-const totalAmount = computed(() =>
-  props.data.reduce((sum, item) => sum + item.amount, 0),
-);
+  // 计算总金额
+  const totalAmount = computed(() => props.data.reduce((sum, item) => sum + item.amount, 0));
 
-// 计算百分比
-const chartData = computed(() =>
-  props.data.map(item => ({
-    ...item,
-    percentage: totalAmount.value > 0 ? (item.amount / totalAmount.value) * 100 : 0,
-  })),
-);
+  // 计算百分比
+  const chartData = computed(() =>
+    props.data.map(item => ({
+      ...item,
+      percentage: totalAmount.value > 0 ? (item.amount / totalAmount.value) * 100 : 0,
+    })),
+  );
 
-// 预设颜色
-const defaultColors = [
-  '#3b82f6',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#06b6d4',
-  '#84cc16',
-  '#f97316',
-];
+  // 预设颜色
+  const defaultColors = [
+    '#3b82f6',
+    '#10b981',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
+    '#06b6d4',
+    '#84cc16',
+    '#f97316',
+  ];
 
-// 格式化金额
-function formatAmount(amount: number): string {
-  return amount.toFixed(2);
-}
+  // 格式化金额
+  function formatAmount(amount: number): string {
+    return amount.toFixed(2);
+  }
 </script>
 
 <template>
@@ -56,7 +54,10 @@ function formatAmount(amount: number): string {
       {{ title }}
     </h4>
 
-    <div class="flex flex-col sm:flex-row items-center gap-8 sm:gap-8" :class="{ 'h-[calc(100%-3rem)]': title }">
+    <div
+      class="flex flex-col sm:flex-row items-center gap-8 sm:gap-8"
+      :class="{ 'h-[calc(100%-3rem)]': title }"
+    >
       <!-- 饼图可视化 -->
       <div class="flex-shrink-0 w-[200px] h-[200px]">
         <svg viewBox="0 0 200 200" class="w-full h-full">
@@ -75,8 +76,20 @@ function formatAmount(amount: number): string {
           </g>
 
           <!-- 中心文字 -->
-          <text x="100" y="95" text-anchor="middle" class="text-xs fill-gray-500 dark:fill-gray-400">总支出</text>
-          <text x="100" y="115" text-anchor="middle" class="text-sm font-semibold fill-gray-900 dark:fill-white">
+          <text
+            x="100"
+            y="95"
+            text-anchor="middle"
+            class="text-xs fill-gray-500 dark:fill-gray-400"
+          >
+            总支出
+          </text>
+          <text
+            x="100"
+            y="115"
+            text-anchor="middle"
+            class="text-sm font-semibold fill-gray-900 dark:fill-white"
+          >
             ¥{{ formatAmount(totalAmount) }}
           </text>
         </svg>
@@ -99,7 +112,9 @@ function formatAmount(amount: number): string {
             </div>
             <div class="text-xs text-gray-600 dark:text-gray-400">
               ¥{{ formatAmount(item.amount) }}
-              <span class="text-gray-400 dark:text-gray-500">({{ item.percentage.toFixed(1) }}%)</span>
+              <span class="text-gray-400 dark:text-gray-500"
+                >({{ item.percentage.toFixed(1) }}%)</span
+              >
             </div>
           </div>
         </div>
@@ -107,11 +122,12 @@ function formatAmount(amount: number): string {
     </div>
 
     <!-- 空状态 -->
-    <div v-if="data.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
+    <div
+      v-if="data.length === 0"
+      class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500"
+    >
       <LucidePieChart class="w-8 h-8 mb-2" />
-      <p class="text-sm">
-        暂无数据
-      </p>
+      <p class="text-sm">暂无数据</p>
     </div>
   </div>
 </template>

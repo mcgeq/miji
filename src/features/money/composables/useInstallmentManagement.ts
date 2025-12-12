@@ -8,14 +8,14 @@
  * - 分期详情展示
  */
 
+import type { InstallmentCalculationRequest, InstallmentCalculationResponse } from '@/schema/money';
+import type { InstallmentPlanResponse } from '@/services/money/transactions';
 import { invokeCommand } from '@/types/api';
 import { DateUtils } from '@/utils/date';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { INSTALLMENT_CONSTANTS, InstallmentStatus } from '../constants/transactionConstants';
 import { parseAmount } from '../utils/numberUtils';
-import type { InstallmentCalculationRequest, InstallmentCalculationResponse } from '@/schema/money';
-import type { InstallmentPlanResponse } from '@/services/money/transactions';
 
 /**
  * 分期详情接口
@@ -27,6 +27,23 @@ export interface InstallmentDetail {
   status: InstallmentStatus;
   paidDate?: string;
   paidAmount?: number;
+}
+
+/**
+ * 原始分期详情接口（来自后端）
+ */
+interface RawInstallmentDetail {
+  periodNumber?: number;
+  period_number?: number;
+  period?: number;
+  amount?: number | string;
+  dueDate?: string;
+  due_date?: string;
+  status?: string;
+  paidDate?: string;
+  paid_date?: string;
+  paidAmount?: number | string;
+  paid_amount?: number | string;
 }
 
 /**
@@ -283,12 +300,12 @@ export function useInstallmentManagement() {
   /**
    * 格式化分期详情
    */
-  function formatInstallmentDetails(sourceDetails: any[]): InstallmentDetail[] {
+  function formatInstallmentDetails(sourceDetails: RawInstallmentDetail[]): InstallmentDetail[] {
     if (!sourceDetails || sourceDetails.length === 0) return [];
 
     const firstPeriodAmount = parseAmount(sourceDetails[0]?.amount);
 
-    return sourceDetails.map((detail: any, index: number) => ({
+    return sourceDetails.map((detail, index) => ({
       period: detail.periodNumber || detail.period_number || detail.period || index + 1,
       amount: parseAmount(detail.amount) || firstPeriodAmount,
       dueDate: detail.dueDate || detail.due_date || '',

@@ -1,16 +1,16 @@
 /**
  * 货币格式化工具
- * 
+ *
  * 统一的货币格式化函数，合并了：
  * - money.ts::formatCurrency
  * - numberUtils.ts::formatCurrencyAmount
  */
 
 import { CURRENCY_CNY } from '@/constants/moneyConst';
+import type { Currency } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
 import { useLocaleStore } from '@/stores/locales';
 import { parseAmount } from './numberUtils';
-import type { Currency } from '@/schema/common';
 
 /**
  * 获取当前地区代码
@@ -37,26 +37,26 @@ export interface CurrencyFormatOptions {
 
 /**
  * 统一的货币格式化函数
- * 
+ *
  * @param amount - 金额（数字或字符串）
  * @param options - 格式化选项
  * @returns 格式化后的货币字符串
- * 
+ *
  * @example
  * // 简单格式：¥123.45
  * formatCurrency(123.45, { symbol: '¥' });
- * 
+ *
  * @example
  * // 国际化格式：123.45
  * formatCurrency(123.45, { style: 'locale', locale: 'zh-CN' });
- * 
+ *
  * @example
  * // 无符号：123.45
  * formatCurrency(123.45, { showSymbol: false });
  */
 export function formatCurrency(
   amount: string | number,
-  options: CurrencyFormatOptions = {}
+  options: CurrencyFormatOptions = {},
 ): string {
   const {
     symbol = '¥',
@@ -83,11 +83,11 @@ export function formatCurrency(
 
 /**
  * 格式化为本地货币（使用 toLocaleString）
- * 
+ *
  * @param amount - 金额
  * @param locale - 可选的地区代码
  * @returns 格式化的字符串
- * 
+ *
  * @example
  * formatLocalCurrency(123.45); // "123.45"（使用当前地区格式）
  * formatLocalCurrency(123.45, 'en-US'); // "123.45"（美式格式）
@@ -102,10 +102,10 @@ export function formatLocalCurrency(amount: string | number, locale?: string): s
 
 /**
  * 快捷方法：格式化为人民币
- * 
+ *
  * @param amount - 金额
  * @returns ¥xxx.xx 格式
- * 
+ *
  * @example
  * formatCNY(123.45); // "¥123.45"
  */
@@ -119,10 +119,10 @@ export function formatCNY(amount: string | number): string {
 
 /**
  * 快捷方法：格式化为美元
- * 
+ *
  * @param amount - 金额
  * @returns $xxx.xx 格式
- * 
+ *
  * @example
  * formatUSD(123.45); // "$123.45"
  */
@@ -136,7 +136,7 @@ export function formatUSD(amount: string | number): string {
 
 /**
  * 获取本地货币信息
- * 
+ *
  * @returns 当前地区的货币信息
  */
 export async function getLocalCurrencyInfo(): Promise<Currency> {

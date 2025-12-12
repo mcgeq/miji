@@ -1,162 +1,166 @@
 <script setup lang="ts">
-import {
-  AlertCircle,
-  ArrowRight,
-  Bell,
-  CheckCircle,
-  CheckCircle2,
-  Clock,
-  Eye,
-  MessageSquare,
-  XCircle,
-} from 'lucide-vue-next';
-import { computed } from 'vue';
+  import {
+    AlertCircle,
+    ArrowRight,
+    Bell,
+    CheckCircle,
+    CheckCircle2,
+    Clock,
+    Eye,
+    MessageSquare,
+    XCircle,
+  } from 'lucide-vue-next';
+  import { type Component, computed } from 'vue';
 
-// ==================== Props ====================
+  // ==================== Props ====================
 
-interface DebtRelation {
-  serialNum: string;
-  familyLedgerSerialNum: string;
-  creditorMemberSerialNum: string;
-  creditorMemberName: string;
-  debtorMemberSerialNum: string;
-  debtorMemberName: string;
-  amount: number;
-  currency: string;
-  status: 'active' | 'settled' | 'cancelled';
-  lastCalculatedAt: string;
-  notes?: string;
-  priority?: 'high' | 'medium' | 'low';
-  originalAmount?: number; // 原始金额（用于显示进度）
-}
-
-interface Props {
-  relation: DebtRelation;
-  currentMemberSerialNum?: string;
-  showActions?: boolean;
-  showProgress?: boolean;
-  showNotes?: boolean;
-  clickable?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  showActions: true,
-  showProgress: false,
-  showNotes: false,
-  clickable: true,
-});
-
-// ==================== Emits ====================
-
-const emit = defineEmits<{
-  click: [relation: DebtRelation];
-  detail: [relation: DebtRelation];
-  settle: [relation: DebtRelation];
-  remind: [relation: DebtRelation];
-}>();
-
-// ==================== 计算属性 ====================
-
-// 卡片角色样式
-const isDebtor = computed(() =>
-  props.currentMemberSerialNum && props.relation.debtorMemberSerialNum === props.currentMemberSerialNum,
-);
-const isCreditor = computed(() =>
-  props.currentMemberSerialNum && props.relation.creditorMemberSerialNum === props.currentMemberSerialNum,
-);
-
-// 成员颜色
-const debtorColor = computed(() => getMemberColor(props.relation.debtorMemberSerialNum));
-const creditorColor = computed(() => getMemberColor(props.relation.creditorMemberSerialNum));
-
-// 支付进度
-const paidAmount = computed(() => {
-  if (!props.relation.originalAmount) return 0;
-  return props.relation.originalAmount - props.relation.amount;
-});
-
-const paymentPercentage = computed(() => {
-  if (!props.relation.originalAmount) return 0;
-  return Math.round((paidAmount.value / props.relation.originalAmount) * 100);
-});
-
-// ==================== 方法 ====================
-
-function handleClick() {
-  if (props.clickable) {
-    emit('click', props.relation);
+  interface DebtRelation {
+    serialNum: string;
+    familyLedgerSerialNum: string;
+    creditorMemberSerialNum: string;
+    creditorMemberName: string;
+    debtorMemberSerialNum: string;
+    debtorMemberName: string;
+    amount: number;
+    currency: string;
+    status: 'active' | 'settled' | 'cancelled';
+    lastCalculatedAt: string;
+    notes?: string;
+    priority?: 'high' | 'medium' | 'low';
+    originalAmount?: number; // 原始金额（用于显示进度）
   }
-}
 
-// 获取成员颜色
-function getMemberColor(memberSerialNum: string): string {
-  const colors = [
-    '#3b82f6',
-    '#ef4444',
-    '#10b981',
-    '#f59e0b',
-    '#8b5cf6',
-    '#ec4899',
-    '#14b8a6',
-    '#f97316',
-  ];
-  const index = Number.parseInt(memberSerialNum.slice(-1), 16) % colors.length;
-  return colors[index];
-}
+  interface Props {
+    relation: DebtRelation;
+    currentMemberSerialNum?: string;
+    showActions?: boolean;
+    showProgress?: boolean;
+    showNotes?: boolean;
+    clickable?: boolean;
+  }
 
-// 获取首字母
-function getInitials(name: string): string {
-  return name.charAt(0).toUpperCase();
-}
+  const props = withDefaults(defineProps<Props>(), {
+    showActions: true,
+    showProgress: false,
+    showNotes: false,
+    clickable: true,
+  });
 
-// 格式化金额
-function formatAmount(amount: number): string {
-  return amount.toFixed(2);
-}
+  // ==================== Emits ====================
 
-// 格式化时间
-function formatTime(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const emit = defineEmits<{
+    click: [relation: DebtRelation];
+    detail: [relation: DebtRelation];
+    settle: [relation: DebtRelation];
+    remind: [relation: DebtRelation];
+  }>();
 
-  if (days === 0) return '今天';
-  if (days === 1) return '昨天';
-  if (days < 7) return `${days}天前`;
-  if (days < 30) return `${Math.floor(days / 7)}周前`;
-  return date.toLocaleDateString();
-}
+  // ==================== 计算属性 ====================
 
-// 获取状态文本
-function getStatusText(status: string): string {
-  const statusMap: Record<string, string> = {
-    active: '活跃',
-    settled: '已结算',
-    cancelled: '已取消',
-  };
-  return statusMap[status] || status;
-}
+  // 卡片角色样式
+  const isDebtor = computed(
+    () =>
+      props.currentMemberSerialNum &&
+      props.relation.debtorMemberSerialNum === props.currentMemberSerialNum,
+  );
+  const isCreditor = computed(
+    () =>
+      props.currentMemberSerialNum &&
+      props.relation.creditorMemberSerialNum === props.currentMemberSerialNum,
+  );
 
-// 获取状态图标
-function getStatusIcon(status: string) {
-  const iconMap: Record<string, any> = {
-    active: AlertCircle,
-    settled: CheckCircle,
-    cancelled: XCircle,
-  };
-  return iconMap[status] || AlertCircle;
-}
+  // 成员颜色
+  const debtorColor = computed(() => getMemberColor(props.relation.debtorMemberSerialNum));
+  const creditorColor = computed(() => getMemberColor(props.relation.creditorMemberSerialNum));
 
-// 获取优先级文本
-function getPriorityText(priority: string): string {
-  const priorityMap: Record<string, string> = {
-    high: '高',
-    medium: '中',
-    low: '低',
-  };
-  return priorityMap[priority] || priority;
-}
+  // 支付进度
+  const paidAmount = computed(() => {
+    if (!props.relation.originalAmount) return 0;
+    return props.relation.originalAmount - props.relation.amount;
+  });
+
+  const paymentPercentage = computed(() => {
+    if (!props.relation.originalAmount) return 0;
+    return Math.round((paidAmount.value / props.relation.originalAmount) * 100);
+  });
+
+  // ==================== 方法 ====================
+
+  function handleClick() {
+    if (props.clickable) {
+      emit('click', props.relation);
+    }
+  }
+
+  // 获取成员颜色
+  function getMemberColor(memberSerialNum: string): string {
+    const colors = [
+      '#3b82f6',
+      '#ef4444',
+      '#10b981',
+      '#f59e0b',
+      '#8b5cf6',
+      '#ec4899',
+      '#14b8a6',
+      '#f97316',
+    ];
+    const index = Number.parseInt(memberSerialNum.slice(-1), 16) % colors.length;
+    return colors[index];
+  }
+
+  // 获取首字母
+  function getInitials(name: string): string {
+    return name.charAt(0).toUpperCase();
+  }
+
+  // 格式化金额
+  function formatAmount(amount: number): string {
+    return amount.toFixed(2);
+  }
+
+  // 格式化时间
+  function formatTime(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (days === 0) return '今天';
+    if (days === 1) return '昨天';
+    if (days < 7) return `${days}天前`;
+    if (days < 30) return `${Math.floor(days / 7)}周前`;
+    return date.toLocaleDateString();
+  }
+
+  // 获取状态文本
+  function getStatusText(status: string): string {
+    const statusMap: Record<string, string> = {
+      active: '活跃',
+      settled: '已结算',
+      cancelled: '已取消',
+    };
+    return statusMap[status] || status;
+  }
+
+  // 获取状态图标
+  function getStatusIcon(status: string): Component {
+    const iconMap: Record<string, Component> = {
+      active: AlertCircle,
+      settled: CheckCircle,
+      cancelled: XCircle,
+    };
+    return iconMap[status] || AlertCircle;
+  }
+
+  // 获取优先级文本
+  function getPriorityText(priority: string): string {
+    const priorityMap: Record<string, string> = {
+      high: '高',
+      medium: '中',
+      low: '低',
+    };
+    return priorityMap[priority] || priority;
+  }
 </script>
 
 <template>
@@ -185,9 +189,7 @@ function getPriorityText(priority: string): string {
             <div class="font-medium text-gray-900 dark:text-gray-100 text-sm">
               {{ relation.debtorMemberName }}
             </div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              债务人
-            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">债务人</div>
           </div>
         </div>
 
@@ -209,9 +211,7 @@ function getPriorityText(priority: string): string {
             <div class="font-medium text-gray-900 dark:text-gray-100 text-sm">
               {{ relation.creditorMemberName }}
             </div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              债权人
-            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">债权人</div>
           </div>
         </div>
       </div>
@@ -248,9 +248,13 @@ function getPriorityText(priority: string): string {
     <div class="p-4 flex flex-col gap-4">
       <!-- 债务描述 -->
       <div class="text-sm text-gray-600 dark:text-gray-400">
-        <span class="font-medium text-gray-900 dark:text-gray-100">{{ relation.debtorMemberName }}</span>
+        <span class="font-medium text-gray-900 dark:text-gray-100"
+          >{{ relation.debtorMemberName }}</span
+        >
         <span class="mx-1">欠</span>
-        <span class="font-medium text-gray-900 dark:text-gray-100">{{ relation.creditorMemberName }}</span>
+        <span class="font-medium text-gray-900 dark:text-gray-100"
+          >{{ relation.creditorMemberName }}</span
+        >
       </div>
 
       <!-- 金额 -->
@@ -260,7 +264,9 @@ function getPriorityText(priority: string): string {
         </div>
         <div class="flex items-baseline gap-2">
           <span class="text-xl text-gray-500 dark:text-gray-400">￥</span>
-          <span class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ formatAmount(relation.amount) }}</span>
+          <span class="text-3xl font-bold text-gray-900 dark:text-gray-100"
+            >{{ formatAmount(relation.amount) }}</span
+          >
           <span class="text-sm text-gray-500 dark:text-gray-400">{{ relation.currency }}</span>
         </div>
       </div>
@@ -274,8 +280,8 @@ function getPriorityText(priority: string): string {
           />
         </div>
         <div class="text-xs text-gray-600 dark:text-gray-400">
-          已还 {{ formatAmount(paidAmount) }} / {{ formatAmount(relation.originalAmount) }}
-          ({{ paymentPercentage }}%)
+          已还 {{ formatAmount(paidAmount) }}/ {{ formatAmount(relation.originalAmount) }}(
+          {{ paymentPercentage }}%)
         </div>
       </div>
     </div>
@@ -320,7 +326,10 @@ function getPriorityText(priority: string): string {
     </div>
 
     <!-- 备注（可选） -->
-    <div v-if="relation.notes && showNotes" class="px-4 pb-4 pt-2 flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/30">
+    <div
+      v-if="relation.notes && showNotes"
+      class="px-4 pb-4 pt-2 flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/30"
+    >
       <MessageSquare :size="16" />
       <span>{{ relation.notes }}</span>
     </div>

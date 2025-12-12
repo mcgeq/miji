@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { CalendarCheck, Eye, Plus, Trash } from 'lucide-vue-next';
-import Badge from '@/components/ui/Badge.vue';
-import PeriodInfoCard from './PeriodInfoCard.vue';
-import type { PeriodDailyRecords } from '@/schema/health/period';
+  import { CalendarCheck, Eye, Plus, Trash } from 'lucide-vue-next';
+  import Badge from '@/components/ui/Badge.vue';
+  import type { PeriodDailyRecords } from '@/schema/health/period';
+  import PeriodInfoCard from './PeriodInfoCard.vue';
 
-defineProps<{
-  currentPhaseLabel: string;
-  daysUntilNext: string;
-  todayRecord?: PeriodDailyRecords | null;
-}>();
+  defineProps<{
+    currentPhaseLabel: string;
+    daysUntilNext: string;
+    todayRecord?: PeriodDailyRecords | null;
+  }>();
 
-const emit = defineEmits<{
-  viewRecord: [record: PeriodDailyRecords];
-  deleteRecord: [serialNum: string];
-  addRecord: [];
-}>();
+  const emit = defineEmits<{
+    viewRecord: [record: PeriodDailyRecords];
+    deleteRecord: [serialNum: string];
+    addRecord: [];
+  }>();
 
-const { t } = useI18n();
+  const { t } = useI18n();
 </script>
 
 <template>
@@ -24,17 +24,19 @@ const { t } = useI18n();
     <!-- 内容区域 -->
     <div class="flex flex-col gap-2.5">
       <!-- 当前阶段 -->
-      <div class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+      <div
+        class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
           {{ t('period.todayInfo.currentPhase') }}
         </span>
-        <Badge variant="info" size="md">
-          {{ currentPhaseLabel }}
-        </Badge>
+        <Badge variant="info" size="md">{{ currentPhaseLabel }}</Badge>
       </div>
 
       <!-- 距离下次天数 -->
-      <div class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+      <div
+        class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
           {{ t('period.todayInfo.daysUntilNext') }}
         </span>

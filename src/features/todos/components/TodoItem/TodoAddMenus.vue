@@ -1,19 +1,13 @@
 <script setup lang="ts">
-import { Folder, StickyNote, Tag, X } from 'lucide-vue-next';
-import { Modal } from '@/components/ui';
+  import { Folder, StickyNote, Tag, X } from 'lucide-vue-next';
+  import { Modal } from '@/components/ui';
 
-defineProps<{ show: boolean }>();
-const emit = defineEmits(['openPopup', 'close']);
+  defineProps<{ show: boolean }>();
+  const emit = defineEmits(['openPopup', 'close']);
 </script>
 
 <template>
-  <Modal
-    :open="show"
-    size="sm"
-    :show-header="false"
-    :show-footer="false"
-    @close="emit('close')"
-  >
+  <Modal :open="show" size="sm" :show-header="false" :show-footer="false" @close="emit('close')">
     <div class="flex flex-col gap-3 -mx-6 -my-4 px-4 py-4">
       <!-- 描述按钮 -->
       <button
@@ -55,5 +49,5 @@ const emit = defineEmits(['openPopup', 'close']);
 </template>
 
 <style scoped>
-/* 所有样式已使用 Tailwind CSS 4 */
+  /* 所有样式已使用 Tailwind CSS 4 */
 </style>

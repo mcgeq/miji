@@ -1,170 +1,179 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import {
-  Camera,
-  Download,
-  FileText,
-  MapPin,
-  Mic,
-  RotateCcw,
-  Trash,
-} from 'lucide-vue-next';
-import { useI18n } from 'vue-i18n';
-import { useAutoSaveSettings, createDatabaseSetting } from '@/composables/useAutoSaveSettings';
-import ToggleSwitch from '@/components/ToggleSwitch.vue';
-import Modal from '@/components/ui/Modal.vue';
-import { toast } from '@/utils/toast';
+  import { Camera, Download, FileText, MapPin, Mic, RotateCcw, Trash } from 'lucide-vue-next';
+  import type { Component } from 'vue';
+  import { useI18n } from 'vue-i18n';
+  import ToggleSwitch from '@/components/ToggleSwitch.vue';
+  import Modal from '@/components/ui/Modal.vue';
+  import { createDatabaseSetting, useAutoSaveSettings } from '@/composables/useAutoSaveSettings';
+  import { toast } from '@/utils/toast';
 
-const { t } = useI18n();
+  const { t } = useI18n();
 
-// 默认权限列表
-const defaultPermissions = computed(() => [
-  {
-    id: 'camera',
-    name: t('settings.privacy.camera'),
-    description: t('settings.privacy.cameraDesc'),
-    icon: Camera,
-    status: 'denied',
-  },
-  {
-    id: 'microphone',
-    name: t('settings.privacy.microphone'),
-    description: t('settings.privacy.microphoneDesc'),
-    icon: Mic,
-    status: 'granted',
-  },
-  {
-    id: 'location',
-    name: t('settings.privacy.location'),
-    description: t('settings.privacy.locationDesc'),
-    icon: MapPin,
-    status: 'prompt',
-  },
-  {
-    id: 'files',
-    name: t('settings.privacy.files'),
-    description: t('settings.privacy.filesDesc'),
-    icon: FileText,
-    status: 'granted',
-  },
-]);
+  type PermissionStatus = 'denied' | 'granted' | 'prompt';
 
-// 使用自动保存设置系统
-const { fields, isSaving, resetAll } = useAutoSaveSettings({
-  moduleName: 'privacy',
-  fields: {
-    dataCollection: createDatabaseSetting({
-      key: 'settings.privacy.dataCollection',
-      defaultValue: true,
-    }),
-    analytics: createDatabaseSetting({
-      key: 'settings.privacy.analytics',
-      defaultValue: true,
-    }),
-    crashReports: createDatabaseSetting({
-      key: 'settings.privacy.crashReports',
-      defaultValue: true,
-    }),
-    profileVisibility: createDatabaseSetting({
-      key: 'settings.privacy.profileVisibility',
-      defaultValue: 'public',
-    }),
-    showOnlineStatus: createDatabaseSetting({
-      key: 'settings.privacy.showOnlineStatus',
-      defaultValue: true,
-    }),
-    showLastActive: createDatabaseSetting({
-      key: 'settings.privacy.showLastActive',
-      defaultValue: true,
-    }),
-    searchIndexing: createDatabaseSetting({
-      key: 'settings.privacy.searchIndexing',
-      defaultValue: false,
-    }),
-    permissions: createDatabaseSetting({
-      key: 'settings.privacy.permissions',
-      defaultValue: defaultPermissions.value,
-    }),
-  },
-});
-
-// 清除数据
-const showClearData = ref(false);
-const selectedClearTypes = ref<string[]>([]);
-
-const clearDataTypes = computed(() => [
-  {
-    id: 'cache',
-    name: t('settings.privacy.clearDataDialog.cache'),
-    description: t('settings.privacy.clearDataDialog.cacheDesc'),
-  },
-  {
-    id: 'history',
-    name: t('settings.privacy.clearDataDialog.history'),
-    description: t('settings.privacy.clearDataDialog.historyDesc'),
-  },
-  {
-    id: 'cookies',
-    name: t('settings.privacy.clearDataDialog.cookies'),
-    description: t('settings.privacy.clearDataDialog.cookiesDesc'),
-  },
-  {
-    id: 'localStorage',
-    name: t('settings.privacy.clearDataDialog.localStorage'),
-    description: t('settings.privacy.clearDataDialog.localStorageDesc'),
-  },
-]);
-
-// 获取权限状态文本
-function getPermissionStatusText(status: string) {
-  const texts: Record<string, string> = {
-    granted: t('settings.privacy.permissionStatus.granted'),
-    denied: t('settings.privacy.permissionStatus.denied'),
-    prompt: t('settings.privacy.permissionStatus.prompt'),
-  };
-  return texts[status] || status;
-}
-
-// 切换权限状态
-function togglePermission(permissionId: string) {
-  const permission = fields.permissions.value.value.find((p: any) => p.id === permissionId);
-  if (permission) {
-    permission.status = permission.status === 'granted' ? 'denied' : 'granted';
+  interface Permission {
+    id: string;
+    name: string;
+    description: string;
+    icon: Component;
+    status: PermissionStatus;
   }
-}
 
-// 请求数据导出
-function requestDataExport() {
-  toast.info('请求数据导出');
-  // 这里可以实现实际的数据导出逻辑
-}
+  // 默认权限列表
+  const defaultPermissions = computed(() => [
+    {
+      id: 'camera',
+      name: t('settings.privacy.camera'),
+      description: t('settings.privacy.cameraDesc'),
+      icon: Camera,
+      status: 'denied',
+    },
+    {
+      id: 'microphone',
+      name: t('settings.privacy.microphone'),
+      description: t('settings.privacy.microphoneDesc'),
+      icon: Mic,
+      status: 'granted',
+    },
+    {
+      id: 'location',
+      name: t('settings.privacy.location'),
+      description: t('settings.privacy.locationDesc'),
+      icon: MapPin,
+      status: 'prompt',
+    },
+    {
+      id: 'files',
+      name: t('settings.privacy.files'),
+      description: t('settings.privacy.filesDesc'),
+      icon: FileText,
+      status: 'granted',
+    },
+  ]);
 
-// 清除选中的数据
-function clearSelectedData() {
-  toast.info(`清除数据类型:, ${selectedClearTypes.value}`);
-  showClearData.value = false;
-  selectedClearTypes.value = [];
-}
+  // 使用自动保存设置系统
+  const { fields, isSaving, resetAll } = useAutoSaveSettings({
+    moduleName: 'privacy',
+    fields: {
+      dataCollection: createDatabaseSetting({
+        key: 'settings.privacy.dataCollection',
+        defaultValue: true,
+      }),
+      analytics: createDatabaseSetting({
+        key: 'settings.privacy.analytics',
+        defaultValue: true,
+      }),
+      crashReports: createDatabaseSetting({
+        key: 'settings.privacy.crashReports',
+        defaultValue: true,
+      }),
+      profileVisibility: createDatabaseSetting({
+        key: 'settings.privacy.profileVisibility',
+        defaultValue: 'public',
+      }),
+      showOnlineStatus: createDatabaseSetting({
+        key: 'settings.privacy.showOnlineStatus',
+        defaultValue: true,
+      }),
+      showLastActive: createDatabaseSetting({
+        key: 'settings.privacy.showLastActive',
+        defaultValue: true,
+      }),
+      searchIndexing: createDatabaseSetting({
+        key: 'settings.privacy.searchIndexing',
+        defaultValue: false,
+      }),
+      permissions: createDatabaseSetting({
+        key: 'settings.privacy.permissions',
+        defaultValue: defaultPermissions.value,
+      }),
+    },
+  });
 
-// 重置为默认
-async function handleReset() {
-  await resetAll();
-  toast.info(t('settings.privacy.resetPrivacy'));
-}
+  // 清除数据
+  const showClearData = ref(false);
+  const selectedClearTypes = ref<string[]>([]);
+
+  const clearDataTypes = computed(() => [
+    {
+      id: 'cache',
+      name: t('settings.privacy.clearDataDialog.cache'),
+      description: t('settings.privacy.clearDataDialog.cacheDesc'),
+    },
+    {
+      id: 'history',
+      name: t('settings.privacy.clearDataDialog.history'),
+      description: t('settings.privacy.clearDataDialog.historyDesc'),
+    },
+    {
+      id: 'cookies',
+      name: t('settings.privacy.clearDataDialog.cookies'),
+      description: t('settings.privacy.clearDataDialog.cookiesDesc'),
+    },
+    {
+      id: 'localStorage',
+      name: t('settings.privacy.clearDataDialog.localStorage'),
+      description: t('settings.privacy.clearDataDialog.localStorageDesc'),
+    },
+  ]);
+
+  // 获取权限状态文本
+  function getPermissionStatusText(status: string) {
+    const texts: Record<string, string> = {
+      granted: t('settings.privacy.permissionStatus.granted'),
+      denied: t('settings.privacy.permissionStatus.denied'),
+      prompt: t('settings.privacy.permissionStatus.prompt'),
+    };
+    return texts[status] || status;
+  }
+
+  // 切换权限状态
+  function togglePermission(permissionId: string) {
+    const permissions = fields.permissions.value.value as Permission[];
+    const permission = permissions.find(p => p.id === permissionId);
+    if (permission) {
+      permission.status = permission.status === 'granted' ? 'denied' : 'granted';
+    }
+  }
+
+  // 请求数据导出
+  function requestDataExport() {
+    toast.info('请求数据导出');
+    // 这里可以实现实际的数据导出逻辑
+  }
+
+  // 清除选中的数据
+  function clearSelectedData() {
+    toast.info(`清除数据类型:, ${selectedClearTypes.value}`);
+    showClearData.value = false;
+    selectedClearTypes.value = [];
+  }
+
+  // 重置为默认
+  async function handleReset() {
+    await resetAll();
+    toast.info(t('settings.privacy.resetPrivacy'));
+  }
 </script>
 
 <template>
   <div class="max-w-4xl w-full">
     <!-- 数据隐私 -->
     <div class="mb-10">
-      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
+      <h3
+        class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700"
+      >
         {{ $t('settings.privacy.dataPrivacy') }}
       </h3>
 
       <div class="space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.privacy.dataCollection') }}</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              {{ $t('settings.privacy.dataCollection') }}
+            </label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.privacy.dataCollectionDesc') }}
             </p>
@@ -174,9 +183,13 @@ async function handleReset() {
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.privacy.analytics') }}</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              {{ $t('settings.privacy.analytics') }}
+            </label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.privacy.analyticsDesc') }}
             </p>
@@ -186,9 +199,13 @@ async function handleReset() {
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.privacy.crashReports') }}</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              {{ $t('settings.privacy.crashReports') }}
+            </label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.privacy.crashReportsDesc') }}
             </p>
@@ -202,14 +219,20 @@ async function handleReset() {
 
     <!-- 个人信息 -->
     <div class="mb-10">
-      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
+      <h3
+        class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700"
+      >
         {{ $t('settings.privacy.personalInfo') }}
       </h3>
 
       <div class="space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.privacy.profileVisibility') }}</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              {{ $t('settings.privacy.profileVisibility') }}
+            </label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.privacy.profileVisibilityDesc') }}
             </p>
@@ -219,9 +242,7 @@ async function handleReset() {
               v-model="fields.profileVisibility.value.value"
               class="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
             >
-              <option value="public">
-                {{ $t('settings.privacy.visibilityOptions.public') }}
-              </option>
+              <option value="public">{{ $t('settings.privacy.visibilityOptions.public') }}</option>
               <option value="friends">
                 {{ $t('settings.privacy.visibilityOptions.friends') }}
               </option>
@@ -232,9 +253,13 @@ async function handleReset() {
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.privacy.onlineStatus') }}</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              {{ $t('settings.privacy.onlineStatus') }}
+            </label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.privacy.onlineStatusDesc') }}
             </p>
@@ -244,9 +269,13 @@ async function handleReset() {
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.privacy.lastActive') }}</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              {{ $t('settings.privacy.lastActive') }}
+            </label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.privacy.lastActiveDesc') }}
             </p>
@@ -256,9 +285,13 @@ async function handleReset() {
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.privacy.searchIndexing') }}</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              {{ $t('settings.privacy.searchIndexing') }}
+            </label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.privacy.searchIndexingDesc') }}
             </p>
@@ -272,14 +305,20 @@ async function handleReset() {
 
     <!-- 数据管理 -->
     <div class="mb-10">
-      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
+      <h3
+        class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700"
+      >
         {{ $t('settings.privacy.dataManagement') }}
       </h3>
 
       <div class="space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.privacy.downloadData') }}</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              {{ $t('settings.privacy.downloadData') }}
+            </label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.privacy.downloadDataDesc') }}
             </p>
@@ -295,9 +334,13 @@ async function handleReset() {
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6 border-b border-gray-200 dark:border-gray-700"
+        >
           <div class="mb-4 sm:mb-0">
-            <label class="block font-medium text-gray-900 dark:text-white mb-1">{{ $t('settings.privacy.clearBrowsingData') }}</label>
+            <label class="block font-medium text-gray-900 dark:text-white mb-1">
+              {{ $t('settings.privacy.clearBrowsingData') }}
+            </label>
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.privacy.clearBrowsingDataDesc') }}
             </p>
@@ -317,7 +360,9 @@ async function handleReset() {
 
     <!-- 权限管理 -->
     <div class="mb-10">
-      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
+      <h3
+        class="text-xl font-semibold text-gray-900 dark:text-white mb-6 pb-2 border-b-2 border-gray-200 dark:border-gray-700"
+      >
         {{ $t('settings.privacy.permissions') }}
       </h3>
 
@@ -330,9 +375,7 @@ async function handleReset() {
           <div class="flex items-center gap-4">
             <component :is="permission.icon" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
             <div>
-              <div class="font-medium text-gray-900 dark:text-white">
-                {{ permission.name }}
-              </div>
+              <div class="font-medium text-gray-900 dark:text-white">{{ permission.name }}</div>
               <div class="text-sm text-gray-600 dark:text-gray-400">
                 {{ permission.description }}
               </div>
@@ -371,7 +414,10 @@ async function handleReset() {
       >
         <Download class="w-5 h-5" />
       </button>
-      <div v-if="isSaving" class="flex items-center justify-center w-12 h-12 text-gray-600 dark:text-gray-400">
+      <div
+        v-if="isSaving"
+        class="flex items-center justify-center w-12 h-12 text-gray-600 dark:text-gray-400"
+      >
         <span class="animate-spin text-xl">⏳</span>
       </div>
     </div>
@@ -402,7 +448,7 @@ async function handleReset() {
               :value="dataType.id"
               type="checkbox"
               class="mt-1 w-4 h-4 text-blue-600 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500/20"
-            >
+            />
             <div>
               <div class="font-medium text-gray-900 dark:text-white">{{ dataType.name }}</div>
               <div class="text-sm text-gray-600 dark:text-gray-400">{{ dataType.description }}</div>

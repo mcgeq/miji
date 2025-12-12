@@ -1,130 +1,128 @@
 <script setup lang="ts">
-import {
-  ArrowUpDown,
-  Ban,
-  Cloud,
-  CreditCard,
-  DollarSign,
-  Edit,
-  Eye,
-  EyeOff,
-  PiggyBank,
-  Trash,
-  TrendingUp,
-  Wallet,
-  Wallet2,
-} from 'lucide-vue-next';
-import FilterBar from '@/components/common/FilterBar.vue';
-import { Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
-import { useAccountStore, useMoneyConfigStore } from '@/stores/money';
-import { useAccountFilters } from '../composables/useAccountFilters';
-import { formatCurrency } from '../utils/money';
-import type { Account, AccountType } from '@/schema/money';
-import type {
-  LucideIcon,
-} from 'lucide-vue-next';
-
-interface Props {
-  accounts: Account[];
-  loading: boolean;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  edit: [account: Account];
-  delete: [serialNum: string];
-  toggleActive: [serialNum: string, isActive: boolean];
-}>();
-
-const { t } = useI18n();
-const accountStore = useAccountStore();
-const moneyConfigStore = useMoneyConfigStore();
-
-const mediaQueries = useMediaQueriesStore();
-
-// 检查账户金额是否隐藏（全局 + 单个）
-function isAccountAmountHidden(serialNum: string) {
-  return moneyConfigStore.globalAmountHidden || accountStore.isAccountAmountHidden(serialNum);
-}
-// 移动端过滤展开状态
-const showMoreFilters = ref(!mediaQueries.isMobile);
-
-// 过滤和分页状态
-const {
-  filters,
-  accountTypes,
-  currencies,
-  pagination,
-  activeAccounts,
-  inactiveAccounts,
-  resetFilters,
-  setActiveFilter,
-  toggleSortOrder,
-} = useAccountFilters(() => props.accounts, 4);
-
-// 切换过滤器显示状态
-function toggleFilters() {
-  showMoreFilters.value = !showMoreFilters.value;
-}
-
-function handleTypeFilter() {
-  pagination.currentPage.value = 1;
-}
-
-function handleCurrencyFilter() {
-  pagination.currentPage.value = 1;
-}
-
-function handleSortChange() {
-  pagination.currentPage.value = 1;
-}
-
-// 分页方法
-function handlePageChange(page: number) {
-  pagination.currentPage.value = page;
-}
-
-function handlePageSizeChange(size: number) {
-  pagination.pageSize.value = size;
-  pagination.currentPage.value = 1;
-}
-
-// 图标和名称映射函数
-function getAccountTypeIcon(type: AccountType): LucideIcon {
-  const icons: Record<AccountType, LucideIcon> = {
-    Savings: PiggyBank,
-    Cash: DollarSign,
-    Bank: PiggyBank,
+  import type { LucideIcon } from 'lucide-vue-next';
+  import {
+    ArrowUpDown,
+    Ban,
+    Cloud,
     CreditCard,
-    Investment: TrendingUp,
-    Alipay: Wallet,
-    WeChat: Wallet2,
-    CloudQuickPass: Cloud,
-    Other: Wallet,
-  };
-  return icons[type] || Wallet;
-}
+    DollarSign,
+    Edit,
+    Eye,
+    EyeOff,
+    PiggyBank,
+    Trash,
+    TrendingUp,
+    Wallet,
+    Wallet2,
+  } from 'lucide-vue-next';
+  import FilterBar from '@/components/common/FilterBar.vue';
+  import { Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
+  import type { Account, AccountType } from '@/schema/money';
+  import { useAccountStore, useMoneyConfigStore } from '@/stores/money';
+  import { useAccountFilters } from '../composables/useAccountFilters';
+  import { formatCurrency } from '../utils/money';
 
-function getAccountTypeName(type: AccountType): string {
-  const names: Record<AccountType, string> = {
-    Savings: '储蓄账户',
-    Cash: '现金',
-    Bank: '银行账户',
-    CreditCard: '信用卡',
-    Investment: '投资账户',
-    Alipay: '支付宝',
-    WeChat: '微信',
-    CloudQuickPass: '云闪付',
-    Other: '其他',
-  };
-  return names[type] || '未知类型';
-}
+  interface Props {
+    accounts: Account[];
+    loading: boolean;
+  }
 
-// 切换账户金额可见性
-function toggleAccountAmountVisibility(accountSerialNum: string) {
-  accountStore.toggleAccountAmountHidden(accountSerialNum);
-}
+  const props = defineProps<Props>();
+
+  const emit = defineEmits<{
+    edit: [account: Account];
+    delete: [serialNum: string];
+    toggleActive: [serialNum: string, isActive: boolean];
+  }>();
+
+  const { t } = useI18n();
+  const accountStore = useAccountStore();
+  const moneyConfigStore = useMoneyConfigStore();
+
+  const mediaQueries = useMediaQueriesStore();
+
+  // 检查账户金额是否隐藏（全局 + 单个）
+  function isAccountAmountHidden(serialNum: string) {
+    return moneyConfigStore.globalAmountHidden || accountStore.isAccountAmountHidden(serialNum);
+  }
+  // 移动端过滤展开状态
+  const showMoreFilters = ref(!mediaQueries.isMobile);
+
+  // 过滤和分页状态
+  const {
+    filters,
+    accountTypes,
+    currencies,
+    pagination,
+    activeAccounts,
+    inactiveAccounts,
+    resetFilters,
+    setActiveFilter,
+    toggleSortOrder,
+  } = useAccountFilters(() => props.accounts, 4);
+
+  // 切换过滤器显示状态
+  function toggleFilters() {
+    showMoreFilters.value = !showMoreFilters.value;
+  }
+
+  function handleTypeFilter() {
+    pagination.currentPage.value = 1;
+  }
+
+  function handleCurrencyFilter() {
+    pagination.currentPage.value = 1;
+  }
+
+  function handleSortChange() {
+    pagination.currentPage.value = 1;
+  }
+
+  // 分页方法
+  function handlePageChange(page: number) {
+    pagination.currentPage.value = page;
+  }
+
+  function handlePageSizeChange(size: number) {
+    pagination.pageSize.value = size;
+    pagination.currentPage.value = 1;
+  }
+
+  // 图标和名称映射函数
+  function getAccountTypeIcon(type: AccountType): LucideIcon {
+    const icons: Record<AccountType, LucideIcon> = {
+      Savings: PiggyBank,
+      Cash: DollarSign,
+      Bank: PiggyBank,
+      CreditCard,
+      Investment: TrendingUp,
+      Alipay: Wallet,
+      WeChat: Wallet2,
+      CloudQuickPass: Cloud,
+      Other: Wallet,
+    };
+    return icons[type] || Wallet;
+  }
+
+  function getAccountTypeName(type: AccountType): string {
+    const names: Record<AccountType, string> = {
+      Savings: '储蓄账户',
+      Cash: '现金',
+      Bank: '银行账户',
+      CreditCard: '信用卡',
+      Investment: '投资账户',
+      Alipay: '支付宝',
+      WeChat: '微信',
+      CloudQuickPass: '云闪付',
+      Other: '其他',
+    };
+    return names[type] || '未知类型';
+  }
+
+  // 切换账户金额可见性
+  function toggleAccountAmountVisibility(accountSerialNum: string) {
+    accountStore.toggleAccountAmountHidden(accountSerialNum);
+  }
 </script>
 
 <template>
@@ -145,7 +143,8 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'"
             @click="setActiveFilter('all')"
           >
-            {{ t('common.actions.all') }}<span class="ml-1 opacity-75">[{{ pagination.totalItems.value }}]</span>
+            {{ t('common.actions.all') }}
+            <span class="ml-1 opacity-75">[{{ pagination.totalItems.value }}]</span>
           </button>
           <button
             class="px-3 py-1.5 text-xs font-medium rounded-full border transition-all"
@@ -154,7 +153,8 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'"
             @click="setActiveFilter('active')"
           >
-            {{ t('common.status.active') }}<span class="ml-1 opacity-75">({{ activeAccounts }})</span>
+            {{ t('common.status.active') }}
+            <span class="ml-1 opacity-75">({{ activeAccounts }})</span>
           </button>
           <button
             class="px-3 py-1.5 text-xs font-medium rounded-full border transition-all"
@@ -163,7 +163,8 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'"
             @click="setActiveFilter('inactive')"
           >
-            {{ t('common.status.inactive') }}<span class="ml-1 opacity-75">({{ inactiveAccounts }})</span>
+            {{ t('common.status.inactive') }}
+            <span class="ml-1 opacity-75">({{ inactiveAccounts }})</span>
           </button>
         </div>
       </template>
@@ -176,7 +177,8 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
           @change="handleTypeFilter"
         >
           <option value="">
-            {{ t('common.actions.all') }}{{ t('common.misc.types') }}
+            {{ t('common.actions.all') }}
+            {{ t('common.misc.types') }}
           </option>
           <option v-for="type in accountTypes" :key="type" :value="type">
             {{ getAccountTypeName(type) }}
@@ -190,7 +192,8 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
           @change="handleCurrencyFilter"
         >
           <option value="">
-            {{ t('common.actions.all') }}{{ t('financial.currency') }}
+            {{ t('common.actions.all') }}
+            {{ t('financial.currency') }}
           </option>
           <option v-for="currency in currencies" :key="currency" :value="currency">
             {{ currency }}
@@ -204,28 +207,22 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
             class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             @change="handleSortChange"
           >
-            <option value="updatedAt">
-              {{ t('date.updatedDate') }}
-            </option>
-            <option value="createdAt">
-              {{ t('date.createDate') }}
-            </option>
-            <option value="name">
-              {{ t('financial.account.name') }}
-            </option>
-            <option value="balance">
-              {{ t('financial.balance') }}
-            </option>
-            <option value="type">
-              {{ t('financial.account.type') }}
-            </option>
+            <option value="updatedAt">{{ t('date.updatedDate') }}</option>
+            <option value="createdAt">{{ t('date.createDate') }}</option>
+            <option value="name">{{ t('financial.account.name') }}</option>
+            <option value="balance">{{ t('financial.balance') }}</option>
+            <option value="type">{{ t('financial.account.type') }}</option>
           </select>
           <button
             class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             :title="filters.sortOrder === 'asc' ? t('common.sorting.asc') : t('common.sorting.desc')"
             @click="toggleSortOrder"
           >
-            <ArrowUpDown :size="16" :class="filters.sortOrder === 'desc' && 'rotate-180'" class="text-gray-600 dark:text-gray-300 transition-transform" />
+            <ArrowUpDown
+              :size="16"
+              :class="filters.sortOrder === 'desc' && 'rotate-180'"
+              class="text-gray-600 dark:text-gray-300 transition-transform"
+            />
           </button>
         </div>
       </template>
@@ -269,10 +266,18 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
           <!-- 账户信息区域 -->
           <div class="flex flex-col gap-1 flex-1 min-w-0">
             <div class="flex items-center gap-2">
-              <component :is="getAccountTypeIcon(account.type)" :size="20" class="text-blue-600 dark:text-blue-400 shrink-0" />
-              <span class="font-semibold text-gray-900 dark:text-white truncate">{{ account.name }}</span>
+              <component
+                :is="getAccountTypeIcon(account.type)"
+                :size="20"
+                class="text-blue-600 dark:text-blue-400 shrink-0"
+              />
+              <span class="font-semibold text-gray-900 dark:text-white truncate"
+                >{{ account.name }}</span
+              >
             </div>
-            <span class="text-xs text-gray-500 dark:text-gray-400 ml-7">{{ getAccountTypeName(account.type) }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400 ml-7"
+              >{{ getAccountTypeName(account.type) }}</span
+            >
           </div>
 
           <!-- 操作按钮区域 -->
@@ -317,7 +322,10 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
 
         <!-- 账户余额区域 -->
         <div class="flex items-baseline gap-2 mt-2">
-          <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ account.currency?.code }}</span>
+          <span
+            class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+            >{{ account.currency?.code }}</span
+          >
           <span class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             {{ isAccountAmountHidden(account.serialNum) ? '***' : formatCurrency(account.balance) }}
           </span>
@@ -326,7 +334,11 @@ function toggleAccountAmountVisibility(accountSerialNum: string) {
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="pagination.totalPages.value > 1" class="flex justify-center" :class="mediaQueries.isMobile && 'mb-16 pb-4'">
+    <div
+      v-if="pagination.totalPages.value > 1"
+      class="flex justify-center"
+      :class="mediaQueries.isMobile && 'mb-16 pb-4'"
+    >
       <Pagination
         :current-page="pagination.currentPage.value"
         :total-pages="pagination.totalPages.value"

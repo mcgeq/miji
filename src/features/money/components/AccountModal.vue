@@ -13,6 +13,7 @@
     UpdateAccountRequestSchema,
   } from '@/schema/money';
   import { MoneyDb } from '@/services/money/money';
+  import { useAuthStore } from '@/stores/auth';
   import { DateUtils } from '@/utils/date';
   import { Lg } from '@/utils/debugLog';
   import { deepDiff } from '@/utils/diff';
@@ -35,7 +36,8 @@
 
   // 定义响应式数据（必须在使用前定义）
   const currencies = ref<Currency[]>([]);
-  const currentUser = computed(() => getCurrentUser());
+  const authStore = useAuthStore();
+  const currentUser = computed(() => authStore.user);
   const familyMembers = computedAsync(async () => {
     try {
       return await MoneyDb.listFamilyMembers();
@@ -214,8 +216,7 @@
       if (!props.account) {
         // 创建模式：直接发送完整数据
         const requestData: CreateAccountRequest = commonRequestFields;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (!validation.validateAll(requestData as any)) {
+        if (!validation.validateAll(requestData as CreateAccountRequest)) {
           toast.error(t('financial.account.validationFailed'));
           return;
         }
@@ -234,8 +235,7 @@
         }
 
         // 验证改变的字段
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (!validation.validateAll(updatePartial as any)) {
+        if (!validation.validateAll(updatePartial as UpdateAccountRequest)) {
           toast.error(t('financial.account.validationFailed'));
           return;
         }

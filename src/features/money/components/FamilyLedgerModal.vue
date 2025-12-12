@@ -345,57 +345,55 @@
     emit('save', ledgerData);
   }
 
-  // eslint-disable-next-line complexity
+  // 从货币代码创建临时 Currency 对象
+  function createTempCurrency(currencyCode: string): Currency {
+    return {
+      locale: 'zh-CN',
+      code: currencyCode,
+      symbol: currencyCode === 'CNY' ? '¥' : '$',
+      isDefault: currencyCode === 'CNY',
+      isActive: true,
+      createdAt: DateUtils.getLocalISODateTimeWithOffset(),
+      updatedAt: null,
+    };
+  }
+
+  // 从货币代码字符串解析 Currency 对象
+  function parseCurrencyFromCode(currencyCode: string): Currency {
+    const foundCurrency = currencies.value.find(c => c.code === currencyCode);
+    return foundCurrency || createTempCurrency(currencyCode);
+  }
+
+  // 处理 baseCurrency 字段的所有情况
+  function resolveBaseCurrency(source: FamilyLedger): Currency {
+    // 优先使用后端返回的完整对象
+    if (source.baseCurrencyDetail) {
+      return source.baseCurrencyDetail;
+    }
+
+    // 降级方案：处理旧版本 API
+    if (source.baseCurrency) {
+      if (typeof source.baseCurrency === 'string') {
+        return parseCurrencyFromCode(source.baseCurrency);
+      }
+      return source.baseCurrency;
+    }
+
+    return defaultLedger.baseCurrency;
+  }
+
   function buildLedgerForm(source: FamilyLedger | null): FamilyLedger {
     if (!source) {
-      // 初始化时清空列表
       memberList.value = [];
       return deepClone(defaultLedger);
     }
 
-    // 填充列表数据
     memberList.value = source.memberList || [];
-
-    // 处理 baseCurrency：优先使用后端返回的 baseCurrencyDetail
-    let baseCurrencyValue = defaultLedger.baseCurrency;
-
-    if (source.baseCurrencyDetail) {
-      // ✅ 后端返回了完整的 Currency 对象，直接使用
-      baseCurrencyValue = source.baseCurrencyDetail;
-      // baseCurrencyDetail loaded from backend
-    } else if (source.baseCurrency) {
-      // 降级方案：如果后端没有返回 baseCurrencyDetail（兼容旧版本API）
-      if (typeof source.baseCurrency === 'string') {
-        const currencyCode = source.baseCurrency;
-
-        // 尝试从已加载的 currencies 列表中查找
-        const foundCurrency = currencies.value.find(c => c.code === currencyCode);
-
-        if (foundCurrency) {
-          baseCurrencyValue = foundCurrency;
-        } else {
-          // 构造临时对象
-          baseCurrencyValue = {
-            locale: 'zh-CN',
-            code: currencyCode,
-            symbol: currencyCode === 'CNY' ? '¥' : '$',
-            isDefault: currencyCode === 'CNY',
-            isActive: true,
-            createdAt: DateUtils.getLocalISODateTimeWithOffset(),
-            updatedAt: null,
-          };
-        }
-
-        // Fallback: Converting baseCurrency string to object
-      } else {
-        baseCurrencyValue = source.baseCurrency;
-      }
-    }
 
     return {
       ...defaultLedger,
       ...source,
-      baseCurrency: baseCurrencyValue,
+      baseCurrency: resolveBaseCurrency(source),
       ledgerType: (source.ledgerType
         ? source.ledgerType.toUpperCase()
         : defaultLedger.ledgerType) as FamilyLedger['ledgerType'],

@@ -1,5 +1,3 @@
-import { MoneyDb } from '@/services/money/money';
-import { Lg } from '@/utils/debugLog';
 import type {
   FamilyLedger,
   FamilyMember,
@@ -7,6 +5,8 @@ import type {
   Transaction,
   TransactionCreate,
 } from '@/schema/money';
+import { MoneyDb } from '@/services/money/money';
+import { Lg } from '@/utils/debugLog';
 
 /**
  * 交易与账本关联的 Composable
@@ -102,7 +102,9 @@ export function useTransactionLedgerLink() {
       const memberIds = new Set<string>();
       allLedgerMembers
         .filter(lm => ledgerSerialNums.includes(lm.familyLedgerSerialNum))
-        .forEach(lm => memberIds.add(lm.familyMemberSerialNum));
+        .forEach(lm => {
+          memberIds.add(lm.familyMemberSerialNum);
+        });
 
       // 获取成员详情
       const memberPromises = Array.from(memberIds).map(id => MoneyDb.getFamilyMember(id));

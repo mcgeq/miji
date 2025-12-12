@@ -10,9 +10,9 @@
 // -----------------------------------------------------------------------------
 
 import { getDb } from '@/db';
-import { toCamelCase, toSnakeCase } from '@/utils/string';
-import { Lg } from '@/utils/debugLog';
 import type { Tags } from '@/schema/tags';
+import { Lg } from '@/utils/debugLog';
+import { toCamelCase, toSnakeCase } from '@/utils/string';
 
 type UpdatableFields = Partial<Record<keyof Tags, string | null>>;
 

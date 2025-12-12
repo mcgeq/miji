@@ -1,303 +1,316 @@
 <script setup lang="ts">
-import { LucideChevronLeft, LucideChevronRight, LucidePause, LucidePlay } from 'lucide-vue-next';
-import StatCard from './StatCard.vue';
-import type { CardData } from '../common/moneyCommon';
-import type { ComponentPublicInstance } from 'vue';
+  import { LucideChevronLeft, LucideChevronRight, LucidePause, LucidePlay } from 'lucide-vue-next';
+  import type { ComponentPublicInstance } from 'vue';
+  import type { CardData } from '../common/moneyCommon';
+  import StatCard from './StatCard.vue';
 
-interface CardPosition {
-  left: string;
-  transform: string;
-  zIndex: number;
-  opacity: number;
-  scale: number;
-}
+  interface CardPosition {
+    left: string;
+    transform: string;
+    zIndex: number;
+    opacity: number;
+    scale: number;
+  }
 
-interface Props {
-  cards: CardData[];
-  autoPlay?: boolean;
-  autoPlayDelay?: number;
-  showNavButtons?: boolean;
-  showPlayControl?: boolean;
-  cardWidth?: number;
-  cardHeight?: number;
-  enableKeyboard?: boolean;
-  maxVisibleCards?: number;
-  transitionDuration?: number;
-  disabled?: boolean;
-}
+  interface Props {
+    cards: CardData[];
+    autoPlay?: boolean;
+    autoPlayDelay?: number;
+    showNavButtons?: boolean;
+    showPlayControl?: boolean;
+    cardWidth?: number;
+    cardHeight?: number;
+    enableKeyboard?: boolean;
+    maxVisibleCards?: number;
+    transitionDuration?: number;
+    disabled?: boolean;
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  autoPlay: true,
-  autoPlayDelay: 6000,
-  showNavButtons: true,
-  showPlayControl: false,
-  cardWidth: 320,
-  cardHeight: 176,
-  enableKeyboard: true,
-  maxVisibleCards: 5,
-  transitionDuration: 800,
-  disabled: false,
-});
+  const props = withDefaults(defineProps<Props>(), {
+    autoPlay: true,
+    autoPlayDelay: 6000,
+    showNavButtons: true,
+    showPlayControl: false,
+    cardWidth: 320,
+    cardHeight: 176,
+    enableKeyboard: true,
+    maxVisibleCards: 5,
+    transitionDuration: 800,
+    disabled: false,
+  });
 
-const emit = defineEmits<{
-  cardChange: [index: number, card: CardData];
-  cardClick: [index: number, card: CardData];
-}>();
+  const emit = defineEmits<{
+    cardChange: [index: number, card: CardData];
+    cardClick: [index: number, card: CardData];
+  }>();
 
-const selectedIndex = ref(0);
-const isTransitioning = ref(false);
-const isAutoPlaying = ref(props.autoPlay);
-const touchStartX = ref(0);
-const touchEndX = ref(0);
-const cardRefs = ref<ComponentPublicInstance[]>([]);
-const autoPlayInterval = ref<NodeJS.Timeout | null>(null);
+  const selectedIndex = ref(0);
+  const isTransitioning = ref(false);
+  const isAutoPlaying = ref(props.autoPlay);
+  const touchStartX = ref(0);
+  const touchEndX = ref(0);
+  const cardRefs = ref<ComponentPublicInstance[]>([]);
+  const autoPlayInterval = ref<NodeJS.Timeout | null>(null);
 
-const containerStyle = computed(() => ({
-  height: `${props.cardHeight + 60}px`,
-}));
+  const containerStyle = computed(() => ({
+    height: `${props.cardHeight + 60}px`,
+  }));
 
-const isPrevDisabled = computed(() =>
-  props.disabled || (!props.autoPlay && selectedIndex.value === 0),
-);
-const isNextDisabled = computed(() =>
-  props.disabled || (!props.autoPlay && selectedIndex.value === props.cards.length - 1),
-);
+  const isPrevDisabled = computed(
+    () => props.disabled || (!props.autoPlay && selectedIndex.value === 0),
+  );
+  const isNextDisabled = computed(
+    () => props.disabled || (!props.autoPlay && selectedIndex.value === props.cards.length - 1),
+  );
 
-const cardPositions = computed(() => {
-  const positions = new Map<number, CardPosition>();
-
-  props.cards.forEach((_, index) => {
+  function calculateAdjustedDiff(index: number): number {
     const diff = index - selectedIndex.value;
     const totalCards = props.cards.length;
     const normalizedDiff = ((diff % totalCards) + totalCards) % totalCards;
-    const adjustedDiff = normalizedDiff > totalCards / 2 ? normalizedDiff - totalCards : normalizedDiff;
+    return normalizedDiff > totalCards / 2 ? normalizedDiff - totalCards : normalizedDiff;
+  }
 
+  function getCardStyles(absDiff: number, adjustedDiff: number, baseLeft: number) {
+    const styleMap = {
+      0: { left: 0, rotation: 0, zIndex: 30, opacity: 1, scale: 1 },
+      1: { left: 6, rotation: 2, zIndex: 25, opacity: 0.9, scale: 0.96 },
+      2: { left: 10, rotation: 4, zIndex: 20, opacity: 0.75, scale: 0.92 },
+      default: { left: 14, rotation: 6, zIndex: 15, opacity: 0.5, scale: 0.88 },
+    };
+
+    const style = styleMap[absDiff as 0 | 1 | 2] || styleMap.default;
+    const direction = adjustedDiff > 0 ? 1 : -1;
+
+    return {
+      left: baseLeft + style.left * direction,
+      rotation: style.rotation * direction,
+      zIndex: style.zIndex,
+      opacity: style.opacity,
+      scale: style.scale,
+    };
+  }
+
+  const cardPositions = computed(() => {
+    const positions = new Map<number, CardPosition>();
     const baseLeft = 50;
-    let left = baseLeft;
-    let rotation = 0;
-    let zIndex = 10;
-    let opacity = 1;
-    let scale = 1;
 
-    const absDiff = Math.abs(adjustedDiff);
+    props.cards.forEach((_, index) => {
+      const adjustedDiff = calculateAdjustedDiff(index);
+      const absDiff = Math.abs(adjustedDiff);
+      const { left, rotation, zIndex, opacity, scale } = getCardStyles(
+        absDiff,
+        adjustedDiff,
+        baseLeft,
+      );
 
-    if (adjustedDiff === 0) {
-      zIndex = 30;
-      opacity = 1;
-      scale = 1;
-    } else if (absDiff === 1) {
-      left = baseLeft + (adjustedDiff > 0 ? 6 : -6);
-      rotation = adjustedDiff > 0 ? 2 : -2;
-      zIndex = 25;
-      opacity = 0.9;
-      scale = 0.96;
-    } else if (absDiff === 2) {
-      left = baseLeft + (adjustedDiff > 0 ? 10 : -10);
-      rotation = adjustedDiff > 0 ? 4 : -4;
-      zIndex = 20;
-      opacity = 0.75;
-      scale = 0.92;
-    } else {
-      left = baseLeft + (adjustedDiff > 0 ? 14 : -14);
-      rotation = adjustedDiff > 0 ? 6 : -6;
-      zIndex = 15;
-      opacity = 0.5;
-      scale = 0.88;
-    }
-
-    positions.set(index, {
-      left: `${left}%`,
-      transform: `translateX(-50%) rotate(${rotation}deg) scale(${scale})`,
-      zIndex,
-      opacity,
-      scale,
+      positions.set(index, {
+        left: `${left}%`,
+        transform: `translateX(-50%) rotate(${rotation}deg) scale(${scale})`,
+        zIndex,
+        opacity,
+        scale,
+      });
     });
+
+    return positions;
   });
 
-  return positions;
-});
+  async function selectCard(index: number) {
+    if (
+      props.disabled ||
+      isTransitioning.value ||
+      index === selectedIndex.value ||
+      index < 0 ||
+      index >= props.cards.length
+    ) {
+      return;
+    }
 
-async function selectCard(index: number) {
-  if (props.disabled || isTransitioning.value || index === selectedIndex.value || index < 0 || index >= props.cards.length) {
-    return;
+    isTransitioning.value = true;
+    selectedIndex.value = index;
+
+    emit('cardChange', index, props.cards[index]);
+    emit('cardClick', index, props.cards[index]);
+
+    resetAutoPlay();
+
+    await nextTick();
+    const targetCard = cardRefs.value[index];
+    if (targetCard?.$el) {
+      targetCard.$el.focus();
+    }
+
+    setTimeout(() => {
+      isTransitioning.value = false;
+    }, props.transitionDuration);
   }
 
-  isTransitioning.value = true;
-  selectedIndex.value = index;
-
-  emit('cardChange', index, props.cards[index]);
-  emit('cardClick', index, props.cards[index]);
-
-  resetAutoPlay();
-
-  await nextTick();
-  const targetCard = cardRefs.value[index];
-  if (targetCard?.$el) {
-    targetCard.$el.focus();
+  function previousCard() {
+    if (props.disabled || isTransitioning.value) return;
+    const newIndex = props.autoPlay
+      ? (selectedIndex.value - 1 + props.cards.length) % props.cards.length
+      : Math.max(0, selectedIndex.value - 1);
+    selectCard(newIndex);
+  }
+  function nextCard() {
+    if (props.disabled || isTransitioning.value) return;
+    const newIndex = props.autoPlay
+      ? (selectedIndex.value + 1) % props.cards.length
+      : Math.min(props.cards.length - 1, selectedIndex.value + 1);
+    selectCard(newIndex);
   }
 
-  setTimeout(() => {
-    isTransitioning.value = false;
-  }, props.transitionDuration);
-}
-
-function previousCard() {
-  if (props.disabled || isTransitioning.value) return;
-  const newIndex = props.autoPlay
-    ? (selectedIndex.value - 1 + props.cards.length) % props.cards.length
-    : Math.max(0, selectedIndex.value - 1);
-  selectCard(newIndex);
-}
-function nextCard() {
-  if (props.disabled || isTransitioning.value) return;
-  const newIndex = props.autoPlay
-    ? (selectedIndex.value + 1) % props.cards.length
-    : Math.min(props.cards.length - 1, selectedIndex.value + 1);
-  selectCard(newIndex);
-}
-
-function getCardStyle(index: number) {
-  const position = cardPositions.value.get(index);
-  if (!position) return {};
-  return {
-    left: position.left,
-    transform: position.transform,
-    opacity: position.opacity,
-    width: `${props.cardWidth}px`,
-    height: `${props.cardHeight}px`,
-    transition: `all ${props.transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-    zIndex: position.zIndex,
-  };
-}
-
-function handleTouchStart(e: TouchEvent) {
-  if (props.disabled) return;
-  touchStartX.value = e.touches[0].clientX;
-  pauseAutoPlay();
-}
-function handleTouchMove(e: TouchEvent) {
-  if (props.disabled) return;
-  e.preventDefault();
-}
-function handleTouchEnd(e: TouchEvent) {
-  if (props.disabled) return;
-  touchEndX.value = e.changedTouches[0].clientX;
-  handleSwipe();
-  resetAutoPlay();
-}
-function handleSwipe() {
-  if (props.disabled || isTransitioning.value) return;
-  const swipeThreshold = 50;
-  const diff = touchStartX.value - touchEndX.value;
-  if (Math.abs(diff) < swipeThreshold) return;
-  if (diff > 0) nextCard();
-  else previousCard();
-}
-
-function handleCardKeydown(e: KeyboardEvent, index: number) {
-  if (props.disabled || !props.enableKeyboard || isTransitioning.value) return;
-  switch (e.key) {
-    case 'ArrowLeft':
-      e.preventDefault();
-      previousCard();
-      break;
-    case 'ArrowRight':
-      e.preventDefault();
-      nextCard();
-      break;
-    case 'Home':
-      e.preventDefault();
-      selectCard(0);
-      break;
-    case 'End':
-      e.preventDefault();
-      selectCard(props.cards.length - 1);
-      break;
-    case 'Enter':
-    case ' ':
-      e.preventDefault();
-      selectCard(index);
-      break;
+  function getCardStyle(index: number) {
+    const position = cardPositions.value.get(index);
+    if (!position) return {};
+    return {
+      left: position.left,
+      transform: position.transform,
+      opacity: position.opacity,
+      width: `${props.cardWidth}px`,
+      height: `${props.cardHeight}px`,
+      transition: `all ${props.transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
+      zIndex: position.zIndex,
+    };
   }
-}
-function handleGlobalKeydown(e: KeyboardEvent) {
-  if (props.disabled || !props.enableKeyboard || isTransitioning.value) return;
-  if (e.target === document.body || e.target === document.documentElement) {
-    handleCardKeydown(e, selectedIndex.value);
-  }
-}
 
-function startAutoPlay() {
-  if (props.disabled || !props.autoPlay || props.cards.length <= 1) return;
-  stopAutoPlay();
-  isAutoPlaying.value = true;
-  autoPlayInterval.value = setInterval(() => {
-    if (!props.disabled) nextCard();
-  }, props.autoPlayDelay);
-}
-function stopAutoPlay() {
-  if (autoPlayInterval.value) {
-    clearInterval(autoPlayInterval.value);
-    autoPlayInterval.value = null;
+  function handleTouchStart(e: TouchEvent) {
+    if (props.disabled) return;
+    touchStartX.value = e.touches[0].clientX;
+    pauseAutoPlay();
   }
-  isAutoPlaying.value = false;
-}
-function pauseAutoPlay() {
-  stopAutoPlay();
-}
-function resetAutoPlay() {
-  if (props.disabled || !props.autoPlay) return;
-  stopAutoPlay();
-  setTimeout(() => {
-    startAutoPlay();
-  }, 2000);
-}
-function toggleAutoPlay() {
-  if (props.disabled) return;
-  if (isAutoPlaying.value) stopAutoPlay();
-  else startAutoPlay();
-}
+  function handleTouchMove(e: TouchEvent) {
+    if (props.disabled) return;
+    e.preventDefault();
+  }
+  function handleTouchEnd(e: TouchEvent) {
+    if (props.disabled) return;
+    touchEndX.value = e.changedTouches[0].clientX;
+    handleSwipe();
+    resetAutoPlay();
+  }
+  function handleSwipe() {
+    if (props.disabled || isTransitioning.value) return;
+    const swipeThreshold = 50;
+    const diff = touchStartX.value - touchEndX.value;
+    if (Math.abs(diff) < swipeThreshold) return;
+    if (diff > 0) nextCard();
+    else previousCard();
+  }
 
-watch(() => props.cards.length, newLength => {
-  if (selectedIndex.value >= newLength) {
-    selectedIndex.value = Math.max(0, newLength - 1);
+  function handleCardKeydown(e: KeyboardEvent, index: number) {
+    if (props.disabled || !props.enableKeyboard || isTransitioning.value) return;
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        previousCard();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        nextCard();
+        break;
+      case 'Home':
+        e.preventDefault();
+        selectCard(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        selectCard(props.cards.length - 1);
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        selectCard(index);
+        break;
+    }
   }
-});
-watch(() => props.autoPlay, newValue => {
-  if (props.disabled) return;
-  if (newValue) startAutoPlay();
-  else stopAutoPlay();
-});
-watch(() => props.disabled, newValue => {
-  if (newValue) stopAutoPlay();
-  else if (props.autoPlay) startAutoPlay();
-});
+  function handleGlobalKeydown(e: KeyboardEvent) {
+    if (props.disabled || !props.enableKeyboard || isTransitioning.value) return;
+    if (e.target === document.body || e.target === document.documentElement) {
+      handleCardKeydown(e, selectedIndex.value);
+    }
+  }
 
-onMounted(() => {
-  if (props.enableKeyboard) {
-    window.addEventListener('keydown', handleGlobalKeydown);
+  function startAutoPlay() {
+    if (props.disabled || !props.autoPlay || props.cards.length <= 1) return;
+    stopAutoPlay();
+    isAutoPlaying.value = true;
+    autoPlayInterval.value = setInterval(() => {
+      if (!props.disabled) nextCard();
+    }, props.autoPlayDelay);
   }
-  if (props.autoPlay && !props.disabled) {
-    startAutoPlay();
+  function stopAutoPlay() {
+    if (autoPlayInterval.value) {
+      clearInterval(autoPlayInterval.value);
+      autoPlayInterval.value = null;
+    }
+    isAutoPlaying.value = false;
   }
-});
-onUnmounted(() => {
-  stopAutoPlay();
-  if (props.enableKeyboard) {
-    window.removeEventListener('keydown', handleGlobalKeydown);
+  function pauseAutoPlay() {
+    stopAutoPlay();
   }
-});
+  function resetAutoPlay() {
+    if (props.disabled || !props.autoPlay) return;
+    stopAutoPlay();
+    setTimeout(() => {
+      startAutoPlay();
+    }, 2000);
+  }
+  function toggleAutoPlay() {
+    if (props.disabled) return;
+    if (isAutoPlaying.value) stopAutoPlay();
+    else startAutoPlay();
+  }
 
-defineExpose({
-  selectCard,
-  previousCard,
-  nextCard,
-  startAutoPlay,
-  stopAutoPlay,
-  toggleAutoPlay,
-  getCurrentIndex: () => selectedIndex.value,
-  getCurrentCard: () => props.cards[selectedIndex.value],
-});
+  watch(
+    () => props.cards.length,
+    newLength => {
+      if (selectedIndex.value >= newLength) {
+        selectedIndex.value = Math.max(0, newLength - 1);
+      }
+    },
+  );
+  watch(
+    () => props.autoPlay,
+    newValue => {
+      if (props.disabled) return;
+      if (newValue) startAutoPlay();
+      else stopAutoPlay();
+    },
+  );
+  watch(
+    () => props.disabled,
+    newValue => {
+      if (newValue) stopAutoPlay();
+      else if (props.autoPlay) startAutoPlay();
+    },
+  );
+
+  onMounted(() => {
+    if (props.enableKeyboard) {
+      window.addEventListener('keydown', handleGlobalKeydown);
+    }
+    if (props.autoPlay && !props.disabled) {
+      startAutoPlay();
+    }
+  });
+  onUnmounted(() => {
+    stopAutoPlay();
+    if (props.enableKeyboard) {
+      window.removeEventListener('keydown', handleGlobalKeydown);
+    }
+  });
+
+  defineExpose({
+    selectCard,
+    previousCard,
+    nextCard,
+    startAutoPlay,
+    stopAutoPlay,
+    toggleAutoPlay,
+    getCurrentIndex: () => selectedIndex.value,
+    getCurrentCard: () => props.cards[selectedIndex.value],
+  });
 </script>
 
 <template>
@@ -406,31 +419,31 @@ defineExpose({
 </template>
 
 <style scoped>
-/* 3D 变换样式（无法用 Tailwind 替代） */
-.stat-card-stacked {
-  position: absolute;
-  top: 0;
-  transform-style: preserve-3d;
-  will-change: transform, opacity, z-index;
-  backface-visibility: hidden;
-}
-
-/* 动画过渡 */
-.nav-fade-enter-active,
-.nav-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.nav-fade-enter-from,
-.nav-fade-leave-to {
-  opacity: 0;
-}
-
-/* 打印模式 */
-@media print {
+  /* 3D 变换样式（无法用 Tailwind 替代） */
   .stat-card-stacked {
-    position: static !important;
-    transform: none !important;
-    opacity: 1 !important;
+    position: absolute;
+    top: 0;
+    transform-style: preserve-3d;
+    will-change: transform, opacity, z-index;
+    backface-visibility: hidden;
   }
-}
+
+  /* 动画过渡 */
+  .nav-fade-enter-active,
+  .nav-fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
+  .nav-fade-enter-from,
+  .nav-fade-leave-to {
+    opacity: 0;
+  }
+
+  /* 打印模式 */
+  @media print {
+    .stat-card-stacked {
+      position: static;
+      transform: none;
+      opacity: 1;
+    }
+  }
 </style>

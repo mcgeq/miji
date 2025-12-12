@@ -1,25 +1,25 @@
 <!-- src/components/TodoList.vue -->
 <script setup lang="ts">
-import { StatusSchema } from '@/schema/common';
-import TodoItem from './TodoItem/TodoItem.vue';
-import type { Status } from '@/schema/common';
-import type { Todo, TodoUpdate } from '@/schema/todos';
+  import type { Status } from '@/schema/common';
+  import { StatusSchema } from '@/schema/common';
+  import type { Todo, TodoUpdate } from '@/schema/todos';
+  import TodoItem from './TodoItem/TodoItem.vue';
 
-const props = defineProps<{
-  todos: Map<string, Todo>;
-}>();
+  const props = defineProps<{
+    todos: Map<string, Todo>;
+  }>();
 
-const emit = defineEmits<{
-  (e: 'toggle', serialNum: string, status: Status): void;
-  (e: 'remove', serialNum: string): void;
-  (e: 'edit', serialNum: string, todo: TodoUpdate): void;
-}>();
+  const emit = defineEmits<{
+    (e: 'toggle', serialNum: string, status: Status): void;
+    (e: 'remove', serialNum: string): void;
+    (e: 'edit', serialNum: string, todo: TodoUpdate): void;
+  }>();
 
-const todoList = computed(() => Array.from(props.todos.values()));
+  const todoList = computed(() => Array.from(props.todos.values()));
 
-function updateTodo(serialNum: string, updated: TodoUpdate) {
-  emit('edit', serialNum, updated);
-}
+  function updateTodo(serialNum: string, updated: TodoUpdate) {
+    emit('edit', serialNum, updated);
+  }
 </script>
 
 <template>

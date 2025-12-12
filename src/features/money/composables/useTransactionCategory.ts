@@ -7,10 +7,10 @@
  * - 处理收入类别白名单
  */
 
-import { computed } from 'vue';
-import { INCOME_ALLOWED_CATEGORIES, TRANSFER_CATEGORY } from '../constants/transactionConstants';
-import type { TransactionType } from '@/schema/common';
 import type { Ref } from 'vue';
+import { computed } from 'vue';
+import type { TransactionType } from '@/schema/common';
+import { INCOME_ALLOWED_CATEGORIES, TRANSFER_CATEGORY } from '../constants/transactionConstants';
 
 export interface CategoryItem {
   name: string;
@@ -27,34 +27,53 @@ export function useTransactionCategory(
   subCategories: Ref<SubCategory[]>,
 ) {
   /**
+   * 辅助函数：添加子分类到映射
+   */
+  function addSubCategoryToMap(
+    map: Map<string, CategoryItem>,
+    categoryName: string,
+    subName: string,
+  ): void {
+    if (!map.has(categoryName)) {
+      map.set(categoryName, { name: categoryName, subs: [] });
+    }
+    map.get(categoryName)?.subs.push(subName);
+  }
+
+  /**
+   * 辅助函数：检查是否应包含收入分类
+   */
+  function shouldIncludeForIncome(categoryName: string): boolean {
+    return INCOME_ALLOWED_CATEGORIES.includes(
+      categoryName as (typeof INCOME_ALLOWED_CATEGORIES)[number],
+    );
+  }
+
+  /**
+   * 辅助函数：检查是否应包含转账分类
+   */
+  function shouldIncludeForTransfer(categoryName: string): boolean {
+    return categoryName === TRANSFER_CATEGORY;
+  }
+
+  /**
+   * 辅助函数：根据交易类型判断是否应包含分类
+   */
+  function shouldIncludeCategory(type: TransactionType, categoryName: string): boolean {
+    if (type === 'Income') return shouldIncludeForIncome(categoryName);
+    if (type === 'Transfer') return shouldIncludeForTransfer(categoryName);
+    return true; // Expense: include all
+  }
+
+  /**
    * 分类映射（根据交易类型过滤）
    */
   const categoryMap = computed(() => {
     const map = new Map<string, CategoryItem>();
 
     subCategories.value.forEach(sub => {
-      // 收入类型：只显示白名单分类
-      if (transactionType.value === 'Income') {
-        if (INCOME_ALLOWED_CATEGORIES.includes(sub.categoryName as any)) {
-          if (!map.has(sub.categoryName)) {
-            map.set(sub.categoryName, { name: sub.categoryName, subs: [] });
-          }
-          map.get(sub.categoryName)!.subs.push(sub.name);
-        }
-      } else if (transactionType.value === 'Transfer') {
-        // 转账类型：只显示转账分类
-        if (sub.categoryName === TRANSFER_CATEGORY) {
-          if (!map.has(TRANSFER_CATEGORY)) {
-            map.set(TRANSFER_CATEGORY, { name: TRANSFER_CATEGORY, subs: [] });
-          }
-          map.get(TRANSFER_CATEGORY)!.subs.push(sub.name);
-        }
-      } else {
-        // 支出类型：显示所有分类
-        if (!map.has(sub.categoryName)) {
-          map.set(sub.categoryName, { name: sub.categoryName, subs: [] });
-        }
-        map.get(sub.categoryName)!.subs.push(sub.name);
+      if (shouldIncludeCategory(transactionType.value, sub.categoryName)) {
+        addSubCategoryToMap(map, sub.categoryName, sub.name);
       }
     });
 

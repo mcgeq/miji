@@ -1,12 +1,12 @@
 import { usePaginationMapFilters } from '@/composables/usePaginationFilters';
 import { useSort } from '@/composables/useSortable';
-import { FilterBtnSchema, SortDirection, StatusSchema } from '@/schema/common';
-import { DateUtils } from '@/utils/date';
-import { Lg } from '@/utils/debugLog';
 import type { FilterBtn, PageQuery } from '@/schema/common';
+import { FilterBtnSchema, SortDirection, StatusSchema } from '@/schema/common';
 import type { Todo } from '@/schema/todos';
 import type { PagedMapResult } from '@/services/money/baseManager';
 import type { TodoFilters } from '@/services/todo';
+import { DateUtils } from '@/utils/date';
+import { Lg } from '@/utils/debugLog';
 
 export function useTodosFilters(todos: () => PagedMapResult<Todo>, defaultPageSize = 5) {
   const { sortOptions } = useSort({

@@ -1,9 +1,9 @@
-import { SortDirection } from '@/schema/common';
-import { useReminderStore } from '@/stores/money';
-import { Lg } from '@/utils/debugLog';
 import type { PageQuery } from '@/schema/common';
+import { SortDirection } from '@/schema/common';
 import type { BilReminder, BilReminderFilters } from '@/schema/money';
 import type { PagedResult } from '@/services/money/baseManager';
+import { useReminderStore } from '@/stores/money';
+import { Lg } from '@/utils/debugLog';
 
 type ExtendedBilReminderFilters = BilReminderFilters & {
   status?: 'paid' | 'overdue' | 'pending' | '';
@@ -88,7 +88,8 @@ export function useBilReminderFilters(
 
     // UI层：dateRange
     if (filters.value.dateRange) {
-      result = result.filter(r => isInDateRange(r, filters.value.dateRange!));
+      const dateRange = filters.value.dateRange;
+      result = result.filter(r => isInDateRange(r, dateRange));
     }
 
     return result;

@@ -1,45 +1,55 @@
 <script setup lang="ts">
-import { Card, Spinner } from '@/components/ui';
-import { DateUtils } from '@/utils/date';
-import type { FamilyLedger } from '@/schema/money';
+  import { Card, Spinner } from '@/components/ui';
+  import type { FamilyLedger } from '@/schema/money';
+  import { DateUtils } from '@/utils/date';
 
-interface Props {
-  ledgers: FamilyLedger[];
-  loading: boolean;
-}
+  interface Props {
+    ledgers: FamilyLedger[];
+    loading: boolean;
+  }
 
-const props = defineProps<Props>();
-const emit = defineEmits<{
-  enter: [ledger: FamilyLedger];
-  edit: [ledger: FamilyLedger];
-  delete: [serialNum: string];
-}>();
-const { ledgers, loading } = toRefs(props);
+  const props = defineProps<Props>();
+  const emit = defineEmits<{
+    enter: [ledger: FamilyLedger];
+    edit: [ledger: FamilyLedger];
+    delete: [serialNum: string];
+  }>();
+  const { ledgers, loading } = toRefs(props);
 
-// 注意：accounts, transactions, budgets 现在是整数类型，不再是 JSON 字符串
+  // 注意：accounts, transactions, budgets 现在是整数类型，不再是 JSON 字符串
 </script>
 
 <template>
   <div class="w-full min-h-[300px] h-full">
     <!-- 加载状态 -->
-    <div v-if="loading" class="flex justify-center items-center h-full min-h-[200px] text-gray-500 dark:text-gray-400 gap-2">
+    <div
+      v-if="loading"
+      class="flex justify-center items-center h-full min-h-[200px] text-gray-500 dark:text-gray-400 gap-2"
+    >
       <Spinner size="md" />
       <span>加载中...</span>
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="ledgers.length === 0" class="flex flex-col justify-center items-center h-full min-h-[200px] text-gray-400 dark:text-gray-600">
+    <div
+      v-else-if="ledgers.length === 0"
+      class="flex flex-col justify-center items-center h-full min-h-[200px] text-gray-400 dark:text-gray-600"
+    >
       <div class="text-6xl mb-4 opacity-50">
         <LucideUsers :size="60" />
       </div>
-      <div class="text-base">
-        暂无家庭账本
-      </div>
+      <div class="text-base">暂无家庭账本</div>
     </div>
 
     <!-- 账本网格 -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 w-full">
-      <Card v-for="ledger in ledgers" :key="ledger.serialNum" padding="lg" hoverable class="transition-all duration-200">
+      <Card
+        v-for="ledger in ledgers"
+        :key="ledger.serialNum"
+        padding="lg"
+        hoverable
+        class="transition-all duration-200"
+      >
         <!-- 账本头部信息 -->
         <div class="flex flex-col sm:flex-row items-start justify-between mb-4 gap-3">
           <div class="flex-1">
@@ -79,9 +89,11 @@ const { ledgers, loading } = toRefs(props);
         <!-- 成员列表 -->
         <div class="mb-4">
           <div class="flex flex-wrap gap-2">
-            <div class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 flex gap-1 items-center">
+            <div
+              class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 flex gap-1 items-center"
+            >
               <LucideUser :size="12" class="text-gray-500 dark:text-gray-400" />
-              <span>{{ ledger.members || 0 }} 位成员</span>
+              <span>{{ ledger.members || 0 }}位成员</span>
             </div>
           </div>
         </div>
@@ -89,25 +101,19 @@ const { ledgers, loading } = toRefs(props);
         <!-- 统计信息 -->
         <div class="pt-3 border-t border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-3">
           <div class="text-center">
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              账户
-            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">账户</div>
             <div class="text-sm font-medium text-gray-900 dark:text-white">
               {{ ledger.accounts || 0 }}
             </div>
           </div>
           <div class="text-center">
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              交易
-            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">交易</div>
             <div class="text-sm font-medium text-gray-900 dark:text-white">
               {{ ledger.transactions || 0 }}
             </div>
           </div>
           <div class="text-center">
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              预算
-            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">预算</div>
             <div class="text-sm font-medium text-gray-900 dark:text-white">
               {{ ledger.budgets || 0 }}
             </div>

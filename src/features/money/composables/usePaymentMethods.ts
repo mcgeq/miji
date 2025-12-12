@@ -1,9 +1,8 @@
-import { computed } from 'vue';
-import { TransactionTypeSchema } from '@/schema/common';
-import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
-import type { TransactionType } from '@/schema/common';
-import type { Account, PaymentMethod } from '@/schema/money';
 import type { Ref } from 'vue';
+import type { TransactionType } from '@/schema/common';
+import { TransactionTypeSchema } from '@/schema/common';
+import type { Account, PaymentMethod } from '@/schema/money';
+import { AccountTypeSchema, PaymentMethodSchema } from '@/schema/money';
 
 /**
  * 根据账户类型和交易类型获取默认支付方式
@@ -61,10 +60,12 @@ export function usePaymentMethods(
       // 支付宝账户只能使用支付宝支付
       if (selectedAccount?.type === AccountTypeSchema.enum.Alipay) {
         return [PaymentMethodSchema.enum.Alipay];
-      } else if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
+      }
+      if (selectedAccount?.type === AccountTypeSchema.enum.WeChat) {
         // 微信账户只能使用微信支付
         return [PaymentMethodSchema.enum.WeChat];
-      } else if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
+      }
+      if (selectedAccount?.type === AccountTypeSchema.enum.CreditCard) {
         // 信用卡账户支持多种支付方式
         return [
           PaymentMethodSchema.enum.CreditCard,

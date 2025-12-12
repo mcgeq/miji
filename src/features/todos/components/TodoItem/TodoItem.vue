@@ -162,7 +162,9 @@
 
     menuStore.setMenuSerialNum(newSerial);
 
-    setTimeout(() => (isRotatingAdd.value = false), 500);
+    setTimeout(() => {
+      isRotatingAdd.value = false;
+    }, 500);
   }
 
   function openEditModal() {

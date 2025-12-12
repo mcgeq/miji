@@ -8,9 +8,9 @@
  * - 表单字段验证
  */
 
+import type { Account } from '@/schema/money';
 import { AccountTypeSchema } from '@/schema/money';
 import { isAmountInRange, parseAmount } from '../utils/numberUtils';
-import type { Account } from '@/schema/money';
 
 export function useTransactionValidation() {
   /**
@@ -19,7 +19,7 @@ export function useTransactionValidation() {
    * @param useCredit - 是否使用授信额度（针对信用卡）
    * @returns 余额，解析失败返回null
    */
-  function parseBalance(account: Account, useCredit: boolean = false): number | null {
+  function parseBalance(account: Account, useCredit = false): number | null {
     const value = useCredit ? account.initialBalance : account.balance;
     const num = parseAmount(value);
     return num;
@@ -176,7 +176,7 @@ export function useTransactionValidation() {
    * @param fields - 字段对象
    * @returns 验证结果
    */
-  function validateRequiredFields(fields: Record<string, any>): {
+  function validateRequiredFields(fields: Record<string, unknown>): {
     valid: boolean;
     missingFields: string[];
   } {

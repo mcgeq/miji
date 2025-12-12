@@ -1,7 +1,7 @@
+import type { Ref } from 'vue';
+import type { Transaction } from '@/schema/money';
 import { MoneyDb } from '@/services/money/money';
 import { Lg } from '@/utils/debugLog';
-import type { Transaction } from '@/schema/money';
-import type { Ref } from 'vue';
 
 /**
  * 交易数据加载器 Composable
@@ -12,21 +12,23 @@ import type { Ref } from 'vue';
  * 3. 提供清晰的数据加载接口
  */
 
+interface SplitConfig {
+  enabled: boolean;
+  splitType?: string;
+  members?: Array<{
+    memberSerialNum: string;
+    memberName: string;
+    amount: number;
+    percentage?: number;
+    weight?: number;
+  }>;
+}
+
 interface LoadedTransactionData {
   fullTransaction: Transaction;
   ledgerSerialNums: string[];
   memberSerialNums: string[];
-  splitConfig: {
-    enabled: boolean;
-    splitType?: string;
-    members?: Array<{
-      memberSerialNum: string;
-      memberName: string;
-      amount: number;
-      percentage?: number;
-      weight?: number;
-    }>;
-  };
+  splitConfig: SplitConfig;
 }
 
 interface DataLoaderDependencies {
@@ -159,7 +161,7 @@ export function useTransactionDataLoader(deps: DataLoaderDependencies) {
     refs: {
       selectedLedgers: Ref<string[]>;
       selectedMembers: Ref<string[]>;
-      splitConfig: Ref<any>;
+      splitConfig: Ref<SplitConfig>;
     },
   ): void {
     try {

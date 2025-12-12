@@ -153,10 +153,7 @@
           <!-- 标题栏 -->
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2 flex-1 min-w-0">
-              <FolderOpen
-                class="w-5 h-5 flex-shrink-0"
-                :style="{ color: project.color || '#3b82f6' }"
-              />
+              <FolderOpen class="w-5 h-5 shrink-0" :style="{ color: project.color || '#3b82f6' }" />
               <h3
                 class="font-semibold text-base truncate"
                 :style="{ color: project.color || '#3b82f6' }"
@@ -166,7 +163,7 @@
             </div>
 
             <!-- 操作按钮 -->
-            <div class="flex items-center gap-1 flex-shrink-0">
+            <div class="flex items-center gap-1 shrink-0">
               <!-- 引用计数 -->
               <span
                 v-if="'usage' in project && project.usage.todos.count > 0"

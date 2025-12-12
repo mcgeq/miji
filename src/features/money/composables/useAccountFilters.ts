@@ -41,8 +41,40 @@ export function useAccountFilters(accounts: () => Account[], defaultPageSize = 4
     () => allAccounts.value.filter(account => account.isActive && !account.isVirtual).length,
   );
   const inactiveAccounts = computed(
-    () => allAccounts.value.filter(account => !account.isActive && !account.isVirtual).length,
+    () => allAccounts.value.filter(account => !(account.isActive || account.isVirtual)).length,
   );
+
+  /**
+   * 辅助函数：获取账户的排序值
+   */
+  function getSortValue(account: Account, sortBy: UiAccountFilters['sortBy']): string | number {
+    switch (sortBy) {
+      case 'name':
+        return account.name.toLowerCase();
+      case 'balance':
+        return Number.parseFloat(account.balance);
+      case 'type':
+        return account.type;
+      default:
+        if (account.updatedAt) {
+          return new Date(account.updatedAt).getTime();
+        }
+        return new Date(account.createdAt).getTime();
+    }
+  }
+
+  /**
+   * 辅助函数：比较两个值
+   */
+  function compareValues(
+    aValue: string | number,
+    bValue: string | number,
+    order: 'asc' | 'desc',
+  ): number {
+    if (aValue < bValue) return order === 'asc' ? -1 : 1;
+    if (aValue > bValue) return order === 'asc' ? 1 : -1;
+    return 0;
+  }
 
   // 过滤后的账户
   const filteredAccounts = computed(() => {
@@ -70,36 +102,9 @@ export function useAccountFilters(accounts: () => Account[], defaultPageSize = 4
 
     // 排序
     return [...filtered].sort((a, b) => {
-      let aValue, bValue;
-
-      switch (filters.value.sortBy) {
-        case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'balance':
-          aValue = Number.parseFloat(a.balance);
-          bValue = Number.parseFloat(b.balance);
-          break;
-        case 'type':
-          aValue = a.type;
-          bValue = b.type;
-          break;
-        case 'updatedAt':
-        default:
-          if (a.updatedAt && b.updatedAt) {
-            aValue = new Date(a.updatedAt).getTime();
-            bValue = new Date(b.updatedAt).getTime();
-          } else {
-            aValue = new Date(a.createdAt).getTime();
-            bValue = new Date(b.createdAt).getTime();
-          }
-          break;
-      }
-
-      if (aValue < bValue) return filters.value.sortOrder === 'asc' ? -1 : 1;
-      if (aValue > bValue) return filters.value.sortOrder === 'asc' ? 1 : -1;
-      return 0;
+      const aValue = getSortValue(a, filters.value.sortBy);
+      const bValue = getSortValue(b, filters.value.sortBy);
+      return compareValues(aValue, bValue, filters.value.sortOrder);
     });
   });
   // 过滤器方法

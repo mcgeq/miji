@@ -10,19 +10,19 @@ export function useTimeProgress(createdAt: string | undefined, dueAt: string | u
   // 时间进度百分比 (0-100，null表示不显示)
   const timeProgress = computed(() => {
     if (!dueAt) return null;
-    
+
     const due = new Date(dueAt).getTime();
     const now = currentTime.value;
-    
+
     // 如果没有创建时间，使用当前时间作为起点
     const created = createdAt ? new Date(createdAt).getTime() : now;
-    
+
     // 已过期
     if (now >= due) return 100;
-    
+
     // 还未开始
     if (now <= created) return 0;
-    
+
     // 计算进度
     const total = due - created;
     const elapsed = now - created;
@@ -32,16 +32,16 @@ export function useTimeProgress(createdAt: string | undefined, dueAt: string | u
   // 剩余时间文本
   const timeRemaining = computed(() => {
     if (!dueAt) return null;
-    
+
     const due = new Date(dueAt).getTime();
     const now = currentTime.value;
     const diff = due - now;
-    
+
     if (diff <= 0) return '已逾期';
-    
+
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
-    
+
     if (days > 7) return `${days}天`;
     if (days > 0) return `${days}天`;
     if (hours > 0) return `${hours}小时`;
@@ -51,7 +51,7 @@ export function useTimeProgress(createdAt: string | undefined, dueAt: string | u
   // 紧急程度（用于边框颜色）
   const urgency = computed(() => {
     const progress = timeProgress.value;
-    
+
     if (progress === null) return 'normal'; // 没有截止时间，正常状态
     if (progress >= 100) return 'overdue'; // 已逾期 - 红色
     if (progress >= 85) return 'critical'; // 非常紧急 - 深橙色
@@ -63,13 +63,13 @@ export function useTimeProgress(createdAt: string | undefined, dueAt: string | u
   // 边框渐变样式
   const borderGradient = computed(() => {
     const progress = timeProgress.value;
-    
+
     if (progress === null) return '';
-    
+
     // 使用 conic-gradient 创建圆形进度指示
     // 从顶部开始，顺时针填充
     const angle = (progress / 100) * 360;
-    
+
     let color: string;
     switch (urgency.value) {
       case 'overdue':
@@ -87,7 +87,7 @@ export function useTimeProgress(createdAt: string | undefined, dueAt: string | u
       default:
         color = 'rgb(59, 130, 246)'; // blue-500
     }
-    
+
     return `conic-gradient(from -90deg, ${color} ${angle}deg, transparent ${angle}deg)`;
   });
 
@@ -102,11 +102,14 @@ export function useTimeProgress(createdAt: string | undefined, dueAt: string | u
   onMounted(() => {
     // 初始更新
     currentTime.value = Date.now();
-    
+
     // 每30分钟更新一次
-    timer = window.setInterval(() => {
-      currentTime.value = Date.now();
-    }, 30 * 60 * 1000); // 30分钟
+    timer = window.setInterval(
+      () => {
+        currentTime.value = Date.now();
+      },
+      30 * 60 * 1000,
+    ); // 30分钟
   });
 
   onUnmounted(() => {

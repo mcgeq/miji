@@ -1,57 +1,57 @@
 <script setup lang="ts">
-import { CheckCircle, Play } from 'lucide-vue-next';
-import { Modal } from '@/components/ui';
-import type { TodoUpdate } from '@/schema/todos';
+  import { CheckCircle, Play } from 'lucide-vue-next';
+  import { Modal } from '@/components/ui';
+  import type { TodoUpdate } from '@/schema/todos';
 
-const props = defineProps<{
-  progress: number;
-  readonly?: boolean;
-}>();
+  const props = defineProps<{
+    progress: number;
+    readonly?: boolean;
+  }>();
 
-const emit = defineEmits<{
-  update: [update: TodoUpdate];
-}>();
+  const emit = defineEmits<{
+    update: [update: TodoUpdate];
+  }>();
 
-const showEditModal = ref(false);
-const isModalVisible = ref(false);
-const editingProgress = ref(props.progress);
+  const showEditModal = ref(false);
+  const isModalVisible = ref(false);
+  const editingProgress = ref(props.progress);
 
-// 计算属性
-const progressPercentage = computed(() => Math.min(Math.max(props.progress, 0), 100));
-const progressColor = computed(() => {
-  if (progressPercentage.value === 100) return 'var(--color-success)';
-  if (progressPercentage.value >= 75) return 'var(--color-info)';
-  if (progressPercentage.value >= 50) return 'var(--color-warning)';
-  return 'var(--color-error)';
-});
+  // 计算属性
+  const progressPercentage = computed(() => Math.min(Math.max(props.progress, 0), 100));
+  const progressColor = computed(() => {
+    if (progressPercentage.value === 100) return 'var(--color-success)';
+    if (progressPercentage.value >= 75) return 'var(--color-info)';
+    if (progressPercentage.value >= 50) return 'var(--color-warning)';
+    return 'var(--color-error)';
+  });
 
-// 预设进度值
-const quickProgressOptions: number[] = [0, 25, 50, 75, 100];
+  // 预设进度值
+  const quickProgressOptions: number[] = [0, 25, 50, 75, 100];
 
-// 方法
-function openEditModal() {
-  if (props.readonly) return;
-  editingProgress.value = props.progress;
-  showEditModal.value = true;
-  // 延迟设置可见性，防止闪烁
-  setTimeout(() => {
-    isModalVisible.value = true;
-  }, 10);
-}
+  // 方法
+  function openEditModal() {
+    if (props.readonly) return;
+    editingProgress.value = props.progress;
+    showEditModal.value = true;
+    // 延迟设置可见性，防止闪烁
+    setTimeout(() => {
+      isModalVisible.value = true;
+    }, 10);
+  }
 
-function closeEditModal() {
-  isModalVisible.value = false;
-  // 延迟关闭，等待动画完成
-  setTimeout(() => {
-    showEditModal.value = false;
-  }, 200);
-}
+  function closeEditModal() {
+    isModalVisible.value = false;
+    // 延迟关闭，等待动画完成
+    setTimeout(() => {
+      showEditModal.value = false;
+    }, 200);
+  }
 
-function updateProgress(newProgress: number) {
-  const clampedProgress = Math.min(Math.max(newProgress, 0), 100);
-  emit('update', { progress: clampedProgress });
-  closeEditModal();
-}
+  function updateProgress(newProgress: number) {
+    const clampedProgress = Math.min(Math.max(newProgress, 0), 100);
+    emit('update', { progress: clampedProgress });
+    closeEditModal();
+  }
 </script>
 
 <template>
@@ -67,7 +67,9 @@ function updateProgress(newProgress: number) {
       @click="openEditModal"
     >
       <!-- 进度条 -->
-      <div class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden relative shadow-inner">
+      <div
+        class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden relative shadow-inner"
+      >
         <div
           class="h-full rounded-md relative shadow-sm transition-all duration-400 ease-out"
           :style="{
@@ -76,7 +78,9 @@ function updateProgress(newProgress: number) {
           }"
         >
           <!-- 闪光动画效果 -->
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+          <div
+            class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"
+          />
         </div>
       </div>
     </div>
@@ -93,7 +97,10 @@ function updateProgress(newProgress: number) {
         <!-- 滑块输入 -->
         <div class="space-y-3">
           <label class="block text-sm font-medium text-gray-900 dark:text-white">
-            进度: <span class="text-blue-600 dark:text-blue-400 font-semibold">{{ editingProgress }}%</span>
+            进度:
+            <span class="text-blue-600 dark:text-blue-400 font-semibold"
+              >{{ editingProgress }}%</span
+            >
           </label>
           <input
             v-model="editingProgress"
@@ -108,7 +115,7 @@ function updateProgress(newProgress: number) {
                    [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
                    [&::-moz-range-thumb]:bg-blue-600 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2
                    [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-md"
-          >
+          />
           <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
             <span>0%</span>
             <span>25%</span>
@@ -129,7 +136,7 @@ function updateProgress(newProgress: number) {
             class="w-20 px-3 py-2 text-center border border-gray-300 dark:border-gray-600 rounded-lg
                    bg-white dark:bg-gray-800 text-gray-900 dark:text-white
                    focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
-          >
+          />
           <span class="text-sm text-gray-600 dark:text-gray-400">%</span>
         </div>
 
@@ -167,10 +174,14 @@ function updateProgress(newProgress: number) {
                 backgroundColor: progressColor,
               }"
             >
-              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+              <div
+                class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"
+              />
             </div>
           </div>
-          <div class="flex items-center justify-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+          <div
+            class="flex items-center justify-center gap-2 text-sm font-semibold text-gray-900 dark:text-white"
+          >
             <Play v-if="editingProgress === 0" class="w-4 h-4" />
             <CheckCircle v-else-if="editingProgress === 100" class="w-4 h-4 text-green-600" />
             <span v-else>{{ editingProgress }}%</span>
@@ -182,12 +193,16 @@ function updateProgress(newProgress: number) {
 </template>
 
 <style scoped>
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
 
-.animate-shimmer {
-  animation: shimmer 2s infinite;
-}
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
 </style>

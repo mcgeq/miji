@@ -5,7 +5,7 @@
   import { useRoute, useRouter } from 'vue-router';
   import ConfirmDialog from '@/components/common/ConfirmDialogCompat.vue';
   import Button from '@/components/ui/Button.vue';
-  import type { FamilyLedger, FamilyLedgerUpdate, FamilyMember } from '@/schema/money';
+  import type { Account, FamilyLedger, FamilyLedgerUpdate, FamilyMember } from '@/schema/money';
   import { MoneyDb } from '@/services/money/money';
   import { useFamilyLedgerStore } from '@/stores/money';
   import { deepDiff } from '@/utils/diff';
@@ -99,7 +99,7 @@
     }
   }
 
-  async function saveLedger(ledgerData: FamilyLedger & { selectedAccounts?: any[] }) {
+  async function saveLedger(ledgerData: FamilyLedger & { selectedAccounts?: Account[] }) {
     try {
       let ledgerSerialNum: string;
       const isEditMode = !!selectedLedger.value;
@@ -219,7 +219,7 @@
   }
 
   // 保存账本的账户关联
-  async function saveLedgerAccounts(ledgerSerialNum: string, accounts: any[]) {
+  async function saveLedgerAccounts(ledgerSerialNum: string, accounts: Account[]) {
     try {
       // 获取现有的账户关联
       const existingLedgerAccounts =

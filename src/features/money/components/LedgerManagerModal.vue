@@ -1,121 +1,112 @@
 <script setup lang="ts">
-import { Button, Modal } from '@/components/ui';
-import { Lg } from '@/utils/debugLog';
-import { toast } from '@/utils/toast';
-import LedgerFormModal from './LedgerFormModal.vue';
-import type { FamilyLedger } from '@/schema/money';
+  import { Button, Modal } from '@/components/ui';
+  import type { FamilyLedger } from '@/schema/money';
+  import { Lg } from '@/utils/debugLog';
+  import { toast } from '@/utils/toast';
+  import LedgerFormModal from './LedgerFormModal.vue';
 
-interface Props {
-  ledgers: FamilyLedger[];
-  currentLedgerId?: string;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  close: [];
-  ledgerSelected: [ledgerId: string];
-  ledgersUpdated: [];
-}>();
-
-const showCreateForm = ref(false);
-const editingLedger = ref<FamilyLedger | null>(null);
-const selectedLedgerId = ref(props.currentLedgerId || '');
-const showConfirmModal = ref(false);
-const deleteLedger = ref();
-
-const currentLedger = computed(() =>
-  props.ledgers.find(ledger => ledger.serialNum === props.currentLedgerId),
-);
-
-function selectLedger(ledgerId: string) {
-  selectedLedgerId.value = ledgerId;
-  // 立即选择账本
-  emit('ledgerSelected', ledgerId);
-}
-
-function confirmSelection() {
-  if (selectedLedgerId.value) {
-    emit('ledgerSelected', selectedLedgerId.value);
+  interface Props {
+    ledgers: FamilyLedger[];
+    currentLedgerId?: string;
   }
-}
 
-function editLedger(ledger: FamilyLedger) {
-  editingLedger.value = { ...ledger }; // 深拷贝避免直接修改
-}
+  const props = defineProps<Props>();
 
-function handleDeleteLedger(ledger: FamilyLedger) {
-  // 不能删除当前正在使用的账本
-  if (props.currentLedgerId === ledger.serialNum) {
-    toast.warning('不能删除当前正在使用的账本');
-    return;
+  const emit = defineEmits<{
+    close: [];
+    ledgerSelected: [ledgerId: string];
+    ledgersUpdated: [];
+  }>();
+
+  const showCreateForm = ref(false);
+  const editingLedger = ref<FamilyLedger | null>(null);
+  const selectedLedgerId = ref(props.currentLedgerId || '');
+  const showConfirmModal = ref(false);
+  const deleteLedger = ref();
+
+  const currentLedger = computed(() =>
+    props.ledgers.find(ledger => ledger.serialNum === props.currentLedgerId),
+  );
+
+  function selectLedger(ledgerId: string) {
+    selectedLedgerId.value = ledgerId;
+    // 立即选择账本
+    emit('ledgerSelected', ledgerId);
   }
-  deleteLedger.value = ledger;
-  showConfirmModal.value = true;
-  // const confirmMessage = `确定删除账本"${ledger.name}"吗？\n\n! 此操作将永久删除该账本下的所有数据，包括：\n• 所有账户信息\n• 所有交易记录\n• 所有预算设置\n• 所有提醒设置\n\n此操作不可恢复！`;
-}
 
-function closeForm() {
-  showCreateForm.value = false;
-  editingLedger.value = null;
-}
-
-function handleSave(savedLedger: FamilyLedger) {
-  closeForm();
-  emit('ledgersUpdated');
-
-  if (editingLedger.value) {
-    toast.success('账本更新成功');
-  } else {
-    toast.success('账本创建成功');
-    // 如果是新创建的账本，自动选择它
-    emit('ledgerSelected', savedLedger.serialNum);
+  function confirmSelection() {
+    if (selectedLedgerId.value) {
+      emit('ledgerSelected', selectedLedgerId.value);
+    }
   }
-}
 
-async function handleConfirmClose() {
-  try {
-    // TODO: 调用删除 API
-    // await familyLedgerStore.deleteLedger(deleteLedger.serialNum);
-    toast.success('账本删除成功');
-    showConfirmModal.value = false;
+  function editLedger(ledger: FamilyLedger) {
+    editingLedger.value = { ...ledger }; // 深拷贝避免直接修改
+  }
+
+  function handleDeleteLedger(ledger: FamilyLedger) {
+    // 不能删除当前正在使用的账本
+    if (props.currentLedgerId === ledger.serialNum) {
+      toast.warning('不能删除当前正在使用的账本');
+      return;
+    }
+    deleteLedger.value = ledger;
+    showConfirmModal.value = true;
+    // const confirmMessage = `确定删除账本"${ledger.name}"吗？\n\n! 此操作将永久删除该账本下的所有数据，包括：\n• 所有账户信息\n• 所有交易记录\n• 所有预算设置\n• 所有提醒设置\n\n此操作不可恢复！`;
+  }
+
+  function closeForm() {
+    showCreateForm.value = false;
+    editingLedger.value = null;
+  }
+
+  function handleSave(savedLedger: FamilyLedger) {
+    closeForm();
     emit('ledgersUpdated');
-  } catch (error) {
-    Lg.e('LedgerManagerModal', error);
-    toast.error('删除账本失败');
-  }
-  emit('close');
-}
 
-function handleCancelClose() {
-  showConfirmModal.value = false;
-}
-
-function formatDate(dateString?: string) {
-  if (!dateString)
-    return '未知';
-  try {
-    return new Date(dateString).toLocaleDateString('zh-CN');
-  } catch {
-    return '未知';
+    if (editingLedger.value) {
+      toast.success('账本更新成功');
+    } else {
+      toast.success('账本创建成功');
+      // 如果是新创建的账本，自动选择它
+      emit('ledgerSelected', savedLedger.serialNum);
+    }
   }
-}
+
+  async function handleConfirmClose() {
+    try {
+      // TODO: 调用删除 API
+      // await familyLedgerStore.deleteLedger(deleteLedger.serialNum);
+      toast.success('账本删除成功');
+      showConfirmModal.value = false;
+      emit('ledgersUpdated');
+    } catch (error) {
+      Lg.e('LedgerManagerModal', error);
+      toast.error('删除账本失败');
+    }
+    emit('close');
+  }
+
+  function handleCancelClose() {
+    showConfirmModal.value = false;
+  }
+
+  function formatDate(dateString?: string) {
+    if (!dateString) return '未知';
+    try {
+      return new Date(dateString).toLocaleDateString('zh-CN');
+    } catch {
+      return '未知';
+    }
+  }
 </script>
 
 <template>
-  <Modal
-    :open="true"
-    title="家庭账本管理"
-    size="lg"
-    :show-footer="false"
-    @close="$emit('close')"
-  >
+  <Modal :open="true" title="家庭账本管理" size="lg" :show-footer="false" @close="$emit('close')">
     <div>
       <!-- 操作栏 -->
       <div class="mb-6 flex items-center justify-between">
-        <div class="text-sm text-gray-600 dark:text-gray-400">
-          共 {{ ledgers.length }} 个账本
-        </div>
+        <div class="text-sm text-gray-600 dark:text-gray-400">共 {{ ledgers.length }}个账本</div>
         <Button variant="primary" size="sm" @click="showCreateForm = true">
           <LucidePlus :size="16" />
           <span class="ml-2">创建新账本</span>
@@ -125,7 +116,8 @@ function formatDate(dateString?: string) {
       <!-- 账本列表 -->
       <div v-if="ledgers.length > 0" class="grid gap-4">
         <div
-          v-for="ledger in ledgers" :key="ledger.serialNum"
+          v-for="ledger in ledgers"
+          :key="ledger.serialNum"
           class="p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md"
           :class="[
             currentLedgerId === ledger.serialNum
@@ -152,10 +144,15 @@ function formatDate(dateString?: string) {
                 {{ ledger.description || '暂无描述' }}
               </p>
 
-              <div class="text-xs text-gray-500 dark:text-gray-500 flex flex-wrap gap-3 sm:gap-6 items-center">
+              <div
+                class="text-xs text-gray-500 dark:text-gray-500 flex flex-wrap gap-3 sm:gap-6 items-center"
+              >
                 <div class="flex gap-1 items-center whitespace-nowrap">
                   <LucideCreditCard :size="12" />
-                  <span>货币: {{ ledger.baseCurrency?.symbol || '¥' }} {{ ledger.baseCurrency?.code || 'CNY' }}</span>
+                  <span
+                    >货币: {{ ledger.baseCurrency?.symbol || '¥' }}
+                    {{ ledger.baseCurrency?.code || 'CNY' }}</span
+                  >
                 </div>
                 <div class="flex gap-1 items-center whitespace-nowrap">
                   <LucideUsers :size="12" />
@@ -192,27 +189,23 @@ function formatDate(dateString?: string) {
       <!-- 空状态 -->
       <div v-else class="py-16 text-center">
         <LucideHandCoins :size="80" class="text-gray-300 dark:text-gray-600 mx-auto mb-6" />
-        <h3 class="text-xl text-gray-900 dark:text-white font-medium mb-3">
-          还没有账本
-        </h3>
+        <h3 class="text-xl text-gray-900 dark:text-white font-medium mb-3">还没有账本</h3>
         <p class="text-gray-500 dark:text-gray-400 mx-auto mb-8 max-w-md">
           创建您的第一个家庭账本，开始管理家庭财务。每个账本可以有不同的成员和货币设置。
         </p>
-        <Button variant="primary" @click="showCreateForm = true">
-          创建第一个账本
-        </Button>
+        <Button variant="primary" @click="showCreateForm = true">创建第一个账本</Button>
       </div>
     </div>
 
     <!-- 底部操作栏 -->
-    <div class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div
+      class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+    >
       <div class="text-sm text-gray-600 dark:text-gray-400">
         <span v-if="currentLedgerId">
           当前使用: <strong class="text-gray-900 dark:text-white">{{ currentLedger?.name }}</strong>
         </span>
-        <span v-else class="text-amber-600 dark:text-amber-500">
-          ! 请选择一个账本
-        </span>
+        <span v-else class="text-amber-600 dark:text-amber-500"> ! 请选择一个账本 </span>
       </div>
       <div class="flex gap-3 w-full sm:w-auto">
         <Button variant="secondary" class="flex-1 sm:flex-initial" @click="$emit('close')">
@@ -231,7 +224,9 @@ function formatDate(dateString?: string) {
 
     <!-- 创建/编辑表单模态框 -->
     <LedgerFormModal
-      v-if="showCreateForm || editingLedger" :ledger="editingLedger" @close="closeForm"
+      v-if="showCreateForm || editingLedger"
+      :ledger="editingLedger"
+      @close="closeForm"
       @save="handleSave"
     />
 

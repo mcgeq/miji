@@ -137,14 +137,14 @@
           <!-- 标题栏 -->
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2 flex-1 min-w-0">
-              <Hash class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <Hash class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
               <h3 class="font-semibold text-base text-blue-600 dark:text-blue-400 truncate">
                 {{ tag.name }}
               </h3>
             </div>
 
             <!-- 操作按钮 -->
-            <div class="flex items-center gap-1 flex-shrink-0">
+            <div class="flex items-center gap-1 shrink-0">
               <!-- 引用计数 -->
               <Tooltip
                 v-if="'usage' in tag && tag.usage.todos.count > 0"

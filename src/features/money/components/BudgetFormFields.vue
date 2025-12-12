@@ -1,65 +1,85 @@
 <script setup lang="ts">
-/* eslint-disable vue/no-mutating-props */
-import CategorySelector from '@/components/common/CategorySelector.vue';
-import ColorSelector from '@/components/common/ColorSelector.vue';
-import AccountSelector from '@/components/common/money/AccountSelector.vue';
-import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
-import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
-import type { SelectOption } from '@/components/ui';
-import type { RepeatPeriod } from '@/schema/common';
+  /* eslint-disable vue/no-mutating-props */
+  import CategorySelector from '@/components/common/CategorySelector.vue';
+  import ColorSelector from '@/components/common/ColorSelector.vue';
+  import AccountSelector from '@/components/common/money/AccountSelector.vue';
+  import RepeatPeriodSelector from '@/components/common/RepeatPeriodSelector.vue';
+  import type { SelectOption } from '@/components/ui';
+  import { Checkbox, FormRow, Input, Select, Textarea } from '@/components/ui';
+  import type { RepeatPeriod } from '@/schema/common';
 
-interface Props {
-  /** 表单数据 */
-  form: any; // 使用 any 以支持不同的表单类型
-  /** 颜色选项 */
-  colorNames: any[];
-  /** 范围类型选项 */
-  scopeTypes: Array<{ original: string; snake: string }>;
-  /** 分类错误信息 */
-  categoryError?: string;
-  /** 账户错误信息 */
-  accountError?: string;
-  /** 重复周期错误信息 */
-  repeatPeriodError?: string;
-  /** 是否显示账户选择器 */
-  showAccountSelector?: boolean;
-  /** 是否为家庭预算（隐藏账户选择） */
-  isFamilyBudget?: boolean;
-}
+  interface AlertThreshold {
+    type: 'Percentage' | 'FixedAmount';
+    value: number;
+  }
 
-interface Emits {
-  (e: 'validateCategory', isValid: boolean): void;
-  (e: 'validateAccount', isValid: boolean): void;
-  (e: 'validateRepeatPeriod', isValid: boolean): void;
-  (e: 'changeRepeatPeriod', value: RepeatPeriod): void;
-  (e: 'update:modelValue', value: any): void;
-}
+  interface BudgetFormData {
+    name: string;
+    amount: number;
+    budgetScopeType: string;
+    categoryScope?: string[];
+    accountSerialNum?: string;
+    repeatPeriod: RepeatPeriod;
+    startDate: string;
+    endDate?: string;
+    color: string;
+    alertEnabled: boolean;
+    alertThreshold?: AlertThreshold;
+    description?: string;
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  categoryError: '',
-  accountError: '',
-  repeatPeriodError: '',
-  showAccountSelector: true,
-  isFamilyBudget: false,
-});
+  interface Props {
+    /** 表单数据 */
+    form: BudgetFormData;
+    /** 颜色选项 */
+    colorNames: unknown;
+    /** 范围类型选项 */
+    scopeTypes: Array<{ original: string; snake: string }>;
+    /** 分类错误信息 */
+    categoryError?: string;
+    /** 账户错误信息 */
+    accountError?: string;
+    /** 重复周期错误信息 */
+    repeatPeriodError?: string;
+    /** 是否显示账户选择器 */
+    showAccountSelector?: boolean;
+    /** 是否为家庭预算（隐藏账户选择） */
+    isFamilyBudget?: boolean;
+  }
 
-const emit = defineEmits<Emits>();
+  interface Emits {
+    (e: 'validateCategory', isValid: boolean): void;
+    (e: 'validateAccount', isValid: boolean): void;
+    (e: 'validateRepeatPeriod', isValid: boolean): void;
+    (e: 'changeRepeatPeriod', value: RepeatPeriod): void;
+    (e: 'update:modelValue', value: BudgetFormData): void;
+  }
 
-const { t } = useI18n();
+  const props = withDefaults(defineProps<Props>(), {
+    categoryError: '',
+    accountError: '',
+    repeatPeriodError: '',
+    showAccountSelector: true,
+    isFamilyBudget: false,
+  });
 
-// 预算范围类型选项
-const scopeTypeOptions = computed<SelectOption[]>(() =>
-  props.scopeTypes.map(ty => ({
-    value: ty.original,
-    label: t(`financial.budgetScopeTypes.${ty.snake}`),
-  })),
-);
+  const emit = defineEmits<Emits>();
 
-// 预警阈值类型选项
-const alertTypeOptions = computed<SelectOption[]>(() => [
-  { value: 'Percentage', label: t('financial.budget.threshold.percentage') },
-  { value: 'FixedAmount', label: t('financial.budget.threshold.fixedAmount') },
-]);
+  const { t } = useI18n();
+
+  // 预算范围类型选项
+  const scopeTypeOptions = computed<SelectOption[]>(() =>
+    props.scopeTypes.map(ty => ({
+      value: ty.original,
+      label: t(`financial.budgetScopeTypes.${ty.snake}`),
+    })),
+  );
+
+  // 预警阈值类型选项
+  const alertTypeOptions = computed<SelectOption[]>(() => [
+    { value: 'Percentage', label: t('financial.budget.threshold.percentage') },
+    { value: 'FixedAmount', label: t('financial.budget.threshold.fixedAmount') },
+  ]);
 </script>
 
 <template>
@@ -77,23 +97,12 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
 
     <!-- 预算金额 -->
     <FormRow :label="t('financial.budget.budgetAmount')" required>
-      <Input
-        v-model="form.amount"
-        type="number"
-        required
-        full-width
-        placeholder="0.00"
-      />
+      <Input v-model="form.amount" type="number" required full-width placeholder="0.00" />
     </FormRow>
 
     <!-- 预算范围类型 -->
     <FormRow :label="t('financial.budget.budgetScopeType')" required>
-      <Select
-        v-model="form.budgetScopeType"
-        :options="scopeTypeOptions"
-        required
-        full-width
-      />
+      <Select v-model="form.budgetScopeType" :options="scopeTypeOptions" required full-width />
     </FormRow>
 
     <!-- 分类选择器 -->
@@ -166,7 +175,7 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
       <ColorSelector
         v-model="form.color"
         width="full"
-        :color-names="colorNames"
+        :color-names="(colorNames as any)"
         :extended="true"
         :show-categories="true"
         :show-custom-color="true"
@@ -183,10 +192,7 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
     <FormRow v-if="form.alertEnabled && form.alertThreshold">
       <div class="flex gap-2">
         <div class="flex-1">
-          <Select
-            v-model="form.alertThreshold.type"
-            :options="alertTypeOptions"
-          />
+          <Select v-model="form.alertThreshold.type" :options="alertTypeOptions" />
         </div>
 
         <div class="flex-1">
@@ -195,7 +201,7 @@ const alertTypeOptions = computed<SelectOption[]>(() => [
             type="number"
             class="w-full px-4 py-2 text-base transition-colors focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 border border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 rounded-lg"
             :placeholder="form.alertThreshold.type === 'Percentage' ? '80' : '100.00'"
-          >
+          />
         </div>
       </div>
     </FormRow>

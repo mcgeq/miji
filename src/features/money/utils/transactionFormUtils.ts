@@ -3,12 +3,12 @@
  */
 
 import { CURRENCY_CNY } from '@/constants/moneyConst';
+import type { TransactionType } from '@/schema/common';
 import { TransactionStatusSchema, TransactionTypeSchema } from '@/schema/common';
+import type { Account, Transaction } from '@/schema/money';
 import { PaymentMethodSchema } from '@/schema/money';
 import { DateUtils } from '@/utils/date';
 import { parseAmount } from './numberUtils';
-import type { TransactionType } from '@/schema/common';
-import type { Account, Transaction } from '@/schema/money';
 
 /**
  * 创建默认交易对象
@@ -89,5 +89,5 @@ export function isTransferTransaction(transaction: Transaction): boolean {
  * 判断是否为分期交易
  */
 export function isInstallmentTransactionForm(transaction: Transaction): boolean {
-  return transaction.isInstallment || false;
+  return transaction.isInstallment;
 }

@@ -1,117 +1,114 @@
 <script setup lang="ts">
-import { listen } from '@tauri-apps/api/event';
-import {
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  CheckCircle as LucideCheckCircle,
-  Clock as LucideClock,
-  Edit as LucideEdit,
-  Repeat as LucideRepeat,
-  Trash as LucideTrash,
-} from 'lucide-vue-next';
-import FilterBar from '@/components/common/FilterBar.vue';
-import { Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
-import { useReminderStore } from '@/stores/money';
-import { lowercaseFirstLetter } from '@/utils/string';
-import { getRepeatTypeName } from '@/utils/business/repeat';
-import { DateUtils } from '@/utils/date';
-import { toast } from '@/utils/toast';
-import { useBilReminderFilters } from '../composables/useBilReminderFilters';
-import { formatCurrency } from '../utils/money';
-import type { BilReminder } from '@/schema/money';
+  import { listen } from '@tauri-apps/api/event';
+  import {
+    AlertCircle,
+    CheckCircle,
+    Clock,
+    CheckCircle as LucideCheckCircle,
+    Clock as LucideClock,
+    Edit as LucideEdit,
+    Repeat as LucideRepeat,
+    Trash as LucideTrash,
+  } from 'lucide-vue-next';
+  import FilterBar from '@/components/common/FilterBar.vue';
+  import { Card, EmptyState, LoadingState, Pagination } from '@/components/ui';
+  import type { BilReminder } from '@/schema/money';
+  import { useReminderStore } from '@/stores/money';
+  import { getRepeatTypeName } from '@/utils/business/repeat';
+  import { DateUtils } from '@/utils/date';
+  import { lowercaseFirstLetter } from '@/utils/string';
+  import { toast } from '@/utils/toast';
+  import { useBilReminderFilters } from '../composables/useBilReminderFilters';
+  import { formatCurrency } from '../utils/money';
 
-const emit = defineEmits<{
-  edit: [reminder: BilReminder];
-  delete: [serialNum: string];
-  markPaid: [serialNum: string, isPaid: boolean];
-}>();
+  const emit = defineEmits<{
+    edit: [reminder: BilReminder];
+    delete: [serialNum: string];
+    markPaid: [serialNum: string, isPaid: boolean];
+  }>();
 
-const { t } = useI18n();
-const reminderStore = useReminderStore();
-const reminders = computed(() => reminderStore.remindersPaged);
-const mediaQueries = useMediaQueriesStore();
-// 移动端过滤展开状态
-const showMoreFilters = ref(!mediaQueries.isMobile);
+  const { t } = useI18n();
+  const reminderStore = useReminderStore();
+  const reminders = computed(() => reminderStore.remindersPaged);
+  const mediaQueries = useMediaQueriesStore();
+  // 移动端过滤展开状态
+  const showMoreFilters = ref(!mediaQueries.isMobile);
 
-// 切换过滤器显示状态
-function toggleFilters() {
-  showMoreFilters.value = !showMoreFilters.value;
-}
-const {
-  loading,
-  filters,
-  resetFilters,
-  uniqueCategories,
-  pagination,
-  getStatusClass,
-  isOverdue,
-  loadReminders,
-} = useBilReminderFilters(() => reminders.value, 4);
-
-function handlePageSizeChange(size: number) {
-  pagination.pageSize.value = size;
-}
-
-async function handlePageChange(page: number) {
-  pagination.setPage(page);
-  await loadReminders();
-}
-
-function getStatusIcon(reminder: BilReminder) {
-  if (reminder.isPaid)
-    return CheckCircle;
-  if (isOverdue(reminder))
-    return AlertCircle;
-  return Clock;
-}
-
-function getStatusText(reminder: BilReminder) {
-  if (reminder.isPaid)
-    return t('common.status.paid');
-  if (isOverdue(reminder))
-    return t('common.status.overdue');
-  return t('common.status.pending');
-}
-
-watch(() => filters.value.repeatPeriodType, repeatPeriodType => {
-  if (repeatPeriodType === 'undefined') {
-    filters.value.repeatPeriodType = undefined;
+  // 切换过滤器显示状态
+  function toggleFilters() {
+    showMoreFilters.value = !showMoreFilters.value;
   }
-});
+  const {
+    loading,
+    filters,
+    resetFilters,
+    uniqueCategories,
+    pagination,
+    getStatusClass,
+    isOverdue,
+    loadReminders,
+  } = useBilReminderFilters(() => reminders.value, 4);
 
-// 监听后端账单提醒事件，自动刷新列表（防抖）
-let unlistenBilReminder: (() => void) | null = null;
-function useDebounceFn<T extends (...args: any[]) => any>(fn: T, wait: number) {
-  let timer: any;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), wait);
-  };
-}
-const debouncedRefresh = useDebounceFn(async () => {
-  await loadReminders();
-}, 500);
+  function handlePageSizeChange(size: number) {
+    pagination.pageSize.value = size;
+  }
 
-onMounted(async () => {
-  unlistenBilReminder = await listen('bil-reminder-fired', async () => {
-    debouncedRefresh();
-    toast.info('收到系统账单提醒，列表已刷新');
+  async function handlePageChange(page: number) {
+    pagination.setPage(page);
+    await loadReminders();
+  }
+
+  function getStatusIcon(reminder: BilReminder) {
+    if (reminder.isPaid) return CheckCircle;
+    if (isOverdue(reminder)) return AlertCircle;
+    return Clock;
+  }
+
+  function getStatusText(reminder: BilReminder) {
+    if (reminder.isPaid) return t('common.status.paid');
+    if (isOverdue(reminder)) return t('common.status.overdue');
+    return t('common.status.pending');
+  }
+
+  watch(
+    () => filters.value.repeatPeriodType,
+    repeatPeriodType => {
+      if (repeatPeriodType === 'undefined') {
+        filters.value.repeatPeriodType = undefined;
+      }
+    },
+  );
+
+  // 监听后端账单提醒事件，自动刷新列表（防抖）
+  let unlistenBilReminder: (() => void) | null = null;
+  function useDebounceFn<T extends (...args: never[]) => unknown>(fn: T, wait: number) {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), wait);
+    };
+  }
+  const debouncedRefresh = useDebounceFn(async () => {
+    await loadReminders();
+  }, 500);
+
+  onMounted(async () => {
+    unlistenBilReminder = await listen('bil-reminder-fired', async () => {
+      debouncedRefresh();
+      toast.info('收到系统账单提醒，列表已刷新');
+    });
   });
-});
 
-onUnmounted(() => {
-  try {
-    unlistenBilReminder && unlistenBilReminder();
-  } catch (_) {
+  onUnmounted(() => {
+    try {
+      unlistenBilReminder?.();
+    } catch (_) {}
+  });
 
-  }
-});
-
-// 暴露刷新方法给父组件
-defineExpose({
-  refresh: loadReminders,
-});
+  // 暴露刷新方法给父组件
+  defineExpose({
+    refresh: loadReminders,
+  });
 </script>
 
 <template>
@@ -129,17 +126,12 @@ defineExpose({
           class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
           <option value="">
-            {{ t('common.actions.all') }}{{ t('common.status.status') }}
+            {{ t('common.actions.all') }}
+            {{ t('common.status.status') }}
           </option>
-          <option value="paid">
-            {{ t('common.status.paid') }}
-          </option>
-          <option value="unpaid">
-            {{ t('common.status.unpaid') }}
-          </option>
-          <option value="overdue">
-            {{ t('common.status.overdue') }}
-          </option>
+          <option value="paid">{{ t('common.status.paid') }}</option>
+          <option value="unpaid">{{ t('common.status.unpaid') }}</option>
+          <option value="overdue">{{ t('common.status.overdue') }}</option>
         </select>
       </template>
 
@@ -149,35 +141,22 @@ defineExpose({
           class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
           <option value="undefined">
-            {{ t('common.actions.all') }}{{ t('todos.repeat.periodType') }}
+            {{ t('common.actions.all') }}
+            {{ t('todos.repeat.periodType') }}
           </option>
-          <option value="None">
-            {{ t('date.repeat.none') }}
-          </option>
-          <option value="Daily">
-            {{ t('date.repeat.daily') }}
-          </option>
-          <option value="Weekly">
-            {{ t('date.repeat.weekly') }}
-          </option>
-          <option value="Monthly">
-            {{ t('date.repeat.monthly') }}
-          </option>
-          <option value="Yearly">
-            {{ t('date.repeat.yearly') }}
-          </option>
-          <option value="Custom">
-            {{ t('date.repeat.custom') }}
-          </option>
+          <option value="None">{{ t('date.repeat.none') }}</option>
+          <option value="Daily">{{ t('date.repeat.daily') }}</option>
+          <option value="Weekly">{{ t('date.repeat.weekly') }}</option>
+          <option value="Monthly">{{ t('date.repeat.monthly') }}</option>
+          <option value="Yearly">{{ t('date.repeat.yearly') }}</option>
+          <option value="Custom">{{ t('date.repeat.custom') }}</option>
         </select>
 
         <select
           v-model="filters.category"
           class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
-          <option value="undefined">
-            {{ t('categories.allCategory') }}
-          </option>
+          <option value="undefined">{{ t('categories.allCategory') }}</option>
           <option v-for="category in uniqueCategories" :key="category" :value="category">
             {{ t(`common.categories.${lowercaseFirstLetter(category)}`) }}
           </option>
@@ -187,21 +166,11 @@ defineExpose({
           v-model="filters.dateRange"
           class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
         >
-          <option value="">
-            {{ t('common.actions.all') }}
-          </option>
-          <option value="today">
-            {{ t('date.today') }}
-          </option>
-          <option value="thisWeek">
-            {{ t('date.thisWeek') }}
-          </option>
-          <option value="thisMonth">
-            {{ t('date.thisMonth') }}
-          </option>
-          <option value="custom">
-            {{ t('common.custom') }}
-          </option>
+          <option value="">{{ t('common.actions.all') }}</option>
+          <option value="today">{{ t('date.today') }}</option>
+          <option value="thisWeek">{{ t('date.thisWeek') }}</option>
+          <option value="thisMonth">{{ t('date.thisMonth') }}</option>
+          <option value="custom">{{ t('common.custom') }}</option>
         </select>
       </template>
     </FilterBar>
@@ -223,7 +192,8 @@ defineExpose({
       :class="mediaQueries.isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'"
     >
       <Card
-        v-for="reminder in pagination.paginatedItems.value" :key="reminder.serialNum"
+        v-for="reminder in pagination.paginatedItems.value"
+        :key="reminder.serialNum"
         padding="md"
         class="relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-lg"
         :class="[
@@ -233,7 +203,9 @@ defineExpose({
         ]"
       >
         <div class="flex items-start justify-between mb-3 gap-2">
-          <div class="text-base font-semibold text-gray-900 dark:text-white leading-tight flex-1 min-w-0">
+          <div
+            class="text-base font-semibold text-gray-900 dark:text-white leading-tight flex-1 min-w-0"
+          >
             {{ reminder.name }}
           </div>
           <div class="flex gap-1 shrink-0 items-center">
@@ -283,11 +255,10 @@ defineExpose({
           </div>
         </div>
 
-        <div
-          v-if="reminder.amount"
-          class="mb-3 flex items-baseline gap-2"
-        >
-          <span class="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">
+        <div v-if="reminder.amount" class="mb-3 flex items-baseline gap-2">
+          <span
+            class="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight"
+          >
             {{ formatCurrency(reminder.amount) }}
           </span>
           <span
@@ -300,32 +271,57 @@ defineExpose({
 
         <div class="mb-2 flex flex-col gap-1">
           <div v-if="reminder.billDate" class="text-xs flex justify-between items-center gap-3">
-            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ t('financial.billDate') }}</span>
-            <span class="text-gray-900 dark:text-white font-medium text-right">{{ DateUtils.formatDate(reminder.billDate) }}</span>
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0"
+              >{{ t('financial.billDate') }}</span
+            >
+            <span class="text-gray-900 dark:text-white font-medium text-right"
+              >{{ DateUtils.formatDate(reminder.billDate) }}</span
+            >
           </div>
           <div class="text-xs flex justify-between items-center gap-3">
-            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ t('date.reminderDate') }}</span>
-            <span class="text-gray-900 dark:text-white font-medium text-right">{{ DateUtils.formatDate(reminder.remindDate) }}</span>
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0"
+              >{{ t('date.reminderDate') }}</span
+            >
+            <span class="text-gray-900 dark:text-white font-medium text-right"
+              >{{ DateUtils.formatDate(reminder.remindDate) }}</span
+            >
           </div>
-          <div v-if="reminder.lastReminderSentAt" class="text-xs flex justify-between items-center gap-3">
-            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">{{ t('financial.reminder.lastReminderSentAt') }}</span>
-            <span class="text-gray-900 dark:text-white font-medium text-right">{{ DateUtils.formatDateTime(reminder.lastReminderSentAt) }}</span>
+          <div
+            v-if="reminder.lastReminderSentAt"
+            class="text-xs flex justify-between items-center gap-3"
+          >
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0"
+              >{{ t('financial.reminder.lastReminderSentAt') }}</span
+            >
+            <span class="text-gray-900 dark:text-white font-medium text-right"
+              >{{ DateUtils.formatDateTime(reminder.lastReminderSentAt) }}</span
+            >
           </div>
         </div>
 
-        <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex gap-1.5 items-center justify-end">
+        <div
+          class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex gap-1.5 items-center justify-end"
+        >
           <LucideRepeat :size="14" class="shrink-0" />
           <span>{{ getRepeatTypeName(reminder.repeatPeriod) }}</span>
         </div>
 
         <div class="pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-1">
           <div class="text-xs flex justify-between items-center gap-3">
-            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0"> {{ t('common.misc.types') }} </span>
-            <span class="text-gray-900 dark:text-white font-medium text-right">{{ t(`financial.reminder.types.${lowercaseFirstLetter(reminder.type)}`) }}</span>
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">
+              {{ t('common.misc.types') }}
+            </span>
+            <span class="text-gray-900 dark:text-white font-medium text-right"
+              >{{ t(`financial.reminder.types.${lowercaseFirstLetter(reminder.type)}`) }}</span
+            >
           </div>
           <div v-if="reminder.description" class="text-xs flex justify-between items-center gap-3">
-            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0"> {{ t('common.misc.remark') }} </span>
-            <span class="text-gray-900 dark:text-white font-medium text-right truncate">{{ reminder.description }}</span>
+            <span class="text-gray-500 dark:text-gray-400 font-medium shrink-0">
+              {{ t('common.misc.remark') }}
+            </span>
+            <span class="text-gray-900 dark:text-white font-medium text-right truncate"
+              >{{ reminder.description }}</span
+            >
           </div>
         </div>
       </Card>

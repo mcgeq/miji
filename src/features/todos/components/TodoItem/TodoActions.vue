@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
+  import { Pencil, Plus, Trash2 } from 'lucide-vue-next';
 
-const props = defineProps<{ show: boolean; completed: boolean }>();
-const emit = defineEmits(['edit', 'add', 'remove']);
+  const props = defineProps<{ show: boolean; completed: boolean }>();
+  const emit = defineEmits(['edit', 'add', 'remove']);
 
-const show = computed(() => props.show);
-const completed = computed(() => props.completed);
+  const show = computed(() => props.show);
+  const completed = computed(() => props.completed);
 </script>
 
 <template>

@@ -395,6 +395,44 @@
     emit('close');
   }
 
+  // Helper: 判断是否为日期字段
+  function isDateField(key: string): boolean {
+    return key.endsWith('Date') || key === 'dueAt' || key === 'snoozeUntil';
+  }
+
+  // Helper: 格式化日期值
+  function formatDateValue(value: unknown, key: string): string | null {
+    if (!value) return null;
+
+    // snoozeUntil 已经是 ISO 格式，不需要转换
+    if (key === 'snoozeUntil') {
+      return value as string;
+    }
+
+    // 其他日期字段需要格式化
+    const dateValue =
+      typeof value === 'string'
+        ? value
+        : value instanceof Date
+          ? value.toISOString()
+          : String(value);
+    return DateUtils.toLocalISOFromDateInput(dateValue);
+  }
+
+  // Helper: 格式化表单字段值
+  function formatFieldValue(
+    value: unknown,
+    key: string,
+    defaultValues: Record<string, unknown>,
+  ): unknown {
+    if (isDateField(key)) {
+      return formatDateValue(value, key);
+    }
+    // 应用默认值
+    return _.defaultTo(value, defaultValues[key] ?? null);
+  }
+
+  // 保存提醒
   async function saveReminder() {
     // 执行所有验证
     validateName();
@@ -441,7 +479,6 @@
         paymentReminderEnabled: false,
         batchReminderId: null,
       };
-      // eslint-disable-next-line complexity
       const formattedData = _.mapValues(
         {
           name: form.name,
@@ -481,28 +518,7 @@
           paymentReminderEnabled: form.paymentReminderEnabled,
           batchReminderId: form.batchReminderId,
         },
-        (value: unknown, key: string) => {
-          if (key.endsWith('Date') || key === 'dueAt' || key === 'snoozeUntil') {
-            if (value) {
-              // snoozeUntil 已经是 ISO 格式，不需要转换
-              if (key === 'snoozeUntil') {
-                return value;
-              }
-
-              // 其他日期字段需要格式化
-              const dateValue =
-                typeof value === 'string'
-                  ? value
-                  : value instanceof Date
-                    ? value.toISOString()
-                    : String(value);
-              return DateUtils.toLocalISOFromDateInput(dateValue);
-            }
-            return null;
-          }
-          // 应用默认值
-          return _.defaultTo(value, defaultValues[key] ?? null);
-        },
+        (value: unknown, key: string) => formatFieldValue(value, key, defaultValues),
       );
       if (props.reminder) {
         const changes = _.omitBy(formattedData, (value: unknown, key: string) =>
@@ -740,7 +756,7 @@
               @blur="validateAmount"
             />
           </div>
-          <div class="flex-[2]">
+          <div class="flex-2">
             <CurrencySelector v-model="form.currency" width="full" />
           </div>
         </div>
