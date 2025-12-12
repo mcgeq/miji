@@ -13,10 +13,14 @@
   import type { CardData } from '../common/moneyCommon';
   // 静态导入列表组件（首屏需要）
   import AccountList from '../components/AccountList.vue';
-  import type BudgetList from '../components/BudgetList.vue';
-  import type ReminderList from '../components/ReminderList.vue';
-  import type StackedStatCards from '../components/StackedStatCards.vue';
-  import type TransactionList from '../components/TransactionList.vue';
+  // biome-ignore lint/style/useImportType: <explanation>
+  import BudgetList from '../components/BudgetList.vue';
+  // biome-ignore lint/style/useImportType: <explanation>
+  import ReminderList from '../components/ReminderList.vue';
+  // biome-ignore lint/style/useImportType: <explanation>
+  import StackedStatCards from '../components/StackedStatCards.vue';
+  // biome-ignore lint/style/useImportType: <explanation>
+  import TransactionList from '../components/TransactionList.vue';
   import { getLocalCurrencyInfo } from '../utils/money';
 
   // 懒加载模态框组件 (Task 27: 按需加载，减少首屏加载时间)
