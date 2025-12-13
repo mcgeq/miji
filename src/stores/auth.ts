@@ -1,13 +1,16 @@
 import { defineStore } from 'pinia';
+import { computed, ref } from 'vue';
+import type { AppError } from '@/errors/appError';
 import { AppErrorSeverity } from '@/errors/appError';
 import { clearAuthCache } from '@/router/guards/auth.guard';
-import type { AuthUser, TokenResponse, User } from '@/schema/user';
-import { refreshToken as refreshTokenApi, verifyToken } from '@/services/auth';
+import type { AuthUser, TokenResponse, UpdateUserRequest, User } from '@/schema/user';
+import { authService } from '@/services/authService';
+import { withLoadingSafe } from '@/stores/utils/withLoadingSafe';
 import type { Permission } from '@/types/auth';
 import { Role, RolePermissions } from '@/types/auth';
 import { authAudit } from '@/utils/auth-audit';
 import { Lg } from '@/utils/debugLog';
-import { assertExists, throwAppError } from '@/utils/errorHandler';
+import { assertExists, throwAppError, wrapError } from '@/utils/errorHandler';
 import { toAuthUser } from '../utils/user';
 
 // =============================================================================
@@ -27,6 +30,7 @@ export const useAuthStore = defineStore(
     const tokenExpiresAt = ref<number | null>(null);
     const rememberMe = ref<boolean>(false);
     const isLoading = ref<boolean>(false);
+    const error = ref<AppError | null>(null);
 
     // 权限相关状态
     const permissions = ref<Permission[]>([]);
@@ -53,114 +57,113 @@ export const useAuthStore = defineStore(
     /**
      * 登录
      */
-    async function login(
-      userData: User,
-      tokenResponse?: TokenResponse,
-      remember = false,
-    ): Promise<boolean> {
-      try {
-        isLoading.value = true;
+    const login = withLoadingSafe<[User, TokenResponse?, boolean?], boolean>(
+      async (userData: User, tokenResponse?: TokenResponse, remember = false) => {
+        try {
+          const authUser = toAuthUser(userData);
+          user.value = authUser;
+          rememberMe.value = remember;
 
-        const authUser = toAuthUser(userData);
-        user.value = authUser;
-        rememberMe.value = remember;
+          if (tokenResponse) {
+            token.value = tokenResponse.token;
+            tokenExpiresAt.value = remember ? tokenResponse.expiresAt : null;
 
-        if (tokenResponse) {
-          token.value = tokenResponse.token;
-          tokenExpiresAt.value = remember ? tokenResponse.expiresAt : null;
-
-          // Verify token immediately after login
-          const tokenStatus = await verifyToken(tokenResponse.token);
-          if (tokenStatus !== 'Valid') {
-            throwAppError(
-              'Auth',
-              'INVALID_TOKEN',
-              'Generated token is invalid',
-              AppErrorSeverity.HIGH,
-            );
+            // Verify token immediately after login
+            const tokenStatus = await authService.verifyToken(tokenResponse.token);
+            if (tokenStatus !== 'Valid') {
+              throwAppError(
+                'Auth',
+                'INVALID_TOKEN',
+                'Generated token is invalid',
+                AppErrorSeverity.HIGH,
+              );
+            }
           }
+
+          // 设置角色和权限
+          // 使用类型守卫安全地提取角色和权限
+          const rawRole =
+            'role' in userData && typeof userData.role === 'string' ? userData.role : undefined;
+          const userPermissions =
+            'permissions' in userData && Array.isArray(userData.permissions)
+              ? (userData.permissions as Permission[])
+              : [];
+
+          // 将角色转换为小写以匹配枚举值（后端可能返回 'User' 而不是 'user'）
+          const normalizedRole = rawRole?.toLowerCase();
+          const userRole =
+            normalizedRole && Object.values(Role).includes(normalizedRole as Role)
+              ? (normalizedRole as Role)
+              : Role.USER;
+
+          role.value = userRole;
+          permissions.value = userPermissions;
+
+          // 清除路由守卫缓存
+          clearAuthCache();
+
+          Lg.i('Auth', 'User logged in successfully', {
+            hasUser: !!user.value,
+            hasToken: !!token.value,
+            rememberMe: rememberMe.value,
+            role: role.value,
+            explicitPermissions: permissions.value.length,
+            effectivePermissions: effectivePermissions.value.length,
+          });
+
+          // 记录审计日志
+          authAudit.logLogin(authUser.serialNum, role.value, {
+            rememberMe: rememberMe.value,
+            effectivePermissions: effectivePermissions.value.length,
+          });
+
+          // 注意：autosave 已在 storeStart() 中启用
+          // 状态变化后会在 300ms 内自动保存到磁盘
+
+          return true;
+        } catch (err) {
+          error.value = wrapError('AuthStore', err, 'LOGIN_FAILED', '登录失败');
+          throw error.value;
         }
-
-        // 设置角色和权限
-        // 使用类型守卫安全地提取角色和权限
-        const rawRole =
-          'role' in userData && typeof userData.role === 'string' ? userData.role : undefined;
-        const userPermissions =
-          'permissions' in userData && Array.isArray(userData.permissions)
-            ? (userData.permissions as Permission[])
-            : [];
-
-        // 将角色转换为小写以匹配枚举值（后端可能返回 'User' 而不是 'user'）
-        const normalizedRole = rawRole?.toLowerCase();
-        const userRole =
-          normalizedRole && Object.values(Role).includes(normalizedRole as Role)
-            ? (normalizedRole as Role)
-            : Role.USER;
-
-        role.value = userRole;
-        permissions.value = userPermissions;
-
-        // 清除路由守卫缓存
-        clearAuthCache();
-
-        Lg.i('Auth', 'User logged in successfully', {
-          hasUser: !!user.value,
-          hasToken: !!token.value,
-          rememberMe: rememberMe.value,
-          role: role.value,
-          explicitPermissions: permissions.value.length,
-          effectivePermissions: effectivePermissions.value.length,
-        });
-
-        // 记录审计日志
-        authAudit.logLogin(authUser.serialNum, role.value, {
-          rememberMe: rememberMe.value,
-          effectivePermissions: effectivePermissions.value.length,
-        });
-
-        // 注意：autosave 已在 storeStart() 中启用
-        // 状态变化后会在 300ms 内自动保存到磁盘
-
-        return true;
-      } catch (error) {
-        Lg.e('Auth', 'Login failed:', error);
-        throw error;
-      } finally {
-        isLoading.value = false;
-      }
-    }
+      },
+      isLoading,
+      error,
+    );
 
     /**
      * 登出
      */
-    async function logout(): Promise<void> {
-      try {
-        isLoading.value = true;
+    const logout = withLoadingSafe(
+      async (): Promise<void> => {
+        try {
+          // 记录审计日志（在清除前记录）
+          const userId = user.value?.serialNum || 'unknown';
+          authAudit.logLogout(userId);
 
-        // 记录审计日志（在清除前记录）
-        const userId = user.value?.serialNum || 'unknown';
-        authAudit.logLogout(userId);
+          // 调用 Service 层的登出逻辑
+          await authService.logout();
 
-        user.value = null;
-        token.value = null;
-        tokenExpiresAt.value = null;
-        rememberMe.value = false;
+          user.value = null;
+          token.value = null;
+          tokenExpiresAt.value = null;
+          rememberMe.value = false;
 
-        // 清除权限和角色
-        permissions.value = [];
-        role.value = Role.GUEST;
+          // 清除权限和角色
+          permissions.value = [];
+          role.value = Role.GUEST;
 
-        // 清除路由守卫缓存
-        clearAuthCache();
+          // 清除路由守卫缓存
+          clearAuthCache();
 
-        Lg.i('Auth', 'User logged out successfully');
-      } catch (error) {
-        Lg.e('Auth', 'Logout failed:', error);
-        throw error;
-      } finally {
-        isLoading.value = false;
-      }
-    }
+          Lg.i('Auth', 'User logged out successfully');
+        } catch (err) {
+          error.value = wrapError('AuthStore', err, 'LOGOUT_FAILED', '登出失败');
+          throw error.value;
+        }
+      },
+      isLoading,
+      error,
+    );
 
     /**
      * 检查 token 过期状态并在需要时刷新
@@ -206,15 +209,16 @@ export const useAuthStore = defineStore(
           }
         }
 
-        const tokenStatus = await verifyToken(token.value);
+        const tokenStatus = await authService.verifyToken(token.value);
         if (tokenStatus !== 'Valid') {
           await logout();
           return false;
         }
 
         return true;
-      } catch (error) {
-        Lg.e('Auth', 'Auth check failed:', error);
+      } catch (err) {
+        Lg.e('Auth', 'Auth check failed:', err);
+        error.value = wrapError('AuthStore', err, 'AUTH_CHECK_FAILED', '认证检查失败');
         await logout();
         return false;
       }
@@ -228,52 +232,78 @@ export const useAuthStore = defineStore(
      * - 使用旧Token换取新Token（延长7天）
      * - 刷新失败不立即登出，继续使用旧Token直到完全过期
      */
-    async function refreshToken(): Promise<void> {
-      assertExists(
-        token.value,
-        'Auth',
-        'NO_TOKEN',
-        'No token available to refresh',
-        AppErrorSeverity.HIGH,
-      );
-      assertExists(
-        user.value,
-        'Auth',
-        'NO_USER',
-        'No user available to refresh',
-        AppErrorSeverity.HIGH,
-      );
+    const refreshToken = withLoadingSafe(
+      async (): Promise<void> => {
+        assertExists(
+          token.value,
+          'Auth',
+          'NO_TOKEN',
+          'No token available to refresh',
+          AppErrorSeverity.HIGH,
+        );
+        assertExists(
+          user.value,
+          'Auth',
+          'NO_USER',
+          'No user available to refresh',
+          AppErrorSeverity.HIGH,
+        );
 
-      try {
-        isLoading.value = true;
+        try {
+          // 调用 AuthService 刷新 Token
+          const tokenResponse = await authService.refreshToken(token.value);
 
-        // 调用后端刷新Token API
-        const tokenResponse = await refreshTokenApi(token.value);
+          // 更新Token和过期时间
+          token.value = tokenResponse.token;
+          tokenExpiresAt.value = tokenResponse.expiresAt;
 
-        // 更新Token和过期时间
-        token.value = tokenResponse.token;
-        tokenExpiresAt.value = tokenResponse.expiresAt;
-
-        Lg.i('Auth', 'Token refreshed successfully', {
-          newExpiresAt: new Date(tokenResponse.expiresAt * 1000).toISOString(),
-        });
-      } catch (error) {
-        Lg.e('Auth', 'Token refresh error:', error);
-        throw error;
-      } finally {
-        isLoading.value = false;
-      }
-    }
+          Lg.i('Auth', 'Token refreshed successfully', {
+            newExpiresAt: new Date(tokenResponse.expiresAt * 1000).toISOString(),
+          });
+        } catch (err) {
+          error.value = wrapError('AuthStore', err, 'TOKEN_REFRESH_FAILED', 'Token 刷新失败');
+          throw error.value;
+        }
+      },
+      isLoading,
+      error,
+    );
 
     /**
      * 更新用户信息
      */
-    async function updateUser(updatedUser: Partial<AuthUser>): Promise<void> {
-      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
+    const updateUser = withLoadingSafe(
+      async (updatedUser: Partial<AuthUser>): Promise<void> => {
+        assertExists(
+          user.value,
+          'Auth',
+          'NOT_AUTHENTICATED',
+          '用户未登录',
+          AppErrorSeverity.MEDIUM,
+        );
 
-      user.value = { ...user.value, ...updatedUser };
-      Lg.i('Auth', 'User info updated');
-    }
+        try {
+          // 如果有 serialNum，调用 Service 更新后端数据
+          if (user.value.serialNum && Object.keys(updatedUser).length > 0) {
+            const updated = await authService.updateUser(
+              user.value.serialNum,
+              updatedUser as UpdateUserRequest,
+            );
+            user.value = toAuthUser(updated);
+          } else {
+            // 仅更新本地状态
+            user.value = { ...user.value, ...updatedUser };
+          }
+
+          Lg.i('Auth', 'User info updated');
+        } catch (err) {
+          error.value = wrapError('AuthStore', err, 'UPDATE_USER_FAILED', '更新用户信息失败');
+          throw error.value;
+        }
+      },
+      isLoading,
+      error,
+    );
 
     /**
      * 获取当前用户
@@ -331,211 +361,162 @@ export const useAuthStore = defineStore(
     /**
      * 更新用户资料
      */
-    async function updateProfile(profileData: Partial<AuthUser>) {
-      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
-      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
+    const updateProfile = withLoadingSafe(
+      async (profileData: Partial<AuthUser>) => {
+        assertExists(
+          user.value,
+          'Auth',
+          'NOT_AUTHENTICATED',
+          '用户未登录',
+          AppErrorSeverity.MEDIUM,
+        );
 
-      try {
-        isLoading.value = true;
+        try {
+          // 调用 Service 层更新用户资料
+          const updatedUserData = await authService.updateProfile(profileData as any);
 
-        // 调用后端 API 更新用户资料
-        const response = await fetch('/api/user/profile', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token.value}`,
-          },
-          body: JSON.stringify(profileData),
-        });
+          // 更新本地状态
+          user.value = toAuthUser(updatedUserData);
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throwAppError(
-            'Auth',
-            'UPDATE_PROFILE_FAILED',
-            errorData.message || '更新资料失败',
-            AppErrorSeverity.MEDIUM,
-          );
+          return updatedUserData;
+        } catch (err) {
+          error.value = wrapError('AuthStore', err, 'UPDATE_PROFILE_FAILED', '更新用户资料失败');
+          throw error.value;
         }
-
-        const updatedUserData = await response.json();
-
-        // 更新本地状态
-        await updateUser(updatedUserData);
-
-        return updatedUserData;
-      } catch (error) {
-        Lg.e('Auth', '更新用户资料错误:', error);
-        throw error;
-      } finally {
-        isLoading.value = false;
-      }
-    }
+      },
+      isLoading,
+      error,
+    );
 
     /**
      * 上传头像
      */
-    async function uploadAvatar(file: File) {
-      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
-      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
+    const uploadAvatar = withLoadingSafe(
+      async (file: File) => {
+        assertExists(
+          user.value,
+          'Auth',
+          'NOT_AUTHENTICATED',
+          '用户未登录',
+          AppErrorSeverity.MEDIUM,
+        );
 
-      try {
-        isLoading.value = true;
+        try {
+          // 调用 Service 层上传头像
+          const avatarUrl = await authService.uploadAvatar(file);
 
-        const formData = new FormData();
-        formData.append('avatar', file);
+          // 更新本地用户头像
+          await updateUser({ avatarUrl });
 
-        const response = await fetch('/api/user/avatar', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token.value}`,
-          },
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throwAppError(
-            'Auth',
-            'UPLOAD_AVATAR_FAILED',
-            errorData.message || '头像上传失败',
-            AppErrorSeverity.MEDIUM,
-          );
+          return avatarUrl;
+        } catch (err) {
+          error.value = wrapError('AuthStore', err, 'UPLOAD_AVATAR_FAILED', '上传头像失败');
+          throw error.value;
         }
-
-        const { avatarUrl } = await response.json();
-
-        // 更新本地用户头像
-        await updateUser({ avatarUrl });
-
-        return avatarUrl;
-      } catch (error) {
-        Lg.e('Auth', '上传头像错误:', error);
-        throw error;
-      } finally {
-        isLoading.value = false;
-      }
-    }
+      },
+      isLoading,
+      error,
+    );
 
     /**
      * 验证邮箱
      */
-    async function verifyEmailAddress(verificationCode: string) {
-      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
-      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
+    const verifyEmailAddress = withLoadingSafe(
+      async (verificationCode: string) => {
+        assertExists(
+          user.value,
+          'Auth',
+          'NOT_AUTHENTICATED',
+          '用户未登录',
+          AppErrorSeverity.MEDIUM,
+        );
 
-      try {
-        isLoading.value = true;
+        try {
+          // 调用 Service 层验证邮箱
+          const success = await authService.verifyEmail(verificationCode);
 
-        const response = await fetch('/api/user/verify-email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token.value}`,
-          },
-          body: JSON.stringify({ code: verificationCode }),
-        });
+          if (success) {
+            // 更新用户验证状态
+            await updateUser({
+              isVerified: true,
+              emailVerifiedAt: new Date().toISOString(),
+            });
+          }
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throwAppError(
-            'Auth',
-            'VERIFY_EMAIL_FAILED',
-            errorData.message || '邮箱验证失败',
-            AppErrorSeverity.MEDIUM,
-          );
+          return success;
+        } catch (err) {
+          error.value = wrapError('AuthStore', err, 'VERIFY_EMAIL_FAILED', '邮箱验证失败');
+          throw error.value;
         }
-
-        // 更新用户验证状态
-        await updateUser({
-          isVerified: true,
-          emailVerifiedAt: new Date().toISOString(),
-        });
-
-        return true;
-      } catch (error) {
-        Lg.e('Auth', '邮箱验证错误:', error);
-        throw error;
-      } finally {
-        isLoading.value = false;
-      }
-    }
+      },
+      isLoading,
+      error,
+    );
 
     /**
      * 发送邮箱验证码
      */
-    async function sendEmailVerification() {
-      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
-      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
+    const sendEmailVerification = withLoadingSafe(
+      async () => {
+        assertExists(
+          user.value,
+          'Auth',
+          'NOT_AUTHENTICATED',
+          '用户未登录',
+          AppErrorSeverity.MEDIUM,
+        );
 
-      try {
-        isLoading.value = true;
-
-        const response = await fetch('/api/user/send-email-verification', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token.value}`,
-          },
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throwAppError(
-            'Auth',
-            'SEND_VERIFICATION_FAILED',
-            errorData.message || '发送验证邮件失败',
-            AppErrorSeverity.MEDIUM,
-          );
+        try {
+          // 调用 Service 层发送验证邮件
+          const success = await authService.sendEmailVerification();
+          return success;
+        } catch (err) {
+          error.value = wrapError('AuthStore', err, 'SEND_VERIFICATION_FAILED', '发送验证邮件失败');
+          throw error.value;
         }
-
-        return true;
-      } catch (error) {
-        Lg.e('Auth', '发送邮箱验证错误:', error);
-        throw error;
-      } finally {
-        isLoading.value = false;
-      }
-    }
+      },
+      isLoading,
+      error,
+    );
 
     /**
      * 修改密码
      */
-    async function changePassword(currentPassword: string, newPassword: string) {
-      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
-      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
+    const changePassword = withLoadingSafe(
+      async (currentPassword: string, newPassword: string) => {
+        assertExists(
+          user.value,
+          'Auth',
+          'NOT_AUTHENTICATED',
+          '用户未登录',
+          AppErrorSeverity.MEDIUM,
+        );
 
-      try {
-        isLoading.value = true;
-
-        const response = await fetch('/api/user/change-password', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token.value}`,
-          },
-          body: JSON.stringify({
-            currentPassword,
-            newPassword,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throwAppError(
-            'Auth',
-            'CHANGE_PASSWORD_FAILED',
-            errorData.message || '修改密码失败',
-            AppErrorSeverity.MEDIUM,
-          );
+        try {
+          // 调用 Service 层修改密码
+          const success = await authService.changePassword(currentPassword, newPassword);
+          return success;
+        } catch (err) {
+          error.value = wrapError('AuthStore', err, 'CHANGE_PASSWORD_FAILED', '修改密码失败');
+          throw error.value;
         }
+      },
+      isLoading,
+      error,
+    );
 
-        return true;
-      } catch (error) {
-        Lg.e('Auth', '修改密码错误:', error);
-        throw error;
-      } finally {
-        isLoading.value = false;
-      }
+    /**
+     * 重置 Store 状态
+     */
+    function $reset() {
+      user.value = null;
+      token.value = null;
+      tokenExpiresAt.value = null;
+      rememberMe.value = false;
+      isLoading.value = false;
+      error.value = null;
+      permissions.value = [];
+      role.value = Role.GUEST;
     }
 
     return {
@@ -545,6 +526,7 @@ export const useAuthStore = defineStore(
       tokenExpiresAt,
       rememberMe,
       isLoading,
+      error,
       permissions,
       role,
 
@@ -573,6 +555,9 @@ export const useAuthStore = defineStore(
       verifyEmail: verifyEmailAddress,
       sendEmailVerification,
       changePassword,
+
+      // 重置方法
+      $reset,
     };
   },
   {

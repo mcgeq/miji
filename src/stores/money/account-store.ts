@@ -2,8 +2,8 @@
 import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
 import type { Account, CreateAccountRequest, UpdateAccountRequest } from '@/schema/money';
+import { accountService } from '@/services/money/AccountService';
 import type { AccountFilters } from '@/services/money/accounts';
-import { MoneyDb } from '@/services/money/money';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
 import { type EventCleanup, onStoreEvent } from './store-events';
@@ -154,13 +154,15 @@ export const useAccountStore = defineStore('money-accounts', {
       return this.withLoadingSafe(
         async () => {
           const result = filters
-            ? await MoneyDb.listAccountsPaged({
-                currentPage: 1,
-                pageSize: 1000,
-                sortOptions: { desc: true },
-                filter: filters,
-              }).then(r => r.rows)
-            : await MoneyDb.listAccounts();
+            ? await accountService
+                .listPaged({
+                  currentPage: 1,
+                  pageSize: 1000,
+                  sortOptions: { desc: true },
+                  filter: filters,
+                })
+                .then(r => r.items)
+            : await accountService.list();
 
           // 不可变更新
           this.accounts = [...result];
@@ -178,7 +180,7 @@ export const useAccountStore = defineStore('money-accounts', {
       Lg.i(STORE_MODULE, '创建账户', { name: data.name, type: data.type });
       return this.withLoadingSafe(
         async () => {
-          const account = await MoneyDb.createAccount(data);
+          const account = await accountService.create(data);
           // 不可变更新
           this.accounts = [...this.accounts, account];
           Lg.i(STORE_MODULE, '账户创建成功', { serialNum: account.serialNum });
@@ -196,7 +198,7 @@ export const useAccountStore = defineStore('money-accounts', {
       Lg.i(STORE_MODULE, '更新账户', { serialNum, updates: Object.keys(data) });
       return this.withLoadingSafe(
         async () => {
-          const account = await MoneyDb.updateAccount(serialNum, data);
+          const account = await accountService.update(serialNum, data);
           // 不可变更新
           this.accounts = this.accounts.map(a => (a.serialNum === serialNum ? account : a));
           Lg.i(STORE_MODULE, '账户更新成功', { serialNum });
@@ -214,7 +216,7 @@ export const useAccountStore = defineStore('money-accounts', {
       Lg.i(STORE_MODULE, '删除账户', { serialNum });
       return this.withLoadingSafe(
         async () => {
-          await MoneyDb.deleteAccount(serialNum);
+          await accountService.delete(serialNum);
           // 不可变更新
           this.accounts = this.accounts.filter(a => a.serialNum !== serialNum);
           Lg.i(STORE_MODULE, '账户删除成功', { serialNum });
@@ -237,7 +239,7 @@ export const useAccountStore = defineStore('money-accounts', {
       Lg.i(STORE_MODULE, '切换账户状态', { serialNum, currentActive: account.isActive });
       return this.withLoadingSafe(
         async () => {
-          const updatedAccount = await MoneyDb.updateAccountActive(serialNum, !account.isActive);
+          const updatedAccount = await accountService.updateActive(serialNum, !account.isActive);
           // 不可变更新
           this.accounts = this.accounts.map(a => (a.serialNum === serialNum ? updatedAccount : a));
           Lg.i(STORE_MODULE, '账户状态切换成功', { serialNum, newActive: updatedAccount.isActive });
@@ -279,7 +281,7 @@ export const useAccountStore = defineStore('money-accounts', {
      */
     async refreshAccount(serialNum: string): Promise<void> {
       try {
-        const account = await MoneyDb.getAccount(serialNum);
+        const account = await accountService.getById(serialNum);
         if (account) {
           const index = this.accounts.findIndex(a => a.serialNum === serialNum);
           if (index !== -1) {

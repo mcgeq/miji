@@ -335,6 +335,7 @@ declare global {
   const useSupported: typeof import('@vueuse/core')['useSupported'];
   const useSwipe: typeof import('@vueuse/core')['useSwipe'];
   const useTabManager: typeof import('./composables/useTabManager')['useTabManager'];
+  const useTagStore: typeof import('./stores/tagStore')['useTagStore'];
   const useTemplateRef: typeof import('vue')['useTemplateRef'];
   const useTemplateRefsList: typeof import('@vueuse/core')['useTemplateRefsList'];
   const useTextDirection: typeof import('@vueuse/core')['useTextDirection'];
@@ -902,6 +903,7 @@ declare module 'vue' {
     readonly useTabManager: UnwrapRef<
       typeof import('./composables/useTabManager')['useTabManager']
     >;
+    readonly useTagStore: UnwrapRef<typeof import('./stores/tagStore')['useTagStore']>;
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>;
     readonly useTemplateRefsList: UnwrapRef<typeof import('@vueuse/core')['useTemplateRefsList']>;
     readonly useTextDirection: UnwrapRef<typeof import('@vueuse/core')['useTextDirection']>;
