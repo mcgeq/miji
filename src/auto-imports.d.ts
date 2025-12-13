@@ -307,6 +307,7 @@ declare global {
   const usePreferredReducedMotion: typeof import('@vueuse/core')['usePreferredReducedMotion'];
   const usePreferredReducedTransparency: typeof import('@vueuse/core')['usePreferredReducedTransparency'];
   const usePrevious: typeof import('@vueuse/core')['usePrevious'];
+  const useProjectStore: typeof import('./stores/projectStore')['useProjectStore'];
   const useRafFn: typeof import('@vueuse/core')['useRafFn'];
   const useRefHistory: typeof import('@vueuse/core')['useRefHistory'];
   const useReminderActions: typeof import('./composables/useReminderActions')['useReminderActions'];
@@ -867,6 +868,7 @@ declare module 'vue' {
       typeof import('@vueuse/core')['usePreferredReducedTransparency']
     >;
     readonly usePrevious: UnwrapRef<typeof import('@vueuse/core')['usePrevious']>;
+    readonly useProjectStore: UnwrapRef<typeof import('./stores/projectStore')['useProjectStore']>;
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>;
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>;
     readonly useReminderActions: UnwrapRef<
