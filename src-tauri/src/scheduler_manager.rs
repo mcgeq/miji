@@ -27,11 +27,14 @@ pub enum SchedulerTask {
     Transaction,
     /// 待办自动创建任务（每2小时）
     Todo,
-    /// 待办提醒任务（桌面60秒，移动300秒）
+    /// Todo 提醒任务（桌面60秒，移动300秒）- 已由统一调度器处理
+    #[allow(dead_code)]
     TodoNotification,
-    /// 账单提醒任务（桌面60秒，移动300秒）
+    /// 账单提醒任务（桌面60秒，移动300秒）- 已由统一调度器处理
+    #[allow(dead_code)]
     BilReminder,
-    /// 经期提醒任务（每天一次）
+    /// 经期提醒任务（每天一次）- 已由统一调度器处理
+    #[allow(dead_code)]
     PeriodReminder,
     /// 预算自动创建任务（每2小时）
     Budget,
@@ -126,6 +129,24 @@ impl SchedulerManager {
         self.start_task(SchedulerTask::Budget, app.clone()).await;
 
         log::info!("All scheduler tasks started successfully");
+    }
+
+    /// 启动非提醒类任务（与统一调度器配合使用）
+    pub async fn start_non_reminder_tasks(&self, app: AppHandle) {
+        log::info!("Starting non-reminder scheduler tasks...");
+
+        // 只启动非提醒类任务
+        self.start_task(SchedulerTask::Transaction, app.clone())
+            .await;
+        self.start_task(SchedulerTask::Todo, app.clone()).await;
+        self.start_task(SchedulerTask::Budget, app.clone()).await;
+
+        // 跳过提醒类任务：
+        // - TodoNotification (由统一调度器处理)
+        // - BilReminder (由统一调度器处理)
+        // - PeriodReminder (由统一调度器处理)
+
+        log::info!("Non-reminder scheduler tasks started successfully");
     }
 
     /// 启动单个任务（使用配置）

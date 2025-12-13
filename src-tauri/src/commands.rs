@@ -26,6 +26,12 @@ pub use crate::system_commands::{AppPreferences, set_complete};
 /// 注册所有Tauri命令
 pub fn init_commands(builder: Builder<Wry>) -> Builder<Wry> {
     builder.invoke_handler(tauri::generate_handler![
+        // 通知调度器命令
+        notification::reminder_scheduler_get_state,
+        notification::reminder_scheduler_start,
+        notification::reminder_scheduler_stop,
+        notification::reminder_scheduler_scan_now,
+        notification::reminder_scheduler_test_notification,
         // 系统命令
         crate::system_commands::set_complete,
         crate::system_commands::greet,

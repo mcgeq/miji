@@ -269,6 +269,7 @@ declare global {
   const useMemory: typeof import('@vueuse/core')['useMemory'];
   const useMenuStore: typeof import('./stores/menuStore')['useMenuStore'];
   const useModel: typeof import('vue')['useModel'];
+  const useModuleReminderListener: typeof import('./composables/useUnifiedReminderListener')['useModuleReminderListener'];
   const useMoneyAuth: typeof import('./composables/useMoneyAuth')['useMoneyAuth'];
   const useMoneyStats: typeof import('./composables/useMoneyStats')['useMoneyStats'];
   const useMoneyStore: typeof import('./stores/moneyStore')['useMoneyStore'];
@@ -359,6 +360,7 @@ declare global {
   const useTransition: typeof import('@vueuse/core')['useTransition'];
   const useTransitionsStore: typeof import('./stores/transition')['useTransitionsStore'];
   const useTray: typeof import('./composables/useTray')['useTray'];
+  const useUnifiedReminderListener: typeof import('./composables/useUnifiedReminderListener')['useUnifiedReminderListener'];
   const useUrlSearchParams: typeof import('@vueuse/core')['useUrlSearchParams'];
   const useUserMedia: typeof import('@vueuse/core')['useUserMedia'];
   const useUserSearch: typeof import('./composables/useUserSearch')['useUserSearch'];
@@ -470,6 +472,9 @@ declare global {
   // @ts-ignore
   export type { TabType } from './composables/useTabManager';
   import('./composables/useTabManager');
+  // @ts-ignore
+  export type { ReminderEventHandlers } from './composables/useUnifiedReminderListener';
+  import('./composables/useUnifiedReminderListener');
 }
 
 // for vue template auto import
@@ -797,6 +802,9 @@ declare module 'vue' {
     readonly useMemory: UnwrapRef<typeof import('@vueuse/core')['useMemory']>;
     readonly useMenuStore: UnwrapRef<typeof import('./stores/menuStore')['useMenuStore']>;
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>;
+    readonly useModuleReminderListener: UnwrapRef<
+      typeof import('./composables/useUnifiedReminderListener')['useModuleReminderListener']
+    >;
     readonly useMoneyAuth: UnwrapRef<typeof import('./composables/useMoneyAuth')['useMoneyAuth']>;
     readonly useMoneyStats: UnwrapRef<
       typeof import('./composables/useMoneyStats')['useMoneyStats']
@@ -925,6 +933,9 @@ declare module 'vue' {
       typeof import('./stores/transition')['useTransitionsStore']
     >;
     readonly useTray: UnwrapRef<typeof import('./composables/useTray')['useTray']>;
+    readonly useUnifiedReminderListener: UnwrapRef<
+      typeof import('./composables/useUnifiedReminderListener')['useUnifiedReminderListener']
+    >;
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>;
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>;
     readonly useUserSearch: UnwrapRef<

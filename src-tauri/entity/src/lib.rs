@@ -15,6 +15,8 @@ pub mod family_member;
 pub mod installment_details;
 pub mod installment_plans;
 pub mod notification_logs;
+pub mod notification_reminder_history;
+pub mod notification_reminder_state;
 pub mod notification_settings;
 pub mod operation_log;
 pub mod period_daily_records;

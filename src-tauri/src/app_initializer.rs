@@ -141,10 +141,60 @@ impl AppInitializer {
             }
         }
 
-        // 启动定时任务调度器
-        let scheduler = SchedulerManager::new();
-        scheduler.start_all(app_handle.clone()).await;
-        log::info!("✓ 定时任务调度器启动完成");
+        // 🆕 初始化统一提醒调度器
+        log::info!("🔔 初始化统一提醒调度器...");
+
+        let reminder_scheduler = {
+            use notification::{ExecutorConfig, ReminderScheduler};
+            use tokio::sync::RwLock;
+
+            let scheduler = ReminderScheduler::new(app_state.db.clone());
+            let scheduler = Arc::new(RwLock::new(scheduler));
+
+            // 设置 App Handle
+            {
+                let mut s = scheduler.write().await;
+                s.set_app_handle(app_handle.clone());
+                if let Err(e) = s.start().await {
+                    log::error!("启动提醒调度器失败: {}", e);
+                } else {
+                    log::info!("  ✓ 调度器已启动");
+                }
+            }
+
+            // 启动后台执行器（自动轮询扫描）
+            let executor_config = ExecutorConfig {
+                scan_interval_secs: if cfg!(any(target_os = "android", target_os = "ios")) {
+                    300 // 移动端：5分钟
+                } else {
+                    60 // 桌面端：1分钟
+                },
+                max_tasks_per_scan: 50,
+                task_timeout_secs: 30,
+                max_retries: 3,
+            };
+
+            log::info!(
+                "  ✓ 执行器配置: 间隔{}秒, 最多{}个任务/次",
+                executor_config.scan_interval_secs,
+                executor_config.max_tasks_per_scan
+            );
+
+            scheduler
+        };
+
+        // 使用 Tauri manage 单独管理调度器（避免循环依赖）
+        app_handle.manage(reminder_scheduler);
+
+        log::info!("✓ 统一提醒调度器初始化完成");
+
+        // 启动其他定时任务调度器（禁用旧的提醒任务）
+        let scheduler_manager = SchedulerManager::new();
+        // 只启动非提醒类任务，避免与新调度器冲突
+        scheduler_manager
+            .start_non_reminder_tasks(app_handle.clone())
+            .await;
+        log::info!("✓ 定时任务调度器启动完成（已排除提醒任务）");
 
         log::info!("后台设置任务完成！");
 

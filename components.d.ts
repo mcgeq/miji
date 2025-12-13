@@ -105,6 +105,8 @@ declare module 'vue' {
     QuickMoneyTabs: typeof import('./src/components/common/QuickMoneyTabs.vue')['default']
     QuickMoneyTransactionList: typeof import('./src/components/common/QuickMoneyTransactionList.vue')['default']
     Radio: typeof import('./src/components/ui/Radio.vue')['default']
+    ReminderConfigPanel: typeof import('./src/components/common/ReminderConfigPanel.vue')['default']
+    ReminderSchedulerSettings: typeof import('./src/components/settings/ReminderSchedulerSettings.vue')['default']
     ReminderSelector: typeof import('./src/components/common/ReminderSelector.vue')['default']
     RepeatPeriodSelector: typeof import('./src/components/common/RepeatPeriodSelector.vue')['default']
     ResponsiveContainer: typeof import('./src/components/layout/ResponsiveContainer.vue')['default']

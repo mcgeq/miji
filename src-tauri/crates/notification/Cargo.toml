@@ -1,0 +1,32 @@
+[package]
+name = "notification"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Tauri
+tauri = { workspace = true }
+tauri-plugin-notification = { workspace = true }
+
+# Database
+sea-orm = { workspace = true }
+entity = { path = "../../entity" }
+common = { path = "../../common" }
+
+# Async
+tokio = { workspace = true }
+futures = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Time
+chrono = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+log = { workspace = true }
+
+# Utilities
+lazy_static = { workspace = true }
