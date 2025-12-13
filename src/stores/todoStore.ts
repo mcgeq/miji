@@ -347,25 +347,35 @@ export const useTodoStore = defineStore('todos', () => {
         // 保存查询参数，用于后续刷新
         lastQuery.value = query;
 
-        const result = await todoService.listPaged(query);
-        result.rows.sort(compareTodos);
+        const result = await todoService.listPagedWithFilters(query);
+        result.items.sort(compareTodos);
 
         // 不可变更新：创建新的 Map 和对象
-        const rowMap = new Map(result.rows.map(item => [item.serialNum, item]));
+        const rowMap = new Map(result.items.map(item => [item.serialNum, item]));
         todosPaged.value = {
-          ...result,
           rows: rowMap,
+          totalCount: result.total,
+          currentPage: result.page,
+          pageSize: result.pageSize,
+          totalPages: result.totalPages,
         };
 
         // 更新最后获取时间
         lastFetched.value = new Date();
 
         Lg.i(STORE_MODULE, '待办列表获取成功', {
-          totalCount: result.totalCount,
-          currentPage: result.currentPage,
+          totalCount: result.total,
+          currentPage: result.page,
         });
 
-        return result;
+        // Return in the old format for compatibility
+        return {
+          rows: result.items,
+          totalCount: result.total,
+          currentPage: result.page,
+          pageSize: result.pageSize,
+          totalPages: result.totalPages,
+        };
       } catch (err) {
         error.value = wrapError(STORE_MODULE, err, 'LIST_FAILED', '获取待办列表失败');
         throw error.value;

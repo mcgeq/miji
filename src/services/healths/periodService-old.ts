@@ -19,22 +19,27 @@ import type {
   PeriodStats,
 } from '@/schema/health/period';
 import { wrapError } from '@/utils/errorHandler';
-import type { PagedResult } from '../base/types';
+import type { PagedResult } from '../money/baseManager';
 import type { PeriodDailyRecordFilter } from './period_daily_record';
+import { PeriodDailyRecordMapper } from './period_daily_record';
 import type { PeriodRecordFilter } from './period_record';
-import { periodDailyRecordService } from './periodDailyRecordService';
-import { periodRecordService } from './periodRecordService';
-import { periodSettingsService } from './periodSettingsService';
+import { PeriodRecordMapper } from './period_record';
+import { PeriodSettingsMapper } from './period_settings';
 
 /**
  * 经期服务类
- * 组合三个子服务，提供统一的经期管理接口和高级业务逻辑
+ * 提供经期记录、每日记录、设置的 CRUD 操作和统计方法
  */
 class PeriodService {
-  // 使用组合模式，引用三个子服务
-  private recordService = periodRecordService;
-  private dailyRecordService = periodDailyRecordService;
-  private settingsService = periodSettingsService;
+  private periodRecordMapper: PeriodRecordMapper;
+  private periodDailyRecordMapper: PeriodDailyRecordMapper;
+  private periodSettingsMapper: PeriodSettingsMapper;
+
+  constructor() {
+    this.periodRecordMapper = new PeriodRecordMapper();
+    this.periodDailyRecordMapper = new PeriodDailyRecordMapper();
+    this.periodSettingsMapper = new PeriodSettingsMapper();
+  }
 
   // ==================== PeriodRecord CRUD ====================
 
@@ -42,21 +47,33 @@ class PeriodService {
    * 创建经期记录
    */
   async createPeriodRecord(data: PeriodRecordCreate): Promise<PeriodRecords> {
-    return await this.recordService.create(data);
+    try {
+      return await this.periodRecordMapper.create(data);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'CREATE_PERIOD_RECORD_FAILED', '创建经期记录失败');
+    }
   }
 
   /**
    * 获取经期记录
    */
   async getPeriodRecord(serialNum: string): Promise<PeriodRecords | null> {
-    return await this.recordService.getById(serialNum);
+    try {
+      return await this.periodRecordMapper.getById(serialNum);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'GET_PERIOD_RECORD_FAILED', '获取经期记录失败');
+    }
   }
 
   /**
    * 获取所有经期记录
    */
   async listPeriodRecords(): Promise<PeriodRecords[]> {
-    return await this.recordService.list();
+    try {
+      return await this.periodRecordMapper.list();
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'LIST_PERIOD_RECORDS_FAILED', '获取经期记录列表失败');
+    }
   }
 
   /**
@@ -65,21 +82,38 @@ class PeriodService {
   async listPagedPeriodRecords(
     query: PageQuery<PeriodRecordFilter>,
   ): Promise<PagedResult<PeriodRecords>> {
-    return await this.recordService.listPagedWithFilters(query);
+    try {
+      return await this.periodRecordMapper.listPaged(query);
+    } catch (error) {
+      throw wrapError(
+        'PeriodService',
+        error,
+        'LIST_PAGED_PERIOD_RECORDS_FAILED',
+        '分页获取经期记录失败',
+      );
+    }
   }
 
   /**
    * 更新经期记录
    */
   async updatePeriodRecord(serialNum: string, data: PeriodRecordUpdate): Promise<PeriodRecords> {
-    return await this.recordService.update(serialNum, data);
+    try {
+      return await this.periodRecordMapper.update(serialNum, data);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'UPDATE_PERIOD_RECORD_FAILED', '更新经期记录失败');
+    }
   }
 
   /**
    * 删除经期记录
    */
   async deletePeriodRecord(serialNum: string): Promise<void> {
-    return await this.recordService.delete(serialNum);
+    try {
+      await this.periodRecordMapper.deleteById(serialNum);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'DELETE_PERIOD_RECORD_FAILED', '删除经期记录失败');
+    }
   }
 
   // ==================== PeriodDailyRecord CRUD ====================
@@ -88,21 +122,33 @@ class PeriodService {
    * 创建每日记录
    */
   async createDailyRecord(data: PeriodDailyRecordCreate): Promise<PeriodDailyRecords> {
-    return await this.dailyRecordService.create(data);
+    try {
+      return await this.periodDailyRecordMapper.create(data);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'CREATE_DAILY_RECORD_FAILED', '创建每日记录失败');
+    }
   }
 
   /**
    * 获取每日记录
    */
   async getDailyRecord(serialNum: string): Promise<PeriodDailyRecords | null> {
-    return await this.dailyRecordService.getById(serialNum);
+    try {
+      return await this.periodDailyRecordMapper.getById(serialNum);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'GET_DAILY_RECORD_FAILED', '获取每日记录失败');
+    }
   }
 
   /**
    * 获取所有每日记录
    */
   async listDailyRecords(): Promise<PeriodDailyRecords[]> {
-    return await this.dailyRecordService.list();
+    try {
+      return await this.periodDailyRecordMapper.list();
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'LIST_DAILY_RECORDS_FAILED', '获取每日记录列表失败');
+    }
   }
 
   /**
@@ -111,7 +157,16 @@ class PeriodService {
   async listPagedDailyRecords(
     query: PageQuery<PeriodDailyRecordFilter>,
   ): Promise<PagedResult<PeriodDailyRecords>> {
-    return await this.dailyRecordService.listPagedWithFilters(query);
+    try {
+      return await this.periodDailyRecordMapper.listPaged(query);
+    } catch (error) {
+      throw wrapError(
+        'PeriodService',
+        error,
+        'LIST_PAGED_DAILY_RECORDS_FAILED',
+        '分页获取每日记录失败',
+      );
+    }
   }
 
   /**
@@ -121,14 +176,22 @@ class PeriodService {
     serialNum: string,
     data: PeriodDailyRecordUpdate,
   ): Promise<PeriodDailyRecords> {
-    return await this.dailyRecordService.update(serialNum, data);
+    try {
+      return await this.periodDailyRecordMapper.update(serialNum, data);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'UPDATE_DAILY_RECORD_FAILED', '更新每日记录失败');
+    }
   }
 
   /**
    * 删除每日记录
    */
   async deleteDailyRecord(serialNum: string): Promise<void> {
-    return await this.dailyRecordService.delete(serialNum);
+    try {
+      await this.periodDailyRecordMapper.deleteById(serialNum);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'DELETE_DAILY_RECORD_FAILED', '删除每日记录失败');
+    }
   }
 
   // ==================== PeriodSettings CRUD ====================
@@ -137,28 +200,44 @@ class PeriodService {
    * 创建经期设置
    */
   async createSettings(data: PeriodSettingsCreate): Promise<PeriodSettings> {
-    return await this.settingsService.create(data);
+    try {
+      return await this.periodSettingsMapper.create(data);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'CREATE_SETTINGS_FAILED', '创建经期设置失败');
+    }
   }
 
   /**
    * 获取经期设置
    */
   async getSettings(serialNum: string): Promise<PeriodSettings | null> {
-    return await this.settingsService.getById(serialNum);
+    try {
+      return await this.periodSettingsMapper.getById(serialNum);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'GET_SETTINGS_FAILED', '获取经期设置失败');
+    }
   }
 
   /**
    * 更新经期设置
    */
   async updateSettings(serialNum: string, data: PeriodSettingsUpdate): Promise<PeriodSettings> {
-    return await this.settingsService.update(serialNum, data);
+    try {
+      return await this.periodSettingsMapper.update(serialNum, data);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'UPDATE_SETTINGS_FAILED', '更新经期设置失败');
+    }
   }
 
   /**
    * 删除经期设置
    */
   async deleteSettings(serialNum: string): Promise<void> {
-    return await this.settingsService.delete(serialNum);
+    try {
+      await this.periodSettingsMapper.deleteById(serialNum);
+    } catch (error) {
+      throw wrapError('PeriodService', error, 'DELETE_SETTINGS_FAILED', '删除经期设置失败');
+    }
   }
 
   // ==================== 统计方法 ====================
@@ -267,7 +346,7 @@ class PeriodService {
       const events: PeriodCalendarEvent[] = [];
 
       // 添加历史经期事件
-      for (const period of periodRecords) {
+      periodRecords.forEach(period => {
         const start = new Date(period.startDate);
         const end = new Date(period.endDate);
         const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -286,10 +365,10 @@ class PeriodService {
             });
           }
         }
-      }
+      });
 
       // 添加历史排卵事件
-      for (const period of periodRecords) {
+      periodRecords.forEach(period => {
         const ovulationDate = new Date(period.startDate);
         ovulationDate.setDate(
           ovulationDate.getDate() + Math.floor(settings.averageCycleLength / 2),
@@ -319,7 +398,7 @@ class PeriodService {
             }
           }
         }
-      }
+      });
 
       // 添加预测的未来事件
       const stats = await this.calculateStats(settings);
@@ -390,7 +469,18 @@ class PeriodService {
    * @returns 当前月份的每日记录列表
    */
   async getCurrentMonthDailyRecords(): Promise<PeriodDailyRecords[]> {
-    return await this.dailyRecordService.getCurrentMonthRecords();
+    try {
+      const allRecords = await this.listDailyRecords();
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      return allRecords.filter(record => record.date.startsWith(currentMonth));
+    } catch (error) {
+      throw wrapError(
+        'PeriodService',
+        error,
+        'GET_CURRENT_MONTH_RECORDS_FAILED',
+        '获取当前月份记录失败',
+      );
+    }
   }
 }
 

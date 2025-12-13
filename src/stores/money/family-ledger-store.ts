@@ -7,7 +7,7 @@ import type {
   FamilyLedgerStats,
   FamilyLedgerUpdate,
 } from '@/schema/money';
-import { MoneyDb } from '@/services/money/money';
+import { familyLedgerService } from '@/services/family/familyLedgerService';
 import { Lg } from '@/utils/debugLog';
 import { assertExists } from '@/utils/errorHandler';
 import { toast } from '@/utils/toast';
@@ -186,7 +186,7 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
       this.error = null;
 
       try {
-        const result = await MoneyDb.listFamilyLedgers();
+        const result = await familyLedgerService.list();
         // 不可变更新
         this.ledgers = [...result];
         Lg.i(STORE_MODULE, '账本列表获取成功', { count: result.length });
@@ -205,7 +205,7 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
       Lg.i(STORE_MODULE, '创建账本', { name: data.name, type: data.ledgerType });
       return this.withLoadingSafe(
         async () => {
-          const ledger = await MoneyDb.createFamilyLedger(data);
+          const ledger = await familyLedgerService.create(data);
           // 不可变更新
           this.ledgers = [...this.ledgers, ledger];
           Lg.i(STORE_MODULE, '账本创建成功', { serialNum: ledger.serialNum });
@@ -223,7 +223,7 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
       Lg.i(STORE_MODULE, '更新账本', { serialNum, updates: Object.keys(data) });
       return this.withLoadingSafe(
         async () => {
-          const updatedLedger = await MoneyDb.updateFamilyLedger(serialNum, data);
+          const updatedLedger = await familyLedgerService.update(serialNum, data);
 
           // 不可变更新
           this.ledgers = this.ledgers.map(l => (l.serialNum === serialNum ? updatedLedger : l));
@@ -248,7 +248,7 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
       Lg.i(STORE_MODULE, '删除账本', { serialNum });
       return this.withLoadingSafe(
         async () => {
-          await MoneyDb.deleteFamilyLedger(serialNum);
+          await familyLedgerService.delete(serialNum);
 
           // 不可变更新
           this.ledgers = this.ledgers.filter(l => l.serialNum !== serialNum);
@@ -276,7 +276,7 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
       Lg.i(STORE_MODULE, '切换账本', { serialNum });
       try {
         // 使用详情 API，一次获取所有数据（包含成员和账户列表）
-        const ledger = await MoneyDb.getFamilyLedgerDetail(serialNum);
+        const ledger = await familyLedgerService.getDetail(serialNum);
 
         this.currentLedger = ledger;
 
@@ -299,9 +299,18 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
     async fetchLedgerStats(serialNum: string): Promise<FamilyLedgerStats> {
       Lg.d(STORE_MODULE, '获取账本统计', { serialNum });
       try {
-        // 目前后端还没有统计API，先返回基础统计数据
-        // TODO: 等后端实现统计API后替换
-        const ledger = await MoneyDb.getFamilyLedger(serialNum);
+        // 尝试获取统计信息
+        const stats = await familyLedgerService.getStats(serialNum);
+
+        if (stats) {
+          // 不可变更新
+          this.ledgerStats = { ...this.ledgerStats, [serialNum]: stats };
+          Lg.d(STORE_MODULE, '账本统计获取成功', { serialNum });
+          return stats;
+        }
+
+        // 如果没有统计信息，获取账本基础信息
+        const ledger = await familyLedgerService.getById(serialNum);
         assertExists(
           ledger,
           'FamilyLedgerStore',
@@ -310,7 +319,7 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
           AppErrorSeverity.MEDIUM,
         );
 
-        const stats: FamilyLedgerStats = {
+        const basicStats: FamilyLedgerStats = {
           familyLedgerSerialNum: serialNum,
           totalIncome: ledger.totalIncome || 0,
           totalExpense: ledger.totalExpense || 0,
@@ -323,9 +332,9 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
         };
 
         // 不可变更新
-        this.ledgerStats = { ...this.ledgerStats, [serialNum]: stats };
+        this.ledgerStats = { ...this.ledgerStats, [serialNum]: basicStats };
         Lg.d(STORE_MODULE, '账本统计获取成功', { serialNum });
-        return stats;
+        return basicStats;
       } catch (err) {
         Lg.e(STORE_MODULE, '获取账本统计失败', { serialNum, error: err });
         throw err;

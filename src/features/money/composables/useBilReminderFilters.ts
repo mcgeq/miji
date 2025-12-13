@@ -69,7 +69,7 @@ export function useBilReminderFilters(
   }
 
   const filteredReminders = computed(() => {
-    let result = [...bilReminders().rows];
+    let result = [...bilReminders().items];
 
     // UI层：status
     if (filters.value.status) {
@@ -96,7 +96,7 @@ export function useBilReminderFilters(
   });
 
   const uniqueCategories = computed(() => {
-    const categories = bilReminders().rows.map(r => r.category);
+    const categories = bilReminders().items.map(r => r.category);
     return [...new Set(categories)].filter(Boolean);
   });
 

@@ -29,7 +29,7 @@ export function useTabManager() {
         },
       };
       await transactionStore.fetchTransactionsPaged(params);
-      transactions.value = transactionStore.transactionsPaged.rows;
+      transactions.value = transactionStore.transactionsPaged.items;
       return true;
     } catch (err) {
       Lg.e('loadTransactions', err);

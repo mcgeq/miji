@@ -34,7 +34,7 @@
   function toggleFilters() {
     showMoreFilters.value = !showMoreFilters.value;
   }
-  const transactions = computed<Transaction[]>(() => transactionStore.transactionsPaged.rows);
+  const transactions = computed<Transaction[]>(() => transactionStore.transactionsPaged.items);
 
   // 禁用转账交易的编辑和删除按钮
   const disabledTransferTransactions = computed(() => {
@@ -179,7 +179,7 @@
       await transactionStore.fetchTransactionsPaged(params);
       const result = transactionStore.transactionsPaged;
 
-      pagination.value.totalItems = result.totalCount;
+      pagination.value.totalItems = result.total;
       pagination.value.totalPages = result.totalPages;
     } catch (error) {
       pagination.value.totalItems = 0;

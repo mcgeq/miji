@@ -85,7 +85,7 @@
         status: filters.value.status === 'all' ? undefined : filters.value.status,
         settlementType: filters.value.type === 'all' ? undefined : filters.value.type,
       });
-      records.value = result.rows || [];
+      records.value = result.items || result.rows || [];
     } catch (error) {
       console.error('加载失败:', error);
       toast.error('加载失败');

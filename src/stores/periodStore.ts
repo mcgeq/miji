@@ -216,7 +216,7 @@ export const usePeriodStore = defineStore('period', () => {
           filter: {},
         };
         const result = await periodService.listPagedPeriodRecords(query);
-        periodRecords.value = result.rows;
+        periodRecords.value = result.items;
       } catch (err) {
         error.value = wrapError('PeriodStore', err, 'UPDATE_RECORDS_FAILED', '更新经期记录失败');
         throw error.value;
@@ -242,7 +242,7 @@ export const usePeriodStore = defineStore('period', () => {
           filter: {},
         };
         const result = await periodService.listPagedDailyRecords(query);
-        periodDailyRecords.value = result.rows;
+        periodDailyRecords.value = result.items;
       } catch (err) {
         error.value = wrapError(
           'PeriodStore',

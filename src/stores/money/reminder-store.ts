@@ -3,9 +3,9 @@ import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
 import type { PageQuery } from '@/schema/common';
 import type { BilReminder, BilReminderCreate, BilReminderUpdate } from '@/schema/money';
-import type { PagedResult } from '@/services/money/baseManager';
+import type { PagedResult } from '@/services/base/types';
 import type { BilReminderFilters } from '@/services/money/billReminder';
-import { MoneyDb } from '@/services/money/money';
+import { billReminderService } from '@/services/money/billReminderService';
 import { toast } from '@/utils/toast';
 
 // ==================== Store Constants ====================
@@ -38,9 +38,9 @@ export const useReminderStore = defineStore('money-reminders', {
   state: (): ReminderStoreState => ({
     reminders: [],
     remindersPaged: {
-      rows: [],
-      totalCount: 0,
-      currentPage: 1,
+      items: [],
+      total: 0,
+      page: 1,
       pageSize: 10,
       totalPages: 0,
     },
@@ -128,7 +128,7 @@ export const useReminderStore = defineStore('money-reminders', {
 
       return this.withLoadingSafe(
         async () => {
-          const result = await MoneyDb.listBilRemindersPaged(query);
+          const result = await billReminderService.listPagedWithFilters(query);
 
           // 检查请求是否已被取消
           if (abortController.signal.aborted) {
@@ -164,7 +164,7 @@ export const useReminderStore = defineStore('money-reminders', {
     async fetchReminders() {
       return this.withLoadingSafe(
         async () => {
-          this.reminders = await MoneyDb.listBilReminders();
+          this.reminders = await billReminderService.list();
         },
         ReminderStoreErrorCode.FETCH_FAILED,
         '获取提醒列表失败',
@@ -177,7 +177,7 @@ export const useReminderStore = defineStore('money-reminders', {
     async createReminder(data: BilReminderCreate): Promise<BilReminder> {
       return this.withLoadingSafe(
         async () => {
-          const reminder = await MoneyDb.createBilReminder(data);
+          const reminder = await billReminderService.create(data);
           this.reminders.unshift(reminder);
 
           // 如果有分页数据，刷新当前页（异步，不阻塞）
@@ -200,7 +200,7 @@ export const useReminderStore = defineStore('money-reminders', {
     async updateReminder(serialNum: string, data: BilReminderUpdate): Promise<BilReminder> {
       return this.withLoadingSafe(
         async () => {
-          const reminder = await MoneyDb.updateBilReminder(serialNum, data);
+          const reminder = await billReminderService.update(serialNum, data);
           const index = this.reminders.findIndex(r => r.serialNum === serialNum);
           if (index !== -1) {
             this.reminders[index] = reminder;
@@ -218,7 +218,7 @@ export const useReminderStore = defineStore('money-reminders', {
     async deleteReminder(serialNum: string): Promise<void> {
       return this.withLoadingSafe(
         async () => {
-          await MoneyDb.deleteBilReminder(serialNum);
+          await billReminderService.delete(serialNum);
           this.reminders = this.reminders.filter(r => r.serialNum !== serialNum);
 
           // 刷新分页数据
@@ -251,7 +251,7 @@ export const useReminderStore = defineStore('money-reminders', {
 
       return this.withLoadingSafe(
         async () => {
-          const updatedReminder = await MoneyDb.updateBilReminderActive(
+          const updatedReminder = await billReminderService.updateActive(
             serialNum,
             !reminder.enabled,
           );
@@ -264,7 +264,7 @@ export const useReminderStore = defineStore('money-reminders', {
 
           // 重新获取列表
           await this.fetchRemindersPaged({
-            currentPage: this.remindersPaged.currentPage,
+            currentPage: this.remindersPaged.page,
             pageSize: this.remindersPaged.pageSize,
             sortOptions: {
               desc: true,
@@ -293,9 +293,9 @@ export const useReminderStore = defineStore('money-reminders', {
 
       this.reminders = [];
       this.remindersPaged = {
-        rows: [],
-        totalCount: 0,
-        currentPage: 1,
+        items: [],
+        total: 0,
+        page: 1,
         pageSize: 10,
         totalPages: 0,
       };

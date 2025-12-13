@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia';
 import { AppErrorSeverity } from '@/errors/appError';
 import type { Currency, CurrencyCrate, CurrencyUpdate } from '@/schema/common';
-import { MoneyDb } from '@/services/money/money';
+import { currencyService } from '@/services/money/currencyService';
 import { assertExists } from '@/utils/errorHandler';
 import { emitStoreEvent } from './store-events';
 
@@ -73,7 +73,7 @@ export const useCurrencyStore = defineStore('money-currencies', {
       this.error = null;
 
       try {
-        this.currencies = await MoneyDb.listCurrencies();
+        this.currencies = await currencyService.list();
         this.lastFetchedCurrencies = new Date();
 
         // 设置默认货币（如果有标记为默认的）
@@ -97,7 +97,7 @@ export const useCurrencyStore = defineStore('money-currencies', {
       this.error = null;
 
       try {
-        const currency = await MoneyDb.createCurrency(data);
+        const currency = await currencyService.create(data);
         this.currencies.push(currency);
 
         // 如果是默认货币，更新 defaultCurrency
@@ -125,7 +125,7 @@ export const useCurrencyStore = defineStore('money-currencies', {
       this.error = null;
 
       try {
-        const updatedCurrency = await MoneyDb.updateCurrency(code, data);
+        const updatedCurrency = await currencyService.update(code, data);
 
         const index = this.currencies.findIndex(c => c.code === code);
         if (index !== -1) {
@@ -160,7 +160,7 @@ export const useCurrencyStore = defineStore('money-currencies', {
       this.error = null;
 
       try {
-        await MoneyDb.deleteCurrency(code);
+        await currencyService.delete(code);
         this.currencies = this.currencies.filter(c => c.code !== code);
 
         // 如果删除的是默认货币，清空默认货币

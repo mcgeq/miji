@@ -8,8 +8,8 @@ import type {
   TransactionUpdate,
   TransferCreate,
 } from '@/schema/money';
-import type { PagedResult } from '@/services/money/baseManager';
-import { MoneyDb } from '@/services/money/money';
+import type { PagedResult } from '@/services/base/types';
+import { transactionService } from '@/services/money/transactionService';
 import type {
   InstallmentPlanResponse,
   TransactionFilters,
@@ -59,9 +59,9 @@ function createInitialState(): TransactionStoreState {
   return {
     transactions: [],
     transactionsPaged: {
-      rows: [],
-      totalCount: 0,
-      currentPage: 1,
+      items: [],
+      total: 0,
+      page: 1,
       pageSize: 10,
       totalPages: 0,
     },
@@ -199,7 +199,7 @@ export const useTransactionStore = defineStore('money-transactions', {
 
       return this.withLoadingSafe(
         async () => {
-          const result = await MoneyDb.listTransactionsPaged(query);
+          const result = await transactionService.listPagedWithFilters(query);
 
           // 检查请求是否已被取消
           if (abortController.signal.aborted) {
@@ -215,7 +215,7 @@ export const useTransactionStore = defineStore('money-transactions', {
           if (this.currentAbortController === abortController) {
             this.currentAbortController = null;
           }
-          Lg.i(STORE_MODULE, '分页交易列表获取成功', { totalCount: result.totalCount });
+          Lg.i(STORE_MODULE, '分页交易列表获取成功', { total: result.total });
         },
         TransactionStoreErrorCode.FETCH_FAILED,
         '获取交易列表失败',
@@ -241,7 +241,7 @@ export const useTransactionStore = defineStore('money-transactions', {
       Lg.i(STORE_MODULE, '获取全部交易列表');
       return this.withLoadingSafe(
         async () => {
-          const result = await MoneyDb.listTransactions();
+          const result = await transactionService.list();
           // 不可变更新：创建新数组
           this.transactions = [...result];
           Lg.i(STORE_MODULE, '全部交易列表获取成功', { count: result.length });
@@ -260,7 +260,7 @@ export const useTransactionStore = defineStore('money-transactions', {
       Lg.i(STORE_MODULE, '创建交易', { type: data.transactionType, amount: data.amount });
       return this.withLoadingSafe(
         async () => {
-          const transaction = await MoneyDb.createTransaction(data);
+          const transaction = await transactionService.create(data);
 
           // 不可变更新：创建新数组
           this.transactions = [transaction, ...this.transactions];
@@ -294,7 +294,7 @@ export const useTransactionStore = defineStore('money-transactions', {
       Lg.i(STORE_MODULE, '更新交易', { serialNum, updates: Object.keys(data) });
       return this.withLoadingSafe(
         async () => {
-          const transaction = await MoneyDb.updateTransaction(serialNum, data);
+          const transaction = await transactionService.update(serialNum, data);
 
           // 不可变更新：创建新数组，替换更新的项
           this.transactions = this.transactions.map(t =>
@@ -331,7 +331,7 @@ export const useTransactionStore = defineStore('money-transactions', {
           // TODO: 在后端实现批量创建 API
           // 目前使用并发创建，在后端实现后替换
           const transactions = await Promise.all(
-            dataList.map(data => MoneyDb.createTransaction(data)),
+            dataList.map(data => transactionService.create(data)),
           );
 
           // 批量更新列表
@@ -376,7 +376,7 @@ export const useTransactionStore = defineStore('money-transactions', {
           const transaction = this.getTransactionById(serialNum);
           const accountSerialNum = transaction?.accountSerialNum;
 
-          await MoneyDb.deleteTransaction(serialNum);
+          await transactionService.delete(serialNum);
 
           // 不可变更新：创建新数组，过滤掉删除的项
           this.transactions = this.transactions.filter(t => t.serialNum !== serialNum);
@@ -409,7 +409,7 @@ export const useTransactionStore = defineStore('money-transactions', {
       });
       return this.withLoadingSafe(
         async () => {
-          const [fromTx, toTx] = await MoneyDb.transferCreate(data);
+          const [fromTx, toTx] = await transactionService.createTransfer(data);
 
           // 不可变更新：创建新数组
           this.transactions = [fromTx, toTx, ...this.transactions];
@@ -444,7 +444,7 @@ export const useTransactionStore = defineStore('money-transactions', {
       Lg.i(STORE_MODULE, '更新转账', { serialNum });
       return this.withLoadingSafe(
         async () => {
-          const [fromTx, toTx] = await MoneyDb.transferUpdate(serialNum, data);
+          const [fromTx, toTx] = await transactionService.updateTransfer(serialNum, data);
 
           // 不可变更新：创建新数组，替换更新的项
           this.transactions = this.transactions.map(t => {
@@ -480,7 +480,7 @@ export const useTransactionStore = defineStore('money-transactions', {
       Lg.i(STORE_MODULE, '删除转账', { serialNum });
       return this.withLoadingSafe(
         async () => {
-          const [fromTx, toTx] = await MoneyDb.transferDelete(serialNum);
+          const [fromTx, toTx] = await transactionService.deleteTransfer(serialNum);
 
           // 不可变更新：创建新数组，过滤掉删除的项
           this.transactions = this.transactions.filter(
@@ -516,7 +516,7 @@ export const useTransactionStore = defineStore('money-transactions', {
       Lg.i(STORE_MODULE, '获取交易统计', { request });
       return this.withLoadingSafe(
         async () => {
-          const result = await MoneyDb.getTransactionStats(request);
+          const result = await transactionService.getStats(request);
           Lg.i(STORE_MODULE, '交易统计获取成功');
           return result;
         },
@@ -532,7 +532,7 @@ export const useTransactionStore = defineStore('money-transactions', {
       Lg.i(STORE_MODULE, '获取分期计划', { serialNum });
       return this.withLoadingSafe(
         async () => {
-          const result = await MoneyDb.getInstallmentPlan(serialNum);
+          const result = await transactionService.getInstallmentPlan(serialNum);
           Lg.i(STORE_MODULE, '分期计划获取成功', { serialNum });
           return result;
         },

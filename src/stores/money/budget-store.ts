@@ -3,9 +3,9 @@ import { defineStore } from 'pinia';
 import { AppError } from '@/errors/appError';
 import type { PageQuery } from '@/schema/common';
 import type { Budget, BudgetCreate, BudgetUpdate } from '@/schema/money';
-import type { PagedResult } from '@/services/money/baseManager';
+import type { PagedResult } from '@/services/base/types';
+import { budgetService } from '@/services/money/budgetService';
 import type { BudgetFilters } from '@/services/money/budgets';
-import { MoneyDb } from '@/services/money/money';
 import { toast } from '@/utils/toast';
 
 // ==================== Store Constants ====================
@@ -38,9 +38,9 @@ export const useBudgetStore = defineStore('money-budgets', {
   state: (): BudgetStoreState => ({
     budgets: [],
     budgetsPaged: {
-      rows: [],
-      totalCount: 0,
-      currentPage: 1,
+      items: [],
+      total: 0,
+      page: 1,
       pageSize: 10,
       totalPages: 0,
     },
@@ -114,7 +114,7 @@ export const useBudgetStore = defineStore('money-budgets', {
 
       return this.withLoadingSafe(
         async () => {
-          const result = await MoneyDb.listBudgetsPaged(query);
+          const result = await budgetService.listPagedWithFilters(query);
 
           // 检查请求是否已被取消
           if (abortController.signal.aborted) {
@@ -150,7 +150,7 @@ export const useBudgetStore = defineStore('money-budgets', {
     async createBudget(data: BudgetCreate): Promise<Budget> {
       return this.withLoadingSafe(
         async () => {
-          const budget = await MoneyDb.createBudget(data);
+          const budget = await budgetService.create(data);
           this.budgets.push(budget);
 
           // 如果有分页数据，刷新当前页（异步，不阻塞）
@@ -173,7 +173,7 @@ export const useBudgetStore = defineStore('money-budgets', {
     async updateBudget(serialNum: string, data: BudgetUpdate): Promise<Budget> {
       return this.withLoadingSafe(
         async () => {
-          const budget = await MoneyDb.updateBudget(serialNum, data);
+          const budget = await budgetService.update(serialNum, data);
           const index = this.budgets.findIndex(b => b.serialNum === serialNum);
           if (index !== -1) {
             this.budgets[index] = budget;
@@ -191,7 +191,7 @@ export const useBudgetStore = defineStore('money-budgets', {
     async deleteBudget(serialNum: string): Promise<void> {
       return this.withLoadingSafe(
         async () => {
-          await MoneyDb.deleteBudget(serialNum);
+          await budgetService.delete(serialNum);
           this.budgets = this.budgets.filter(b => b.serialNum !== serialNum);
 
           // 刷新分页数据
@@ -212,7 +212,7 @@ export const useBudgetStore = defineStore('money-budgets', {
     async toggleBudgetActive(serialNum: string, isActive: boolean): Promise<void> {
       return this.withLoadingSafe(
         async () => {
-          const updatedBudget = await MoneyDb.updateBudgetActive(serialNum, isActive);
+          const updatedBudget = await budgetService.updateActive(serialNum, isActive);
 
           // 更新 budgets 数组
           const index = this.budgets.findIndex(b => b.serialNum === serialNum);
@@ -222,7 +222,7 @@ export const useBudgetStore = defineStore('money-budgets', {
 
           // 刷新分页数据
           await this.fetchBudgetsPaged({
-            currentPage: this.budgetsPaged.currentPage,
+            currentPage: this.budgetsPaged.page,
             pageSize: this.budgetsPaged.pageSize,
             sortOptions: {
               desc: true,
@@ -251,9 +251,9 @@ export const useBudgetStore = defineStore('money-budgets', {
 
       this.budgets = [];
       this.budgetsPaged = {
-        rows: [],
-        totalCount: 0,
-        currentPage: 1,
+        items: [],
+        total: 0,
+        page: 1,
         pageSize: 10,
         totalPages: 0,
       };

@@ -1,7 +1,8 @@
 // src/stores/money/category-store.ts
 import { defineStore } from 'pinia';
 import type { Category, SubCategory } from '@/schema/money/category';
-import { MoneyDb } from '@/services/money/money';
+import { categoryService } from '@/services/money/categoryService';
+import { subCategoryService } from '@/services/money/subCategoryService';
 
 interface CategoryStoreState {
   categories: Category[];
@@ -94,7 +95,7 @@ export const useCategoryStore = defineStore('money-categories', {
       this.error = null;
 
       try {
-        this.categories = await MoneyDb.listCategory();
+        this.categories = await categoryService.list();
         this.lastFetchedCategories = new Date();
       } catch (error: unknown) {
         this.error = error instanceof Error ? error.message : '获取分类列表失败';
@@ -116,7 +117,7 @@ export const useCategoryStore = defineStore('money-categories', {
       this.error = null;
 
       try {
-        this.subCategories = await MoneyDb.listSubCategory();
+        this.subCategories = await subCategoryService.list();
         this.lastFetchedSubCategories = new Date();
       } catch (error: unknown) {
         this.error = error instanceof Error ? error.message : '获取子分类列表失败';

@@ -42,7 +42,7 @@ export function useBudgetActions() {
   });
 
   // 预算列表状态
-  const budgets = computed(() => budgetStore.budgetsPaged.rows);
+  const budgets = computed(() => budgetStore.budgetsPaged.items);
 
   /**
    * 切换预算激活状态

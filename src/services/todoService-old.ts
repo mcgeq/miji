@@ -7,30 +7,74 @@
 import type { PageQuery, Status } from '@/schema/common';
 import type { Todo, TodoCreate, TodoUpdate } from '@/schema/todos';
 import { wrapError } from '@/utils/errorHandler';
-import { BaseService, type IMapper } from './base/BaseService';
-import type { PagedResult } from './base/types';
+import type { PagedResult } from './money/baseManager';
 import type { TodoFilters } from './todo';
 import { TodoMapper } from './todo';
 
 /**
  * 待办服务类
- * 继承 BaseService，提供待办的 CRUD 操作和自定义业务方法
+ * 提供待办的 CRUD 操作和自定义业务方法
  */
-class TodoService extends BaseService<Todo, TodoCreate, TodoUpdate> {
-  private todoMapper: TodoMapper;
+class TodoService {
+  private mapper: TodoMapper;
 
   constructor() {
-    const mapper = new TodoMapper();
-    // Create an adapter to match IMapper interface
-    const mapperAdapter: IMapper<Todo, TodoCreate, TodoUpdate> = {
-      create: data => mapper.create(data),
-      getById: id => mapper.getById(id),
-      list: () => mapper.list(),
-      update: (id, data) => mapper.update(id, data),
-      delete: id => mapper.delete(id),
-    };
-    super('todo', mapperAdapter);
-    this.todoMapper = mapper;
+    this.mapper = new TodoMapper();
+  }
+
+  /**
+   * 创建待办
+   */
+  async create(data: TodoCreate): Promise<Todo> {
+    try {
+      return await this.mapper.create(data);
+    } catch (error) {
+      throw wrapError('TodoService', error, 'CREATE_FAILED', '创建待办失败');
+    }
+  }
+
+  /**
+   * 根据 ID 获取待办
+   */
+  async getById(id: string): Promise<Todo | null> {
+    try {
+      return await this.mapper.getById(id);
+    } catch (error) {
+      throw wrapError('TodoService', error, 'GET_FAILED', '获取待办失败');
+    }
+  }
+
+  /**
+   * 获取待办列表
+   */
+  async list(): Promise<Todo[]> {
+    try {
+      return await this.mapper.list();
+    } catch (error) {
+      throw wrapError('TodoService', error, 'LIST_FAILED', '获取待办列表失败');
+    }
+  }
+
+  /**
+   * 更新待办
+   */
+  async update(id: string, data: TodoUpdate): Promise<Todo> {
+    try {
+      return await this.mapper.update(id, data);
+    } catch (error) {
+      throw wrapError('TodoService', error, 'UPDATE_FAILED', '更新待办失败');
+    }
+  }
+
+  /**
+   * 删除待办
+   */
+  async delete(id: string): Promise<void> {
+    try {
+      await this.mapper.delete(id);
+    } catch (error) {
+      throw wrapError('TodoService', error, 'DELETE_FAILED', '删除待办失败');
+    }
   }
 
   /**
@@ -41,7 +85,7 @@ class TodoService extends BaseService<Todo, TodoCreate, TodoUpdate> {
    */
   async toggle(serialNum: string, status: Status): Promise<Todo> {
     try {
-      return await this.todoMapper.toggle(serialNum, status);
+      return await this.mapper.toggle(serialNum, status);
     } catch (error) {
       throw wrapError('TodoService', error, 'TOGGLE_FAILED', `切换待办状态失败: ${serialNum}`);
     }
@@ -52,17 +96,9 @@ class TodoService extends BaseService<Todo, TodoCreate, TodoUpdate> {
    * @param query - 分页查询参数
    * @returns 分页结果
    */
-  async listPagedWithFilters(query: PageQuery<TodoFilters>): Promise<PagedResult<Todo>> {
+  async listPaged(query: PageQuery<TodoFilters>): Promise<PagedResult<Todo>> {
     try {
-      const result = await this.todoMapper.listPaged(query);
-      // 转换为标准 PagedResult 格式
-      return {
-        items: result.rows,
-        total: result.totalCount,
-        page: result.currentPage,
-        pageSize: result.pageSize,
-        totalPages: result.totalPages,
-      };
+      return await this.mapper.listPaged(query);
     } catch (error) {
       throw wrapError('TodoService', error, 'LIST_PAGED_FAILED', '分页查询待办失败');
     }
@@ -75,7 +111,7 @@ class TodoService extends BaseService<Todo, TodoCreate, TodoUpdate> {
    */
   async listSubtasks(parentId: string): Promise<Todo[]> {
     try {
-      return await this.todoMapper.listSubtasks(parentId);
+      return await this.mapper.listSubtasks(parentId);
     } catch (error) {
       throw wrapError('TodoService', error, 'LIST_SUBTASKS_FAILED', `获取子任务失败: ${parentId}`);
     }
@@ -89,7 +125,7 @@ class TodoService extends BaseService<Todo, TodoCreate, TodoUpdate> {
    */
   async createSubtask(parentId: string, todo: TodoCreate): Promise<Todo> {
     try {
-      return await this.todoMapper.createSubtask(parentId, todo);
+      return await this.mapper.createSubtask(parentId, todo);
     } catch (error) {
       throw wrapError('TodoService', error, 'CREATE_SUBTASK_FAILED', `创建子任务失败: ${parentId}`);
     }

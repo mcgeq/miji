@@ -2,16 +2,16 @@ import type { PagedMapResult, PagedResult } from '@/services/money/baseManager';
 
 export function usePaginationFilters<T>(items: () => PagedResult<T>, defaultPageSize = 10) {
   const paged = computed(() => items());
-  const currentPage = ref(paged.value.currentPage);
+  const currentPage = ref(paged.value.page);
   const pageSize = ref(defaultPageSize);
 
-  const totalItems = computed(() => paged.value.totalCount);
+  const totalItems = computed(() => paged.value.total);
   const totalPages = computed(() => paged.value.totalPages);
-  const paginatedItems = computed(() => paged.value.rows);
+  const paginatedItems = computed(() => paged.value.items);
 
   // 当数据源变化时，自动回第一页
   watch(items, () => {
-    currentPage.value = paged.value.currentPage;
+    currentPage.value = paged.value.page;
   });
 
   watch(pageSize, () => {
