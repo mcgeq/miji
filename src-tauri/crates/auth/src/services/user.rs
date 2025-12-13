@@ -3,7 +3,7 @@ use std::sync::Arc;
 use common::{
     crud::service::{CrudConverter, CrudService, GenericCrudService},
     error::{AppError, MijiResult},
-    log::logger::OperationLogger,
+    log::{logger::OperationLogger, sanitizer::LogSanitizer},
     paginations::{Filter, PagedQuery, PagedResult},
     utils::date::DateUtils,
 };
@@ -220,8 +220,8 @@ impl UserService {
         db: &DatabaseConnection,
         email: String,
     ) -> MijiResult<entity::users::Model> {
-        entity::users::Entity::find()
-            .filter(entity::users::Column::Email.eq(email))
+        let result = entity::users::Entity::find()
+            .filter(entity::users::Column::Email.eq(&email))
             .one(db)
             .await
             .map_err(AppError::from)?
@@ -230,7 +230,20 @@ impl UserService {
                     common::BusinessCode::NotFound,
                     "User with given email not found",
                 )
-            })
+            });
+
+        // Log query with sanitized email
+        if result.is_ok() {
+            let sanitizer = LogSanitizer::new();
+            let query_data = serde_json::json!({"email": &email});
+            let sanitized = sanitizer.sanitize(&query_data);
+            tracing::info!(
+                "[QUERY] User found by email - {}",
+                serde_json::to_string(&sanitized).unwrap_or_default()
+            );
+        }
+
+        result
     }
 
     pub async fn get_user_password(
@@ -238,7 +251,14 @@ impl UserService {
         db: &DatabaseConnection,
         serial_num: String,
     ) -> MijiResult<String> {
-        let model = self.get_by_id(db, serial_num).await?;
+        let model = self.get_by_id(db, serial_num.clone()).await?;
+
+        // Log password access (sensitive operation)
+        tracing::info!(
+            "[QUERY] Get user password (ID: {}) - Sensitive operation",
+            serial_num
+        );
+
         Ok(model.password)
     }
 
@@ -249,6 +269,7 @@ impl UserService {
         query: UserSearchQuery,
         limit: Option<u32>,
     ) -> MijiResult<Vec<entity::users::Model>> {
+        let sanitizer = LogSanitizer::new();
         use entity::users::Entity as UserEntity;
         use sea_orm::{QueryOrder, QuerySelect};
 
@@ -258,29 +279,27 @@ impl UserService {
         conditions = conditions.add(entity::users::Column::DeletedAt.is_null());
 
         // 关键词搜索 - 支持姓名或邮箱模糊匹配
-        if let Some(keyword) = &query.keyword {
-            if !keyword.trim().is_empty() {
-                let keyword_condition = Condition::any()
-                    .add(entity::users::Column::Name.contains(keyword.trim()))
-                    .add(entity::users::Column::Email.contains(keyword.trim()));
-                conditions = conditions.add(keyword_condition);
-            }
+        if let Some(keyword) = &query.keyword
+            && !keyword.trim().is_empty()
+        {
+            let keyword_condition = Condition::any()
+                .add(entity::users::Column::Name.contains(keyword.trim()))
+                .add(entity::users::Column::Email.contains(keyword.trim()));
+            conditions = conditions.add(keyword_condition);
         }
 
         // 精确姓名搜索
-        if let Some(name) = &query.name {
-            if !name.trim().is_empty() {
-                conditions = conditions.add(entity::users::Column::Name.contains(name.trim()));
-            }
+        if let Some(name) = &query.name
+            && !name.trim().is_empty()
+        {
+            conditions = conditions.add(entity::users::Column::Name.contains(name.trim()));
         }
-
         // 精确邮箱搜索
-        if let Some(email) = &query.email {
-            if !email.trim().is_empty() {
-                conditions = conditions.add(entity::users::Column::Email.contains(email.trim()));
-            }
+        if let Some(email) = &query.email
+            && !email.trim().is_empty()
+        {
+            conditions = conditions.add(entity::users::Column::Email.contains(email.trim()));
         }
-
         // 状态过滤
         if let Some(status) = &query.status {
             conditions = conditions.add(entity::users::Column::Status.eq(status));
@@ -301,7 +320,26 @@ impl UserService {
             query_builder = query_builder.limit(limit as u64);
         }
 
-        query_builder.all(db).await.map_err(AppError::from)
+        let results = query_builder.all(db).await.map_err(AppError::from)?;
+
+        // Log search with sanitized params
+        let search_params = serde_json::json!({
+            "keyword": &query.keyword,
+            "name": &query.name,
+            "email": &query.email,
+            "status": &query.status,
+            "role": &query.role,
+            "limit": limit,
+            "result_count": results.len()
+        });
+        let sanitized = sanitizer.sanitize(&search_params);
+        tracing::info!(
+            "[QUERY] Search users - {} ({} results found)",
+            serde_json::to_string(&sanitized).unwrap_or_default(),
+            results.len()
+        );
+
+        Ok(results)
     }
 
     /// 获取最近活跃的用户
@@ -321,17 +359,25 @@ impl UserService {
         // 计算日期范围
         let cutoff_date = Utc::now() - Duration::days(days as i64);
 
-        UserEntity::find()
-            .filter(entity::users::Column::DeletedAt.is_null())
-            .filter(
-                entity::users::Column::LastActiveAt.gte(
+        let results =
+            UserEntity::find()
+                .filter(entity::users::Column::DeletedAt.is_null())
+                .filter(entity::users::Column::LastActiveAt.gte(
                     cutoff_date.with_timezone(&chrono::FixedOffset::east_opt(8 * 3600).unwrap()),
-                ),
-            )
-            .order_by_desc(entity::users::Column::LastActiveAt)
-            .limit(limit as u64)
-            .all(db)
-            .await
-            .map_err(AppError::from)
+                ))
+                .order_by_desc(entity::users::Column::LastActiveAt)
+                .limit(limit as u64)
+                .all(db)
+                .await
+                .map_err(AppError::from)?;
+
+        tracing::info!(
+            "[QUERY] Get recent active users - limit: {}, days: {}, {} results found",
+            limit,
+            days,
+            results.len()
+        );
+
+        Ok(results)
     }
 }

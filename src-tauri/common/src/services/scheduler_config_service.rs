@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::time::Duration;
+use tracing::info;
 
 /// 调度器配置
 #[derive(Debug, Clone)]
@@ -69,7 +70,7 @@ impl SchedulerConfigService {
         {
             let cache = self.cache.read().await;
             if let Some(config) = cache.get(&cache_key) {
-                tracing::debug!("从缓存读取配置: {}", cache_key);
+                tracing::debug!("Read config from cache: {}", cache_key);
                 return Ok(config.clone());
             }
         }
@@ -81,7 +82,7 @@ impl SchedulerConfigService {
         {
             let mut cache = self.cache.write().await;
             cache.insert(cache_key.clone(), config.clone());
-            tracing::debug!("配置写入缓存: {}", cache_key);
+            tracing::debug!("Write config to cache: {}", cache_key);
         }
 
         Ok(config)
@@ -127,7 +128,7 @@ impl SchedulerConfigService {
 
             if let Some(model) = query.one(db).await? {
                 tracing::debug!(
-                    "从数据库读取配置: task={}, user={:?}, platform={:?}",
+                    "Read config from database: task={}, user={:?}, platform={:?}",
                     task_type,
                     uid,
                     plat
@@ -137,7 +138,7 @@ impl SchedulerConfigService {
         }
 
         // 如果数据库没有配置，返回默认配置
-        tracing::debug!("使用默认配置: task={}", task_type);
+        tracing::debug!("Using default config: task={}", task_type);
         Ok(Self::default_config(task_type))
     }
 
@@ -153,10 +154,7 @@ impl SchedulerConfigService {
             battery_threshold: model.battery_threshold,
             network_required: model.network_required,
             wifi_only: model.wifi_only,
-            active_hours: model
-                .active_hours_start
-                .zip(model.active_hours_end)
-                .map(|(start, end)| (start, end)),
+            active_hours: model.active_hours_start.zip(model.active_hours_end),
             priority: model.priority,
         }
     }
@@ -217,14 +215,14 @@ impl SchedulerConfigService {
     pub async fn clear_cache(&self) {
         let mut cache = self.cache.write().await;
         cache.clear();
-        tracing::debug!("配置缓存已清除");
+        tracing::debug!("Config cache cleared");
     }
 
     /// 清除特定任务的缓存
     pub async fn clear_task_cache(&self, task_type: &str) {
         let mut cache = self.cache.write().await;
         cache.retain(|key, _| !key.starts_with(&format!("{}:", task_type)));
-        tracing::debug!("清除任务缓存: {}", task_type);
+        tracing::debug!("Clear task cache: {}", task_type);
     }
 
     /// 更新配置
@@ -238,6 +236,7 @@ impl SchedulerConfigService {
     ///
     /// # Returns
     /// * `MijiResult<scheduler_config::Model>` - 更新后的配置
+    #[allow(clippy::too_many_arguments)]
     pub async fn update_config(
         &self,
         db: &DatabaseConnection,
@@ -261,6 +260,9 @@ impl SchedulerConfigService {
             .one(db)
             .await?
             .ok_or_else(|| AppError::simple(BusinessCode::NotFound, "配置不存在"))?;
+
+        // 记录更新前状态
+        let before_data = serde_json::to_value(&config).ok();
 
         // 更新配置
         let mut active: scheduler_config::ActiveModel = config.into();
@@ -306,11 +308,31 @@ impl SchedulerConfigService {
         // 清除相关缓存
         self.clear_cache().await;
 
-        tracing::info!("配置已更新: {}", serial_num);
+        // 记录更新日志（只显示变更字段）
+        if let Some(before) = before_data {
+            let after_data = serde_json::to_value(&updated).ok();
+            if let Some(after) = after_data {
+                use crate::log::sanitizer::ChangeTracker;
+                if let Some(changes) = ChangeTracker::extract_changed_values(&before, &after) {
+                    info!(
+                        "[UPDATE] Scheduler config updated (ID: {}) - Changes: {}",
+                        serial_num,
+                        serde_json::to_string(&changes).unwrap_or_default()
+                    );
+                } else {
+                    info!(
+                        "[UPDATE] Scheduler config updated (ID: {}) - No changes",
+                        serial_num
+                    );
+                }
+            }
+        }
+
         Ok(updated)
     }
 
     /// 创建新配置
+    #[allow(clippy::too_many_arguments)]
     pub async fn create_config(
         &self,
         db: &DatabaseConnection,
@@ -360,12 +382,30 @@ impl SchedulerConfigService {
         // 清除缓存
         self.clear_cache().await;
 
-        tracing::info!("配置已创建: {}", created.serial_num);
+        // 记录创建日志
+        let config_data = serde_json::json!({
+            "task_type": &created.task_type,
+            "enabled": created.enabled,
+            "interval_seconds": created.interval_seconds,
+            "platform": &created.platform,
+            "priority": created.priority,
+        });
+        info!(
+            "[CREATE] Scheduler config created (ID: {}) - {}",
+            created.serial_num,
+            serde_json::to_string(&config_data).unwrap_or_default()
+        );
+
         Ok(created)
     }
 
     /// 删除配置
     pub async fn delete_config(&self, db: &DatabaseConnection, serial_num: &str) -> MijiResult<()> {
+        // 查询配置信息用于日志
+        let config = scheduler_config::Entity::find_by_id(serial_num)
+            .one(db)
+            .await?;
+
         scheduler_config::Entity::delete_by_id(serial_num)
             .exec(db)
             .await?;
@@ -373,7 +413,16 @@ impl SchedulerConfigService {
         // 清除缓存
         self.clear_cache().await;
 
-        tracing::info!("配置已删除: {}", serial_num);
+        // 记录删除日志
+        if let Some(cfg) = config {
+            info!(
+                "[DELETE] Scheduler config deleted (ID: {}) - task_type: {}",
+                serial_num, cfg.task_type
+            );
+        } else {
+            info!("[DELETE] Scheduler config deleted (ID: {})", serial_num);
+        }
+
         Ok(())
     }
 

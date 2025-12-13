@@ -138,7 +138,7 @@ impl PeriodReminderService {
         // PMS 通常在经期前 3-7 天出现
         let days_until = (period_date - DateUtils::local_now()).num_days();
 
-        let body = if days_until >= 3 && days_until <= 7 {
+        let body = if (3..=7).contains(&days_until) {
             "经期将至，如有不适症状属于正常现象。建议保持心情愉悦，适度运动".to_string()
         } else {
             "注意调节情绪，保持良好的生活作息".to_string()
@@ -189,7 +189,7 @@ impl PeriodReminderService {
             .await?;
 
         if recent_records.is_empty() {
-            tracing::debug!("未找到需要处理的经期记录");
+            tracing::debug!("[REMINDER] No period records found to process");
             return Ok(0);
         }
 
@@ -209,10 +209,10 @@ impl PeriodReminderService {
             let next_period_date = record.start_date + chrono::Duration::days(cycle_days);
             let days_until = (next_period_date - now).num_days();
 
-            // 提前 3 天开始提醒
-            if days_until >= 0 && days_until <= 3 {
+            // Send reminder 3 days in advance
+            if (0..=3).contains(&days_until) {
                 tracing::debug!(
-                    "发送经期提醒: record={}, days_until={}",
+                    "[REMINDER] Sending period reminder: record={}, days_until={}",
                     record.serial_num,
                     days_until
                 );
@@ -224,11 +224,14 @@ impl PeriodReminderService {
                 {
                     Ok(_) => {
                         sent_count += 1;
-                        tracing::info!("✅ 成功发送经期提醒: record={}", record.serial_num);
+                        tracing::info!(
+                            "[REMINDER] Period reminder sent successfully: record={}",
+                            record.serial_num
+                        );
                     }
                     Err(e) => {
                         tracing::error!(
-                            "❌ 发送经期提醒失败: record={}, error={}",
+                            "[REMINDER] Failed to send period reminder: record={}, error={}",
                             record.serial_num,
                             e
                         );
@@ -240,18 +243,21 @@ impl PeriodReminderService {
             let ovulation_date = record.start_date + chrono::Duration::days(14);
             let days_to_ovulation = (ovulation_date - now).num_days();
 
-            if days_to_ovulation >= 0 && days_to_ovulation <= 2 {
+            if (0..=2).contains(&days_to_ovulation) {
                 match self
                     .send_ovulation_reminder(app, db, system_user_id, ovulation_date)
                     .await
                 {
                     Ok(_) => {
                         sent_count += 1;
-                        tracing::info!("✅ 成功发送排卵期提醒: record={}", record.serial_num);
+                        tracing::info!(
+                            "[REMINDER] Ovulation reminder sent successfully: record={}",
+                            record.serial_num
+                        );
                     }
                     Err(e) => {
                         tracing::error!(
-                            "❌ 发送排卵期提醒失败: record={}, error={}",
+                            "[REMINDER] Failed to send ovulation reminder: record={}, error={}",
                             record.serial_num,
                             e
                         );
@@ -260,18 +266,21 @@ impl PeriodReminderService {
             }
 
             // PMS 提醒（经期前 3-7 天）
-            if days_until >= 3 && days_until <= 7 {
+            if (3..=7).contains(&days_until) {
                 match self
                     .send_pms_reminder(app, db, system_user_id, next_period_date)
                     .await
                 {
                     Ok(_) => {
                         sent_count += 1;
-                        tracing::info!("✅ 成功发送 PMS 提醒: record={}", record.serial_num);
+                        tracing::info!(
+                            "[REMINDER] PMS reminder sent successfully: record={}",
+                            record.serial_num
+                        );
                     }
                     Err(e) => {
                         tracing::error!(
-                            "❌ 发送 PMS 提醒失败: record={}, error={}",
+                            "[REMINDER] Failed to send PMS reminder: record={}, error={}",
                             record.serial_num,
                             e
                         );
@@ -281,7 +290,10 @@ impl PeriodReminderService {
         }
 
         if sent_count > 0 {
-            tracing::info!("✅ 发送 {} 条健康提醒（使用统一通知服务）", sent_count);
+            tracing::info!(
+                "[REMINDER] Sent {} health reminders (using unified notification service)",
+                sent_count
+            );
         }
 
         Ok(sent_count)

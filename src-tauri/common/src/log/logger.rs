@@ -7,7 +7,10 @@ use tracing::info;
 
 use crate::{
     error::{AppError, MijiResult},
-    log::config::{LogFilterConfig, LogTarget},
+    log::{
+        config::{LogFilterConfig, LogTarget},
+        sanitizer::{ChangeTracker, LogSanitizer},
+    },
     utils::date::DateUtils,
 };
 
@@ -47,11 +50,20 @@ impl OperationLogger for NoopLogger {
 /// 控制台日志记录器
 pub struct ConsoleLogger {
     filter: LogFilterConfig,
+    sanitizer: LogSanitizer,
 }
 
 impl ConsoleLogger {
     pub fn new(filter: LogFilterConfig) -> Self {
-        Self { filter }
+        Self {
+            filter,
+            sanitizer: LogSanitizer::new(),
+        }
+    }
+
+    pub fn with_sanitizer(mut self, sanitizer: LogSanitizer) -> Self {
+        self.sanitizer = sanitizer;
+        self
     }
 
     fn should_log(&self, target_table: &str) -> bool {
@@ -86,10 +98,55 @@ impl OperationLogger for ConsoleLogger {
             return Ok(());
         }
 
-        info!(
-            "Operation: {} on {} (ID: {})\nBefore: {:?}\nAfter: {:?}",
-            operation, target_table, record_id, data_before, data_after
-        );
+        match (data_before, data_after) {
+            // UPDATE 操作：只记录变更字段并脱敏
+            (Some(before), Some(after)) => {
+                if let Some(changes) = ChangeTracker::extract_changed_values(before, after) {
+                    let changes_value = Value::Object(changes);
+                    let sanitized = self.sanitizer.sanitize(&changes_value);
+                    info!(
+                        "[{}] {} on {} (ID: {}) - Changes: {}",
+                        operation,
+                        operation,
+                        target_table,
+                        record_id,
+                        serde_json::to_string(&sanitized).unwrap_or_default()
+                    );
+                } else {
+                    info!(
+                        "[{}] {} on {} (ID: {}) - No changes detected",
+                        operation, operation, target_table, record_id
+                    );
+                }
+            }
+            // CREATE 操作：记录新数据并脱敏
+            (None, Some(after)) => {
+                let sanitized = self.sanitizer.sanitize(after);
+                info!(
+                    "[{}] {} on {} (ID: {}) - Created: {}",
+                    operation,
+                    operation,
+                    target_table,
+                    record_id,
+                    serde_json::to_string(&sanitized).unwrap_or_default()
+                );
+            }
+            // DELETE 操作：只记录ID
+            (Some(_), None) => {
+                info!(
+                    "[{}] {} on {} (ID: {}) - Deleted",
+                    operation, operation, target_table, record_id
+                );
+            }
+            // 其他情况
+            _ => {
+                info!(
+                    "[{}] {} on {} (ID: {})",
+                    operation, operation, target_table, record_id
+                );
+            }
+        }
+
         Ok(())
     }
 }
@@ -102,6 +159,7 @@ pub struct FileLogger {
     current_file: Mutex<File>,
     current_size: Mutex<u64>,
     filter: LogFilterConfig,
+    sanitizer: LogSanitizer,
 }
 
 impl FileLogger {
@@ -124,7 +182,13 @@ impl FileLogger {
             current_file: Mutex::new(file),
             current_size: Mutex::new(current_size),
             filter,
+            sanitizer: LogSanitizer::new(),
         })
+    }
+
+    pub fn with_sanitizer(mut self, sanitizer: LogSanitizer) -> Self {
+        self.sanitizer = sanitizer;
+        self
     }
 
     async fn create_file(path: &PathBuf) -> MijiResult<File> {
@@ -216,14 +280,42 @@ impl OperationLogger for FileLogger {
             return Ok(());
         }
 
+        // 构建智能日志内容
+        let log_content = match (data_before, data_after) {
+            // UPDATE 操作：只记录变更字段并脱敏
+            (Some(before), Some(after)) => {
+                if let Some(changes) = ChangeTracker::extract_changed_values(before, after) {
+                    let changes_value = Value::Object(changes);
+                    let sanitized = self.sanitizer.sanitize(&changes_value);
+                    format!(
+                        "Changes: {}",
+                        serde_json::to_string(&sanitized).unwrap_or_default()
+                    )
+                } else {
+                    "No changes detected".to_string()
+                }
+            }
+            // CREATE 操作：记录新数据并脱敏
+            (None, Some(after)) => {
+                let sanitized = self.sanitizer.sanitize(after);
+                format!(
+                    "Created: {}",
+                    serde_json::to_string(&sanitized).unwrap_or_default()
+                )
+            }
+            // DELETE 操作：只记录ID
+            (Some(_), None) => "Deleted".to_string(),
+            // 其他情况
+            _ => "Unknown operation".to_string(),
+        };
+
         let log_entry = format!(
-            "[{}] {} - {} - {} - Before: {:?} - After: {:?}\n",
+            "[{}] {} on {} (ID: {}) - {}\n",
             DateUtils::local_rfc3339(),
             operation,
             target_table,
             record_id,
-            data_before,
-            data_after
+            log_content
         );
 
         let log_bytes = log_entry.as_bytes();

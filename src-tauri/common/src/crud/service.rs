@@ -5,7 +5,7 @@
 // File:           service.rs
 // Description:    About Common
 // Create   Date:  2025-08-07 09:16:50
-// Last Modified:  2025-08-08 19:43:15
+// Last Modified:  2025-12-13 15:14:00
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // ----------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ use sea_orm::{
 };
 use serde::{Serialize, de::DeserializeOwned};
 use std::{fmt, str::FromStr, sync::Arc};
-use tracing::{error, info};
+use tracing::error;
 use validator::Validate;
 
 /// 重构后的 CRUD 服务 trait
@@ -381,7 +381,6 @@ where
 
         // 应用排序
         query_builder = query.sort_options.apply_sort(query_builder);
-        info!("After sort_options query_builder {:?}", query_builder);
         // 计算总数
         let total_count = query_builder
             .clone()

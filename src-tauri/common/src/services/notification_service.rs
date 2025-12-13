@@ -186,7 +186,12 @@ impl NotificationService {
         // 4. 发送通知
         match self.send_platform_notification(app, &request).await {
             Ok(_) => {
-                tracing::info!("通知发送成功: {}", request.title);
+                tracing::info!(
+                    "[NOTIFICATION] 通知发送成功: type={}, title={}, priority={}",
+                    request.notification_type.as_str(),
+                    request.title,
+                    request.priority.as_str()
+                );
 
                 // 更新日志为成功
                 self.log_recorder.mark_success(db, &log_id).await?;
@@ -203,7 +208,12 @@ impl NotificationService {
                 Ok(())
             }
             Err(e) => {
-                tracing::error!("通知发送失败: {} - {}", request.title, e);
+                tracing::error!(
+                    "[NOTIFICATION] 通知发送失败: type={}, title={} - {}",
+                    request.notification_type.as_str(),
+                    request.title,
+                    e
+                );
 
                 // 更新日志为失败
                 self.log_recorder
@@ -391,13 +401,13 @@ impl SettingsChecker {
             }
 
             // 检查免打扰日期
-            if let Some(days_json) = s.quiet_days {
-                if let Ok(days) = serde_json::from_value::<Vec<String>>(days_json) {
-                    let today = Local::now().weekday().number_from_monday();
-                    if days.contains(&today.to_string()) {
-                        tracing::debug!("处于免打扰日期: 星期{}", today);
-                        return Ok(false);
-                    }
+            if let Some(days_json) = s.quiet_days
+                && let Ok(days) = serde_json::from_value::<Vec<String>>(days_json)
+            {
+                let today = Local::now().weekday().number_from_monday();
+                if days.contains(&today.to_string()) {
+                    tracing::debug!("处于免打扰日期: 星期{}", today);
+                    return Ok(false);
                 }
             }
         } else {
@@ -460,7 +470,13 @@ impl LogRecorder {
         };
 
         log.insert(db).await?;
-        tracing::debug!("创建通知日志: {}", log_id);
+
+        tracing::debug!(
+            "[CREATE] 通知日志已创建 (ID: {}) - type: {}, priority: {}",
+            log_id,
+            request.notification_type.as_str(),
+            request.priority.as_str()
+        );
         Ok(log_id)
     }
 
@@ -483,9 +499,13 @@ impl LogRecorder {
         active.status = Set("Sent".to_string());
         active.sent_at = Set(Some(DateUtils::local_now()));
         active.updated_at = Set(Some(DateUtils::local_now()));
-        active.update(db).await?;
+        let updated = active.update(db).await?;
 
-        tracing::debug!("更新通知日志为成功: {}", log_id);
+        tracing::info!(
+            "[UPDATE] 通知日志标记成功 (ID: {}) - type: {}",
+            log_id,
+            updated.notification_type
+        );
         Ok(())
     }
 
@@ -517,9 +537,15 @@ impl LogRecorder {
         active.retry_count = Set(retry_count + 1);
         active.last_retry_at = Set(Some(DateUtils::local_now()));
         active.updated_at = Set(Some(DateUtils::local_now()));
-        active.update(db).await?;
+        let updated = active.update(db).await?;
 
-        tracing::warn!("更新通知日志为失败: {} - {}", log_id, error);
+        tracing::warn!(
+            "[UPDATE] 通知日志标记失败 (ID: {}) - type: {}, retry: {}, error: {}",
+            log_id,
+            updated.notification_type,
+            updated.retry_count,
+            error
+        );
         Ok(())
     }
 }
@@ -569,9 +595,9 @@ impl PermissionManager {
     pub async fn request_permission(&self, _app: &AppHandle) -> MijiResult<()> {
         #[cfg(any(target_os = "android", target_os = "ios"))]
         {
-            // TODO: 实现实际的权限请求
-            // 这需要使用 Tauri 的权限 API 或原生插件
-            tracing::info!("请求通知权限（移动端）");
+            // TODO: Implement actual permission request
+            // This requires using Tauri's permission API or native plugin
+            tracing::info!("Request notification permission (mobile)");
         }
 
         Ok(())

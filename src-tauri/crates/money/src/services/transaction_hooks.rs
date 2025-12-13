@@ -81,7 +81,10 @@ impl Hooks<entity::transactions::Entity, CreateTransactionRequest, UpdateTransac
             {
                 // 立即记账失败，记录错误但不回滚整个事务
                 // 让定时任务稍后重试
-                tracing::warn!("立即处理第1期分期记账失败，将由定时任务重试: {}", e);
+                tracing::warn!(
+                    "[INSTALLMENT] Failed to process first installment immediately, will retry via scheduled task: {}",
+                    e
+                );
             }
         } else {
             // Only not transfer
@@ -746,7 +749,9 @@ async fn handle_installment_transaction_deletion(
     // 4. 根据分期状态处理不同场景
     if paid_details.is_empty() {
         // 场景1：分期还没有记账
-        tracing::info!("分期交易删除场景1：分期还没有记账，直接删除分期计划和明细");
+        tracing::info!(
+            "[INSTALLMENT] Delete scenario 1: No installments recorded yet, deleting plan and details directly"
+        );
         // 删除分期明细
         for detail in &details {
             entity::installment_details::Entity::delete_by_id(&detail.serial_num)
@@ -759,12 +764,16 @@ async fn handle_installment_transaction_deletion(
             .await?;
     } else if pending_details.is_empty() {
         // 场景3：所有分期都记账完成
-        tracing::info!("分期交易删除场景3：所有分期都记账完成，标记主交易为删除并创建反向交易");
+        tracing::info!(
+            "[INSTALLMENT] Delete scenario 3: All installments recorded, marking main transaction as deleted and creating reverse transaction"
+        );
         // 这里不需要额外处理，主交易会被标记为删除
         // 反向交易会在after_delete中处理
     } else {
         // 场景2：分期已记账但未完成
-        tracing::info!("分期交易删除场景2：分期已记账但未完成，删除已记账的分期交易和分期计划");
+        tracing::info!(
+            "[INSTALLMENT] Delete scenario 2: Installments partially recorded, deleting recorded transactions and plan"
+        );
 
         // 删除已记账的分期交易
         let installment_transactions = entity::transactions::Entity::find()
@@ -841,7 +850,7 @@ async fn cleanup_installment_after_deletion(
 
     // 场景3：所有分期都记账完成，需要创建反向交易
     if !paid_details.is_empty() && details.len() == paid_details.len() {
-        tracing::info!("分期交易删除场景3：创建反向交易");
+        tracing::info!("[INSTALLMENT] Delete scenario 3: Creating reverse transaction");
 
         // 创建反向交易（入账）
         let reverse_transaction = CreateTransactionRequest {
@@ -969,7 +978,10 @@ async fn create_split_records_from_transaction(
             {
                 Some(serial) => serial.to_string(),
                 None => {
-                    tracing::warn!("split_member 缺少 serialNum 字段: {:?}", split_member);
+                    tracing::warn!(
+                        "[SPLIT] split_member missing serialNum field: {:?}",
+                        split_member
+                    );
                     continue;
                 }
             };

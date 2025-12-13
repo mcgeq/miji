@@ -235,7 +235,7 @@ impl TodosService {
     ) -> MijiResult<usize> {
         let now = DateUtils::local_now();
         let todos = self.find_due_reminder_todos(db, now).await?;
-        tracing::debug!("reminder scan at={}, due candidates={}", now, todos.len());
+        tracing::debug!("[REMINDER] Scan at={}, due candidates={}", now, todos.len());
         if todos.is_empty() {
             return Ok(0);
         }
@@ -244,7 +244,7 @@ impl TodosService {
         let mut sent = 0usize;
         for td in todos {
             tracing::debug!(
-                "send reminder for todo={}, title='{}'",
+                "[REMINDER] Sending reminder for todo={}, title='{}'",
                 td.serial_num,
                 td.title
             );
@@ -256,11 +256,18 @@ impl TodosService {
                     sent += 1;
                 }
                 Err(e) => {
-                    tracing::error!("发送待办提醒失败: {} - {}", td.title, e);
+                    tracing::error!(
+                        "[REMINDER] Failed to send todo reminder: {} - {}",
+                        td.title,
+                        e
+                    );
                 }
             }
         }
-        tracing::info!("✅ 发送 {} 条待办提醒（使用统一通知服务）", sent);
+        tracing::info!(
+            "[REMINDER] Sent {} todo reminders (using unified notification service)",
+            sent
+        );
         Ok(sent)
     }
     /// 计算提前提醒时长（根据 advance value + unit），默认 0
@@ -343,7 +350,7 @@ impl TodosService {
 
             true
         });
-        tracing::debug!("reminder filtered: {} -> {}", before, todos.len());
+        tracing::debug!("[REMINDER] Filtered: {} -> {}", before, todos.len());
 
         Ok(todos)
     }
@@ -730,7 +737,10 @@ impl TodosService {
             let repeat_type = match RepeatPeriodType::from_string(&td.repeat_period_type) {
                 Some(rt) => rt,
                 None => {
-                    tracing::warn!("Unknown repeat period type: {}", td.repeat_period_type);
+                    tracing::warn!(
+                        "[TODO] Unknown repeat period type: {}",
+                        td.repeat_period_type
+                    );
                     continue;
                 }
             };
@@ -742,7 +752,7 @@ impl TodosService {
             // 验证重复规则配置
             if !Self::validate_repeat_config(&repeat_type, &td.repeat) {
                 tracing::warn!(
-                    "Invalid repeat config for todo {}: type={:?}, config={:?}",
+                    "[TODO] Invalid repeat config for todo {}: type={:?}, config={:?}",
                     td.serial_num,
                     repeat_type,
                     td.repeat
@@ -988,7 +998,7 @@ impl TodosService {
                 > 0;
             if exists {
                 tracing::debug!(
-                    "Skipping duplicate todo for parent {} at {}",
+                    "[TODO] Skipping duplicate todo for parent {} at {}",
                     td.serial_num,
                     next_due
                 );
@@ -1037,7 +1047,7 @@ impl TodosService {
                 Ok(active) => match active.insert(db).await {
                     Ok(new_todo) => {
                         tracing::info!(
-                            "Created repeated todo {} for parent {} due_at={}",
+                            "[TODO] Created repeated todo {} for parent {} due_at={}",
                             new_todo.serial_num,
                             td.serial_num,
                             next_due
@@ -1045,7 +1055,7 @@ impl TodosService {
                     }
                     Err(e) => {
                         tracing::error!(
-                            "Failed to insert repeated todo for parent {}: {}",
+                            "[TODO] Failed to insert repeated todo for parent {}: {}",
                             td.serial_num,
                             e
                         );
@@ -1053,7 +1063,7 @@ impl TodosService {
                 },
                 Err(e) => {
                     tracing::error!(
-                        "Failed to create repeated todo for parent {}: {}",
+                        "[TODO] Failed to create repeated todo for parent {}: {}",
                         td.serial_num,
                         e
                     );

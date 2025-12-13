@@ -1429,13 +1429,23 @@ impl BilReminderService {
                         auto_rescheduled += 1;
                     }
                 }
-                Err(e) => tracing::error!("发送账单提醒失败: {} - {}", br.name, e),
+                Err(e) => tracing::error!(
+                    "[REMINDER] Failed to send bill reminder: {} - {}",
+                    br.name,
+                    e
+                ),
             }
         }
 
-        tracing::info!("✅ 发送 {} 条账单提醒（使用统一通知服务）", sent);
+        tracing::info!(
+            "[REMINDER] Sent {} bill reminders (using unified notification service)",
+            sent
+        );
         if auto_rescheduled > 0 {
-            tracing::info!("自动重新安排了 {} 个过期账单", auto_rescheduled);
+            tracing::info!(
+                "[REMINDER] Auto-rescheduled {} overdue bills",
+                auto_rescheduled
+            );
         }
 
         Ok(sent)
