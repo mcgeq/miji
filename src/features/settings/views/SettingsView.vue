@@ -1,8 +1,8 @@
 <script setup lang="ts">
   import { Bell, Clock, Database, Lock, Settings, Shield, User } from 'lucide-vue-next';
   import { useRoute } from 'vue-router';
+  import SchedulerSettingsTabs from '@/components/settings/SchedulerSettingsTabs.vue';
   import DataMigration from '../components/DataMigration.vue';
-  import SchedulerSettings from '../components/SchedulerSettings.vue';
   import UserDisplayCard from '../components/UserDisplayCard.vue';
   import UserProfileCard from '../components/UserProfileCard.vue';
   import GeneralSettings from './GeneralSettings.vue';
@@ -31,7 +31,7 @@
       account: UserProfileCard,
       security: SecuritySettings,
       notifications: NotificationSettings,
-      scheduler: SchedulerSettings,
+      scheduler: SchedulerSettingsTabs,
       privacy: PrivacySettings,
       data: DataMigration,
     };

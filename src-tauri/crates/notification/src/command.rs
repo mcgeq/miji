@@ -8,6 +8,7 @@ use crate::scheduler::ReminderScheduler;
 
 /// 调度器状态响应
 #[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SchedulerStateResponse {
     pub is_running: bool,
     pub last_scan_at: Option<String>,
@@ -23,6 +24,15 @@ pub async fn reminder_scheduler_get_state(
 ) -> Result<SchedulerStateResponse, String> {
     let scheduler = scheduler.read().await;
     let state = scheduler.get_state().await;
+
+    // 调试日志
+    tracing::info!(
+        "🔍 查询调度器状态: is_running={}, pending={}, executed={}, failed={}",
+        state.is_running,
+        state.pending_tasks,
+        state.executed_today,
+        state.failed_today
+    );
 
     Ok(SchedulerStateResponse {
         is_running: state.is_running,

@@ -128,8 +128,8 @@
         v-if="isVisible && content"
         ref="tooltipRef"
         class="absolute z-[9999] px-3 py-2.5 text-sm text-white rounded-lg shadow-xl pointer-events-none
-               bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-900 dark:to-black
-               border border-gray-700/50 dark:border-gray-800/50
+               bg-gray-800/95 dark:bg-gray-900/95
+               border border-gray-700/30 dark:border-gray-800/30
                backdrop-blur-sm"
         :class="[
           actualPlacement === 'top' && 'bottom-full left-1/2 -translate-x-1/2 mb-2',
@@ -141,8 +141,8 @@
       >
         <!-- 箭头 -->
         <div
-          class="absolute w-2 h-2 bg-gradient-to-br from-gray-800 to-gray-900 dark:from-gray-900 dark:to-black transform rotate-45
-                 border-gray-700/50 dark:border-gray-800/50"
+          class="absolute w-2 h-2 bg-gray-800/95 dark:bg-gray-900/95 transform rotate-45
+                 border-gray-700/30 dark:border-gray-800/30"
           :class="[
             actualPlacement === 'top' && 'bottom-[-5px] left-1/2 -translate-x-1/2 border-r border-b',
             actualPlacement === 'bottom' && 'top-[-5px] left-1/2 -translate-x-1/2 border-l border-t',

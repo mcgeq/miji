@@ -1,81 +1,192 @@
 <template>
-  <div class="reminder-scheduler-settings">
-    <div class="settings-header">
-      <h3>提醒调度器</h3>
-      <p class="description">管理系统提醒的自动扫描和发送</p>
+  <div class="max-w-4xl mx-auto">
+    <!-- 加载状态 -->
+    <div v-if="loading" class="flex items-center justify-center py-16">
+      <div
+        class="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-600 dark:border-orange-500"
+      ></div>
+      <span class="ml-3 text-gray-600 dark:text-gray-400 text-lg">加载中...</span>
     </div>
 
-    <div v-if="loading" class="loading">
-      <div class="spinner" />
-      加载中...
+    <!-- 错误消息 -->
+    <div
+      v-else-if="errorMessage"
+      class="p-5 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl flex items-center justify-between shadow-sm"
+    >
+      <span class="text-red-700 dark:text-red-300 font-medium">{{ errorMessage }}</span>
+      <button
+        @click="loadState"
+        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+      >
+        重试
+      </button>
     </div>
 
-    <div v-else-if="errorMessage" class="error-message">
-      {{ errorMessage }}
-      <button @click="loadState" class="retry-btn">重试</button>
-    </div>
+    <!-- 主内容 -->
+    <div v-else-if="state" class="space-y-6">
+      <!-- 状态卡片 -->
+      <div
+        class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm"
+      >
+        <div class="p-5">
+          <!-- 状态头部 -->
+          <div
+            class="flex items-center justify-between pb-4 mb-4 border-b border-gray-200 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <div
+                  :class="[
+                    'w-4 h-4 rounded-full transition-all duration-300',
+                    state.isRunning 
+                      ? 'bg-green-500 shadow-lg shadow-green-500/50' 
+                      : 'bg-gray-400 dark:bg-gray-600'
+                  ]"
+                >
+                  <div
+                    v-if="state.isRunning"
+                    class="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75"
+                  ></div>
+                </div>
+              </div>
+              <span class="text-xl font-bold text-gray-900 dark:text-white">
+                {{ state.isRunning ? '🟢 运行中' : '⚫ 已停止' }}
+              </span>
+            </div>
+          </div>
 
-    <div v-else-if="state" class="settings-content">
-      <!-- 调度器状态 -->
-      <div class="status-card">
-        <div class="status-header">
-          <div class="status-indicator" :class="{ active: state.isRunning }" />
-          <span class="status-text"> {{ state.isRunning ? '运行中' : '已停止' }} </span>
-        </div>
+          <!-- 状态网格 -->
+          <div class="grid grid-cols-2 gap-3">
+            <div
+              class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500 dark:text-gray-400">上次扫描</span>
+                <span class="text-xs text-orange-600 dark:text-orange-400">⏱️</span>
+              </div>
+              <div class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+                {{ displayTime }}
+              </div>
+            </div>
 
-        <div class="status-info">
-          <div class="info-item">
-            <span class="label">上次扫描:</span>
-            <span class="value">{{ formatTime(state.lastScanAt) }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">待处理:</span>
-            <span class="value">{{ state.pendingTasks }}个</span>
-          </div>
-          <div class="info-item">
-            <span class="label">今日已执行:</span>
-            <span class="value success">{{ state.executedToday }}个</span>
-          </div>
-          <div class="info-item">
-            <span class="label">今日失败:</span>
-            <span class="value error">{{ state.failedToday }}个</span>
+            <div
+              class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500 dark:text-gray-400">待处理</span>
+                <span class="text-xs">⏳</span>
+              </div>
+              <div class="mt-2 text-lg font-semibold text-blue-600 dark:text-blue-400">
+                {{ state.pendingTasks }}个
+              </div>
+            </div>
+
+            <div
+              class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500 dark:text-gray-400">今日已执行</span>
+                <span class="text-xs">✅</span>
+              </div>
+              <div class="mt-2 text-lg font-semibold text-green-600 dark:text-green-400">
+                {{ state.executedToday }}个
+              </div>
+            </div>
+
+            <div
+              class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500 dark:text-gray-400">今日失败</span>
+                <span class="text-xs">❌</span>
+              </div>
+              <div class="mt-2 text-lg font-semibold text-red-600 dark:text-red-400">
+                {{ state.failedToday }}个
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 操作按钮 -->
-      <div class="action-buttons">
-        <button @click="toggle" :disabled="loading" class="btn-primary">
-          {{ state.isRunning ? '停止调度器' : '启动调度器' }}
+      <!-- 操作按钮区 -->
+      <div class="flex justify-center gap-3">
+        <button
+          @click="toggle"
+          :disabled="loading"
+          :class="[
+            'w-12 h-12 rounded-lg text-xl text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center',
+            state.isRunning 
+              ? 'bg-red-600 hover:bg-red-700' 
+              : 'bg-green-600 hover:bg-green-700'
+          ]"
+          :title="state.isRunning ? '停止调度器' : '启动调度器'"
+        >
+          {{ state.isRunning ? '⏸️' : '▶️' }}
         </button>
 
-        <button @click="handleScan" :disabled="loading || !state.isRunning" class="btn-secondary">
-          立即扫描
+        <button
+          @click="handleScan"
+          :disabled="loading || !state.isRunning"
+          class="w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white text-xl rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          title="立即扫描"
+        >
+          🔍
         </button>
 
-        <button @click="handleTest" :disabled="loading" class="btn-secondary">测试通知</button>
+        <button
+          v-if="isDev"
+          @click="handleTest"
+          :disabled="loading"
+          class="w-12 h-12 bg-gray-600 hover:bg-gray-700 text-white text-xl rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          title="测试通知"
+        >
+          🧪
+        </button>
 
-        <button @click="loadState" :disabled="loading" class="btn-text">刷新状态</button>
+        <button
+          @click="loadState"
+          :disabled="loading"
+          class="w-12 h-12 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-white text-xl rounded-lg border border-gray-300 dark:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          title="刷新状态"
+        >
+          🔄
+        </button>
       </div>
 
       <!-- 扫描结果 -->
-      <div v-if="scanResult !== null" class="scan-result">
-        <div class="result-icon">✓</div>
-        <span>扫描完成，找到 {{ scanResult }}个待发送提醒</span>
+      <div
+        v-if="scanResult !== null"
+        class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg animate-fade-in"
+      >
+        <div class="flex items-center gap-2">
+          <span class="text-green-600 dark:text-green-400 text-xl">✓</span>
+          <span class="text-green-800 dark:text-green-300 font-medium">
+            扫描完成，找到 <span class="font-semibold">{{ scanResult }}</span>个待发送提醒
+          </span>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue';
+  import { listen } from '@tauri-apps/api/event';
+  import { onMounted, onUnmounted, ref } from 'vue';
   import { reminderSchedulerApi, type SchedulerState } from '@/api/reminderScheduler';
   import { toast } from '@/utils/toast';
 
-  const state = ref<SchedulerState | null>(null);
+  // 乐观初始状态：假设调度器已启动（与后端保持一致）
+  const state = ref<SchedulerState | null>({
+    isRunning: true,
+    lastScanAt: undefined,
+    pendingTasks: 0,
+    executedToday: 0,
+    failedToday: 0,
+  });
   const loading = ref(false);
   const errorMessage = ref<string | null>(null);
   const scanResult = ref<number | null>(null);
+  const isDev = import.meta.env.DEV;
 
   /**
    * 加载调度器状态
@@ -85,7 +196,8 @@
     errorMessage.value = null;
 
     try {
-      state.value = await reminderSchedulerApi.getState();
+      const result = await reminderSchedulerApi.getState();
+      state.value = result;
     } catch (err) {
       errorMessage.value = err instanceof Error ? err.message : '加载状态失败';
       toast.error('加载调度器状态失败');
@@ -171,254 +283,83 @@
   }
 
   /**
-   * 格式化时间
+   * 格式化时间为 YYYY-MM-DD HH:mm:ss 格式
    */
   function formatTime(timeStr?: string): string {
     if (!timeStr) return '从未';
 
     try {
       const date = new Date(timeStr);
-      const now = new Date();
-      const diff = now.getTime() - date.getTime();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
 
-      if (diff < 60000) return '刚刚';
-      if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`;
-      if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`;
-
-      return date.toLocaleString('zh-CN', {
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     } catch {
       return timeStr;
     }
   }
 
-  // 组件挂载时加载状态
-  onMounted(() => {
-    loadState();
+  // 直接使用 computed 计算显示时间
+  const displayTime = computed(() => formatTime(state.value?.lastScanAt));
+
+  // 组件挂载时监听后端事件
+  let unlistenReadyFn: (() => void) | null = null;
+  let unlistenScanFn: (() => void) | null = null;
+  let fallbackTimer: NodeJS.Timeout | null = null;
+
+  onMounted(async () => {
+    // 1. 监听后端调度器就绪事件
+    try {
+      unlistenReadyFn = await listen('scheduler-ready', () => {
+        loadState();
+
+        // 收到事件后清除兜底定时器
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer);
+          fallbackTimer = null;
+        }
+      });
+    } catch (err) {
+      console.error('监听调度器就绪事件失败:', err);
+    }
+
+    // 2. 监听扫描完成事件（后端每次扫描后自动通知）
+    try {
+      unlistenScanFn = await listen('scheduler-scan-completed', () => {
+        loadState();
+      });
+    } catch (err) {
+      console.error('监听扫描完成事件失败:', err);
+    }
+
+    // 兜底机制：1.5秒后主动刷新状态（给后端足够初始化时间）
+    fallbackTimer = setTimeout(() => {
+      loadState();
+    }, 1500);
+  });
+
+  // 清理监听器
+  onUnmounted(() => {
+    if (unlistenReadyFn) {
+      unlistenReadyFn();
+    }
+    if (unlistenScanFn) {
+      unlistenScanFn();
+    }
+    if (fallbackTimer) {
+      clearTimeout(fallbackTimer);
+    }
   });
 </script>
 
 <style scoped>
-  .reminder-scheduler-settings {
-    padding: 24px;
-    max-width: 800px;
-  }
+  /* 使用 Tailwind CSS */
 
-  .settings-header {
-    margin-bottom: 24px;
-  }
-
-  .settings-header h3 {
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--color-text-primary);
-  }
-
-  .description {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-  }
-
-  /* 加载状态 */
-  .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 48px;
-    color: var(--color-text-secondary);
-  }
-
-  .spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--color-border);
-    border-top-color: var(--color-primary);
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    margin-right: 12px;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  /* 错误消息 */
-  .error-message {
-    padding: 16px;
-    background: var(--color-error-bg);
-    border: 1px solid var(--color-error-border);
-    border-radius: 8px;
-    color: var(--color-error);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .retry-btn {
-    padding: 6px 12px;
-    background: var(--color-error);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  /* 状态卡片 */
-  .status-card {
-    background: var(--color-bg-elevated);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 24px;
-  }
-
-  .status-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .status-indicator {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--color-text-tertiary);
-    margin-right: 12px;
-  }
-
-  .status-indicator.active {
-    background: var(--color-success);
-    box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
-  }
-
-  .status-text {
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--color-text-primary);
-  }
-
-  .status-info {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .info-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-  }
-
-  .info-item .label {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-  }
-
-  .info-item .value {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--color-text-primary);
-  }
-
-  .info-item .value.success {
-    color: var(--color-success);
-  }
-
-  .info-item .value.error {
-    color: var(--color-error);
-  }
-
-  /* 操作按钮 */
-  .action-buttons {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-
-  .btn-primary,
-  .btn-secondary,
-  .btn-text {
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-  }
-
-  .btn-primary {
-    background: var(--color-primary);
-    color: white;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: var(--color-primary-hover);
-  }
-
-  .btn-secondary {
-    background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border);
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--color-bg-hover);
-  }
-
-  .btn-text {
-    background: transparent;
-    color: var(--color-primary);
-  }
-
-  .btn-text:hover:not(:disabled) {
-    background: var(--color-bg-hover);
-  }
-
-  .btn-primary:disabled,
-  .btn-secondary:disabled,
-  .btn-text:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* 扫描结果 */
-  .scan-result {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--color-success-bg);
-    border: 1px solid var(--color-success-border);
-    border-radius: 8px;
-    color: var(--color-success);
-    animation: fadeIn 0.3s;
-  }
-
-  .result-icon {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-success);
-    color: white;
-    border-radius: 50%;
-    margin-right: 12px;
-    font-weight: bold;
-  }
-
-  @keyframes fadeIn {
+  @keyframes fade-in {
     from {
       opacity: 0;
       transform: translateY(-10px);
@@ -427,5 +368,9 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out;
   }
 </style>

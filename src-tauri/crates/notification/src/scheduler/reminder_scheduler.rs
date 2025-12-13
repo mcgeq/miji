@@ -12,7 +12,8 @@ use super::event::ReminderEvent;
 use super::task::{ReminderMethods, ReminderTask, TaskExecutionResult, TaskPriority};
 
 /// 调度器状态
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SchedulerState {
     pub is_running: bool,
     pub last_scan_at: Option<DateTime<Utc>>,
@@ -130,6 +131,19 @@ impl ReminderScheduler {
         state.pending_tasks = all_tasks.len();
 
         tracing::info!("✅ 扫描完成，共 {} 个待执行提醒", all_tasks.len());
+
+        // 发送扫描完成事件通知前端
+        if let Some(app_handle) = &self.app_handle {
+            tracing::info!("📡 发送扫描完成事件到前端");
+            if let Err(e) = app_handle.emit("scheduler-scan-completed", ()) {
+                tracing::error!("❌ 发送扫描完成事件失败: {}", e);
+            } else {
+                tracing::info!("✅ 扫描完成事件已发送");
+            }
+        } else {
+            tracing::warn!("⚠️ AppHandle 未设置，无法发送事件");
+        }
+
         Ok(all_tasks)
     }
 

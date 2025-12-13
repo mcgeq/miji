@@ -15,9 +15,10 @@ use common::{
     error::AppError,
 };
 use migration::{Migrator, MigratorTrait};
+use notification::ReminderExecutor;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager, async_runtime};
 use tokio::sync::Mutex;
 use tokio::time::{Duration, sleep};
 
@@ -159,6 +160,11 @@ impl AppInitializer {
                     log::error!("启动提醒调度器失败: {}", e);
                 } else {
                     log::info!("  ✓ 调度器已启动");
+
+                    // 发送就绪事件通知前端
+                    if let Err(e) = app_handle.emit("scheduler-ready", ()) {
+                        log::warn!("发送调度器就绪事件失败: {}", e);
+                    }
                 }
             }
 
@@ -179,6 +185,13 @@ impl AppInitializer {
                 executor_config.scan_interval_secs,
                 executor_config.max_tasks_per_scan
             );
+
+            // 启动后台执行器
+            let executor = ReminderExecutor::new(scheduler.clone(), executor_config);
+            async_runtime::spawn(async move {
+                executor.run().await;
+            });
+            log::info!("  ✓ 后台执行器已启动");
 
             scheduler
         };

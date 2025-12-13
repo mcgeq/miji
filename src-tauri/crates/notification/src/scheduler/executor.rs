@@ -40,13 +40,16 @@ impl Default for ExecutorConfig {
 
 /// 定时任务执行器
 pub struct ReminderExecutor {
-    scheduler: Arc<ReminderScheduler>,
+    scheduler: Arc<tokio::sync::RwLock<ReminderScheduler>>,
     config: ExecutorConfig,
 }
 
 impl ReminderExecutor {
     /// 创建新的执行器
-    pub fn new(scheduler: Arc<ReminderScheduler>, config: ExecutorConfig) -> Self {
+    pub fn new(
+        scheduler: Arc<tokio::sync::RwLock<ReminderScheduler>>,
+        config: ExecutorConfig,
+    ) -> Self {
         Self { scheduler, config }
     }
 
@@ -63,7 +66,10 @@ impl ReminderExecutor {
             interval.tick().await;
 
             // 检查调度器是否运行
-            let state = self.scheduler.get_state().await;
+            let state = {
+                let scheduler = self.scheduler.read().await;
+                scheduler.get_state().await
+            };
             if !state.is_running {
                 continue;
             }
@@ -78,7 +84,10 @@ impl ReminderExecutor {
     /// 处理一轮任务
     async fn process_round(&self) -> Result<(), String> {
         // 1. 扫描待执行任务
-        let tasks = self.scheduler.scan_pending_reminders().await?;
+        let tasks = {
+            let scheduler = self.scheduler.read().await;
+            scheduler.scan_pending_reminders().await?
+        };
 
         if tasks.is_empty() {
             return Ok(());
@@ -101,7 +110,11 @@ impl ReminderExecutor {
 
             let handle = tokio::spawn(async move {
                 // 带超时的任务执行
-                match time::timeout(timeout, scheduler.execute_task(&task)).await {
+                let exec_future = async {
+                    let scheduler = scheduler.read().await;
+                    scheduler.execute_task(&task).await
+                };
+                match time::timeout(timeout, exec_future).await {
                     Ok(result) => result,
                     Err(_) => {
                         error!("⏱️ 任务执行超时: {}", task.id);
@@ -158,7 +171,7 @@ impl ReminderExecutor {
 
 /// 创建并启动执行器
 pub fn start_reminder_executor(
-    scheduler: Arc<ReminderScheduler>,
+    scheduler: Arc<tokio::sync::RwLock<ReminderScheduler>>,
     config: Option<ExecutorConfig>,
 ) -> tokio::task::JoinHandle<()> {
     let executor = ReminderExecutor::new(scheduler, config.unwrap_or_default());
