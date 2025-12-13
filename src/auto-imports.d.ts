@@ -433,9 +433,6 @@ declare global {
   export type { ThemeMode, ThemeOption } from './stores/theme';
   import('./stores/theme');
   // @ts-ignore
-  export type { TodoStoreErrorCode } from './stores/todoStore';
-  import('./stores/todoStore');
-  // @ts-ignore
   export type { AuthGuardOptions } from './composables/useAuthGuard';
   import('./composables/useAuthGuard');
   // @ts-ignore
@@ -496,9 +493,6 @@ declare module 'vue' {
       typeof import('./stores/mediaQueries')['MEDIA_BREAKPOINTS']
     >;
     readonly SplitType: UnwrapRef<typeof import('./composables/useSplitCalculator')['SplitType']>;
-    readonly TodoStoreErrorCode: UnwrapRef<
-      typeof import('./stores/todoStore')['TodoStoreErrorCode']
-    >;
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>;
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>;
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>;

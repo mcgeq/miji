@@ -69,12 +69,16 @@ export class TodoMapper extends BaseMapper<TodoCreate, TodoUpdate, Todo> {
     }
   }
 
-  async deleteById(serialNum: string): Promise<void> {
+  async delete(serialNum: string): Promise<void> {
     try {
       await invokeCommand('todo_delete', { serialNum });
     } catch (error) {
-      this.handleError('deleteById', error);
+      this.handleError('delete', error);
     }
+  }
+
+  async deleteById(serialNum: string): Promise<void> {
+    return this.delete(serialNum);
   }
 
   async listPaged(
