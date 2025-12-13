@@ -5,9 +5,9 @@
   import BudgetAllocationEditor from '@/components/common/money/BudgetAllocationEditor.vue';
   import Button from '@/components/ui/Button.vue';
   import Modal from '@/components/ui/Modal.vue';
-  import type { SelectOption } from '@/components/ui/Select.vue';
   import Select from '@/components/ui/Select.vue';
   import Spinner from '@/components/ui/Spinner.vue';
+  import type { SelectOption } from '@/components/ui/types';
   import { useBudgetStore, useCategoryStore, useFamilyMemberStore } from '@/stores/money';
   import { useBudgetAllocationStore } from '@/stores/money/budget-allocation-store';
   import type {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import type { SelectOption } from '@/components/ui/Select.vue';
   import Select from '@/components/ui/Select.vue';
+  import type { SelectOption } from '@/components/ui/types';
   import { CURRENCY_CNY } from '@/constants/moneyConst';
   import type { Currency } from '@/schema/common';
   import { CurrencySchema } from '@/schema/common';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import type { SelectOption } from '@/components/ui/Select.vue';
   import Select from '@/components/ui/Select.vue';
+  import type { SelectOption } from '@/components/ui/types';
   import type { ReminderTypeI18 } from '@/constants/commonConstant';
   import { DEFAULT_REMINDER_TYPES, POPULAR_REMINDER_TYPES } from '@/constants/commonConstant';
 

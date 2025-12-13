@@ -23,7 +23,7 @@
   import PresetButtons from '@/components/common/PresetButtons.vue';
   import { Input, Modal, Radio, Textarea } from '@/components/ui';
   import FormRow from '@/components/ui/FormRow.vue';
-  import type { RadioOption as BaseRadioOption } from '@/components/ui/Radio.vue';
+  import type { RadioOption as BaseRadioOption } from '@/components/ui/types';
   import type {
     PeriodDailyRecordCreate,
     PeriodDailyRecords,

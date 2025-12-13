@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import type { SelectOption } from '@/components/ui/Select.vue';
   import Select from '@/components/ui/Select.vue';
+  import type { SelectOption } from '@/components/ui/types';
   import type { Priority } from '@/schema/common';
   import { PrioritySchema } from '@/schema/common';
 

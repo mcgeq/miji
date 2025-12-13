@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import Button from '@/components/ui/Button.vue';
-  import type { DropdownOption } from '@/components/ui/Dropdown.vue';
   import Dropdown from '@/components/ui/Dropdown.vue';
+  import type { DropdownOption } from '@/components/ui/types';
   import { useMoneyAuth } from '@/composables/useMoneyAuth';
   import { Permission } from '@/types/auth';
 

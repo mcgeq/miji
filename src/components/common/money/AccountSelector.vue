@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import type { SelectOption } from '@/components/ui/Select.vue';
   import Select from '@/components/ui/Select.vue';
+  import type { SelectOption } from '@/components/ui/types';
   import type { Account } from '@/schema/money';
   import { useAccountStore } from '@/stores/money';
 

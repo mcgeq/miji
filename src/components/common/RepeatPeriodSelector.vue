@@ -1,8 +1,8 @@
 <script setup lang="ts">
   import Input from '@/components/ui/Input.vue';
-  import type { SelectOption } from '@/components/ui/Select.vue';
   import Select from '@/components/ui/Select.vue';
   import Textarea from '@/components/ui/Textarea.vue';
+  import type { SelectOption } from '@/components/ui/types';
   import type { RepeatPeriod, Weekday } from '@/schema/common';
 
   interface Props {
