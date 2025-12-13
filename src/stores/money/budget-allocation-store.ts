@@ -6,6 +6,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { AppErrorSeverity } from '@/errors/appError';
 import type {
   BudgetAlertResponse,
   BudgetAllocationCreateRequest,
@@ -13,6 +14,7 @@ import type {
   BudgetAllocationUpdateRequest,
   BudgetUsageRequest,
 } from '@/types/budget-allocation';
+import { wrapError } from '@/utils/errorHandler';
 
 /**
  * 预算分配 Store
@@ -149,8 +151,15 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
 
       return response.data;
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : '创建分配失败';
-      throw err;
+      const appError = wrapError(
+        'BudgetAllocationStore',
+        err,
+        'CREATE_ALLOCATION_FAILED',
+        '创建分配失败',
+        AppErrorSeverity.MEDIUM,
+      );
+      error.value = appError.message;
+      throw appError;
     } finally {
       loading.value = false;
     }
@@ -188,8 +197,15 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
 
       return response.data;
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : '更新分配失败';
-      throw err;
+      const appError = wrapError(
+        'BudgetAllocationStore',
+        err,
+        'UPDATE_ALLOCATION_FAILED',
+        '更新分配失败',
+        AppErrorSeverity.MEDIUM,
+      );
+      error.value = appError.message;
+      throw appError;
     } finally {
       loading.value = false;
     }
@@ -220,8 +236,15 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
         allocations.value.splice(index, 1);
       }
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : '删除分配失败';
-      throw err;
+      const appError = wrapError(
+        'BudgetAllocationStore',
+        err,
+        'DELETE_ALLOCATION_FAILED',
+        '删除分配失败',
+        AppErrorSeverity.MEDIUM,
+      );
+      error.value = appError.message;
+      throw appError;
     } finally {
       loading.value = false;
     }
@@ -250,8 +273,15 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
       currentAllocation.value = response.data;
       return response.data;
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : '获取分配详情失败';
-      throw err;
+      const appError = wrapError(
+        'BudgetAllocationStore',
+        err,
+        'FETCH_ALLOCATION_FAILED',
+        '获取分配详情失败',
+        AppErrorSeverity.MEDIUM,
+      );
+      error.value = appError.message;
+      throw appError;
     } finally {
       loading.value = false;
     }
@@ -279,8 +309,15 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
 
       allocations.value = response.data;
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : '获取分配列表失败';
-      throw err;
+      const appError = wrapError(
+        'BudgetAllocationStore',
+        err,
+        'FETCH_ALLOCATIONS_FAILED',
+        '获取分配列表失败',
+        AppErrorSeverity.MEDIUM,
+      );
+      error.value = appError.message;
+      throw appError;
     } finally {
       loading.value = false;
     }
@@ -328,8 +365,15 @@ export const useBudgetAllocationStore = defineStore('budget-allocation', () => {
 
       return response.data;
     } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : '记录使用失败';
-      throw err;
+      const appError = wrapError(
+        'BudgetAllocationStore',
+        err,
+        'RECORD_USAGE_FAILED',
+        '记录使用失败',
+        AppErrorSeverity.MEDIUM,
+      );
+      error.value = appError.message;
+      throw appError;
     } finally {
       loading.value = false;
     }

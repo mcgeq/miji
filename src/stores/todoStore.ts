@@ -16,9 +16,7 @@ const STORE_MODULE = 'TodoStore';
 
 // ==================== Store State Interface ====================
 interface TodoStoreState {
-  /** 所有待办列表（旧版兼容） */
-  todos: Todo[];
-  /** 分页待办数据 */
+  /** 分页待办数据（主要数据源） */
   todosPaged: PagedMapResult<Todo>;
   /** 加载状态 */
   loading: boolean;
@@ -89,7 +87,6 @@ export function compareTodos(a: Todo, b: Todo): number {
  */
 function createInitialState(): TodoStoreState {
   return {
-    todos: [],
     todosPaged: { rows: new Map(), totalPages: 0, currentPage: 1, totalCount: 0, pageSize: 10 },
     loading: false,
     lastFetched: null,
@@ -102,10 +99,22 @@ function createInitialState(): TodoStoreState {
 }
 
 /**
- * 从 Map 获取待办数组（缓存优化）
+ * 从 Map 获取待办数组（带缓存优化）
+ * 使用 WeakMap 缓存转换结果，避免重复转换
  */
+const todoArrayCache = new WeakMap<Map<string, Todo>, Todo[]>();
+
 function getTodosFromMap(rows: Map<string, Todo>): Todo[] {
-  return Array.from(rows.values());
+  // 检查缓存
+  const cached = todoArrayCache.get(rows);
+  if (cached) {
+    return cached;
+  }
+
+  // 转换并缓存
+  const result = Array.from(rows.values());
+  todoArrayCache.set(rows, result);
+  return result;
 }
 
 export const useTodoStore = defineStore('todos', {
@@ -541,7 +550,6 @@ export const useTodoStore = defineStore('todos', {
     $reset() {
       Lg.i(STORE_MODULE, '重置 store 状态');
       const initialState = createInitialState();
-      this.todos = initialState.todos;
       this.todosPaged = initialState.todosPaged;
       this.loading = initialState.loading;
       this.lastFetched = initialState.lastFetched;

@@ -1,7 +1,9 @@
 import type { Ref } from 'vue';
+import { AppErrorSeverity } from '@/errors/appError';
 import type { Transaction } from '@/schema/money';
 import { MoneyDb } from '@/services/money/money';
 import { Lg } from '@/utils/debugLog';
+import { throwAppError } from '@/utils/errorHandler';
 
 /**
  * 交易数据加载器 Composable
@@ -64,7 +66,12 @@ export function useTransactionDataLoader(deps: DataLoaderDependencies) {
       const fullTransaction = await MoneyDb.getTransaction(serialNum);
 
       if (!fullTransaction) {
-        throw new Error(`Transaction not found: ${serialNum}`);
+        throwAppError(
+          'TransactionDataLoader',
+          'TRANSACTION_NOT_FOUND',
+          `交易不存在: ${serialNum}`,
+          AppErrorSeverity.MEDIUM,
+        );
       }
 
       Lg.d('TransactionDataLoader', 'Full transaction loaded:', {

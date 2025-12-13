@@ -9,9 +9,11 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
+import { AppErrorSeverity } from '../errors/appError';
 import type { Tags } from '../schema/tags';
 import { TagsSchema } from '../schema/tags';
 import { DateUtils } from '../utils/date';
+import { assertExists, throwAppError } from '../utils/errorHandler';
 import { uuid } from '../utils/uuid';
 import { createWithDefaults } from '../utils/zodFactory';
 
@@ -50,7 +52,12 @@ function createTag(input?: Partial<Tags>): Tags {
 function addTag(input?: Partial<Tags>): Tags {
   const tag = createTag(input);
   if (tags.value.has(tag.serialNum)) {
-    throw new Error(`Tag with serialNum ${tag.serialNum} already exists.`);
+    throwAppError(
+      'TagStore',
+      'TAG_ALREADY_EXISTS',
+      `标签已存在: ${tag.serialNum}`,
+      AppErrorSeverity.MEDIUM,
+    );
   }
   tags.value.set(tag.serialNum, tag);
   return tag;
@@ -59,9 +66,13 @@ function addTag(input?: Partial<Tags>): Tags {
 // 更新标签（不可修改 serialNum 与 createdAt）
 function updateTag(serialNum: string, input: Partial<Omit<Tags, 'serialNum' | 'createdAt'>>): Tags {
   const existing = tags.value.get(serialNum);
-  if (!existing) {
-    throw new Error(`Tag with serialNum ${serialNum} not found.`);
-  }
+  assertExists(
+    existing,
+    'TagStore',
+    'TAG_NOT_FOUND',
+    `标签不存在: ${serialNum}`,
+    AppErrorSeverity.MEDIUM,
+  );
   const updatedTag = createTag({
     ...existing,
     ...input,

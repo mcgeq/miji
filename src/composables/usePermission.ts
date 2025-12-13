@@ -1,7 +1,10 @@
 // composables/usePermission.ts
+
+import { AppErrorSeverity } from '@/errors/appError';
 import type { FamilyMember } from '@/schema/money';
 import { useAuthStore } from '@/stores/auth';
 import { useFamilyLedgerStore, useFamilyMemberStore } from '@/stores/money';
+import { throwAppError } from '@/utils/errorHandler';
 
 /**
  * 权限管理 Composable
@@ -202,7 +205,12 @@ export function usePermission() {
 
       descriptor.value = function (...args: unknown[]) {
         if (!hasPermission(permission)) {
-          throw new Error(errorMessage || getPermissionErrorMessage(permission));
+          throwAppError(
+            'Permission',
+            'PERMISSION_DENIED',
+            errorMessage || getPermissionErrorMessage(permission),
+            AppErrorSeverity.MEDIUM,
+          );
         }
         return originalMethod.apply(this, args);
       };

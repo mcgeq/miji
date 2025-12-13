@@ -1,6 +1,6 @@
 // src/stores/money/family-ledger-store.ts
 import { defineStore } from 'pinia';
-import { AppError } from '@/errors/appError';
+import { AppError, AppErrorSeverity } from '@/errors/appError';
 import type {
   FamilyLedger,
   FamilyLedgerCreate,
@@ -9,6 +9,7 @@ import type {
 } from '@/schema/money';
 import { MoneyDb } from '@/services/money/money';
 import { Lg } from '@/utils/debugLog';
+import { assertExists } from '@/utils/errorHandler';
 import { toast } from '@/utils/toast';
 import { type EventCleanup, onStoreEvent } from './store-events';
 
@@ -301,9 +302,13 @@ export const useFamilyLedgerStore = defineStore('family-ledger', {
         // 目前后端还没有统计API，先返回基础统计数据
         // TODO: 等后端实现统计API后替换
         const ledger = await MoneyDb.getFamilyLedger(serialNum);
-        if (!ledger) {
-          throw new Error('账本不存在');
-        }
+        assertExists(
+          ledger,
+          'FamilyLedgerStore',
+          'LEDGER_NOT_FOUND',
+          '账本不存在',
+          AppErrorSeverity.MEDIUM,
+        );
 
         const stats: FamilyLedgerStats = {
           familyLedgerSerialNum: serialNum,

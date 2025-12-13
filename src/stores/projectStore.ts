@@ -9,9 +9,11 @@
 // Modified   By:  mcgeq <mcgeq@outlook.com>
 // -----------------------------------------------------------------------------
 
+import { AppErrorSeverity } from '../errors/appError';
 import type { Projects } from '../schema/todos';
 import { ProjectSchema } from '../schema/todos';
 import { DateUtils } from '../utils/date';
+import { assertExists, throwAppError } from '../utils/errorHandler';
 import { uuid } from '../utils/uuid';
 import { createWithDefaults } from '../utils/zodFactory';
 
@@ -55,7 +57,12 @@ function createProject(input?: Partial<Projects>): Projects {
 function addProject(input?: Partial<Projects>): Projects {
   const project = createProject(input);
   if (projects.value.has(project.serialNum)) {
-    throw new Error(`Project with serialNum ${project.serialNum} already exists.`);
+    throwAppError(
+      'ProjectStore',
+      'PROJECT_ALREADY_EXISTS',
+      `项目已存在: ${project.serialNum}`,
+      AppErrorSeverity.MEDIUM,
+    );
   }
   projects.value.set(project.serialNum, project);
   return project;
@@ -67,9 +74,13 @@ function updateProject(
   input: Partial<Omit<Projects, 'serialNum' | 'createdAt'>>,
 ): Projects {
   const existing = projects.value.get(serialNum);
-  if (!existing) {
-    throw new Error(`Project with serialNum ${serialNum} not found.`);
-  }
+  assertExists(
+    existing,
+    'ProjectStore',
+    'PROJECT_NOT_FOUND',
+    `项目不存在: ${serialNum}`,
+    AppErrorSeverity.MEDIUM,
+  );
   const updated = createProject({
     ...existing,
     ...input,

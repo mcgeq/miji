@@ -1,6 +1,8 @@
 import Database from '@tauri-apps/plugin-sql';
 import { LRUCache } from 'lru-cache';
+import { AppErrorSeverity } from '../errors/appError';
 import { Lg } from './debugLog';
+import { throwAppError } from './errorHandler';
 
 /**
  * DataBase Error
@@ -346,7 +348,12 @@ export class DatabaseManager {
       const walResult = await db.select<{ journal_mode: string }[]>('PRAGMA journal_mode=WAL');
 
       if (walResult[0]?.journal_mode !== 'wal') {
-        throw new Error('Failed to enable WAL mode');
+        throwAppError(
+          'DatabaseManager',
+          'WAL_MODE_FAILED',
+          'Failed to enable WAL mode',
+          AppErrorSeverity.HIGH,
+        );
       }
 
       // Other optimizations

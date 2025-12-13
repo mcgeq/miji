@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { AppErrorSeverity } from '@/errors/appError';
 import { clearAuthCache } from '@/router/guards/auth.guard';
 import type { AuthUser, TokenResponse, User } from '@/schema/user';
 import { refreshToken as refreshTokenApi, verifyToken } from '@/services/auth';
@@ -6,6 +7,7 @@ import type { Permission } from '@/types/auth';
 import { Role, RolePermissions } from '@/types/auth';
 import { authAudit } from '@/utils/auth-audit';
 import { Lg } from '@/utils/debugLog';
+import { assertExists, throwAppError } from '@/utils/errorHandler';
 import { toAuthUser } from '../utils/user';
 
 // =============================================================================
@@ -70,20 +72,30 @@ export const useAuthStore = defineStore(
           // Verify token immediately after login
           const tokenStatus = await verifyToken(tokenResponse.token);
           if (tokenStatus !== 'Valid') {
-            throw new Error('Generated token is invalid');
+            throwAppError(
+              'Auth',
+              'INVALID_TOKEN',
+              'Generated token is invalid',
+              AppErrorSeverity.HIGH,
+            );
           }
         }
 
         // 设置角色和权限
-        // 注意：User 类型可能还没有 role 和 permissions 字段
-        // 这里使用类型断言，如果字段不存在则使用默认值
-        const userDataRecord = userData as Record<string, unknown>;
-        const rawRole = userDataRecord.role as string | undefined;
-        const userPermissions = (userDataRecord.permissions as Permission[]) || [];
+        // 使用类型守卫安全地提取角色和权限
+        const rawRole =
+          'role' in userData && typeof userData.role === 'string' ? userData.role : undefined;
+        const userPermissions =
+          'permissions' in userData && Array.isArray(userData.permissions)
+            ? (userData.permissions as Permission[])
+            : [];
 
         // 将角色转换为小写以匹配枚举值（后端可能返回 'User' 而不是 'user'）
-        const normalizedRole = rawRole?.toLowerCase() as Role;
-        const userRole = normalizedRole || Role.USER;
+        const normalizedRole = rawRole?.toLowerCase();
+        const userRole =
+          normalizedRole && Object.values(Role).includes(normalizedRole as Role)
+            ? (normalizedRole as Role)
+            : Role.USER;
 
         role.value = userRole;
         permissions.value = userPermissions;
@@ -217,9 +229,20 @@ export const useAuthStore = defineStore(
      * - 刷新失败不立即登出，继续使用旧Token直到完全过期
      */
     async function refreshToken(): Promise<void> {
-      if (!(token.value && user.value)) {
-        throw new Error('No token or user to refresh');
-      }
+      assertExists(
+        token.value,
+        'Auth',
+        'NO_TOKEN',
+        'No token available to refresh',
+        AppErrorSeverity.HIGH,
+      );
+      assertExists(
+        user.value,
+        'Auth',
+        'NO_USER',
+        'No user available to refresh',
+        AppErrorSeverity.HIGH,
+      );
 
       try {
         isLoading.value = true;
@@ -246,9 +269,7 @@ export const useAuthStore = defineStore(
      * 更新用户信息
      */
     async function updateUser(updatedUser: Partial<AuthUser>): Promise<void> {
-      if (!user.value) {
-        throw new Error('用户未登录');
-      }
+      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
 
       user.value = { ...user.value, ...updatedUser };
       Lg.i('Auth', 'User info updated');
@@ -311,9 +332,8 @@ export const useAuthStore = defineStore(
      * 更新用户资料
      */
     async function updateProfile(profileData: Partial<AuthUser>) {
-      if (!(user.value && token.value)) {
-        throw new Error('用户未登录');
-      }
+      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
+      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
 
       try {
         isLoading.value = true;
@@ -330,7 +350,12 @@ export const useAuthStore = defineStore(
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || '更新资料失败');
+          throwAppError(
+            'Auth',
+            'UPDATE_PROFILE_FAILED',
+            errorData.message || '更新资料失败',
+            AppErrorSeverity.MEDIUM,
+          );
         }
 
         const updatedUserData = await response.json();
@@ -351,9 +376,8 @@ export const useAuthStore = defineStore(
      * 上传头像
      */
     async function uploadAvatar(file: File) {
-      if (!(user.value && token.value)) {
-        throw new Error('用户未登录');
-      }
+      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
+      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
 
       try {
         isLoading.value = true;
@@ -371,7 +395,12 @@ export const useAuthStore = defineStore(
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || '头像上传失败');
+          throwAppError(
+            'Auth',
+            'UPLOAD_AVATAR_FAILED',
+            errorData.message || '头像上传失败',
+            AppErrorSeverity.MEDIUM,
+          );
         }
 
         const { avatarUrl } = await response.json();
@@ -392,9 +421,8 @@ export const useAuthStore = defineStore(
      * 验证邮箱
      */
     async function verifyEmailAddress(verificationCode: string) {
-      if (!(user.value && token.value)) {
-        throw new Error('用户未登录');
-      }
+      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
+      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
 
       try {
         isLoading.value = true;
@@ -410,7 +438,12 @@ export const useAuthStore = defineStore(
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || '邮箱验证失败');
+          throwAppError(
+            'Auth',
+            'VERIFY_EMAIL_FAILED',
+            errorData.message || '邮箱验证失败',
+            AppErrorSeverity.MEDIUM,
+          );
         }
 
         // 更新用户验证状态
@@ -432,9 +465,8 @@ export const useAuthStore = defineStore(
      * 发送邮箱验证码
      */
     async function sendEmailVerification() {
-      if (!(user.value && token.value)) {
-        throw new Error('用户未登录');
-      }
+      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
+      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
 
       try {
         isLoading.value = true;
@@ -448,7 +480,12 @@ export const useAuthStore = defineStore(
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || '发送验证邮件失败');
+          throwAppError(
+            'Auth',
+            'SEND_VERIFICATION_FAILED',
+            errorData.message || '发送验证邮件失败',
+            AppErrorSeverity.MEDIUM,
+          );
         }
 
         return true;
@@ -464,9 +501,8 @@ export const useAuthStore = defineStore(
      * 修改密码
      */
     async function changePassword(currentPassword: string, newPassword: string) {
-      if (!(user.value && token.value)) {
-        throw new Error('用户未登录');
-      }
+      assertExists(user.value, 'Auth', 'NOT_AUTHENTICATED', '用户未登录', AppErrorSeverity.MEDIUM);
+      assertExists(token.value, 'Auth', 'NO_TOKEN', 'Token 不存在', AppErrorSeverity.MEDIUM);
 
       try {
         isLoading.value = true;
@@ -485,7 +521,12 @@ export const useAuthStore = defineStore(
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || '修改密码失败');
+          throwAppError(
+            'Auth',
+            'CHANGE_PASSWORD_FAILED',
+            errorData.message || '修改密码失败',
+            AppErrorSeverity.MEDIUM,
+          );
         }
 
         return true;

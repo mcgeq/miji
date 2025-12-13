@@ -31,3 +31,4 @@ target/*
 !.jj/*.ps1
 !.jj/*.md
 !.jj/.gitkeep
+.kiro/*

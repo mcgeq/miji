@@ -1,7 +1,9 @@
 // src/stores/money/currency-store.ts
 import { defineStore } from 'pinia';
+import { AppErrorSeverity } from '@/errors/appError';
 import type { Currency, CurrencyCrate, CurrencyUpdate } from '@/schema/common';
 import { MoneyDb } from '@/services/money/money';
+import { assertExists } from '@/utils/errorHandler';
 import { emitStoreEvent } from './store-events';
 
 interface CurrencyStoreState {
@@ -181,9 +183,13 @@ export const useCurrencyStore = defineStore('money-currencies', {
      */
     async setDefaultCurrency(code: string): Promise<void> {
       const currency = this.getCurrencyByCode(code);
-      if (!currency) {
-        throw new Error('货币不存在');
-      }
+      assertExists(
+        currency,
+        'CurrencyStore',
+        'CURRENCY_NOT_FOUND',
+        '货币不存在',
+        AppErrorSeverity.MEDIUM,
+      );
 
       // 更新为默认货币
       await this.updateCurrency(code, { isDefault: true });

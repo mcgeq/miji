@@ -1,5 +1,7 @@
 import type { ZodObject, ZodType } from 'zod';
 import { z } from 'zod';
+import { AppErrorSeverity } from '../errors/appError';
+import { throwAppError } from '../utils/errorHandler';
 
 export const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 export const alphanumericRegex = /^[a-z0-9]+$/;
@@ -22,7 +24,12 @@ export function extractFields<
   // 2. 运行时校验：源对象必须包含所有目标字段（Zod 4 严格模式需要）
   targetKeys.forEach(key => {
     if (!(key in source)) {
-      throw new Error(`源对象缺少目标字段: ${String(key)}`);
+      throwAppError(
+        'Schema',
+        'MISSING_FIELD',
+        `源对象缺少目标字段: ${String(key)}`,
+        AppErrorSeverity.MEDIUM,
+      );
     }
   });
 

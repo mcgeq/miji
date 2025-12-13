@@ -1,7 +1,9 @@
 import type { ZodObject, ZodRawShape, z } from 'zod';
+import { AppErrorSeverity } from '../errors/appError';
 import type { RepeatPeriod } from '../schema/common';
 import { RepeatPeriodSchema } from '../schema/common';
 import { Lg } from './debugLog';
+import { throwAppError } from './errorHandler';
 
 /**
  * 通用对象工厂：根据 Zod Schema 和默认值生成合法对象
@@ -34,7 +36,12 @@ export function createWithDefaults<T extends ZodRawShape, Schema extends ZodObje
   const parsed = schema.safeParse(merged);
   if (!parsed.success) {
     Lg.e('Zod validation failed:', parsed.error);
-    throw new Error('Failed to create valid object');
+    throwAppError(
+      'ZodFactory',
+      'VALIDATION_FAILED',
+      'Failed to create valid object',
+      AppErrorSeverity.MEDIUM,
+    );
   }
 
   return parsed.data;
@@ -66,7 +73,12 @@ export function createRepeatPeriod(input?: Partial<RepeatPeriod>): RepeatPeriod 
       defaults = { ...defaults, description: '自定义周期' };
       break;
     default:
-      throw new Error(`Unsupported repeat period type: ${type}`);
+      throwAppError(
+        'ZodFactory',
+        'UNSUPPORTED_TYPE',
+        `不支持的重复周期类型: ${type}`,
+        AppErrorSeverity.MEDIUM,
+      );
   }
 
   // 合并用户输入，优先使用用户输入的值

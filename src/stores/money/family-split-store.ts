@@ -1,5 +1,6 @@
 // src/stores/money/family-split-store.ts
 import { defineStore } from 'pinia';
+import { AppErrorSeverity } from '@/errors/appError';
 import type {
   DebtRelation,
   SettlementSuggestion,
@@ -11,6 +12,7 @@ import type {
   SplitRuleConfigUpdate,
   SplitRuleType,
 } from '@/schema/money';
+import { assertExists, throwAppError, wrapError } from '@/utils/errorHandler';
 
 interface FamilySplitStoreState {
   splitRules: SplitRuleConfig[];
@@ -162,8 +164,15 @@ export const useFamilySplitStore = defineStore('family-split', {
         // 临时模拟数据
         this.splitRules = [];
       } catch (error: unknown) {
-        this.error = error instanceof Error ? error.message : '获取分摊规则失败';
-        throw error;
+        const appError = wrapError(
+          'FamilySplitStore',
+          error,
+          'FETCH_RULES_FAILED',
+          '获取分摊规则失败',
+          AppErrorSeverity.MEDIUM,
+        );
+        this.error = appError.message;
+        throw appError;
       } finally {
         this.loading = false;
       }
@@ -198,8 +207,15 @@ export const useFamilySplitStore = defineStore('family-split', {
         this.splitRules.push(rule);
         return rule;
       } catch (error: unknown) {
-        this.error = error instanceof Error ? error.message : '创建分摊规则失败';
-        throw error;
+        const appError = wrapError(
+          'FamilySplitStore',
+          error,
+          'CREATE_RULE_FAILED',
+          '创建分摊规则失败',
+          AppErrorSeverity.MEDIUM,
+        );
+        this.error = appError.message;
+        throw appError;
       } finally {
         this.loading = false;
       }
@@ -222,7 +238,12 @@ export const useFamilySplitStore = defineStore('family-split', {
 
         const index = this.splitRules.findIndex(r => r.serialNum === serialNum);
         if (index === -1) {
-          throw new Error('分摊规则不存在');
+          throwAppError(
+            'FamilySplitStore',
+            'RULE_NOT_FOUND',
+            '分摊规则不存在',
+            AppErrorSeverity.MEDIUM,
+          );
         }
 
         // 临时模拟更新
@@ -235,8 +256,15 @@ export const useFamilySplitStore = defineStore('family-split', {
         this.splitRules[index] = updatedRule;
         return updatedRule;
       } catch (error: unknown) {
-        this.error = error instanceof Error ? error.message : '更新分摊规则失败';
-        throw error;
+        const appError = wrapError(
+          'FamilySplitStore',
+          error,
+          'UPDATE_RULE_FAILED',
+          '更新分摊规则失败',
+          AppErrorSeverity.MEDIUM,
+        );
+        this.error = appError.message;
+        throw appError;
       } finally {
         this.loading = false;
       }
@@ -256,8 +284,15 @@ export const useFamilySplitStore = defineStore('family-split', {
 
         this.splitRules = this.splitRules.filter(r => r.serialNum !== serialNum);
       } catch (error: unknown) {
-        this.error = error instanceof Error ? error.message : '删除分摊规则失败';
-        throw error;
+        const appError = wrapError(
+          'FamilySplitStore',
+          error,
+          'DELETE_RULE_FAILED',
+          '删除分摊规则失败',
+          AppErrorSeverity.MEDIUM,
+        );
+        this.error = appError.message;
+        throw appError;
       } finally {
         this.loading = false;
       }
@@ -268,9 +303,13 @@ export const useFamilySplitStore = defineStore('family-split', {
      */
     calculateSplit(ruleId: string, totalAmount: number): SplitResult[] {
       const rule = this.getSplitRuleById(ruleId);
-      if (!rule) {
-        throw new Error('分摊规则不存在');
-      }
+      assertExists(
+        rule,
+        'FamilySplitStore',
+        'RULE_NOT_FOUND',
+        '分摊规则不存在',
+        AppErrorSeverity.MEDIUM,
+      );
 
       const results: SplitResult[] = [];
 
@@ -355,7 +394,12 @@ export const useFamilySplitStore = defineStore('family-split', {
         }
 
         default:
-          throw new Error('不支持的分摊类型');
+          throwAppError(
+            'FamilySplitStore',
+            'UNSUPPORTED_SPLIT_TYPE',
+            '不支持的分摊类型',
+            AppErrorSeverity.MEDIUM,
+          );
       }
 
       return results;
@@ -392,8 +436,15 @@ export const useFamilySplitStore = defineStore('family-split', {
 
         return record;
       } catch (error: unknown) {
-        this.error = error instanceof Error ? error.message : '创建分摊记录失败';
-        throw error;
+        const appError = wrapError(
+          'FamilySplitStore',
+          error,
+          'CREATE_RECORD_FAILED',
+          '创建分摊记录失败',
+          AppErrorSeverity.MEDIUM,
+        );
+        this.error = appError.message;
+        throw appError;
       } finally {
         this.loading = false;
       }
@@ -430,14 +481,22 @@ export const useFamilySplitStore = defineStore('family-split', {
      */
     async markSplitAsPaid(splitRecordId: string, memberSerialNum: string): Promise<void> {
       const record = this.splitRecords.find(r => r.serialNum === splitRecordId);
-      if (!record) {
-        throw new Error('分摊记录不存在');
-      }
+      assertExists(
+        record,
+        'FamilySplitStore',
+        'RECORD_NOT_FOUND',
+        '分摊记录不存在',
+        AppErrorSeverity.MEDIUM,
+      );
 
       const detail = record.splitDetails.find(d => d.memberSerialNum === memberSerialNum);
-      if (!detail) {
-        throw new Error('分摊详情不存在');
-      }
+      assertExists(
+        detail,
+        'FamilySplitStore',
+        'DETAIL_NOT_FOUND',
+        '分摊详情不存在',
+        AppErrorSeverity.MEDIUM,
+      );
 
       detail.isPaid = true;
       detail.paidAt = new Date().toISOString();

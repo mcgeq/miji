@@ -1,5 +1,6 @@
 // src/stores/money/family-member-store.ts
 import { defineStore } from 'pinia';
+import { AppErrorSeverity } from '@/errors/appError';
 import type {
   FamilyMember,
   FamilyMemberCreate,
@@ -7,6 +8,7 @@ import type {
   MemberFinancialStats,
 } from '@/schema/money';
 import { MoneyDb } from '@/services/money/money';
+import { throwAppError } from '@/utils/errorHandler';
 import { emitStoreEvent } from './store-events';
 
 interface FamilyMemberStoreState {
@@ -320,7 +322,12 @@ export const useFamilyMemberStore = defineStore('family-member', {
       // 检查成员是否有未结算的债务
       const stats = this.memberStats[serialNum];
       if (stats && Math.abs(stats.netBalance) > 0.01) {
-        throw new Error('该成员有未结算的债务，无法移除');
+        throwAppError(
+          'FamilyMemberStore',
+          'UNSETTLED_DEBT',
+          '该成员有未结算的债务，无法移除',
+          AppErrorSeverity.MEDIUM,
+        );
       }
 
       await this.deleteMember(serialNum);

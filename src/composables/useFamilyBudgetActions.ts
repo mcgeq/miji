@@ -1,6 +1,8 @@
+import { AppErrorSeverity } from '@/errors/appError';
 import type { Budget, BudgetCreate } from '@/schema/money';
 import { invokeCommand } from '@/types/api';
 import type { BudgetAllocationCreateRequest } from '@/types/budget-allocation';
+import { throwAppError } from '@/utils/errorHandler';
 import { toast } from '@/utils/toast';
 
 /**
@@ -81,7 +83,7 @@ export function useFamilyBudgetActions() {
       });
 
       if (!createdBudget?.serialNum) {
-        throw new Error('预算创建失败');
+        throwAppError('FamilyBudget', 'CREATE_FAILED', '预算创建失败', AppErrorSeverity.HIGH);
       }
 
       // 2. 创建成员分配
