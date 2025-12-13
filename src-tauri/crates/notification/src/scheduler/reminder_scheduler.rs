@@ -115,10 +115,28 @@ impl ReminderScheduler {
         // 3. 扫描经期提醒
         match self.scan_period_reminders().await {
             Ok(tasks) => {
-                tracing::debug!("  - Period: {} 个待执行", tasks.len());
+                tracing::debug!("  - 经期提醒: {} 个待执行", tasks.len());
                 all_tasks.extend(tasks);
             }
-            Err(e) => tracing::error!("  - Period 扫描失败: {}", e),
+            Err(e) => tracing::error!("  - 经期提醒扫描失败: {}", e),
+        }
+
+        // 4. 扫描排卵期提醒
+        match self.scan_ovulation_reminders().await {
+            Ok(tasks) => {
+                tracing::debug!("  - 排卵期提醒: {} 个待执行", tasks.len());
+                all_tasks.extend(tasks);
+            }
+            Err(e) => tracing::error!("  - 排卵期提醒扫描失败: {}", e),
+        }
+
+        // 5. 扫描PMS提醒
+        match self.scan_pms_reminders().await {
+            Ok(tasks) => {
+                tracing::debug!("  - PMS提醒: {} 个待执行", tasks.len());
+                all_tasks.extend(tasks);
+            }
+            Err(e) => tracing::error!("  - PMS提醒扫描失败: {}", e),
         }
 
         // 按优先级和时间排序
@@ -543,18 +561,14 @@ impl ReminderScheduler {
         let now = Utc::now();
         let mut tasks = Vec::new();
 
-        // 查询所有用户的经期设置
+        // 查询启用了经期提醒的设置
         let settings_list = period_settings::Entity::find()
+            .filter(period_settings::Column::PeriodReminder.eq(true))
             .all(self.db.as_ref())
             .await
             .map_err(|e| format!("查询经期设置失败: {}", e))?;
 
         for settings in settings_list {
-            // 检查是否启用了任何提醒
-            if !settings.period_reminder && !settings.ovulation_reminder && !settings.pms_reminder {
-                continue;
-            }
-
             // 获取最近的经期记录
             let last_record = period_records::Entity::find()
                 .filter(period_records::Column::SerialNum.eq(&settings.serial_num))
@@ -571,123 +585,191 @@ impl ReminderScheduler {
                 let next_period_date =
                     record.start_date + chrono::Duration::days(cycle_length as i64);
 
-                // 1. 经期提醒
-                if settings.period_reminder {
-                    let remind_date =
-                        next_period_date - chrono::Duration::days(reminder_days as i64);
-                    let remind_datetime = remind_date
-                        .date_naive()
-                        .and_hms_opt(9, 0, 0)
-                        .map(|dt| dt.and_utc())
-                        .unwrap_or(now);
+                let remind_date = next_period_date - chrono::Duration::days(reminder_days as i64);
+                let remind_datetime = remind_date
+                    .date_naive()
+                    .and_hms_opt(9, 0, 0)
+                    .map(|dt| dt.and_utc())
+                    .unwrap_or(now);
 
-                    if remind_datetime <= now && remind_datetime > now - chrono::Duration::days(1) {
-                        tasks.push(build_reminder_task(
-                            format!("period-{}", settings.serial_num),
-                            "period",
-                            settings.serial_num.clone(),
-                            "PeriodReminder",
-                            remind_datetime,
-                            "Medium",
-                            "经期提醒".to_string(),
-                            format!("预计 {} 天后将迎来下次经期", reminder_days),
-                            ReminderMethods {
-                                desktop: true,
-                                mobile: true,
-                                email: false,
-                                sms: false,
-                            },
-                            Some(
-                                serde_json::json!({
-                                    "reminder_type": "period",
-                                    "next_period_date": next_period_date,
-                                    "cycle_length": cycle_length,
-                                })
-                                .to_string(),
-                            ),
-                        ));
-                    }
-                }
-
-                // 2. 排卵期提醒 (通常在经期后14天左右)
-                if settings.ovulation_reminder {
-                    let ovulation_date = next_period_date - chrono::Duration::days(14);
-                    let remind_date = ovulation_date - chrono::Duration::days(reminder_days as i64);
-                    let remind_datetime = remind_date
-                        .date_naive()
-                        .and_hms_opt(9, 0, 0)
-                        .map(|dt| dt.and_utc())
-                        .unwrap_or(now);
-
-                    if remind_datetime <= now && remind_datetime > now - chrono::Duration::days(1) {
-                        tasks.push(build_reminder_task(
-                            format!("ovulation-{}", settings.serial_num),
-                            "period",
-                            settings.serial_num.clone(),
-                            "PeriodReminder",
-                            remind_datetime,
-                            "Medium",
-                            "排卵期提醒".to_string(),
-                            format!("预计 {} 天后将进入排卵期", reminder_days),
-                            ReminderMethods {
-                                desktop: true,
-                                mobile: true,
-                                email: false,
-                                sms: false,
-                            },
-                            Some(
-                                serde_json::json!({
-                                    "reminder_type": "ovulation",
-                                    "ovulation_date": ovulation_date,
-                                    "cycle_length": cycle_length,
-                                })
-                                .to_string(),
-                            ),
-                        ));
-                    }
-                }
-
-                // 3. PMS提醒 (经期前7天左右)
-                if settings.pms_reminder {
-                    let pms_start_date = next_period_date - chrono::Duration::days(7);
-                    let remind_date = pms_start_date - chrono::Duration::days(reminder_days as i64);
-                    let remind_datetime = remind_date
-                        .date_naive()
-                        .and_hms_opt(9, 0, 0)
-                        .map(|dt| dt.and_utc())
-                        .unwrap_or(now);
-
-                    if remind_datetime <= now && remind_datetime > now - chrono::Duration::days(1) {
-                        tasks.push(build_reminder_task(
-                            format!("pms-{}", settings.serial_num),
-                            "period",
-                            settings.serial_num.clone(),
-                            "PeriodReminder",
-                            remind_datetime,
-                            "Medium",
-                            "PMS提醒".to_string(),
-                            "注意调节情绪，保持良好作息".to_string(),
-                            ReminderMethods {
-                                desktop: true,
-                                mobile: true,
-                                email: false,
-                                sms: false,
-                            },
-                            Some(
-                                serde_json::json!({
-                                    "reminder_type": "pms",
-                                    "pms_start_date": pms_start_date,
-                                    "cycle_length": cycle_length,
-                                })
-                                .to_string(),
-                            ),
-                        ));
-                    }
+                if remind_datetime <= now && remind_datetime > now - chrono::Duration::days(1) {
+                    tasks.push(build_reminder_task(
+                        format!("period-{}", settings.serial_num),
+                        "period",
+                        settings.serial_num.clone(),
+                        "PeriodReminder",
+                        remind_datetime,
+                        "Medium",
+                        "🌸 经期提醒".to_string(),
+                        format!("预计 {} 天后将迎来下次经期", reminder_days),
+                        ReminderMethods {
+                            desktop: true,
+                            mobile: true,
+                            email: false,
+                            sms: false,
+                        },
+                        Some(
+                            serde_json::json!({
+                                "reminder_type": "period",
+                                "next_period_date": next_period_date,
+                                "cycle_length": cycle_length,
+                            })
+                            .to_string(),
+                        ),
+                    ));
                 }
             }
         }
 
-        tracing::debug!("找到 {} 个经期相关提醒", tasks.len());
+        tracing::debug!("找到 {} 个经期提醒", tasks.len());
+        Ok(tasks)
+    }
+
+    /// 扫描排卵期提醒
+    async fn scan_ovulation_reminders(&self) -> Result<Vec<ReminderTask>, String> {
+        use entity::{period_records, period_settings};
+        use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
+
+        let now = Utc::now();
+        let mut tasks = Vec::new();
+
+        // 查询启用了排卵期提醒的设置
+        let settings_list = period_settings::Entity::find()
+            .filter(period_settings::Column::OvulationReminder.eq(true))
+            .all(self.db.as_ref())
+            .await
+            .map_err(|e| format!("查询排卵期设置失败: {}", e))?;
+
+        for settings in settings_list {
+            // 获取最近的经期记录
+            let last_record = period_records::Entity::find()
+                .filter(period_records::Column::SerialNum.eq(&settings.serial_num))
+                .order_by_desc(period_records::Column::StartDate)
+                .one(self.db.as_ref())
+                .await
+                .map_err(|e| format!("查询经期记录失败: {}", e))?;
+
+            if let Some(record) = last_record {
+                let cycle_length = settings.average_cycle_length;
+                let reminder_days = settings.reminder_days;
+
+                // 计算下次经期预计日期
+                let next_period_date =
+                    record.start_date + chrono::Duration::days(cycle_length as i64);
+
+                // 排卵期通常在经期后14天左右
+                let ovulation_date = next_period_date - chrono::Duration::days(14);
+                let remind_date = ovulation_date - chrono::Duration::days(reminder_days as i64);
+                let remind_datetime = remind_date
+                    .date_naive()
+                    .and_hms_opt(9, 0, 0)
+                    .map(|dt| dt.and_utc())
+                    .unwrap_or(now);
+
+                if remind_datetime <= now && remind_datetime > now - chrono::Duration::days(1) {
+                    tasks.push(build_reminder_task(
+                        format!("ovulation-{}", settings.serial_num),
+                        "ovulation",
+                        settings.serial_num.clone(),
+                        "OvulationReminder",
+                        remind_datetime,
+                        "Medium",
+                        "💝 排卵期提醒".to_string(),
+                        format!("预计 {} 天后将进入排卵期", reminder_days),
+                        ReminderMethods {
+                            desktop: true,
+                            mobile: true,
+                            email: false,
+                            sms: false,
+                        },
+                        Some(
+                            serde_json::json!({
+                                "reminder_type": "ovulation",
+                                "ovulation_date": ovulation_date,
+                                "cycle_length": cycle_length,
+                            })
+                            .to_string(),
+                        ),
+                    ));
+                }
+            }
+        }
+
+        tracing::debug!("找到 {} 个排卵期提醒", tasks.len());
+        Ok(tasks)
+    }
+
+    /// 扫描PMS提醒
+    async fn scan_pms_reminders(&self) -> Result<Vec<ReminderTask>, String> {
+        use entity::{period_records, period_settings};
+        use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
+
+        let now = Utc::now();
+        let mut tasks = Vec::new();
+
+        // 查询启用了PMS提醒的设置
+        let settings_list = period_settings::Entity::find()
+            .filter(period_settings::Column::PmsReminder.eq(true))
+            .all(self.db.as_ref())
+            .await
+            .map_err(|e| format!("查询PMS设置失败: {}", e))?;
+
+        for settings in settings_list {
+            // 获取最近的经期记录
+            let last_record = period_records::Entity::find()
+                .filter(period_records::Column::SerialNum.eq(&settings.serial_num))
+                .order_by_desc(period_records::Column::StartDate)
+                .one(self.db.as_ref())
+                .await
+                .map_err(|e| format!("查询经期记录失败: {}", e))?;
+
+            if let Some(record) = last_record {
+                let cycle_length = settings.average_cycle_length;
+                let reminder_days = settings.reminder_days;
+
+                // 计算下次经期预计日期
+                let next_period_date =
+                    record.start_date + chrono::Duration::days(cycle_length as i64);
+
+                // PMS通常在经期前7天左右
+                let pms_start_date = next_period_date - chrono::Duration::days(7);
+                let remind_date = pms_start_date - chrono::Duration::days(reminder_days as i64);
+                let remind_datetime = remind_date
+                    .date_naive()
+                    .and_hms_opt(9, 0, 0)
+                    .map(|dt| dt.and_utc())
+                    .unwrap_or(now);
+
+                if remind_datetime <= now && remind_datetime > now - chrono::Duration::days(1) {
+                    tasks.push(build_reminder_task(
+                        format!("pms-{}", settings.serial_num),
+                        "pms",
+                        settings.serial_num.clone(),
+                        "PmsReminder",
+                        remind_datetime,
+                        "Medium",
+                        "💆‍♀️ PMS提醒".to_string(),
+                        "注意调节情绪，保持良好作息".to_string(),
+                        ReminderMethods {
+                            desktop: true,
+                            mobile: true,
+                            email: false,
+                            sms: false,
+                        },
+                        Some(
+                            serde_json::json!({
+                                "reminder_type": "pms",
+                                "pms_start_date": pms_start_date,
+                                "cycle_length": cycle_length,
+                            })
+                            .to_string(),
+                        ),
+                    ));
+                }
+            }
+        }
+
+        tracing::debug!("找到 {} 个PMS提醒", tasks.len());
         Ok(tasks)
     }
 

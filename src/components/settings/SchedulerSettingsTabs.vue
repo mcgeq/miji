@@ -247,7 +247,11 @@
       key: 'health',
       label: '健康模块',
       icon: '❤️',
-      taskTypes: [SchedulerTaskType.PeriodReminderCheck],
+      taskTypes: [
+        SchedulerTaskType.PeriodReminder,
+        SchedulerTaskType.OvulationReminder,
+        SchedulerTaskType.PmsReminder,
+      ],
     },
     { key: 'reminder', label: '提醒调度器', icon: '🔔', taskTypes: [] },
   ];

@@ -14,8 +14,12 @@ export enum SchedulerTaskType {
   TodoReminderCheck = 'TodoReminderCheck',
   /** 账单提醒检查 */
   BillReminderCheck = 'BillReminderCheck',
-  /** 经期提醒检查 */
-  PeriodReminderCheck = 'PeriodReminderCheck',
+  /** 经期提醒 */
+  PeriodReminder = 'PeriodReminder',
+  /** 排卵期提醒 */
+  OvulationReminder = 'OvulationReminder',
+  /** PMS提醒 */
+  PmsReminder = 'PmsReminder',
   /** 预算自动创建 */
   BudgetAutoCreate = 'BudgetAutoCreate',
 }
@@ -28,7 +32,9 @@ export const TASK_TYPE_LABELS: Record<SchedulerTaskType, string> = {
   [SchedulerTaskType.TodoAutoCreate]: '待办自动创建',
   [SchedulerTaskType.TodoReminderCheck]: '待办提醒检查',
   [SchedulerTaskType.BillReminderCheck]: '账单提醒检查',
-  [SchedulerTaskType.PeriodReminderCheck]: '经期提醒检查',
+  [SchedulerTaskType.PeriodReminder]: '经期提醒',
+  [SchedulerTaskType.OvulationReminder]: '排卵期提醒',
+  [SchedulerTaskType.PmsReminder]: 'PMS提醒',
   [SchedulerTaskType.BudgetAutoCreate]: '预算自动创建',
 };
 
@@ -40,7 +46,9 @@ export const TASK_TYPE_DESCRIPTIONS: Record<SchedulerTaskType, string> = {
   [SchedulerTaskType.TodoAutoCreate]: '根据规则自动创建重复待办',
   [SchedulerTaskType.TodoReminderCheck]: '检查并发送待办事项提醒',
   [SchedulerTaskType.BillReminderCheck]: '检查并发送账单到期提醒',
-  [SchedulerTaskType.PeriodReminderCheck]: '检查并发送经期相关提醒',
+  [SchedulerTaskType.PeriodReminder]: '在经期开始前几天发送提醒',
+  [SchedulerTaskType.OvulationReminder]: '在排卵期到来时发送提醒',
+  [SchedulerTaskType.PmsReminder]: '在可能出现经前症状时发送提醒',
   [SchedulerTaskType.BudgetAutoCreate]: '根据规则自动创建周期预算',
 };
 
@@ -52,7 +60,9 @@ export const TASK_TYPE_ICONS: Record<SchedulerTaskType, string> = {
   [SchedulerTaskType.TodoAutoCreate]: '📝',
   [SchedulerTaskType.TodoReminderCheck]: '⏰',
   [SchedulerTaskType.BillReminderCheck]: '📅',
-  [SchedulerTaskType.PeriodReminderCheck]: '❤️',
+  [SchedulerTaskType.PeriodReminder]: '🌸',
+  [SchedulerTaskType.OvulationReminder]: '💝',
+  [SchedulerTaskType.PmsReminder]: '💆‍♀️',
   [SchedulerTaskType.BudgetAutoCreate]: '💳',
 };
 
@@ -205,11 +215,23 @@ export const TASK_INTERVAL_RANGES: Record<SchedulerTaskType, IntervalRange> = {
     step: 60,
     default: 60,
   },
-  [SchedulerTaskType.PeriodReminderCheck]: {
+  [SchedulerTaskType.PeriodReminder]: {
     min: 3600, // 1小时
     max: 86400, // 1天
     step: 3600, // 1小时
-    default: 86400, // 1天
+    default: 43200, // 12小时
+  },
+  [SchedulerTaskType.OvulationReminder]: {
+    min: 3600, // 1小时
+    max: 86400, // 1天
+    step: 3600, // 1小时
+    default: 43200, // 12小时
+  },
+  [SchedulerTaskType.PmsReminder]: {
+    min: 3600, // 1小时
+    max: 86400, // 1天
+    step: 3600, // 1小时
+    default: 43200, // 12小时
   },
   [SchedulerTaskType.BudgetAutoCreate]: {
     min: 300,

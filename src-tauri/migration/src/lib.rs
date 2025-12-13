@@ -37,6 +37,7 @@ mod m20251202_042_create_user_setting_history;
 mod m20251206_043_add_priority_to_notification_logs;
 mod m20251206_044_create_scheduler_config;
 mod m20251206_046_create_project_tag;
+mod m20251213_001_split_period_reminder_tasks;
 mod m20251213_create_reminder_states;
 
 pub mod schema;
@@ -84,6 +85,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251206_044_create_scheduler_config::Migration),
             Box::new(m20251206_046_create_project_tag::Migration),
             Box::new(m20251213_create_reminder_states::Migration),
+            Box::new(m20251213_001_split_period_reminder_tasks::Migration),
         ]
     }
 }
