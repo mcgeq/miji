@@ -1,4 +1,5 @@
 import type { DateRange, PageQuery } from '@/schema/common';
+import { SortDirection } from '@/schema/common';
 import type { PeriodRecordCreate, PeriodRecords, PeriodRecordUpdate } from '@/schema/health/period';
 import { invokeCommand } from '@/types/api';
 import type { PagedResult } from '../money/baseManager';
@@ -59,9 +60,19 @@ export class PeriodRecordMapper extends BaseMapper<
 
   async list(): Promise<PeriodRecords[]> {
     try {
-      return await invokeCommand<PeriodRecords[]>('period_record_list', { filter: {} });
+      // Use listPaged with a large page size to get all records
+      const result = await this.listPaged({
+        currentPage: 1,
+        pageSize: 1000, // Large enough to get all records
+        sortOptions: {
+          desc: true,
+          sortDir: SortDirection.Desc,
+        },
+        filter: {},
+      });
+      return result.rows;
     } catch (error) {
-      this.handleError('period_record_list_paged', error);
+      this.handleError('period_record_list', error);
     }
   }
 

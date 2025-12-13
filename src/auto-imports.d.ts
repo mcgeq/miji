@@ -427,9 +427,6 @@ declare global {
   export type { MediaBreakpoints } from './stores/mediaQueries';
   import('./stores/mediaQueries');
   // @ts-ignore
-  export type { HealthStoreErrorCode, HealthDbError } from './stores/periodStore';
-  import('./stores/periodStore');
-  // @ts-ignore
   export type { ThemeMode, ThemeOption } from './stores/theme';
   import('./stores/theme');
   // @ts-ignore
@@ -485,10 +482,6 @@ declare module 'vue' {
       typeof import('./composables/useCrudActions')['CrudActionErrorCode']
     >;
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>;
-    readonly HealthDbError: UnwrapRef<typeof import('./stores/periodStore')['HealthDbError']>;
-    readonly HealthStoreErrorCode: UnwrapRef<
-      typeof import('./stores/periodStore')['HealthStoreErrorCode']
-    >;
     readonly MEDIA_BREAKPOINTS: UnwrapRef<
       typeof import('./stores/mediaQueries')['MEDIA_BREAKPOINTS']
     >;

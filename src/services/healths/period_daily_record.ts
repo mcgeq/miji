@@ -1,4 +1,5 @@
 import type { PageQuery } from '@/schema/common';
+import { SortDirection } from '@/schema/common';
 import type {
   PeriodDailyRecordCreate,
   PeriodDailyRecords,
@@ -54,11 +55,19 @@ export class PeriodDailyRecordMapper extends BaseMapper<
 
   async list(): Promise<PeriodDailyRecords[]> {
     try {
-      return await invokeCommand<PeriodDailyRecords[]>('period_daily_record_list_paged', {
+      // Use listPaged with a large page size to get all records
+      const result = await this.listPaged({
+        currentPage: 1,
+        pageSize: 1000, // Large enough to get all records
+        sortOptions: {
+          desc: true,
+          sortDir: SortDirection.Desc,
+        },
         filter: {},
       });
+      return result.rows;
     } catch (error) {
-      this.handleError('period_daily_record_list_paged', error);
+      this.handleError('period_daily_record_list', error);
     }
   }
 
