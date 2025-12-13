@@ -63,7 +63,7 @@ export interface AutoSaveSettingsConfig {
 export function useAutoSaveSettings<T extends Record<string, SettingsConfig<any>>>(
   config: AutoSaveSettingsConfig & { fields: T },
 ) {
-  const { moduleName = 'settings', fields: fieldsConfig } = config;
+  const { moduleName: _moduleName = 'settings', fields: fieldsConfig } = config;
 
   // 创建每个字段的设置缓存
   const fields = Object.entries(fieldsConfig).reduce(
@@ -96,7 +96,6 @@ export function useAutoSaveSettings<T extends Record<string, SettingsConfig<any>
   async function loadAll(): Promise<void> {
     const loadPromises = Object.values(fields).map(field => field.load());
     await Promise.all(loadPromises);
-    console.log(`[${moduleName}] All settings loaded`);
   }
 
   /**
@@ -105,7 +104,6 @@ export function useAutoSaveSettings<T extends Record<string, SettingsConfig<any>
   async function saveAll(): Promise<void> {
     const savePromises = Object.values(fields).map(field => field.save());
     await Promise.all(savePromises);
-    console.log(`[${moduleName}] All settings saved`);
   }
 
   /**
@@ -114,7 +112,6 @@ export function useAutoSaveSettings<T extends Record<string, SettingsConfig<any>
   async function resetAll(): Promise<void> {
     const resetPromises = Object.values(fields).map(field => field.reset());
     await Promise.all(resetPromises);
-    console.log(`[${moduleName}] All settings reset to defaults`);
   }
 
   return {
@@ -272,7 +269,16 @@ export function createDatabaseSetting<T>(params: {
     if (cached === null) return null;
 
     try {
-      return JSON.parse(cached) as T;
+      const parsed = JSON.parse(cached);
+
+      // 检查是否是错误的响应对象格式 {success, code, data}
+      if (parsed && typeof parsed === 'object' && 'success' in parsed && 'data' in parsed) {
+        // 清理错误缓存
+        localStorage.removeItem(key);
+        return null;
+      }
+
+      return parsed as T;
     } catch {
       return null;
     }
@@ -283,7 +289,14 @@ export function createDatabaseSetting<T>(params: {
    */
   async function loadFromDatabase<T>(key: string): Promise<T | null> {
     const invoke = await invokePromise;
-    const result = (await invoke('user_setting_get', { key })) as T | null;
+    const response = (await invoke('user_setting_get', { key })) as {
+      success: boolean;
+      code: string;
+      data: T | null;
+    };
+
+    // 提取 data 字段
+    const result = response?.data ?? null;
 
     if (result !== null) {
       // 回填 localStorage 缓存

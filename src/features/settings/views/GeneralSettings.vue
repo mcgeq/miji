@@ -190,18 +190,8 @@
         localeStore.currentLocale ||
         (typeof fields.locale.value.value === 'string' ? fields.locale.value.value : 'zh-CN');
       const defaultTimezone = getDefaultTimezoneForLocale(currentLocale);
-      console.log('[GeneralSettings] Timezone is empty, setting default based on locale:', {
-        locale: currentLocale,
-        timezone: defaultTimezone,
-      });
       fields.timezone.value.value = defaultTimezone;
     }
-
-    console.log('[GeneralSettings] Settings loaded:', {
-      locale: fields.locale.value.value,
-      timezone: fields.timezone.value.value,
-      theme: fields.theme.value.value,
-    });
 
     // 加载关闭行为偏好（Tauri 特定）
     try {

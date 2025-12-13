@@ -168,7 +168,18 @@ export function useSettingsCache<T>(config: SettingsConfig<T>) {
       isLoading.value = true;
       error.value = null;
 
-      const loadedValue = await loadFn();
+      let loadedValue = await loadFn();
+
+      // 检查是否是错误的响应对象格式 {success, code, data}
+      // 这是预期行为：清理旧版本缓存的错误格式数据
+      if (
+        loadedValue &&
+        typeof loadedValue === 'object' &&
+        'success' in loadedValue &&
+        'data' in loadedValue
+      ) {
+        loadedValue = (loadedValue as any).data;
+      }
 
       if (loadedValue !== null && loadedValue !== undefined) {
         value.value = loadedValue;

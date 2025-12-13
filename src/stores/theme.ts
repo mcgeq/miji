@@ -31,26 +31,6 @@ const THEME_OPTIONS: readonly ThemeOption[] = Object.freeze([
 // =============================================================================
 
 /**
- * 检查是否为开发环境
- */
-function isDevelopment(): boolean {
-  return (
-    import.meta.env?.DEV === true ||
-    import.meta.env?.MODE === 'development' ||
-    (typeof window !== 'undefined' && window.location?.hostname === 'localhost')
-  );
-}
-
-/**
- * 安全的控制台日志输出
- */
-function safeLog(message: string, data?: unknown): void {
-  if (isDevelopment()) {
-    console.warn(message, data || '');
-  }
-}
-
-/**
  * 获取系统主题偏好
  */
 function getSystemTheme(): 'light' | 'dark' {
@@ -96,8 +76,6 @@ function applyThemeToDOM(theme: 'light' | 'dark'): void {
       // 使用 Tailwind 的 gray-900 和 white
       metaThemeColor.setAttribute('content', theme === 'dark' ? '#111827' : '#ffffff');
     }
-
-    safeLog(`Theme applied to DOM: ${theme}`);
   } catch (error) {
     console.error('Failed to apply theme to DOM:', error);
   }
@@ -219,11 +197,6 @@ export const useThemeStore = defineStore(
 
         // 设置系统主题监听器
         setupSystemThemeWatcher();
-
-        safeLog('Theme store initialized successfully', {
-          currentTheme: currentTheme.value,
-          effectiveTheme: effectiveTheme.value,
-        });
       } catch (error) {
         console.error('Theme store initialization failed:', error);
         await setTheme(DEFAULT_THEME);
@@ -246,9 +219,6 @@ export const useThemeStore = defineStore(
         // 重新设置系统主题监听器
         setupSystemThemeWatcher();
 
-        safeLog(`Theme set to: ${newTheme}`, {
-          effectiveTheme: effectiveTheme.value,
-        });
         return true;
       } catch (error) {
         console.error('Failed to set theme:', error);
@@ -268,7 +238,6 @@ export const useThemeStore = defineStore(
       // 只有在系统模式下才需要监听系统主题变化
       if (currentTheme.value === 'system') {
         systemThemeCleanup = watchSystemThemeChange(systemTheme => {
-          safeLog('System theme changed:', systemTheme);
           applyThemeToDOM(systemTheme);
         });
       }
