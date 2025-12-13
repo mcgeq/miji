@@ -45,13 +45,17 @@
     members?: SplitConfigMember[];
   }
 
-  interface SplitConfiguratorConfig {
-    ruleType: SplitRuleType;
-    participants: Array<{
+  interface SplitRuleConfiguratorSaveConfig {
+    splitType: SplitRuleType;
+    selectedMembers: string[];
+    splitParams: Record<string, { percentage?: number; amount?: number; weight?: number }>;
+    templateName: string;
+    templateDescription: string;
+    calculatedSplit?: Array<{
       memberSerialNum: string;
+      memberName: string;
+      amount: number;
       percentage?: number;
-      fixedAmount?: number;
-      weight?: number;
     }>;
   }
 
@@ -220,17 +224,10 @@
     showConfigurator.value = false;
   }
 
-  function handleConfigSave(config: SplitConfiguratorConfig) {
-    splitConfig.splitType = config.ruleType;
-    config.participants.forEach(participant => {
-      const memberId = participant.memberSerialNum;
-      if (!splitConfig.splitParams[memberId]) {
-        splitConfig.splitParams[memberId] = {};
-      }
-      splitConfig.splitParams[memberId].percentage = participant.percentage;
-      splitConfig.splitParams[memberId].amount = participant.fixedAmount;
-      splitConfig.splitParams[memberId].weight = participant.weight;
-    });
+  function handleConfigSave(config: SplitRuleConfiguratorSaveConfig) {
+    splitConfig.splitType = config.splitType;
+    splitConfig.selectedMembers = config.selectedMembers;
+    splitConfig.splitParams = { ...config.splitParams };
     showConfigurator.value = false;
   }
 

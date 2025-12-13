@@ -3,6 +3,7 @@
   import SplitRuleConfigurator from '@/features/money/components/SplitRuleConfigurator.vue';
   import SplitTemplateList from '@/features/money/components/SplitTemplateList.vue';
   import SplitTemplateModal from '@/features/money/components/SplitTemplateModal.vue';
+  import type { SplitRuleType } from '@/schema/money';
   import { Permission } from '@/types/auth';
 
   definePage({
@@ -17,10 +18,19 @@
 
   const showTemplateModal = ref(false);
   const showConfigurator = ref(false);
-  const selectedTemplate = ref<unknown>(null);
+
+  interface SplitTemplate {
+    serialNum?: string;
+    name: string;
+    description: string;
+    ruleType: SplitRuleType;
+    isDefault: boolean;
+  }
+
+  const selectedTemplate = ref<SplitTemplate | undefined>(undefined);
 
   // 打开模板编辑
-  function handleEditTemplate(template: unknown) {
+  function handleEditTemplate(template: SplitTemplate) {
     selectedTemplate.value = template;
     showTemplateModal.value = true;
   }
@@ -34,7 +44,7 @@
   function handleCloseModal() {
     showTemplateModal.value = false;
     showConfigurator.value = false;
-    selectedTemplate.value = null;
+    selectedTemplate.value = undefined;
   }
 
   // 保存模板

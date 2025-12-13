@@ -8,6 +8,7 @@ import type {
   FamilyLedgerMember,
   FamilyLedgerMemberCreate,
   FamilyLedgerMemberUpdate,
+  FamilyLedgerStats,
   FamilyLedgerTransaction,
   FamilyLedgerTransactionCreate,
   FamilyLedgerTransactionUpdate,
@@ -208,9 +209,9 @@ export class FamilyLedgerMapper extends BaseMapper<
   /**
    * 获取账本统计信息
    */
-  async getStats(serialNum: string): Promise<unknown> {
+  async getStats(serialNum: string): Promise<FamilyLedgerStats | null> {
     try {
-      const result = await invokeCommand('family_ledger_stats', {
+      const result = await invokeCommand<FamilyLedgerStats | null>('family_ledger_stats', {
         serialNum,
       });
       Lg.d('MoneyDb', `FamilyLedger stats loaded: ${serialNum}`);

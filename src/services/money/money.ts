@@ -22,6 +22,7 @@ import type {
   FamilyLedgerCreate,
   FamilyLedgerMember,
   FamilyLedgerMemberCreate,
+  FamilyLedgerStats,
   FamilyLedgerTransaction,
   FamilyLedgerTransactionCreate,
   FamilyLedgerUpdate,
@@ -346,7 +347,7 @@ class MoneyDbService {
     return this.familyLedgerMapper.update(serialNum, ledger);
   }
 
-  async getFamilyLedgerStats(serialNum: string): Promise<unknown> {
+  async getFamilyLedgerStats(serialNum: string): Promise<FamilyLedgerStats | null> {
     return this.familyLedgerMapper.getStats(serialNum);
   }
 

@@ -11,7 +11,7 @@
   } from '@/schema/health/period';
   import { usePeriodStore } from '@/stores/periodStore';
   import { DateUtils } from '@/utils/date';
-  import { deepDiff } from '@/utils/diff';
+  import { deepDiff, UNCHANGED } from '@/utils/diff';
   import PeriodInfoCard from '../components/PeriodInfoCard.vue';
   import { usePeriodValidation } from '../composables/usePeriodValidation';
   import { durationPresets, intensityLevels, symptomGroups } from '../constants/periodConstants';
@@ -246,7 +246,14 @@
       period_record.endDate = DateUtils.toBackendDateTimeFromDateOnly(period_record.endDate);
       if (isEditing.value && props.record) {
         const updatedRecord = deepDiff(props.record, period_record);
-        if (Object.keys(updatedRecord).length > 0) {
+        const hasChanges =
+          updatedRecord !== UNCHANGED &&
+          typeof updatedRecord === 'object' &&
+          updatedRecord !== null &&
+          !Array.isArray(updatedRecord) &&
+          Object.keys(updatedRecord as Record<string, unknown>).length > 0;
+
+        if (hasChanges) {
           emit('update', props.record.serialNum, updatedRecord as PeriodRecordUpdate);
         } else {
           // 如果没有更改，直接关闭表单

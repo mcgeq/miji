@@ -18,13 +18,13 @@
     amount: number;
     budgetScopeType: string;
     categoryScope?: string[];
-    accountSerialNum?: string;
+    accountSerialNum?: string | null;
     repeatPeriod: RepeatPeriod;
     startDate: string;
     endDate?: string;
     color: string;
     alertEnabled: boolean;
-    alertThreshold?: AlertThreshold;
+    alertThreshold?: AlertThreshold | null;
     description?: string;
   }
 

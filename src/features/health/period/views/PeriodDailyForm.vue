@@ -31,7 +31,7 @@
   } from '@/schema/health/period';
   import { DateUtils } from '@/utils/date';
   import { Lg } from '@/utils/debugLog';
-  import { deepDiff } from '@/utils/diff';
+  import { deepDiff, UNCHANGED } from '@/utils/diff';
   import { usePeriodValidation } from '../composables/usePeriodValidation';
 
   interface PeriodOption<T extends string | number> {
@@ -223,7 +223,14 @@
       record.date = DateUtils.toBackendDateTimeFromDateOnly(record.date);
       if (props.record) {
         const updatePeriodDailyRecord = deepDiff(props.record, record);
-        if (Object.keys(updatePeriodDailyRecord).length > 0) {
+        const hasChanges =
+          updatePeriodDailyRecord !== UNCHANGED &&
+          typeof updatePeriodDailyRecord === 'object' &&
+          updatePeriodDailyRecord !== null &&
+          !Array.isArray(updatePeriodDailyRecord) &&
+          Object.keys(updatePeriodDailyRecord as Record<string, unknown>).length > 0;
+
+        if (hasChanges) {
           emit('update', props.record.serialNum, record);
         } else {
           // 如果没有更改，直接关闭表单

@@ -113,7 +113,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SchedulerSettingsTabs: typeof import('./src/components/settings/SchedulerSettingsTabs.vue')['default']
-    SchedulerTaskConfig: typeof import('./src/components/settings/SchedulerTaskConfig.vue')['default']
     Select: typeof import('./src/components/ui/Select.vue')['default']
     Sidebar: typeof import('./src/components/common/Sidebar.vue')['default']
     Spinner: typeof import('./src/components/ui/Spinner.vue')['default']

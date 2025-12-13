@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import Modal from '@/components/ui/Modal.vue';
-  import type { SelectOption } from '@/components/ui/Select.vue';
   import Select from '@/components/ui/Select.vue';
+  import type { SelectOption } from '@/components/ui/types';
   import type { Category } from '@/schema/money/category';
   import { lowercaseFirstLetter } from '@/utils/string';
 

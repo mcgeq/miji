@@ -7,6 +7,7 @@
     AdvanceUnit,
     BaseReminderConfig,
     ReminderFrequency,
+    ReminderMethods,
     SmartReminderConfig,
   } from '@/schema/notification/baseReminder';
   import {
@@ -20,7 +21,7 @@
     modelValue: BaseReminderConfig;
     showAdvanced?: boolean;
     showSmartConfig?: boolean;
-    allowedMethods?: ('desktop' | 'mobile' | 'email' | 'sms')[];
+    allowedMethods?: Array<keyof ReminderMethods>;
     compact?: boolean;
   }
 
@@ -50,6 +51,8 @@
     { value: 'weeks', label: t('units.weeks') },
   ]);
 
+  type ReminderMethodKey = keyof ReminderMethods;
+
   const frequencyOptions = computed(() => [
     { value: 'once', label: t('common.frequency.once') },
     { value: '15m', label: t('common.frequency.q15m') },
@@ -61,13 +64,13 @@
   ]);
 
   const availableMethods = computed(() => {
-    const allMethods = [
+    const allMethods: Array<{ key: ReminderMethodKey; label: string; icon: string }> = [
       { key: 'desktop', label: t('notification.methods.desktop'), icon: '💻' },
       { key: 'mobile', label: t('notification.methods.mobile'), icon: '📱' },
       { key: 'email', label: t('notification.methods.email'), icon: '✉️' },
       { key: 'sms', label: t('notification.methods.sms'), icon: '💬' },
     ];
-    return allMethods.filter(m => props.allowedMethods.includes(m.key as any));
+    return allMethods.filter(m => props.allowedMethods.includes(m.key));
   });
 
   const nextReminderTime = computed(() => {
@@ -91,10 +94,7 @@
     emitUpdate();
   }
 
-  function updateReminderMethods(
-    key: keyof typeof localConfig.value.reminderMethods,
-    value: boolean,
-  ) {
+  function updateReminderMethods(key: ReminderMethodKey, value: boolean) {
     localConfig.value = {
       ...localConfig.value,
       reminderMethods: {
@@ -220,13 +220,13 @@
             v-for="method in availableMethods"
             :key="method.key"
             class="flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors"
-            :class="localConfig.reminderMethods[method.key as keyof typeof localConfig.reminderMethods] ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-600 dark:border-blue-400' : 'border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-800'"
+            :class="localConfig.reminderMethods[method.key] ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-600 dark:border-blue-400' : 'border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-800'"
           >
             <input
               type="checkbox"
-              :checked="localConfig.reminderMethods[method.key as keyof typeof localConfig.reminderMethods]"
+              :checked="localConfig.reminderMethods[method.key]"
               class="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400"
-              @change="updateReminderMethods(method.key as keyof typeof localConfig.reminderMethods, !localConfig.reminderMethods[method.key as keyof typeof localConfig.reminderMethods])"
+              @change="updateReminderMethods(method.key, !localConfig.reminderMethods[method.key])"
             />
             <span class="text-sm"
               >{{ method.icon }}
