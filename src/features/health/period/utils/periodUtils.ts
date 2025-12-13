@@ -39,18 +39,6 @@ import { DateUtils } from '@/utils/date';
 
 type PeriodCategory = 'Diet' | 'Exercise' | 'Sleep' | 'Care' | 'Mood';
 
-/**
- * 计算经期持续天数（包含首尾两天）
- * 例如：11/22 到 11/28 = 7 天
- *
- * @deprecated 建议直接使用 DateUtils.daysBetweenInclusive
- */
-export function calculatePeriodDuration(
-  record: PeriodRecords | { startDate: string; endDate: string },
-): number {
-  return DateUtils.daysBetweenInclusive(record.startDate, record.endDate);
-}
-
 // Define tip structure
 export interface HealthTip {
   id: number;

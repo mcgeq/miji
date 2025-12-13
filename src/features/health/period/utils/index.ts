@@ -2,7 +2,6 @@
  * 经期工具函数统一导出
  *
  * 组织结构：
- * - 基础计算：calculatePeriodDuration
  * - 日期工具：PeriodDateUtils
  * - 格式化：PeriodFormatter
  * - 验证：PeriodValidator
@@ -12,19 +11,18 @@
  * - 分析工具：PeriodAnalyzer
  *
  * @example
- * // 基础计算
- * import { calculatePeriodDuration } from './utils';
- *
- * @example
  * // 使用工具类
  * import { PeriodCalculator, PeriodAnalyzer } from './utils';
  * const cycleLength = PeriodCalculator.calculateCycleLength(records);
+ *
+ * @example
+ * // 计算持续天数
+ * import { DateUtils } from '@/utils/date';
+ * const duration = DateUtils.daysBetweenInclusive(startDate, endDate);
  */
 
 export {
   type AnalysisResult,
-  // 基础函数
-  calculatePeriodDuration,
   // 类型定义
   type HealthTip,
   HealthTipsManager,

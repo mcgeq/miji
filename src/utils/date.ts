@@ -118,11 +118,16 @@ export class DateUtils {
       return 0;
     }
 
-    // 直接计算，避免调用 daysBetween（减少一次函数调用）
+    // 规范化日期到UTC午夜，避免时区问题
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const diffTime = end.getTime() - start.getTime();
-    return Math.ceil(diffTime / 86400000) + 1; // 86400000 = 1000 * 60 * 60 * 24
+
+    // 设置为UTC午夜时间，消除时区和时间部分的影响
+    const startUTC = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+    const endUTC = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+
+    const diffTime = endUTC - startUTC;
+    return Math.round(diffTime / 86400000) + 1; // 86400000 = 1000 * 60 * 60 * 24
   }
 
   /**
