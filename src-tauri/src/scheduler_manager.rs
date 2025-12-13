@@ -27,15 +27,6 @@ pub enum SchedulerTask {
     Transaction,
     /// 待办自动创建任务（每2小时）
     Todo,
-    /// Todo 提醒任务（桌面60秒，移动300秒）- 已由统一调度器处理
-    #[allow(dead_code)]
-    TodoNotification,
-    /// 账单提醒任务（桌面60秒，移动300秒）- 已由统一调度器处理
-    #[allow(dead_code)]
-    BilReminder,
-    /// 经期提醒任务（每天一次）- 已由统一调度器处理
-    #[allow(dead_code)]
-    PeriodReminder,
     /// 预算自动创建任务（每2小时）
     Budget,
 }
@@ -47,22 +38,7 @@ impl SchedulerTask {
         match self {
             Self::Transaction => Duration::from_secs(60 * 60 * 2), // 2小时
             Self::Todo => Duration::from_secs(60 * 60 * 2),        // 2小时
-            Self::TodoNotification => {
-                if cfg!(any(target_os = "android", target_os = "ios")) {
-                    Duration::from_secs(300) // 移动端5分钟
-                } else {
-                    Duration::from_secs(60) // 桌面端1分钟
-                }
-            }
-            Self::BilReminder => {
-                if cfg!(any(target_os = "android", target_os = "ios")) {
-                    Duration::from_secs(300) // 移动端5分钟
-                } else {
-                    Duration::from_secs(60) // 桌面端1分钟
-                }
-            }
-            Self::PeriodReminder => Duration::from_secs(60 * 60 * 24), // 每天一次
-            Self::Budget => Duration::from_secs(60 * 60 * 2),          // 2小时
+            Self::Budget => Duration::from_secs(60 * 60 * 2),      // 2小时
         }
     }
 
@@ -71,9 +47,6 @@ impl SchedulerTask {
         match self {
             Self::Transaction => "TransactionProcess",
             Self::Todo => "TodoAutoCreate",
-            Self::TodoNotification => "TodoReminderCheck",
-            Self::BilReminder => "BillReminderCheck",
-            Self::PeriodReminder => "PeriodReminderCheck",
             Self::Budget => "BudgetAutoCreate",
         }
     }
@@ -83,9 +56,6 @@ impl SchedulerTask {
         match self {
             Self::Transaction => "transaction",
             Self::Todo => "todo",
-            Self::TodoNotification => "todo_notification",
-            Self::BilReminder => "bil_reminder",
-            Self::PeriodReminder => "period_reminder",
             Self::Budget => "budget",
         }
     }
@@ -120,12 +90,6 @@ impl SchedulerManager {
         self.start_task(SchedulerTask::Transaction, app.clone())
             .await;
         self.start_task(SchedulerTask::Todo, app.clone()).await;
-        self.start_task(SchedulerTask::TodoNotification, app.clone())
-            .await;
-        self.start_task(SchedulerTask::BilReminder, app.clone())
-            .await;
-        self.start_task(SchedulerTask::PeriodReminder, app.clone())
-            .await;
         self.start_task(SchedulerTask::Budget, app.clone()).await;
 
         log::info!("All scheduler tasks started successfully");
@@ -135,16 +99,11 @@ impl SchedulerManager {
     pub async fn start_non_reminder_tasks(&self, app: AppHandle) {
         log::info!("Starting non-reminder scheduler tasks...");
 
-        // 只启动非提醒类任务
+        // 启动非提醒类任务（提醒类任务由统一调度器处理）
         self.start_task(SchedulerTask::Transaction, app.clone())
             .await;
         self.start_task(SchedulerTask::Todo, app.clone()).await;
         self.start_task(SchedulerTask::Budget, app.clone()).await;
-
-        // 跳过提醒类任务：
-        // - TodoNotification (由统一调度器处理)
-        // - BilReminder (由统一调度器处理)
-        // - PeriodReminder (由统一调度器处理)
 
         log::info!("Non-reminder scheduler tasks started successfully");
     }
@@ -204,24 +163,6 @@ impl SchedulerManager {
                 task_type,
                 config,
                 Self::execute_todo_task,
-            )),
-            SchedulerTask::TodoNotification => tokio::spawn(Self::run_task_with_config(
-                app.clone(),
-                task_type,
-                config,
-                Self::execute_todo_notification_task,
-            )),
-            SchedulerTask::BilReminder => tokio::spawn(Self::run_task_with_config(
-                app.clone(),
-                task_type,
-                config,
-                Self::execute_bil_reminder_task,
-            )),
-            SchedulerTask::PeriodReminder => tokio::spawn(Self::run_task_with_config(
-                app.clone(),
-                task_type,
-                config,
-                Self::execute_period_reminder_task,
             )),
             SchedulerTask::Budget => tokio::spawn(Self::run_task_with_config(
                 app.clone(),
@@ -397,51 +338,6 @@ impl SchedulerManager {
                 log::error!("自动创建重复待办失败: {}", e);
             } else {
                 log::info!("自动创建重复待办执行完成");
-            }
-        });
-    }
-
-    /// 执行待办提醒任务
-    fn execute_todo_notification_task(app: AppHandle) {
-        tokio::spawn(async move {
-            let app_state = app.state::<AppState>();
-            let db = app_state.db.clone();
-            let todos_service = todos::service::todo::TodosService::default();
-
-            match todos_service.process_due_reminders(&app, &db).await {
-                Ok(n) if n > 0 => log::info!("发送 {} 条待办提醒", n),
-                Ok(_) => {}
-                Err(e) => log::error!("待办提醒处理失败: {}", e),
-            }
-        });
-    }
-
-    /// 执行账单提醒任务
-    fn execute_bil_reminder_task(app: AppHandle) {
-        tokio::spawn(async move {
-            let app_state = app.state::<AppState>();
-            let db = app_state.db.clone();
-            let service = money::services::bil_reminder::BilReminderService::default();
-
-            match service.process_due_bil_reminders(&app, &db).await {
-                Ok(n) if n > 0 => log::info!("发送 {} 条账单提醒", n),
-                Ok(_) => {}
-                Err(e) => log::error!("账单提醒处理失败: {}", e),
-            }
-        });
-    }
-
-    /// 执行经期提醒任务
-    fn execute_period_reminder_task(app: AppHandle) {
-        tokio::spawn(async move {
-            let app_state = app.state::<AppState>();
-            let db = app_state.db.clone();
-            let service = healths::service::period_reminder::PeriodReminderService;
-
-            match service.process_period_reminders(&app, &db).await {
-                Ok(n) if n > 0 => log::info!("发送 {} 条健康提醒", n),
-                Ok(_) => {}
-                Err(e) => log::error!("健康提醒处理失败: {}", e),
             }
         });
     }

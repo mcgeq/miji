@@ -12,6 +12,6 @@ pub mod reminder_scheduler;
 pub mod task;
 
 pub use event::ReminderEvent;
-pub use executor::{ExecutorConfig, ReminderExecutor, start_reminder_executor};
+pub use executor::{start_reminder_executor, ExecutorConfig, ReminderExecutor};
 pub use reminder_scheduler::ReminderScheduler;
 pub use task::{ReminderTask, TaskPriority};

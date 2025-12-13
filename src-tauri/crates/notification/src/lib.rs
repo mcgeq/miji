@@ -6,10 +6,10 @@ pub mod scheduler;
 
 // 导出调度器相关类型
 pub use scheduler::{
-    ReminderScheduler,
     event::ReminderEvent,
-    executor::{ExecutorConfig, ReminderExecutor, start_reminder_executor},
+    executor::{start_reminder_executor, ExecutorConfig, ReminderExecutor},
     task::{ReminderMethods, ReminderTask, TaskPriority},
+    ReminderScheduler,
 };
 
 // 导出命令
