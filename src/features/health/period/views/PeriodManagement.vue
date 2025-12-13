@@ -1,138 +1,149 @@
 <script setup lang="ts">
-import { Activity, CalendarCheck, Settings } from 'lucide-vue-next';
-import { Card, ConfirmDialog, Modal, Spinner } from '@/components/ui';
-import { DateUtils } from '@/utils/date';
-import { Lg } from '@/utils/debugLog';
-import PeriodCalendar from '../components/PeriodCalendar.vue';
-import PeriodHealthTip from '../components/PeriodHealthTip.vue';
-import PeriodRecentRecord from '../components/PeriodRecentRecord.vue';
-import PeriodTodayInfo from '../components/PeriodTodayInfo.vue';
-import { usePeriodDailyRecords } from '../composables/usePeriodDailyRecords';
-import { usePeriodPhase } from '../composables/usePeriodPhase';
-import { usePeriodRecords } from '../composables/usePeriodRecords';
-import PeriodDailyForm from './PeriodDailyForm.vue';
-import PeriodRecordForm from './PeriodRecordForm.vue';
-import PeriodSettings from './PeriodSettings.vue';
-import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
-import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period';
+  import { Activity, CalendarCheck, Settings } from 'lucide-vue-next';
+  import { Card, ConfirmDialog, Modal, Spinner } from '@/components/ui';
+  import type {
+    PeriodDailyRecordCreate,
+    PeriodDailyRecords,
+    PeriodDailyRecordUpdate,
+    PeriodRecordCreate,
+    PeriodRecords,
+    PeriodRecordUpdate,
+  } from '@/schema/health/period';
+  import { DateUtils } from '@/utils/date';
+  import { Lg } from '@/utils/debugLog';
+  import PeriodCalendar from '../components/PeriodCalendar.vue';
+  import PeriodHealthTip from '../components/PeriodHealthTip.vue';
+  import PeriodRecentRecord from '../components/PeriodRecentRecord.vue';
+  import PeriodTodayInfo from '../components/PeriodTodayInfo.vue';
+  import { usePeriodDailyRecords } from '../composables/usePeriodDailyRecords';
+  import { usePeriodPhase } from '../composables/usePeriodPhase';
+  import { usePeriodRecords } from '../composables/usePeriodRecords';
+  import PeriodDailyForm from './PeriodDailyForm.vue';
+  import PeriodRecordForm from './PeriodRecordForm.vue';
+  import PeriodSettings from './PeriodSettings.vue';
+  import PeriodStatsDashboard from './PeriodStatsDashboard.vue';
 
-// Store
-const periodStore = usePeriodStore();
-const { t } = useI18n();
+  // Store
+  const periodStore = usePeriodStore();
+  const { t } = useI18n();
 
-// Reactive state
-const currentView = ref<'calendar' | 'stats' | 'settings'>('calendar');
-const selectedDate = ref(DateUtils.getTodayDate());
-const editingRecord = ref<PeriodRecords | undefined>();
-const editingDailyRecord = ref<PeriodDailyRecords | undefined>();
+  // Reactive state
+  const currentView = ref<'calendar' | 'stats' | 'settings'>('calendar');
+  const selectedDate = ref(DateUtils.getTodayDate());
+  const editingRecord = ref<PeriodRecords | undefined>();
+  const editingDailyRecord = ref<PeriodDailyRecords | undefined>();
 
-const uiState = reactive({
-  showRecordForm: false,
-  showDailyForm: false,
-  showDeleteConfirm: false,
-  deletingSerialNum: '',
-});
+  const uiState = reactive({
+    showRecordForm: false,
+    showDailyForm: false,
+    showDeleteConfirm: false,
+    deletingSerialNum: '',
+  });
 
-const { currentPhase, currentPhaseLabel, daysUntilNext } = usePeriodPhase();
-const periodRecords = usePeriodRecords(t);
-const periodDailyRecords = usePeriodDailyRecords(t);
+  const { currentPhase, currentPhaseLabel, daysUntilNext } = usePeriodPhase();
+  const periodRecords = usePeriodRecords(t);
+  const periodDailyRecords = usePeriodDailyRecords(t);
 
-const todayRecord = computed(() => {
-  return periodStore.periodDailyRecords.find(r => r.date.startsWith(selectedDate.value)) || null;
-});
+  const todayRecord = computed(() => {
+    return periodStore.periodDailyRecords.find(r => r.date.startsWith(selectedDate.value)) || null;
+  });
 
-// Methods
-function handleDateSelect(date: string) {
-  selectedDate.value = date;
-}
+  // Methods
+  function handleDateSelect(date: string) {
+    selectedDate.value = date;
+  }
 
-function openRecordForm(record?: PeriodRecords) {
-  editingRecord.value = record;
-  uiState.showRecordForm = true;
-}
+  function openRecordForm(record?: PeriodRecords) {
+    editingRecord.value = record;
+    uiState.showRecordForm = true;
+  }
 
-function closeRecordForm() {
-  uiState.showRecordForm = false;
-  editingRecord.value = undefined;
-}
+  function closeRecordForm() {
+    uiState.showRecordForm = false;
+    editingRecord.value = undefined;
+  }
 
-function openDailyForm(record?: PeriodDailyRecords) {
-  editingDailyRecord.value = record;
-  uiState.showDailyForm = true;
-}
+  function openDailyForm(record?: PeriodDailyRecords) {
+    editingDailyRecord.value = record;
+    uiState.showDailyForm = true;
+  }
 
-function closeDailyForm() {
-  uiState.showDailyForm = false;
-  editingDailyRecord.value = undefined;
-}
+  function closeDailyForm() {
+    uiState.showDailyForm = false;
+    editingDailyRecord.value = undefined;
+  }
 
-// 处理日常记录的创建和更新
-async function handleDailyRecordCreate(record: any) {
-  await periodDailyRecords.create(record);
-  closeDailyForm();
-}
+  // 处理日常记录的创建和更新
+  async function handleDailyRecordCreate(record: PeriodDailyRecordCreate) {
+    await periodDailyRecords.create(record);
+    closeDailyForm();
+  }
 
-async function handleDailyRecordUpdate(serialNum: string, record: any) {
-  await periodDailyRecords.update(serialNum, record);
-  closeDailyForm();
-}
+  async function handleDailyRecordUpdate(serialNum: string, record: PeriodDailyRecordUpdate) {
+    await periodDailyRecords.update(serialNum, record);
+    closeDailyForm();
+  }
 
-async function handleDailyRecordDelete(serialNum: string) {
-  await periodDailyRecords.remove(serialNum);
-  closeDailyForm();
-}
+  async function handleDailyRecordDelete(serialNum: string) {
+    await periodDailyRecords.remove(serialNum);
+    closeDailyForm();
+  }
 
-// 处理经期记录的创建和更新
-async function handleRecordCreate(record: any) {
-  await periodRecords.create(record);
-  closeRecordForm();
-}
+  // 处理经期记录的创建和更新
+  async function handleRecordCreate(record: PeriodRecordCreate) {
+    await periodRecords.create(record);
+    closeRecordForm();
+  }
 
-async function handleRecordUpdate(serialNum: string, record: any) {
-  await periodRecords.update(serialNum, record);
-  closeRecordForm();
-}
+  async function handleRecordUpdate(serialNum: string, record: PeriodRecordUpdate) {
+    await periodRecords.update(serialNum, record);
+    closeRecordForm();
+  }
 
-async function handleRecordDelete(serialNum: string) {
-  await periodRecords.remove(serialNum);
-  closeRecordForm();
-}
+  async function handleRecordDelete(serialNum: string) {
+    await periodRecords.remove(serialNum);
+    closeRecordForm();
+  }
 
-// 删除确认处理
-async function confirmDelete() {
-  if (uiState.deletingSerialNum) {
-    await periodDailyRecords.remove(uiState.deletingSerialNum);
+  // 删除确认处理
+  async function confirmDelete() {
+    if (uiState.deletingSerialNum) {
+      await periodDailyRecords.remove(uiState.deletingSerialNum);
+      uiState.showDeleteConfirm = false;
+      uiState.deletingSerialNum = '';
+    }
+  }
+
+  function handleDeleteDailyRecord(serialNum: string) {
+    uiState.deletingSerialNum = serialNum;
+    uiState.showDeleteConfirm = true;
+  }
+
+  function closeDeleteConfirm() {
     uiState.showDeleteConfirm = false;
     uiState.deletingSerialNum = '';
   }
-}
 
-function handleDeleteDailyRecord(serialNum: string) {
-  uiState.deletingSerialNum = serialNum;
-  uiState.showDeleteConfirm = true;
-}
-
-function closeDeleteConfirm() {
-  uiState.showDeleteConfirm = false;
-  uiState.deletingSerialNum = '';
-}
-
-// Lifecycle
-onMounted(async () => {
-  periodStore.initialize();
-  try {
-    await periodStore.periodRecordAll();
-    await periodStore.periodDailyRecorAll();
-  } catch (error) {
-    Lg.e('PeriodManagement', 'Failed to load period data:', error);
-  }
-});
+  // Lifecycle
+  onMounted(async () => {
+    periodStore.initialize();
+    try {
+      await periodStore.periodRecordAll();
+      await periodStore.periodDailyRecorAll();
+    } catch (error) {
+      Lg.e('PeriodManagement', 'Failed to load period data:', error);
+    }
+  });
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+  <div
+    class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800"
+  >
     <!-- 头部导航 -->
-    <div class="sticky top-0 z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+    <div
+      class="sticky top-0 z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700"
+    >
       <div class="max-w-7xl mx-auto px-4 lg:px-6">
         <div class="py-1 flex items-center justify-end">
           <div class="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
@@ -203,7 +214,10 @@ onMounted(async () => {
           </div>
 
           <!-- 最近记录 -->
-          <PeriodRecentRecord @add-record="openRecordForm()" @edit-record="openRecordForm($event)" />
+          <PeriodRecentRecord
+            @add-record="openRecordForm()"
+            @edit-record="openRecordForm($event)"
+          />
         </div>
 
         <!-- 设置视图 -->
@@ -265,8 +279,13 @@ onMounted(async () => {
     />
 
     <!-- 加载状态 -->
-    <div v-if="periodStore.loading" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl px-8 py-6 flex items-center gap-4">
+    <div
+      v-if="periodStore.loading"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+    >
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl px-8 py-6 flex items-center gap-4"
+      >
         <Spinner size="lg" color="primary" />
         <span class="text-gray-900 dark:text-white font-medium">{{ t('common.processing') }}</span>
       </div>

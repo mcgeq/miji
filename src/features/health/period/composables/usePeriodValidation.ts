@@ -1,39 +1,57 @@
-import { Lg } from '@/utils/debugLog';
 import type { PeriodDailyRecords, PeriodRecords } from '@/schema/health/period';
+import { Lg } from '@/utils/debugLog';
 
 export function usePeriodValidation() {
   const validationErrors = ref<Record<string, string[]>>({});
+
+  // Helper functions to reduce complexity
+  const validateDate = (date?: string) => {
+    if (!date) {
+      addValidationError('date', '日期不能为空');
+      return;
+    }
+    const dateObj = new Date(date);
+    const today = new Date();
+    if (dateObj > today) {
+      addValidationError('date', '日期不能超过今天');
+    }
+  };
+
+  const validateDiet = (diet?: string) => {
+    if (!diet || diet.trim() === '') {
+      addValidationError('diet', '饮食记录不能为空');
+    }
+  };
+
+  const validateWaterIntake = (waterIntake?: number) => {
+    if (waterIntake === undefined) return;
+    if (waterIntake < 0 || waterIntake > 5000) {
+      addValidationError('waterIntake', '饮水量应在0-5000ml之间');
+    }
+  };
+
+  const validateSleepHours = (sleepHours?: number) => {
+    if (sleepHours === undefined) return;
+    if (sleepHours < 0 || sleepHours > 24) {
+      addValidationError('sleepHours', '睡眠时间应在0-24小时之间');
+    }
+  };
+
+  const validateNotes = (notes?: string | null) => {
+    if (notes && notes.length > 500) {
+      addValidationError('notes', '备注不能超过500个字符');
+    }
+  };
 
   const validateDailyRecord = (record: Partial<PeriodDailyRecords>): boolean => {
     validationErrors.value = {};
 
     try {
-      // 基本验证
-      if (!record.date) {
-        addValidationError('date', '日期不能为空');
-      } else {
-        const date = new Date(record.date);
-        const today = new Date();
-        if (date > today) {
-          addValidationError('date', '日期不能超过今天');
-        }
-      }
-
-      if (!record.diet || record.diet.trim() === '') {
-        addValidationError('diet', '饮食记录不能为空');
-      }
-
-      if (record.waterIntake && (record.waterIntake < 0 || record.waterIntake > 5000)) {
-        addValidationError('waterIntake', '饮水量应在0-5000ml之间');
-      }
-
-      if (record.sleepHours && (record.sleepHours < 0 || record.sleepHours > 24)) {
-        addValidationError('sleepHours', '睡眠时间应在0-24小时之间');
-      }
-
-      if (record.notes && record.notes.length > 500) {
-        addValidationError('notes', '备注不能超过500个字符');
-      }
+      validateDate(record.date);
+      validateDiet(record.diet);
+      validateWaterIntake(record.waterIntake);
+      validateSleepHours(record.sleepHours);
+      validateNotes(record.notes);
 
       return Object.keys(validationErrors.value).length === 0;
     } catch (error) {

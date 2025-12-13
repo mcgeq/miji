@@ -1,11 +1,14 @@
-export function mergeSettings<T extends Record<string, any>>(target: T, source: T): T {
+export function mergeSettings<T extends Record<string, unknown>>(target: T, source: T): T {
   for (const key in source) {
-    if (Object.prototype.hasOwnProperty.call(source, key)) {
+    if (Object.hasOwn(source, key)) {
       if (typeof source[key] === 'object' && source[key] !== null && !Array.isArray(source[key])) {
         if (typeof target[key] !== 'object' || target[key] === null) {
-          target[key] = {} as any;
+          target[key] = {} as T[Extract<keyof T, string>];
         }
-        mergeSettings(target[key], source[key]);
+        mergeSettings(
+          target[key] as Record<string, unknown>,
+          source[key] as Record<string, unknown>,
+        );
       } else {
         target[key] = source[key];
       }

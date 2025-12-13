@@ -1,8 +1,8 @@
+import type { ComposerTranslation } from 'vue-i18n';
+import type { PeriodRecordCreate, PeriodRecordUpdate } from '@/schema/health/period';
 import { HealthsDb } from '@/services/healths/healths';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import type { PeriodRecordCreate, PeriodRecordUpdate } from '@/schema/health/period';
-import type { ComposerTranslation } from 'vue-i18n';
 
 export function usePeriodRecords(t: ComposerTranslation<import('vue-i18n').DefineLocaleMessage>) {
   const periodStore = usePeriodStore();

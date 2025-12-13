@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-vue-next';
 import {
   Activity,
   Apple,
@@ -32,17 +33,16 @@ import {
   Wheat,
   WheatOff,
 } from 'lucide-vue-next';
-import { DateUtils } from '@/utils/date';
 import type { ExerciseIntensity, FlowLevel, Intensity } from '@/schema/common';
 import type { Mood, PeriodDailyRecords, PeriodPhase, PeriodRecords } from '@/schema/health/period';
-import type { LucideIcon } from 'lucide-vue-next';
+import { DateUtils } from '@/utils/date';
 
 type PeriodCategory = 'Diet' | 'Exercise' | 'Sleep' | 'Care' | 'Mood';
 
 /**
  * 计算经期持续天数（包含首尾两天）
  * 例如：11/22 到 11/28 = 7 天
- * 
+ *
  * @deprecated 建议直接使用 DateUtils.daysBetweenInclusive
  */
 export function calculatePeriodDuration(
@@ -104,11 +104,11 @@ export interface AnalysisResult {
 /**
  * 日期相关工具函数
  */
-export class PeriodDateUtils {
+export const PeriodDateUtils = {
   /**
    * 格式化日期为中文
    */
-  static formatChineseDate(dateStr: string): string {
+  formatChineseDate(dateStr: string): string {
     const date = new Date(dateStr);
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
@@ -116,12 +116,12 @@ export class PeriodDateUtils {
     const weekDay = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
 
     return `${year}年${month}月${day}日 星期${weekDay}`;
-  }
+  },
 
   /**
    * 格式化日期范围
    */
-  static formatDateRange(startDate: string, endDate: string): string {
+  formatDateRange(startDate: string, endDate: string): string {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
@@ -134,12 +134,12 @@ export class PeriodDateUtils {
     }
 
     return `${start.getMonth() + 1}月${start.getDate()}日 - ${end.getDate()}日`;
-  }
+  },
 
   /**
    * 获取月份的第一天和最后一天
    */
-  static getMonthRange(year: number, month: number): { start: string; end: string } {
+  getMonthRange(year: number, month: number): { start: string; end: string } {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0);
 
@@ -147,46 +147,46 @@ export class PeriodDateUtils {
       start: start.toISOString().split('T')[0],
       end: end.toISOString().split('T')[0],
     };
-  }
+  },
 
   /**
    * 判断是否为同一天
    */
-  static isSameDay(date1: string, date2: string): boolean {
+  isSameDay(date1: string, date2: string): boolean {
     return date1 === date2;
-  }
+  },
 
   /**
    * 获取相对日期描述
    */
-  static getRelativeDate(dateStr: string): string {
+  getRelativeDate(dateStr: string): string {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    if (this.isSameDay(dateStr, today.toISOString().split('T')[0])) {
+    if (PeriodDateUtils.isSameDay(dateStr, today.toISOString().split('T')[0])) {
       return '今天';
-    } else if (this.isSameDay(dateStr, yesterday.toISOString().split('T')[0])) {
+    }
+    if (PeriodDateUtils.isSameDay(dateStr, yesterday.toISOString().split('T')[0])) {
       return '昨天';
-    } else if (this.isSameDay(dateStr, tomorrow.toISOString().split('T')[0])) {
+    }
+    if (PeriodDateUtils.isSameDay(dateStr, tomorrow.toISOString().split('T')[0])) {
       return '明天';
     }
 
     const daysDiff = DateUtils.daysBetween(today.toISOString().split('T')[0], dateStr);
     if (daysDiff > 0) {
       return `${daysDiff}天后`;
-    } else {
-      return `${Math.abs(daysDiff)}天前`;
     }
-  }
+    return `${Math.abs(daysDiff)}天前`;
+  },
 
   /**
    * 获取日期范围内的所有日期
    */
-
-  static getDateRange(startDate: string, endDate: string): string[] {
+  getDateRange(startDate: string, endDate: string): string[] {
     const dates: string[] = [];
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -199,39 +199,39 @@ export class PeriodDateUtils {
     }
 
     return dates;
-  }
+  },
 
   /**
    * 检查日期是否在范围内
    */
-  static isDateInRange(date: string, startDate: string, endDate: string): boolean {
+  isDateInRange(date: string, startDate: string, endDate: string): boolean {
     const target = new Date(date);
     const start = new Date(startDate);
     const end = new Date(endDate);
     return target >= start && target <= end;
-  }
-}
+  },
+} as const;
 
 /**
  * 显示格式化工具函数
  */
-export class PeriodFormatter {
+export const PeriodFormatter = {
   /**
    * 格式化流量等级
    */
-  static formatFlowLevel(level: FlowLevel | null): string {
+  formatFlowLevel(level: FlowLevel | null): string {
     const levels = {
       Light: '轻量',
       Medium: '中等',
       Heavy: '大量',
     };
     return level ? levels[level] : '未记录';
-  }
+  },
 
   /**
    * 格式化心情
    */
-  static formatMood(mood: Mood | null): string {
+  formatMood(mood: Mood | null): string {
     const moods = {
       Happy: '开心',
       Sad: '难过',
@@ -241,12 +241,12 @@ export class PeriodFormatter {
       Irritable: '易怒',
     };
     return mood ? moods[mood] : '未记录';
-  }
+  },
 
   /**
    * 格式化运动强度
    */
-  static formatExerciseIntensity(intensity: ExerciseIntensity): string {
+  formatExerciseIntensity(intensity: ExerciseIntensity): string {
     const intensities = {
       None: '无运动',
       Light: '轻度运动',
@@ -254,24 +254,24 @@ export class PeriodFormatter {
       Heavy: '高强度运动',
     };
     return intensities[intensity];
-  }
+  },
 
   /**
    * 格式化强度等级
    */
-  static formatIntensity(intensity: Intensity): string {
+  formatIntensity(intensity: Intensity): string {
     const intensities = {
       Light: '轻度',
       Medium: '中度',
       Heavy: '重度',
     };
     return intensities[intensity];
-  }
+  },
 
   /**
    * 格式化经期阶段
    */
-  static formatPhase(phase: PeriodPhase): string {
+  formatPhase(phase: PeriodPhase): string {
     const phases = {
       Menstrual: '经期',
       Follicular: '卵泡期',
@@ -279,42 +279,42 @@ export class PeriodFormatter {
       Luteal: '黄体期',
     };
     return phases[phase];
-  }
+  },
 
   /**
    * 格式化持续时间
    */
-  static formatDuration(days: number): string {
+  formatDuration(days: number): string {
     if (days === 1) return '1天';
     return `${days}天`;
-  }
+  },
 
   /**
    * 格式化周期描述
    */
-  static formatCycleDescription(cycleLength: number): string {
+  formatCycleDescription(cycleLength: number): string {
     if (cycleLength === 0) return '首次记录';
     if (cycleLength < 21) return `${cycleLength}天 (偏短)`;
     if (cycleLength > 35) return `${cycleLength}天 (偏长)`;
     return `${cycleLength}天`;
-  }
+  },
 
   /**
    * 格式化规律性评分
    */
-  static formatRegularityScore(score: number): string {
+  formatRegularityScore(score: number): string {
     if (score >= 90) return '非常规律';
     if (score >= 80) return '很规律';
     if (score >= 70) return '比较规律';
     if (score >= 60) return '一般规律';
     if (score >= 50) return '不太规律';
     return '不规律';
-  }
+  },
 
   /**
    * 格式化健康评分
    */
-  static formatHealthScore(score: number): {
+  formatHealthScore(score: number): {
     level: string;
     color: string;
     description: string;
@@ -325,79 +325,81 @@ export class PeriodFormatter {
         color: 'green',
         description: '经期健康状况很好，请继续保持',
       };
-    } else if (score >= 80) {
+    }
+    if (score >= 80) {
       return {
         level: '良好',
         color: 'blue',
         description: '经期健康状况良好，注意保持规律',
       };
-    } else if (score >= 70) {
+    }
+    if (score >= 70) {
       return {
         level: '一般',
         color: 'yellow',
         description: '经期健康状况一般，建议关注生活习惯',
       };
-    } else if (score >= 60) {
+    }
+    if (score >= 60) {
       return {
         level: '需要改善',
         color: 'orange',
         description: '经期健康需要改善，建议调整生活方式',
       };
-    } else {
-      return {
-        level: '需要关注',
-        color: 'red',
-        description: '经期健康需要关注，建议咨询医生',
-      };
     }
-  }
-}
+    return {
+      level: '需要关注',
+      color: 'red',
+      description: '经期健康需要关注，建议咨询医生',
+    };
+  },
+} as const;
 
 /**
  * 数据验证工具函数
  */
-export class PeriodValidator {
+export const PeriodValidator = {
   /**
    * 验证日期格式
    */
-  static isValidDate(dateStr: string): boolean {
+  isValidDate(dateStr: string): boolean {
     const dateObj = new Date(dateStr);
     const isValidDateObj = dateObj instanceof Date && !Number.isNaN(dateObj.getTime());
     const matchesFormat = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
     return isValidDateObj && matchesFormat;
-  }
+  },
 
   /**
    * 验证日期范围
    */
-  static isValidDateRange(startDate: string, endDate: string): boolean {
-    if (!this.isValidDate(startDate) || !this.isValidDate(endDate)) {
+  isValidDateRange(startDate: string, endDate: string): boolean {
+    if (!(PeriodValidator.isValidDate(startDate) && PeriodValidator.isValidDate(endDate))) {
       return false;
     }
     return new Date(startDate) <= new Date(endDate);
-  }
+  },
 
   /**
    * 验证经期长度
    */
-  static isValidPeriodLength(startDate: string, endDate: string): boolean {
-    if (!this.isValidDateRange(startDate, endDate)) return false;
+  isValidPeriodLength(startDate: string, endDate: string): boolean {
+    if (!PeriodValidator.isValidDateRange(startDate, endDate)) return false;
 
     const days = DateUtils.daysBetween(startDate, endDate) + 1;
     return days >= 1 && days <= 14;
-  }
+  },
 
   /**
    * 验证周期长度
    */
-  static isValidCycleLength(days: number): boolean {
+  isValidCycleLength(days: number): boolean {
     return days >= 15 && days <= 60;
-  }
+  },
 
   /**
    * 验证经期记录重叠
    */
-  static hasOverlap(
+  hasOverlap(
     newRecord: { startDate: string; endDate: string },
     existingRecords: PeriodRecords[],
   ): boolean {
@@ -410,12 +412,12 @@ export class PeriodValidator {
 
       return newStart <= existingEnd && newEnd >= existingStart;
     });
-  }
+  },
 
   /**
    * 验证数据完整性
    */
-  static validatePeriodRecord(record: Partial<PeriodRecords>): {
+  validatePeriodRecord(record: Partial<PeriodRecords>): {
     valid: boolean;
     errors: string[];
   } {
@@ -423,21 +425,21 @@ export class PeriodValidator {
 
     if (!record.startDate) {
       errors.push('开始日期不能为空');
-    } else if (!this.isValidDate(record.startDate)) {
+    } else if (!PeriodValidator.isValidDate(record.startDate)) {
       errors.push('开始日期格式不正确');
     }
 
     if (!record.endDate) {
       errors.push('结束日期不能为空');
-    } else if (!this.isValidDate(record.endDate)) {
+    } else if (!PeriodValidator.isValidDate(record.endDate)) {
       errors.push('结束日期格式不正确');
     }
 
     if (record.startDate && record.endDate) {
-      if (!this.isValidDateRange(record.startDate, record.endDate)) {
+      if (!PeriodValidator.isValidDateRange(record.startDate, record.endDate)) {
         errors.push('结束日期不能早于开始日期');
       }
-      if (!this.isValidPeriodLength(record.startDate, record.endDate)) {
+      if (!PeriodValidator.isValidPeriodLength(record.startDate, record.endDate)) {
         errors.push('经期长度不合理（应在1-14天之间）');
       }
     }
@@ -446,12 +448,12 @@ export class PeriodValidator {
       valid: errors.length === 0,
       errors,
     };
-  }
+  },
 
   /**
    * 验证日常记录
    */
-  static validateDailyRecord(record: Partial<PeriodDailyRecords>): {
+  validateDailyRecord(record: Partial<PeriodDailyRecords>): {
     valid: boolean;
     errors: string[];
   } {
@@ -459,7 +461,7 @@ export class PeriodValidator {
 
     if (!record.date) {
       errors.push('日期不能为空');
-    } else if (!this.isValidDate(record.date)) {
+    } else if (!PeriodValidator.isValidDate(record.date)) {
       errors.push('日期格式不正确');
     } else if (new Date(record.date) > new Date()) {
       errors.push('日期不能超过今天');
@@ -485,20 +487,20 @@ export class PeriodValidator {
       valid: errors.length === 0,
       errors,
     };
-  }
-}
+  },
+} as const;
 
 /**
  * 导入导出工具函数
  */
-export class PeriodDataManager {
+export const PeriodDataManager = {
   /**
    * 导出数据为JSON
    */
-  static exportToJSON(data: {
+  exportToJSON(data: {
     periodRecords: PeriodRecords[];
     dailyRecords: PeriodDailyRecords[];
-    settings: any;
+    settings: Record<string, unknown>;
   }): void {
     const exportData = {
       ...data,
@@ -518,12 +520,12 @@ export class PeriodDataManager {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }
+  },
 
   /**
    * 验证导入数据格式
    */
-  static validateImportData(data: any): { valid: boolean; errors: string[] } {
+  validateImportData(data: unknown): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     if (typeof data !== 'object' || data === null) {
@@ -531,18 +533,20 @@ export class PeriodDataManager {
       return { valid: false, errors };
     }
 
-    if (!Array.isArray(data.periodRecords)) {
+    const importData = data as Record<string, unknown>;
+
+    if (!Array.isArray(importData.periodRecords)) {
       errors.push('经期记录数据格式不正确');
     }
 
-    if (!Array.isArray(data.dailyRecords)) {
+    if (!Array.isArray(importData.dailyRecords)) {
       errors.push('日常记录数据格式不正确');
     }
 
     // 验证记录格式
-    if (data.periodRecords && Array.isArray(data.periodRecords)) {
-      data.periodRecords.forEach((record: any, index: number) => {
-        const validation = PeriodValidator.validatePeriodRecord(record);
+    if (importData.periodRecords && Array.isArray(importData.periodRecords)) {
+      importData.periodRecords.forEach((record: unknown, index: number) => {
+        const validation = PeriodValidator.validatePeriodRecord(record as Partial<PeriodRecords>);
         if (!validation.valid) {
           errors.push(`经期记录${index + 1}: ${validation.errors.join(', ')}`);
         }
@@ -553,15 +557,12 @@ export class PeriodDataManager {
       valid: errors.length === 0,
       errors,
     };
-  }
+  },
 
   /**
    * 生成统计报告
    */
-  static generateReport(
-    periodRecords: PeriodRecords[],
-    dailyRecords: PeriodDailyRecords[],
-  ): string {
+  generateReport(periodRecords: PeriodRecords[], dailyRecords: PeriodDailyRecords[]): string {
     const sortedRecords = [...periodRecords].sort(
       (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
     );
@@ -607,356 +608,352 @@ ${sortedRecords
 
 生成时间: ${PeriodDateUtils.formatChineseDate(DateUtils.getTodayDate())}
     `.trim();
-  }
-}
+  },
+} as const;
 
 /**
  * 健康提示管理工具类
  */
-export class HealthTipsManager {
-  // 通用健康提示
-  private static readonly GENERAL_TIPS: HealthTip[] = [
+// 通用健康提示
+const GENERAL_TIPS: HealthTip[] = [
+  {
+    id: 1,
+    icon: Droplet,
+    text: '每天喝足够的水有助于缓解经期不适',
+    priority: 1,
+    category: 'Diet',
+  },
+  {
+    id: 2,
+    icon: Moon,
+    text: '保持规律的睡眠时间对月经周期很重要',
+    priority: 2,
+    category: 'Sleep',
+  },
+  {
+    id: 3,
+    icon: Apple,
+    text: '富含铁质的食物有助于补充经期流失的营养',
+    priority: 3,
+    category: 'Diet',
+  },
+  {
+    id: 4,
+    icon: Activity,
+    text: '适度的运动可以缓解经期症状',
+    priority: 4,
+    category: 'Exercise',
+  },
+  {
+    id: 5,
+    icon: Heart,
+    text: '保持良好的心情有助于缓解经期不适',
+    priority: 5,
+    category: 'Mood',
+  },
+  {
+    id: 6,
+    icon: Sun,
+    text: '适当的阳光照射有助于维生素D的合成',
+    priority: 6,
+    category: 'Care',
+  },
+];
+
+// 经期阶段特定提示
+const PHASE_SPECIFIC_TIPS: Record<PeriodPhase, HealthTip[]> = {
+  Menstrual: [
     {
-      id: 1,
-      icon: Droplet,
-      text: '每天喝足够的水有助于缓解经期不适',
+      id: 101,
+      icon: CupSoda,
+      text: '多喝温水，避免冷饮',
       priority: 1,
       category: 'Diet',
     },
     {
-      id: 2,
-      icon: Moon,
-      text: '保持规律的睡眠时间对月经周期很重要',
+      id: 102,
+      icon: Bed,
+      text: '充分休息，避免剧烈运动',
       priority: 2,
-      category: 'Sleep',
+      category: 'Exercise',
     },
     {
-      id: 3,
-      icon: Apple,
-      text: '富含铁质的食物有助于补充经期流失的营养',
+      id: 103,
+      icon: Flame,
+      text: '注意保暖，特别是腹部和腰部',
       priority: 3,
-      category: 'Diet',
+      category: 'Care',
     },
     {
-      id: 4,
-      icon: Activity,
-      text: '适度的运动可以缓解经期症状',
+      id: 104,
+      icon: BedSingle,
+      text: '可以做一些轻柔的瑜伽或伸展运动',
       priority: 4,
       category: 'Exercise',
     },
     {
-      id: 5,
-      icon: Heart,
-      text: '保持良好的心情有助于缓解经期不适',
+      id: 105,
+      icon: Soup,
+      text: '多吃温热的食物，少吃生冷食品',
       priority: 5,
-      category: 'Mood',
+      category: 'Diet',
     },
     {
-      id: 6,
-      icon: Sun,
-      text: '适当的阳光照射有助于维生素D的合成',
+      id: 106,
+      icon: Bath,
+      text: '温水泡脚或热敷可以缓解疼痛',
       priority: 6,
       category: 'Care',
     },
-  ];
+  ],
+  Follicular: [
+    {
+      id: 201,
+      icon: Dumbbell,
+      text: '这是运动的好时机，可以进行有氧运动',
+      priority: 1,
+      category: 'Exercise',
+    },
+    {
+      id: 202,
+      icon: Salad,
+      text: '多吃新鲜蔬菜和水果，补充维生素',
+      priority: 2,
+      category: 'Diet',
+    },
+    {
+      id: 203,
+      icon: Brain,
+      text: '精力充沛的时期，适合学习和工作',
+      priority: 3,
+      category: 'Mood',
+    },
+    {
+      id: 204,
+      icon: Dumbbell,
+      text: '可以进行力量训练，提高肌肉力量',
+      priority: 4,
+      category: 'Exercise',
+    },
+    {
+      id: 205,
+      icon: Fish,
+      text: '适当摄入蛋白质，支持身体恢复',
+      priority: 5,
+      category: 'Diet',
+    },
+  ],
+  Ovulation: [
+    {
+      id: 301,
+      icon: HandHeart,
+      text: '排卵期是受孕的最佳时机',
+      priority: 1,
+      category: 'Care',
+    },
+    {
+      id: 302,
+      icon: Droplet,
+      text: '注意观察分泌物变化，了解身体状态',
+      priority: 2,
+      category: 'Care',
+    },
+    {
+      id: 303,
+      icon: Thermometer,
+      text: '可以测量基础体温来确认排卵',
+      priority: 3,
+      category: 'Care',
+    },
+    {
+      id: 304,
+      icon: Bike,
+      text: '保持适度运动，但避免过度疲劳',
+      priority: 4,
+      category: 'Exercise',
+    },
+    {
+      id: 305,
+      icon: Leaf,
+      text: '多摄入叶酸和维生素E',
+      priority: 5,
+      category: 'Diet',
+    },
+  ],
+  Luteal: [
+    {
+      id: 401,
+      icon: Frown,
+      text: '注意情绪变化，保持心情愉悦',
+      priority: 1,
+      category: 'Mood',
+    },
+    {
+      id: 402,
+      icon: Cookie,
+      text: '可能会有食欲增加，注意控制饮食',
+      priority: 2,
+      category: 'Diet',
+    },
+    {
+      id: 403,
+      icon: Bed,
+      text: '保证充足的睡眠，缓解疲劳',
+      priority: 3,
+      category: 'Sleep',
+    },
+    {
+      id: 404,
+      icon: Move,
+      text: '进行轻度运动，如散步或慢跑',
+      priority: 4,
+      category: 'Exercise',
+    },
+    {
+      id: 405,
+      icon: Wheat,
+      text: '减少盐分摄入，避免水肿',
+      priority: 5,
+      category: 'Diet',
+    },
+    {
+      id: 406,
+      icon: Flower,
+      text: '可以尝试冥想或深呼吸来放松',
+      priority: 6,
+      category: 'Mood',
+    },
+  ],
+};
 
-  // 经期阶段特定提示
-  private static readonly PHASE_SPECIFIC_TIPS: Record<PeriodPhase, HealthTip[]> = {
-    Menstrual: [
-      {
-        id: 101,
-        icon: CupSoda,
-        text: '多喝温水，避免冷饮',
-        priority: 1,
-        category: 'Diet',
-      },
-      {
-        id: 102,
-        icon: Bed,
-        text: '充分休息，避免剧烈运动',
-        priority: 2,
-        category: 'Exercise',
-      },
-      {
-        id: 103,
-        icon: Flame,
-        text: '注意保暖，特别是腹部和腰部',
-        priority: 3,
-        category: 'Care',
-      },
-      {
-        id: 104,
-        icon: BedSingle,
-        text: '可以做一些轻柔的瑜伽或伸展运动',
-        priority: 4,
-        category: 'Exercise',
-      },
-      {
-        id: 105,
-        icon: Soup,
-        text: '多吃温热的食物，少吃生冷食品',
-        priority: 5,
-        category: 'Diet',
-      },
-      {
-        id: 106,
-        icon: Bath,
-        text: '温水泡脚或热敷可以缓解疼痛',
-        priority: 6,
-        category: 'Care',
-      },
-    ],
-    Follicular: [
-      {
-        id: 201,
-        icon: Dumbbell,
-        text: '这是运动的好时机，可以进行有氧运动',
-        priority: 1,
-        category: 'Exercise',
-      },
-      {
-        id: 202,
-        icon: Salad,
-        text: '多吃新鲜蔬菜和水果，补充维生素',
-        priority: 2,
-        category: 'Diet',
-      },
-      {
-        id: 203,
-        icon: Brain,
-        text: '精力充沛的时期，适合学习和工作',
-        priority: 3,
-        category: 'Mood',
-      },
-      {
-        id: 204,
-        icon: Dumbbell,
-        text: '可以进行力量训练，提高肌肉力量',
-        priority: 4,
-        category: 'Exercise',
-      },
-      {
-        id: 205,
-        icon: Fish,
-        text: '适当摄入蛋白质，支持身体恢复',
-        priority: 5,
-        category: 'Diet',
-      },
-    ],
-    Ovulation: [
-      {
-        id: 301,
-        icon: HandHeart,
-        text: '排卵期是受孕的最佳时机',
-        priority: 1,
-        category: 'Care',
-      },
-      {
-        id: 302,
-        icon: Droplet,
-        text: '注意观察分泌物变化，了解身体状态',
-        priority: 2,
-        category: 'Care',
-      },
-      {
-        id: 303,
-        icon: Thermometer,
-        text: '可以测量基础体温来确认排卵',
-        priority: 3,
-        category: 'Care',
-      },
-      {
-        id: 304,
-        icon: Bike,
-        text: '保持适度运动，但避免过度疲劳',
-        priority: 4,
-        category: 'Exercise',
-      },
-      {
-        id: 305,
-        icon: Leaf,
-        text: '多摄入叶酸和维生素E',
-        priority: 5,
-        category: 'Diet',
-      },
-    ],
-    Luteal: [
-      {
-        id: 401,
-        icon: Frown,
-        text: '注意情绪变化，保持心情愉悦',
-        priority: 1,
-        category: 'Mood',
-      },
-      {
-        id: 402,
-        icon: Cookie,
-        text: '可能会有食欲增加，注意控制饮食',
-        priority: 2,
-        category: 'Diet',
-      },
-      {
-        id: 403,
-        icon: Bed,
-        text: '保证充足的睡眠，缓解疲劳',
-        priority: 3,
-        category: 'Sleep',
-      },
-      {
-        id: 404,
-        icon: Move,
-        text: '进行轻度运动，如散步或慢跑',
-        priority: 4,
-        category: 'Exercise',
-      },
-      {
-        id: 405,
-        icon: Wheat,
-        text: '减少盐分摄入，避免水肿',
-        priority: 5,
-        category: 'Diet',
-      },
-      {
-        id: 406,
-        icon: Flower,
-        text: '可以尝试冥想或深呼吸来放松',
-        priority: 6,
-        category: 'Mood',
-      },
-    ],
-  };
+// 基于症状的特殊提示
+const SYMPTOM_TIPS: Record<string, HealthTip[]> = {
+  heavyFlow: [
+    {
+      id: 501,
+      icon: Drumstick,
+      text: '增加铁质摄入，预防贫血',
+      priority: 1,
+      category: 'Diet',
+    },
+    {
+      id: 502,
+      icon: Bed,
+      text: '避免剧烈运动，多休息',
+      priority: 2,
+      category: 'Exercise',
+    },
+  ],
+  cramps: [
+    {
+      id: 511,
+      icon: ThermometerSun,
+      text: '热敷腹部可以缓解痉挛',
+      priority: 1,
+      category: 'Care',
+    },
+    {
+      id: 512,
+      icon: Pill,
+      text: '适量补充镁元素有助于肌肉放松',
+      priority: 2,
+      category: 'Diet',
+    },
+  ],
+  moodSwings: [
+    {
+      id: 521,
+      icon: Users,
+      text: '与朋友交流，寻求情感支持',
+      priority: 1,
+      category: 'Mood',
+    },
+    {
+      id: 522,
+      icon: Music,
+      text: '听音乐或做喜欢的事情来调节心情',
+      priority: 2,
+      category: 'Mood',
+    },
+  ],
+  fatigue: [
+    {
+      id: 531,
+      icon: Moon,
+      text: '保证充足的睡眠，早睡早起',
+      priority: 1,
+      category: 'Sleep',
+    },
+    {
+      id: 532,
+      icon: Battery,
+      text: '补充B族维生素，提升精力',
+      priority: 2,
+      category: 'Diet',
+    },
+  ],
+  bloating: [
+    {
+      id: 541,
+      icon: WheatOff,
+      text: '减少盐分和糖分摄入',
+      priority: 1,
+      category: 'Diet',
+    },
+    {
+      id: 542,
+      icon: Move,
+      text: '轻柔的散步有助于缓解腹胀',
+      priority: 2,
+      category: 'Exercise',
+    },
+  ],
+};
 
-  // 基于症状的特殊提示
-  private static readonly SYMPTOM_TIPS: Record<string, HealthTip[]> = {
-    heavyFlow: [
-      {
-        id: 501,
-        icon: Drumstick,
-        text: '增加铁质摄入，预防贫血',
-        priority: 1,
-        category: 'Diet',
-      },
-      {
-        id: 502,
-        icon: Bed,
-        text: '避免剧烈运动，多休息',
-        priority: 2,
-        category: 'Exercise',
-      },
-    ],
-    cramps: [
-      {
-        id: 511,
-        icon: ThermometerSun,
-        text: '热敷腹部可以缓解痉挛',
-        priority: 1,
-        category: 'Care',
-      },
-      {
-        id: 512,
-        icon: Pill,
-        text: '适量补充镁元素有助于肌肉放松',
-        priority: 2,
-        category: 'Diet',
-      },
-    ],
-    moodSwings: [
-      {
-        id: 521,
-        icon: Users,
-        text: '与朋友交流，寻求情感支持',
-        priority: 1,
-        category: 'Mood',
-      },
-      {
-        id: 522,
-        icon: Music,
-        text: '听音乐或做喜欢的事情来调节心情',
-        priority: 2,
-        category: 'Mood',
-      },
-    ],
-    fatigue: [
-      {
-        id: 531,
-        icon: Moon,
-        text: '保证充足的睡眠，早睡早起',
-        priority: 1,
-        category: 'Sleep',
-      },
-      {
-        id: 532,
-        icon: Battery,
-        text: '补充B族维生素，提升精力',
-        priority: 2,
-        category: 'Diet',
-      },
-    ],
-    bloating: [
-      {
-        id: 541,
-        icon: WheatOff,
-        text: '减少盐分和糖分摄入',
-        priority: 1,
-        category: 'Diet',
-      },
-      {
-        id: 542,
-        icon: Move,
-        text: '轻柔的散步有助于缓解腹胀',
-        priority: 2,
-        category: 'Exercise',
-      },
-    ],
-  };
-
+export const HealthTipsManager = {
   /**
    * 根据当前阶段获取健康提示
    */
-  static getTipsForPhase(
-    phase: PeriodPhase,
-    maxTips: number = 3,
-    includeGeneral: boolean = false,
-  ): HealthTip[] {
-    const phaseTips = this.PHASE_SPECIFIC_TIPS[phase] || [];
+  getTipsForPhase(phase: PeriodPhase, maxTips = 3, includeGeneral = false): HealthTip[] {
+    const phaseTips = PHASE_SPECIFIC_TIPS[phase] || [];
     const tips = [...phaseTips];
 
     // 如果需要包含通用提示
     if (includeGeneral) {
-      tips.push(...this.GENERAL_TIPS);
+      tips.push(...GENERAL_TIPS);
     }
 
     // 按优先级排序并返回指定数量的提示
     return tips.sort((a, b) => (a.priority || 999) - (b.priority || 999)).slice(0, maxTips);
-  }
+  },
 
   /**
    * 根据症状获取特殊提示
    */
-  static getTipsForSymptoms(symptoms: string[]): HealthTip[] {
+  getTipsForSymptoms(symptoms: string[]): HealthTip[] {
     const tips: HealthTip[] = [];
 
     symptoms.forEach(symptom => {
-      const symptomTips = this.SYMPTOM_TIPS[symptom];
+      const symptomTips = SYMPTOM_TIPS[symptom];
       if (symptomTips) {
         tips.push(...symptomTips);
       }
     });
 
     return tips.sort((a, b) => (a.priority || 999) - (b.priority || 999));
-  }
+  },
 
   /**
    * 根据分类获取提示
    */
-  static getTipsByCategory(category: HealthTip['category'], phase?: PeriodPhase): HealthTip[] {
-    const allTips = [...this.GENERAL_TIPS];
+  getTipsByCategory(category: HealthTip['category'], phase?: PeriodPhase): HealthTip[] {
+    const allTips = [...GENERAL_TIPS];
 
     if (phase) {
-      allTips.push(...(this.PHASE_SPECIFIC_TIPS[phase] || []));
+      allTips.push(...(PHASE_SPECIFIC_TIPS[phase] || []));
     } else {
       // 包含所有阶段的提示
-      Object.values(this.PHASE_SPECIFIC_TIPS).forEach(phaseTips => {
+      Object.values(PHASE_SPECIFIC_TIPS).forEach(phaseTips => {
         allTips.push(...phaseTips);
       });
     }
@@ -964,12 +961,12 @@ export class HealthTipsManager {
     return allTips
       .filter(tip => tip.category === category)
       .sort((a, b) => (a.priority || 999) - (b.priority || 999));
-  }
+  },
 
   /**
    * 获取个性化提示
    */
-  static getPersonalizedTips(
+  getPersonalizedTips(
     phase: PeriodPhase,
     dailyRecord?: PeriodDailyRecords,
     preferences?: {
@@ -981,7 +978,7 @@ export class HealthTipsManager {
     const { categories, excludeSymptoms = [], maxTips = 3 } = preferences || {};
 
     // 获取阶段相关提示
-    let tips = this.getTipsForPhase(phase, 10, true);
+    let tips = HealthTipsManager.getTipsForPhase(phase, 10, true);
 
     // 根据日常记录添加症状相关提示
     if (dailyRecord) {
@@ -999,7 +996,7 @@ export class HealthTipsManager {
       }
       // 可以根据其他字段推断更多症状
 
-      const symptomTips = this.getTipsForSymptoms(
+      const symptomTips = HealthTipsManager.getTipsForSymptoms(
         symptoms.filter(s => !excludeSymptoms.includes(s)),
       );
       tips.push(...symptomTips);
@@ -1016,22 +1013,22 @@ export class HealthTipsManager {
     );
 
     return uniqueTips.sort((a, b) => (a.priority || 999) - (b.priority || 999)).slice(0, maxTips);
-  }
+  },
 
   /**
    * 获取随机提示
    */
-  static getRandomTips(count: number = 3): HealthTip[] {
-    const allTips = [...this.GENERAL_TIPS, ...Object.values(this.PHASE_SPECIFIC_TIPS).flat()];
+  getRandomTips(count = 3): HealthTip[] {
+    const allTips = [...GENERAL_TIPS, ...Object.values(PHASE_SPECIFIC_TIPS).flat()];
 
     const shuffled = [...allTips].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, count);
-  }
+  },
 
   /**
    * 添加自定义提示
    */
-  static addCustomTip(tip: Omit<HealthTip, 'id'>): HealthTip {
+  addCustomTip(tip: Omit<HealthTip, 'id'>): HealthTip {
     const newTip: HealthTip = {
       ...tip,
       id: Date.now(), // 简单的ID生成
@@ -1039,40 +1036,40 @@ export class HealthTipsManager {
 
     // 这里可以添加持久化逻辑
     return newTip;
-  }
-}
+  },
+} as const;
 
 /**
  * 经期计算工具函数
  */
-export class PeriodCalculator {
+export const PeriodCalculator = {
   /**
    * 计算经期长度
    */
-  static calculatePeriodLength(record: PeriodRecords): number {
+  calculatePeriodLength(record: PeriodRecords): number {
     return DateUtils.daysBetween(record.startDate, record.endDate) + 1;
-  }
+  },
 
   /**
    * 计算周期长度
    */
-  static calculateCycleLength(current: PeriodRecords, previous: PeriodRecords): number {
+  calculateCycleLength(current: PeriodRecords, previous: PeriodRecords): number {
     return DateUtils.daysBetween(previous.startDate, current.startDate);
-  }
+  },
 
   /**
    * 预测下次经期开始日期
    */
-  static predictNextPeriod(lastPeriod: PeriodRecords, averageCycleLength: number): string {
+  predictNextPeriod(lastPeriod: PeriodRecords, averageCycleLength: number): string {
     return DateUtils.addDays(lastPeriod.startDate, averageCycleLength);
-  }
+  },
 
   /**
    * 计算排卵日和相关信息
    */
-  static calculateOvulationInfo(
+  calculateOvulationInfo(
     nextPeriodDate: string,
-    cycleLength: number = 28,
+    cycleLength = 28,
   ): {
     ovulationDate: string;
     fertileStart: string;
@@ -1116,12 +1113,12 @@ export class PeriodCalculator {
     result.fertileEnd = DateUtils.addDays(result.ovulationDate, 1);
 
     return result;
-  }
+  },
 
   /**
    * 计算易孕期
    */
-  static calculateFertileWindow(ovulationDate: string): {
+  calculateFertileWindow(ovulationDate: string): {
     start: string;
     end: string;
   } {
@@ -1129,12 +1126,12 @@ export class PeriodCalculator {
       start: DateUtils.addDays(ovulationDate, -5),
       end: DateUtils.addDays(ovulationDate, 1),
     };
-  }
+  },
 
   /**
    * 获取当前月经周期阶段
    */
-  static getCurrentPhase(
+  getCurrentPhase(
     lastPeriod: PeriodRecords,
     averageCycleLength: number,
     averagePeriodLength: number,
@@ -1144,41 +1141,42 @@ export class PeriodCalculator {
 
     if (daysSinceLastPeriod <= averagePeriodLength) {
       return 'Menstrual';
-    } else if (daysSinceLastPeriod <= averageCycleLength / 2 - 3) {
-      return 'Follicular';
-    } else if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
-      return 'Ovulation';
-    } else {
-      return 'Luteal';
     }
-  }
+    if (daysSinceLastPeriod <= averageCycleLength / 2 - 3) {
+      return 'Follicular';
+    }
+    if (daysSinceLastPeriod <= averageCycleLength / 2 + 3) {
+      return 'Ovulation';
+    }
+    return 'Luteal';
+  },
 
   /**
    * 计算到下次经期的天数
    */
-  static daysUntilNextPeriod(
+  daysUntilNextPeriod(
     nextPeriodDate: string,
     currentDate: string = DateUtils.getTodayDate(),
   ): number {
     return DateUtils.daysBetween(currentDate, nextPeriodDate);
-  }
+  },
 
   /**
    * 判断指定日期是否在经期内
    */
-  static isInPeriod(date: string, periods: PeriodRecords[]): boolean {
+  isInPeriod(date: string, periods: PeriodRecords[]): boolean {
     return periods.some(period => {
       const targetDate = new Date(date);
       const startDate = new Date(period.startDate);
       const endDate = new Date(period.endDate);
       return targetDate >= startDate && targetDate <= endDate;
     });
-  }
+  },
 
   /**
    * 获取指定日期的经期记录
    */
-  static getPeriodForDate(date: string, periods: PeriodRecords[]): PeriodRecords | null {
+  getPeriodForDate(date: string, periods: PeriodRecords[]): PeriodRecords | null {
     return (
       periods.find(period => {
         const targetDate = new Date(date);
@@ -1187,12 +1185,12 @@ export class PeriodCalculator {
         return targetDate >= startDate && targetDate <= endDate;
       }) || null
     );
-  }
+  },
 
   /**
    * 生成完整的预测结果
    */
-  static generatePrediction(
+  generatePrediction(
     periods: PeriodRecords[],
     currentDate: string = DateUtils.getTodayDate(),
   ): PredictionResult {
@@ -1210,7 +1208,7 @@ export class PeriodCalculator {
     // 计算平均周期长度
     const cycleLengths = [];
     for (let i = 1; i < periods.length; i++) {
-      cycleLengths.push(this.calculateCycleLength(periods[i], periods[i - 1]));
+      cycleLengths.push(PeriodCalculator.calculateCycleLength(periods[i], periods[i - 1]));
     }
 
     const averageCycleLength =
@@ -1219,11 +1217,14 @@ export class PeriodCalculator {
         : 28;
 
     const lastPeriod = periods[periods.length - 1];
-    const nextPeriodDate = this.predictNextPeriod(lastPeriod, averageCycleLength);
-    const ovulationInfo = this.calculateOvulationInfo(nextPeriodDate, averageCycleLength);
+    const nextPeriodDate = PeriodCalculator.predictNextPeriod(lastPeriod, averageCycleLength);
+    const ovulationInfo = PeriodCalculator.calculateOvulationInfo(
+      nextPeriodDate,
+      averageCycleLength,
+    );
 
     // 计算预测置信度
-    const confidence = this.calculatePredictionConfidence(cycleLengths);
+    const confidence = PeriodCalculator.calculatePredictionConfidence(cycleLengths);
 
     return {
       nextPeriodDate,
@@ -1231,14 +1232,14 @@ export class PeriodCalculator {
       fertileWindowStart: ovulationInfo.fertileStart,
       fertileWindowEnd: ovulationInfo.fertileEnd,
       confidence,
-      daysUntilNext: this.daysUntilNextPeriod(nextPeriodDate, currentDate),
+      daysUntilNext: PeriodCalculator.daysUntilNextPeriod(nextPeriodDate, currentDate),
     };
-  }
+  },
 
   /**
    * 计算预测置信度
    */
-  private static calculatePredictionConfidence(cycleLengths: number[]): number {
+  calculatePredictionConfidence(cycleLengths: number[]): number {
     if (cycleLengths.length < 2) return 50;
 
     const avg = cycleLengths.reduce((sum, len) => sum + len, 0) / cycleLengths.length;
@@ -1249,57 +1250,54 @@ export class PeriodCalculator {
     // 标准差越小，置信度越高
     const confidence = Math.max(50, 100 - standardDeviation * 10);
     return Math.round(confidence);
-  }
-}
+  },
+} as const;
 
 /**
  * 数据分析工具函数
  */
-export class PeriodAnalyzer {
+export const PeriodAnalyzer = {
   /**
    * 计算周期规律性评分 (0-100)
    */
-  static calculateRegularityScore(cycleLengths: number[]): number {
+  calculateRegularityScore(cycleLengths: number[]): number {
     if (cycleLengths.length < 2) return 100;
 
-    const variation = this.calculateVariationCoefficient(cycleLengths);
+    const variation = PeriodAnalyzer.calculateVariationCoefficient(cycleLengths);
     return Math.max(0, Math.round(100 - variation * 200));
-  }
+  },
 
   /**
    * 分析趋势方向
    */
-  static analyzeTrend(
-    values: number[],
-    windowSize: number = 6,
-  ): 'stable' | 'increasing' | 'decreasing' {
+  analyzeTrend(values: number[], windowSize = 6): 'stable' | 'increasing' | 'decreasing' {
     if (values.length < windowSize * 2) return 'stable';
 
     const recent = values.slice(-windowSize);
     const earlier = values.slice(-windowSize * 2, -windowSize);
 
-    const recentAvg = this.calculateAverage(recent);
-    const earlierAvg = this.calculateAverage(earlier);
+    const recentAvg = PeriodAnalyzer.calculateAverage(recent);
+    const earlierAvg = PeriodAnalyzer.calculateAverage(earlier);
     const difference = recentAvg - earlierAvg;
 
     if (Math.abs(difference) < 1) return 'stable';
     return difference > 0 ? 'increasing' : 'decreasing';
-  }
+  },
 
   /**
    * 识别异常值
    */
-  static identifyOutliers(values: number[], threshold: number = 2): number[] {
-    const mean = this.calculateAverage(values);
-    const stdDev = this.calculateStandardDeviation(values);
+  identifyOutliers(values: number[], threshold = 2): number[] {
+    const mean = PeriodAnalyzer.calculateAverage(values);
+    const stdDev = PeriodAnalyzer.calculateStandardDeviation(values);
 
     return values.filter(value => Math.abs(value - mean) > threshold * stdDev);
-  }
+  },
 
   /**
    * 计算健康评分
    */
-  static calculateHealthScore(
+  calculateHealthScore(
     cycleLengths: number[],
     periodLengths: number[],
     _dailyRecords: PeriodDailyRecords[],
@@ -1307,66 +1305,66 @@ export class PeriodAnalyzer {
     let score = 100;
 
     // 周期规律性 (40%)
-    const cycleRegularity = this.calculateRegularityScore(cycleLengths);
+    const cycleRegularity = PeriodAnalyzer.calculateRegularityScore(cycleLengths);
     score = score * 0.6 + cycleRegularity * 0.4;
 
     // 经期长度合理性 (30%)
-    const avgPeriodLength = this.calculateAverage(periodLengths);
+    const avgPeriodLength = PeriodAnalyzer.calculateAverage(periodLengths);
     if (avgPeriodLength < 3 || avgPeriodLength > 7) {
       score -= 20;
     }
 
     // 平均周期长度合理性 (30%)
-    const avgCycleLength = this.calculateAverage(cycleLengths);
+    const avgCycleLength = PeriodAnalyzer.calculateAverage(cycleLengths);
     if (avgCycleLength < 21 || avgCycleLength > 35) {
       score -= 20;
     }
 
     return Math.max(0, Math.round(score));
-  }
+  },
 
   /**
    * 计算平均值
    */
-  static calculateAverage(values: number[]): number {
+  calculateAverage(values: number[]): number {
     if (values.length === 0) return 0;
     return values.reduce((sum, val) => sum + val, 0) / values.length;
-  }
+  },
 
   /**
    * 计算标准差
    */
-  static calculateStandardDeviation(values: number[]): number {
+  calculateStandardDeviation(values: number[]): number {
     if (values.length === 0) return 0;
-    const mean = this.calculateAverage(values);
+    const mean = PeriodAnalyzer.calculateAverage(values);
     const variance = values.reduce((sum, val) => sum + (val - mean) ** 2, 0) / values.length;
     return Math.sqrt(variance);
-  }
+  },
 
   /**
    * 计算变异系数（标准差与平均值的比率）
    */
-  static calculateVariationCoefficient(values: number[]): number {
+  calculateVariationCoefficient(values: number[]): number {
     if (values.length === 0) return 0;
-    const mean = this.calculateAverage(values);
+    const mean = PeriodAnalyzer.calculateAverage(values);
     if (mean === 0) return 0; // 避免除以零
-    const stdDev = this.calculateStandardDeviation(values);
+    const stdDev = PeriodAnalyzer.calculateStandardDeviation(values);
     return Number((stdDev / mean).toFixed(2));
-  }
+  },
 
   /**
    * 检测异常周期（与平均值相差超过一个标准差）
    */
-  static detectOutliers(cycleLengths: number[]): number[] {
-    const mean = this.calculateAverage(cycleLengths);
-    const stdDev = this.calculateStandardDeviation(cycleLengths);
+  detectOutliers(cycleLengths: number[]): number[] {
+    const mean = PeriodAnalyzer.calculateAverage(cycleLengths);
+    const stdDev = PeriodAnalyzer.calculateStandardDeviation(cycleLengths);
     return cycleLengths.filter(length => Math.abs(length - mean) > stdDev);
-  }
+  },
 
   /**
    * 分析周期趋势（使用线性回归）
    */
-  static analyzeCycleTrend(cycleLengths: number[]): {
+  analyzeCycleTrend(cycleLengths: number[]): {
     slope: number;
     trend: 'stable' | 'increasing' | 'decreasing';
   } {
@@ -1374,7 +1372,7 @@ export class PeriodAnalyzer {
 
     const n = cycleLengths.length;
     const xMean = (n * (n + 1)) / (2 * n);
-    const yMean = this.calculateAverage(cycleLengths);
+    const yMean = PeriodAnalyzer.calculateAverage(cycleLengths);
 
     let numerator = 0;
     let denominator = 0;
@@ -1390,12 +1388,12 @@ export class PeriodAnalyzer {
     else if (slope < -0.5) trend = 'decreasing';
 
     return { slope: Number(slope.toFixed(2)), trend };
-  }
+  },
 
   // /**
   //  * 分析症状与经期阶段的关系
   //  */
-  // static analyzeSymptomsByPhase(
+  // analyzeSymptomsByPhase(
   //   dailyRecords: PeriodDailyRecords[],
   //   stats: PeriodStats,
   // ): Record<string, Record<string, number>> {
@@ -1418,18 +1416,18 @@ export class PeriodAnalyzer {
   /**
    * 评估健康风险
    */
-  static assessHealthRisk(cycleLengths: number[], periodLengths: number[]): string[] {
+  assessHealthRisk(cycleLengths: number[], periodLengths: number[]): string[] {
     const risks: string[] = [];
-    const cycleVariation = this.calculateVariationCoefficient(cycleLengths);
-    const periodVariation = this.calculateVariationCoefficient(periodLengths);
+    const cycleVariation = PeriodAnalyzer.calculateVariationCoefficient(cycleLengths);
+    const periodVariation = PeriodAnalyzer.calculateVariationCoefficient(periodLengths);
 
     if (cycleVariation > 0.2) {
       risks.push('周期变化较大，可能存在内分泌失调的风险。');
     }
-    if (this.calculateAverage(periodLengths) > 7) {
+    if (PeriodAnalyzer.calculateAverage(periodLengths) > 7) {
       risks.push('经期持续时间较长，建议咨询医生。');
     }
-    if (this.detectOutliers(cycleLengths).length > 2) {
+    if (PeriodAnalyzer.detectOutliers(cycleLengths).length > 2) {
       risks.push('存在多个异常周期，建议进行健康检查。');
     }
 
@@ -1438,29 +1436,29 @@ export class PeriodAnalyzer {
     }
 
     return risks;
-  }
+  },
 
   /**
    * 生成经期数据分析报告
    */
-  static generateAnalysisReport(
+  generateAnalysisReport(
     periods: PeriodRecords[],
     _dailyRecords: PeriodDailyRecords[],
   ): AnalysisResult {
-    const cycleLengths = this.calculateCycleLengths(periods);
+    const cycleLengths = PeriodAnalyzer.calculateCycleLengths(periods);
     const periodLengths = periods.map(p => DateUtils.daysBetween(p.startDate, p.endDate) + 1);
 
-    const cycleMean = this.calculateAverage(cycleLengths);
-    const cycleStdDev = this.calculateStandardDeviation(cycleLengths);
-    const cycleVariation = this.calculateVariationCoefficient(cycleLengths);
+    const cycleMean = PeriodAnalyzer.calculateAverage(cycleLengths);
+    const cycleStdDev = PeriodAnalyzer.calculateStandardDeviation(cycleLengths);
+    const cycleVariation = PeriodAnalyzer.calculateVariationCoefficient(cycleLengths);
 
-    const periodMean = this.calculateAverage(periodLengths);
-    const periodStdDev = this.calculateStandardDeviation(periodLengths);
+    const periodMean = PeriodAnalyzer.calculateAverage(periodLengths);
+    const periodStdDev = PeriodAnalyzer.calculateStandardDeviation(periodLengths);
 
-    const outliers = this.detectOutliers(cycleLengths);
-    const trendAnalysis = this.analyzeCycleTrend(cycleLengths);
+    const outliers = PeriodAnalyzer.detectOutliers(cycleLengths);
+    const trendAnalysis = PeriodAnalyzer.analyzeCycleTrend(cycleLengths);
     // const symptomAnalysis = this.analyzeSymptomsByPhase(dailyRecords);
-    const healthRisks = this.assessHealthRisk(cycleLengths, periodLengths);
+    const healthRisks = PeriodAnalyzer.assessHealthRisk(cycleLengths, periodLengths);
 
     const recommendations: string[] = [];
     if (cycleVariation > 0.1) {
@@ -1486,12 +1484,12 @@ export class PeriodAnalyzer {
       symptomFrequency: {},
       recommendations,
     };
-  }
+  },
 
   /**
    * 计算周期长度
    */
-  private static calculateCycleLengths(periods: PeriodRecords[]): number[] {
+  calculateCycleLengths(periods: PeriodRecords[]): number[] {
     const cycleLengths: number[] = [];
     for (let i = 1; i < periods.length; i++) {
       const currentStart = new Date(periods[i].startDate);
@@ -1502,5 +1500,5 @@ export class PeriodAnalyzer {
       cycleLengths.push(cycleLength);
     }
     return cycleLengths;
-  }
-}
+  },
+} as const;

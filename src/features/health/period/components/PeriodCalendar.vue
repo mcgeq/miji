@@ -303,6 +303,43 @@
     position: 'top' | 'bottom' | 'left' | 'right';
   }
 
+  // Helper function to check if position has enough space
+  function hasSpace(space: number, required: number, offset: number): boolean {
+    return space >= required + offset;
+  }
+
+  // Helper function to calculate coordinates for a given position
+  function calculateCoords(
+    mouseX: number,
+    mouseY: number,
+    scrollX: number,
+    scrollY: number,
+    tooltipWidth: number,
+    tooltipHeight: number,
+    offset: number,
+    position: 'top' | 'bottom' | 'left' | 'right',
+  ): { x: number; y: number } {
+    const coords = {
+      bottom: {
+        x: mouseX + scrollX + offset,
+        y: mouseY + scrollY + offset,
+      },
+      top: {
+        x: mouseX + scrollX + offset,
+        y: mouseY + scrollY - tooltipHeight - offset,
+      },
+      left: {
+        x: mouseX + scrollX - tooltipWidth - offset,
+        y: mouseY + scrollY + offset,
+      },
+      right: {
+        x: mouseX + scrollX + offset,
+        y: mouseY + scrollY + offset,
+      },
+    };
+    return coords[position];
+  }
+
   function calculateTooltipPosition(
     mouseX: number,
     mouseY: number,
@@ -319,43 +356,44 @@
     const spaceBottom = viewportHeight - mouseY;
     const spaceTop = mouseY;
 
-    let x: number;
-    let y: number;
-    let position: 'top' | 'bottom' | 'left' | 'right' = 'bottom';
+    // Try preferred positions in order
+    const positions: Array<{
+      position: 'top' | 'bottom' | 'left' | 'right';
+      checkH: number;
+      checkV: number;
+    }> = [
+      { position: 'bottom', checkH: spaceRight, checkV: spaceBottom },
+      { position: 'left', checkH: spaceLeft, checkV: spaceBottom },
+      { position: 'top', checkH: spaceRight, checkV: spaceTop },
+      { position: 'left', checkH: spaceLeft, checkV: spaceTop },
+    ];
 
-    if (spaceRight >= tooltipWidth + offset && spaceBottom >= tooltipHeight + offset) {
-      position = 'bottom';
-      x = mouseX + scrollX + offset;
-      y = mouseY + scrollY + offset;
-    } else if (spaceLeft >= tooltipWidth + offset && spaceBottom >= tooltipHeight + offset) {
-      position = 'left';
-      x = mouseX + scrollX - tooltipWidth - offset;
-      y = mouseY + scrollY + offset;
-    } else if (spaceRight >= tooltipWidth + offset && spaceTop >= tooltipHeight + offset) {
-      position = 'top';
-      x = mouseX + scrollX + offset;
-      y = mouseY + scrollY - tooltipHeight - offset;
-    } else if (spaceLeft >= tooltipWidth + offset && spaceTop >= tooltipHeight + offset) {
-      position = 'left';
-      x = mouseX + scrollX - tooltipWidth - offset;
-      y = mouseY + scrollY - tooltipHeight - offset;
-    } else {
-      if (spaceRight >= spaceLeft) {
-        position = spaceBottom >= spaceTop ? 'bottom' : 'top';
-        x = mouseX + scrollX + offset;
-        y =
-          spaceBottom >= spaceTop
-            ? mouseY + scrollY + offset
-            : mouseY + scrollY - tooltipHeight - offset;
-      } else {
-        position = 'left';
-        x = mouseX + scrollX - tooltipWidth - offset;
-        y =
-          spaceBottom >= spaceTop
-            ? mouseY + scrollY + offset
-            : mouseY + scrollY - tooltipHeight - offset;
+    // Find first position with enough space
+    for (const { position, checkH, checkV } of positions) {
+      if (hasSpace(checkH, tooltipWidth, offset) && hasSpace(checkV, tooltipHeight, offset)) {
+        const { x, y } = calculateCoords(
+          mouseX,
+          mouseY,
+          scrollX,
+          scrollY,
+          tooltipWidth,
+          tooltipHeight,
+          offset,
+          position,
+        );
+        return { x, y, position };
       }
     }
+
+    // Fallback: use best available position
+    const position =
+      spaceRight >= spaceLeft ? (spaceBottom >= spaceTop ? 'bottom' : 'top') : 'left';
+    const yOffset = spaceBottom >= spaceTop ? offset : -tooltipHeight - offset;
+    const x =
+      spaceRight >= spaceLeft
+        ? mouseX + scrollX + offset
+        : mouseX + scrollX - tooltipWidth - offset;
+    const y = mouseY + scrollY + yOffset;
 
     return { x, y, position };
   }

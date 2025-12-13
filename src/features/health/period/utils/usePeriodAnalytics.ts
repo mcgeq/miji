@@ -395,32 +395,33 @@ export function usePeriodAnalytics(
 
     if (currentDate >= periodStart && currentDate <= periodEnd) {
       return 'Menstrual';
-    } else if (daysSinceStart < 14) {
-      return 'Follicular';
-    } else if (daysSinceStart < 17) {
-      return 'Ovulation';
-    } else {
-      return 'Luteal';
     }
+    if (daysSinceStart < 14) {
+      return 'Follicular';
+    }
+    if (daysSinceStart < 17) {
+      return 'Ovulation';
+    }
+    return 'Luteal';
   }
 
   function extractSymptoms(dailyRecords: PeriodDailyRecords[]): string[] {
     // 从日常记录中提取症状信息
     const symptoms = new Set<string>();
+    const symptomKeywords = [
+      { keywords: ['疼痛', '痛'], symptom: '疼痛' },
+      { keywords: ['头痛'], symptom: '头痛' },
+      { keywords: ['疲劳', '累'], symptom: '疲劳' },
+    ];
 
     dailyRecords.forEach(record => {
-      if (record.notes) {
-        // 简单的关键词匹配，实际应该更复杂
-        if (record.notes.includes('疼痛') || record.notes.includes('痛')) {
-          symptoms.add('疼痛');
+      if (!record.notes) return;
+
+      symptomKeywords.forEach(({ keywords, symptom }) => {
+        if (keywords.some(keyword => record.notes?.includes(keyword))) {
+          symptoms.add(symptom);
         }
-        if (record.notes.includes('头痛')) {
-          symptoms.add('头痛');
-        }
-        if (record.notes.includes('疲劳') || record.notes.includes('累')) {
-          symptoms.add('疲劳');
-        }
-      }
+      });
     });
 
     return Array.from(symptoms);

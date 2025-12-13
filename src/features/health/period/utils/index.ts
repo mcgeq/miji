@@ -1,6 +1,6 @@
 /**
  * 经期工具函数统一导出
- * 
+ *
  * 组织结构：
  * - 基础计算：calculatePeriodDuration
  * - 日期工具：PeriodDateUtils
@@ -10,11 +10,11 @@
  * - 健康提示：HealthTipsManager
  * - 计算工具：PeriodCalculator
  * - 分析工具：PeriodAnalyzer
- * 
+ *
  * @example
  * // 基础计算
  * import { calculatePeriodDuration } from './utils';
- * 
+ *
  * @example
  * // 使用工具类
  * import { PeriodCalculator, PeriodAnalyzer } from './utils';
@@ -22,20 +22,18 @@
  */
 
 export {
+  type AnalysisResult,
   // 基础函数
   calculatePeriodDuration,
-  
   // 类型定义
   type HealthTip,
-  type AnalysisResult,
-  type PredictionResult,
-  
+  HealthTipsManager,
+  PeriodAnalyzer,
+  PeriodCalculator,
+  PeriodDataManager,
   // 工具类
   PeriodDateUtils,
   PeriodFormatter,
   PeriodValidator,
-  PeriodDataManager,
-  HealthTipsManager,
-  PeriodCalculator,
-  PeriodAnalyzer,
+  type PredictionResult,
 } from './periodUtils';

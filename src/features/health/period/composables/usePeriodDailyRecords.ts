@@ -1,8 +1,8 @@
+import type { ComposerTranslation } from 'vue-i18n';
+import type { PeriodDailyRecordCreate, PeriodDailyRecordUpdate } from '@/schema/health/period';
 import { HealthsDb } from '@/services/healths/healths';
 import { Lg } from '@/utils/debugLog';
 import { toast } from '@/utils/toast';
-import type { PeriodDailyRecordCreate, PeriodDailyRecordUpdate } from '@/schema/health/period';
-import type { ComposerTranslation } from 'vue-i18n';
 
 export function usePeriodDailyRecords(
   t: ComposerTranslation<import('vue-i18n').DefineLocaleMessage>,
