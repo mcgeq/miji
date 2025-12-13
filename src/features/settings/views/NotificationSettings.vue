@@ -83,6 +83,9 @@
   const vibrationEnabled = ref(true);
   const selectedSound = ref('default');
 
+  // 开发模式检测
+  const isDev = ref(import.meta.env.DEV);
+
   // 通知持续时间（秒）
   const notificationDuration = ref(5);
 
@@ -515,6 +518,7 @@
                 </option>
               </select>
               <Button
+                v-if="isDev"
                 size="sm"
                 variant="outline"
                 :disabled="isLoading || !hasPermission"

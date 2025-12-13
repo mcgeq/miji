@@ -1,10 +1,13 @@
 <script setup lang="ts">
   import { useNotificationPermission } from '@/composables/useNotificationPermission';
+  import { useNotificationSettings } from '@/composables/useNotificationSettings';
+  import type { NotificationSettingsForm } from '@/types/notification';
   import {
     NotificationType,
     NotificationTypeDescription,
     NotificationTypeLabel,
   } from '@/types/notification';
+  import { toast } from '@/utils/toast';
 
   // 本地设置表单类型（简化版）
   interface LocalNotificationSettings {
@@ -46,17 +49,24 @@
     statusText,
     statusColor,
     checking,
-    error,
+    error: permissionError,
     isProcessing,
     checkPermission,
     requestPermission,
     openSettings,
-    clearError,
+    clearError: clearPermissionError,
   } = useNotificationPermission();
 
-  // ==================== 状态 ====================
+  const {
+    isLoading,
+    settings: apiSettings,
+    settingsMap,
+    loadSettings: loadApiSettings,
+    updateSettings: updateApiSettings,
+    resetSettings: resetApiSettings,
+  } = useNotificationSettings();
 
-  const loading = ref(false);
+  // ==================== 状态 ====================
 
   const settings = reactive<LocalNotificationSettings>({
     todoReminder: true,
@@ -135,8 +145,7 @@
   async function handleRequestPermission() {
     const granted = await requestPermission();
     if (granted) {
-      // TODO: 显示成功提示
-      console.log('✅ 权限授予成功');
+      toast.success('通知权限授予成功');
     }
   }
 
@@ -184,61 +193,66 @@
    * 保存设置
    */
   async function handleSave() {
-    loading.value = true;
-
     try {
-      // TODO: 调用后端 API 保存设置
-      console.log('保存设置:', settings);
+      // 构建 API 所需的设置数组
+      const settingsToUpdate: NotificationSettingsForm[] = notificationTypes.map(type => ({
+        notificationType: type.value,
+        enabled: settings[type.key] as boolean,
+        quietHoursStart: settings.quietHoursStart,
+        quietHoursEnd: settings.quietHoursEnd,
+        quietDays: settings.quietDays?.map(d => d.toString()),
+        soundEnabled: true,
+        vibrationEnabled: true,
+      }));
 
-      // 模拟延迟
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // TODO: 显示成功提示
-      console.log('✅ 设置保存成功');
+      await updateApiSettings(settingsToUpdate);
+      // toast.success 已在 composable 中处理
     } catch (err) {
       console.error('❌ 保存设置失败:', err);
-      // TODO: 显示错误提示
-    } finally {
-      loading.value = false;
+      // toast.error 已在 composable 中处理
     }
   }
 
   /**
    * 重置设置
    */
-  function handleReset() {
-    // 恢复默认设置
-    settings.todoReminder = true;
-    settings.billReminder = true;
-    settings.periodReminder = true;
-    settings.ovulationReminder = true;
-    settings.pmsReminder = true;
-    settings.systemAlert = true;
-    settings.quietHoursStart = undefined;
-    settings.quietHoursEnd = undefined;
-    settings.quietDays = [];
-
-    console.log('✅ 设置已重置');
+  async function handleReset() {
+    try {
+      await resetApiSettings();
+      // toast.success 已在 composable 中处理
+      // 重新加载会在 composable 中自动完成
+    } catch (err) {
+      console.error('❌ 重置设置失败:', err);
+      // toast.error 已在 composable 中处理
+    }
   }
 
   /**
    * 加载设置
    */
   async function loadSettings() {
-    loading.value = true;
-
     try {
-      // TODO: 从后端 API 加载设置
-      console.log('加载设置...');
+      await loadApiSettings();
 
-      // 模拟延迟
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 从 API 设置同步到本地表单
+      if (apiSettings.value.length > 0) {
+        // 获取第一个设置的通用配置（免打扰时段）
+        const firstSetting = apiSettings.value[0];
+        settings.quietHoursStart = firstSetting.quietHoursStart;
+        settings.quietHoursEnd = firstSetting.quietHoursEnd;
+        settings.quietDays = firstSetting.quietDays?.map(d => Number.parseInt(d, 10)) || [];
 
-      // TODO: 更新 settings
+        // 同步各个通知类型的启用状态
+        notificationTypes.forEach(type => {
+          const apiSetting = settingsMap.value.get(type.value as any);
+          if (apiSetting) {
+            (settings as any)[type.key] = apiSetting.enabled;
+          }
+        });
+      }
     } catch (err) {
       console.error('❌ 加载设置失败:', err);
-    } finally {
-      loading.value = false;
+      // toast.error 已在 composable 中处理
     }
   }
 
@@ -288,7 +302,9 @@
         </p>
 
         <!-- 错误提示 -->
-        <Alert v-if="error" type="error" @close="clearError">{{ error }}</Alert>
+        <Alert v-if="permissionError" type="error" @close="clearPermissionError">
+          {{ permissionError }}
+        </Alert>
 
         <!-- 权限操作按钮 -->
         <div class="flex space-x-3">
@@ -338,7 +354,7 @@
             <Switch
               :model-value="settings[type.key] as boolean"
               @update:model-value="(val) => { (settings as any)[type.key] = val; handleSettingChange(); }"
-              :disabled="!hasPermission || loading"
+              :disabled="!hasPermission || isLoading"
             />
           </div>
         </div>
@@ -365,7 +381,7 @@
                 v-model="settings.quietHoursStart"
                 type="time"
                 class="input-time w-full"
-                :disabled="!hasPermission || loading"
+                :disabled="!hasPermission || isLoading"
                 @change="handleSettingChange"
               />
             </div>
@@ -376,7 +392,7 @@
                 v-model="settings.quietHoursEnd"
                 type="time"
                 class="input-time w-full"
-                :disabled="!hasPermission || loading"
+                :disabled="!hasPermission || isLoading"
                 @change="handleSettingChange"
               />
             </div>
@@ -394,7 +410,7 @@
               :variant="isDaySelected(day.value) ? 'primary' : 'outline'"
               size="sm"
               @click="toggleDay(day.value)"
-              :disabled="!hasPermission || loading"
+              :disabled="!hasPermission || isLoading"
             >
               {{ day.label }}
             </Button>
@@ -406,8 +422,8 @@
 
     <!-- 操作按钮 -->
     <div class="actions mt-6 flex justify-end space-x-3">
-      <Button @click="handleReset" variant="outline" :disabled="loading">重置</Button>
-      <Button @click="handleSave" variant="primary" :loading="loading" :disabled="!hasPermission">
+      <Button @click="handleReset" variant="outline" :disabled="isLoading">重置</Button>
+      <Button @click="handleSave" variant="primary" :loading="isLoading" :disabled="!hasPermission">
         保存设置
       </Button>
     </div>

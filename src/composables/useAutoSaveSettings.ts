@@ -26,7 +26,7 @@ export interface AutoSaveSettingsConfig {
   /** 设置模块名称（用于日志） */
   moduleName?: string;
   /** 设置项配置 */
-  fields: Record<string, SettingsConfig>;
+  fields: Record<string, SettingsConfig<any>>;
 }
 
 /**
@@ -60,7 +60,9 @@ export interface AutoSaveSettingsConfig {
  * await resetAll();
  * ```
  */
-export function useAutoSaveSettings(config: AutoSaveSettingsConfig) {
+export function useAutoSaveSettings<T extends Record<string, SettingsConfig<any>>>(
+  config: AutoSaveSettingsConfig & { fields: T },
+) {
   const { moduleName = 'settings', fields: fieldsConfig } = config;
 
   // 创建每个字段的设置缓存
@@ -79,8 +81,8 @@ export function useAutoSaveSettings(config: AutoSaveSettingsConfig) {
 
       return acc;
     },
-    {} as Record<string, SettingField>,
-  );
+    {} as Record<string, SettingField<any>>,
+  ) as { [K in keyof T]: SettingField<T[K]['defaultValue']> };
 
   // 计算是否有任何字段正在加载
   const isLoading = computed(() => Object.values(fields).some(field => field.isLoading.value));

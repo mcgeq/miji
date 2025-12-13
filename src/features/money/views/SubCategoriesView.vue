@@ -8,6 +8,7 @@
     RefreshCw,
   } from 'lucide-vue-next';
   import type { SubCategory } from '@/schema/money/category';
+  import { MoneyDb } from '@/services/money/money';
   import { useCategoryStore } from '@/stores/money';
   import { toast } from '@/utils/toast';
   import SubCategoryAddModal from '../components/SubCategoryAddModal.vue';
@@ -98,8 +99,7 @@
 
   async function handleAddSubCategory(name: string, icon: string, categoryName: string) {
     try {
-      // TODO: 调用后端 API 添加子分类
-      console.log('添加子分类:', { name, icon, categoryName });
+      await MoneyDb.createSubCategory({ name, icon, categoryName });
       toast.success(`子分类 "${name}" 添加成功`);
       showAddModal.value = false;
       // 刷新列表

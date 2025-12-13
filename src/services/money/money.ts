@@ -490,8 +490,20 @@ class MoneyDbService {
     return this.categoryMapper.list();
   }
 
+  async createCategory(data: { name: string; icon: string }): Promise<Category> {
+    return this.categoryMapper.create(data);
+  }
+
   async listSubCategory(): Promise<SubCategory[]> {
     return this.subCategoryMapper.list();
+  }
+
+  async createSubCategory(data: {
+    name: string;
+    icon: string;
+    categoryName: string;
+  }): Promise<SubCategory> {
+    return this.subCategoryMapper.create(data);
   }
 }
 

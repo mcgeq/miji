@@ -39,6 +39,19 @@
     return 'en-US';
   }
 
+  // 根据语言获取默认时区
+  function getDefaultTimezoneForLocale(locale: string): string {
+    const timezoneMap: Record<string, string> = {
+      'zh-CN': 'Asia/Shanghai',
+      'zh-TW': 'Asia/Shanghai',
+      'en-US': 'America/New_York',
+      'ja-JP': 'Asia/Tokyo',
+      'ko-KR': 'Asia/Seoul',
+      'es-ES': 'Europe/Berlin',
+    };
+    return timezoneMap[locale] || 'Asia/Shanghai';
+  }
+
   // 使用自动保存设置系统
   const { fields, isSaving, resetAll, loadAll } = useAutoSaveSettings({
     moduleName: 'general',
@@ -57,7 +70,7 @@
       },
       timezone: createDatabaseSetting({
         key: 'settings.general.timezone',
-        defaultValue: 'Asia/Shanghai',
+        defaultValue: getDefaultTimezoneForLocale(localeStore.currentLocale || 'zh-CN'),
       }),
       theme: {
         key: 'settings.general.theme',
@@ -171,10 +184,17 @@
     // 加载所有自动保存的设置
     await loadAll();
 
-    // 确保时区有默认值（防止显示空白）
+    // 确保时区有默认值（根据当前语言设置）
     if (!fields.timezone.value.value) {
-      console.log('[GeneralSettings] Timezone is empty, setting default value');
-      fields.timezone.value.value = 'Asia/Shanghai';
+      const currentLocale =
+        localeStore.currentLocale ||
+        (typeof fields.locale.value.value === 'string' ? fields.locale.value.value : 'zh-CN');
+      const defaultTimezone = getDefaultTimezoneForLocale(currentLocale);
+      console.log('[GeneralSettings] Timezone is empty, setting default based on locale:', {
+        locale: currentLocale,
+        timezone: defaultTimezone,
+      });
+      fields.timezone.value.value = defaultTimezone;
     }
 
     console.log('[GeneralSettings] Settings loaded:', {
@@ -244,6 +264,8 @@
     { value: 'America/Los_Angeles', label: '美国西部时间 (UTC-8)' },
     { value: 'Europe/London', label: '格林威治标准时间 (UTC+0)' },
     { value: 'Europe/Berlin', label: '中欧时间 (UTC+1)' },
+    { value: 'Europe/Madrid', label: '西班牙时间 (UTC+1)' },
+    { value: 'Australia/Sydney', label: '澳大利亚东部时间 (UTC+10)' },
   ];
 
   const themes = computed(() => [

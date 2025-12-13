@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { Plus, RefreshCw } from 'lucide-vue-next';
   import type { Category } from '@/schema/money/category';
+  import { MoneyDb } from '@/services/money/money';
   import { useCategoryStore } from '@/stores/money';
   import { toast } from '@/utils/toast';
   import CategoryAddModal from '../components/CategoryAddModal.vue';
@@ -33,8 +34,7 @@
 
   async function handleAddCategory(name: string, icon: string) {
     try {
-      // TODO: 调用后端 API 添加分类
-      console.log('添加分类:', { name, icon });
+      await MoneyDb.createCategory({ name, icon });
       toast.success(`分类 "${name}" 添加成功`);
       showAddModal.value = false;
       // 刷新列表
