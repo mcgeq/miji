@@ -571,46 +571,5 @@ export const useAuthStore = defineStore(
   },
 );
 
-// =============================================================================
-// 向后兼容性导出
-// =============================================================================
-
-/**
- * @deprecated 使用 useAuthStore() 替代
- * 为了向后兼容而保留
- */
-export function getCurrentUser(): AuthUser | null {
-  const store = useAuthStore();
-  return store.getCurrentUser();
-}
-
-/**
- * @deprecated 使用 useAuthStore().login() 替代
- */
-export async function loginUser(
-  userData: User,
-  tokenResponse?: TokenResponse,
-  remember = false,
-): Promise<void> {
-  const store = useAuthStore();
-  await store.login(userData, tokenResponse, remember);
-}
-
-/**
- * @deprecated 使用 useAuthStore().logout() 替代
- */
-export async function logoutUser(): Promise<void> {
-  const store = useAuthStore();
-  await store.logout();
-}
-
-/**
- * @deprecated 使用 useAuthStore().checkAuthStatus() 替代
- */
-export async function isAuthenticated(): Promise<boolean> {
-  const store = useAuthStore();
-  return await store.checkAuthStatus();
-}
-
 // 导出类型
 export type { AuthUser, TokenResponse, User };

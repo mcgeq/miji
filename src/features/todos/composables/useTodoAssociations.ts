@@ -1,8 +1,15 @@
 import type { Tags } from '@/schema/tags';
 import type { Projects } from '@/schema/todos';
-import { ProjectDb } from '@/services/projects';
-import { TagDb } from '@/services/tags';
-import { TodoDb } from '@/services/todos';
+import { projectService } from '@/services/projectsService';
+import { tagService } from '@/services/tagService';
+import {
+  addProject as todoAddProject,
+  addTag as todoAddTag,
+  listProjects as todoListProjects,
+  listTags as todoListTags,
+  removeProject as todoRemoveProject,
+  removeTag as todoRemoveTag,
+} from '@/services/todos';
 
 /**
  * Todo 项目和标签关联管理的组合式函数
@@ -22,7 +29,7 @@ export function useTodoAssociations(todoId: string) {
    */
   async function loadMasterData() {
     try {
-      const [projects, tags] = await Promise.all([ProjectDb.listProjects(), TagDb.listTags()]);
+      const [projects, tags] = await Promise.all([projectService.list(), tagService.list()]);
 
       projectsMap.value = new Map(projects.map(p => [p.serialNum, p]));
       tagsMap.value = new Map(tags.map(t => [t.serialNum, t]));
@@ -45,8 +52,8 @@ export function useTodoAssociations(todoId: string) {
 
       // 从后端加载当前 todo 的关联
       const [todoProjects, todoTags] = await Promise.all([
-        TodoDb.listProjects(todoId),
-        TodoDb.listTags(todoId),
+        todoListProjects(todoId),
+        todoListTags(todoId),
       ]);
 
       selectedProjects.value = todoProjects.map(p => p.serialNum);
@@ -64,7 +71,7 @@ export function useTodoAssociations(todoId: string) {
    */
   async function addProject(projectId: string) {
     try {
-      await TodoDb.addProject(todoId, projectId);
+      await todoAddProject(todoId, projectId);
 
       if (!selectedProjects.value.includes(projectId)) {
         selectedProjects.value.push(projectId);
@@ -80,7 +87,7 @@ export function useTodoAssociations(todoId: string) {
    */
   async function removeProject(projectId: string) {
     try {
-      await TodoDb.removeProject(todoId, projectId);
+      await todoRemoveProject(todoId, projectId);
 
       selectedProjects.value = selectedProjects.value.filter(id => id !== projectId);
     } catch (err) {
@@ -94,7 +101,7 @@ export function useTodoAssociations(todoId: string) {
    */
   async function addTag(tagId: string) {
     try {
-      await TodoDb.addTag(todoId, tagId);
+      await todoAddTag(todoId, tagId);
 
       if (!selectedTags.value.includes(tagId)) {
         selectedTags.value.push(tagId);
@@ -110,7 +117,7 @@ export function useTodoAssociations(todoId: string) {
    */
   async function removeTag(tagId: string) {
     try {
-      await TodoDb.removeTag(todoId, tagId);
+      await todoRemoveTag(todoId, tagId);
 
       selectedTags.value = selectedTags.value.filter(id => id !== tagId);
     } catch (err) {

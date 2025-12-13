@@ -62,37 +62,3 @@ export class TagMapper {
     }
   }
 }
-
-/**
- * 标签数据库操作
- */
-const tagMapper = new TagMapper();
-
-export async function listTags(): Promise<Tags[]> {
-  return tagMapper.list();
-}
-
-export async function getTag(serialNum: string): Promise<Tags | null> {
-  return tagMapper.getById(serialNum);
-}
-
-export async function createTag(data: TagCreate): Promise<Tags> {
-  return tagMapper.create(data);
-}
-
-export async function updateTag(serialNum: string, data: TagUpdate): Promise<Tags> {
-  return tagMapper.update(serialNum, data);
-}
-
-export async function deleteTag(serialNum: string): Promise<void> {
-  return tagMapper.delete(serialNum);
-}
-
-// Legacy export for backward compatibility
-export const TagDb = {
-  listTags,
-  getTag,
-  createTag,
-  updateTag,
-  deleteTag,
-};

@@ -50,6 +50,7 @@ export function calculatePeriodDuration(
 ): number {
   return DateUtils.daysBetweenInclusive(record.startDate, record.endDate);
 }
+
 // Define tip structure
 export interface HealthTip {
   id: number;

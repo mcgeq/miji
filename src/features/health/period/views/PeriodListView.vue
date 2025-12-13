@@ -14,9 +14,9 @@
     TrendingUp,
   } from 'lucide-vue-next';
   import { Badge, Button, Card, Input, Pagination, Select } from '@/components/ui';
-  import { calculatePeriodDuration } from '@/features/health/period/utils/periodUtils';
   import type { PeriodRecords } from '@/schema/health/period';
   import { usePeriodStore } from '@/stores/periodStore';
+  import { DateUtils } from '@/utils/date';
 
   interface SortOption {
     value: 'startDate' | 'duration' | 'cycleLength';
@@ -96,11 +96,15 @@
     }
     if (filters.value.minDuration) {
       const minDuration = filters.value.minDuration;
-      records = records.filter(record => calculatePeriodDuration(record) >= minDuration);
+      records = records.filter(
+        record => DateUtils.daysBetweenInclusive(record.startDate, record.endDate) >= minDuration,
+      );
     }
     if (filters.value.maxDuration) {
       const maxDuration = filters.value.maxDuration;
-      records = records.filter(record => calculatePeriodDuration(record) <= maxDuration);
+      records = records.filter(
+        record => DateUtils.daysBetweenInclusive(record.startDate, record.endDate) <= maxDuration,
+      );
     }
     if (filters.value.minCycle) {
       const minCycle = filters.value.minCycle;
@@ -128,8 +132,8 @@
           bValue = new Date(b.startDate).getTime();
           break;
         case 'duration':
-          aValue = calculatePeriodDuration(a);
-          bValue = calculatePeriodDuration(b);
+          aValue = DateUtils.daysBetweenInclusive(a.startDate, a.endDate);
+          bValue = DateUtils.daysBetweenInclusive(b.startDate, b.endDate);
           break;
         case 'cycleLength':
           aValue = calculateCycleLength(a);
@@ -157,7 +161,7 @@
   const averageDuration = computed(() => {
     if (filteredRecords.value.length === 0) return 0;
     const total = filteredRecords.value.reduce(
-      (sum, record) => sum + calculatePeriodDuration(record),
+      (sum, record) => sum + DateUtils.daysBetweenInclusive(record.startDate, record.endDate),
       0,
     );
     return total / filteredRecords.value.length;
@@ -439,7 +443,9 @@
                   {{ formatDateRange(record.startDate, record.endDate) }}
                 </h3>
                 <div class="flex gap-2">
-                  <Badge variant="danger" size="sm">{{ calculatePeriodDuration(record) }}天</Badge>
+                  <Badge variant="danger" size="sm">
+                    {{ DateUtils.daysBetweenInclusive(record.startDate, record.endDate) }}天
+                  </Badge>
                   <Badge v-if="calculateCycleLength(record) > 0" variant="info" size="sm">
                     周期{{ calculateCycleLength(record) }}天
                   </Badge>

@@ -541,10 +541,7 @@ declare module 'vue' {
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>;
     readonly getBrowserLocale: UnwrapRef<typeof import('./stores/locales')['getBrowserLocale']>;
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>;
-    readonly getCurrentLocale: UnwrapRef<typeof import('./stores/locales')['getCurrentLocale']>;
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>;
-    readonly getCurrentTheme: UnwrapRef<typeof import('./stores/theme')['getCurrentTheme']>;
-    readonly getCurrentUser: UnwrapRef<typeof import('./stores/auth')['getCurrentUser']>;
     readonly getLocaleFlag: UnwrapRef<typeof import('./stores/locales')['getLocaleFlag']>;
     readonly getLocaleName: UnwrapRef<typeof import('./stores/locales')['getLocaleName']>;
     readonly getSettingsCacheManager: UnwrapRef<
@@ -557,15 +554,12 @@ declare module 'vue' {
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>;
     readonly inject: UnwrapRef<typeof import('vue')['inject']>;
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>;
-    readonly isAuthenticated: UnwrapRef<typeof import('./stores/auth')['isAuthenticated']>;
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>;
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>;
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>;
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>;
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>;
     readonly isSupportedLocale: UnwrapRef<typeof import('./stores/locales')['isSupportedLocale']>;
-    readonly loginUser: UnwrapRef<typeof import('./stores/auth')['loginUser']>;
-    readonly logoutUser: UnwrapRef<typeof import('./stores/auth')['logoutUser']>;
     readonly makeDestructurable: UnwrapRef<typeof import('@vueuse/core')['makeDestructurable']>;
     readonly mapActions: UnwrapRef<typeof import('pinia')['mapActions']>;
     readonly mapGetters: UnwrapRef<typeof import('pinia')['mapGetters']>;
@@ -596,7 +590,6 @@ declare module 'vue' {
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>;
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>;
     readonly pausableWatch: UnwrapRef<typeof import('@vueuse/core')['pausableWatch']>;
-    readonly projectsStore: UnwrapRef<typeof import('./stores/projectStore')['projectsStore']>;
     readonly provide: UnwrapRef<typeof import('vue')['provide']>;
     readonly provideLocal: UnwrapRef<typeof import('@vueuse/core')['provideLocal']>;
     readonly reactify: UnwrapRef<typeof import('@vueuse/core')['reactify']>;
@@ -617,8 +610,6 @@ declare module 'vue' {
       typeof import('./composables/useAuthGuard')['requirePermission']
     >;
     readonly requireRole: UnwrapRef<typeof import('./composables/useAuthGuard')['requireRole']>;
-    readonly resetLocale: UnwrapRef<typeof import('./stores/locales')['resetLocale']>;
-    readonly resetTheme: UnwrapRef<typeof import('./stores/theme')['resetTheme']>;
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>;
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>;
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>;
@@ -627,13 +618,9 @@ declare module 'vue' {
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>;
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>;
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>;
-    readonly startLocaleStore: UnwrapRef<typeof import('./stores/locales')['startLocaleStore']>;
-    readonly startThemeStore: UnwrapRef<typeof import('./stores/theme')['startThemeStore']>;
-    readonly storeStart: UnwrapRef<typeof import('./stores/index')['storeStart']>;
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>;
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>;
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>;
-    readonly tagsStore: UnwrapRef<typeof import('./stores/tagStore')['tagsStore']>;
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>;
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>;
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>;
@@ -651,8 +638,6 @@ declare module 'vue' {
     readonly unref: UnwrapRef<typeof import('vue')['unref']>;
     readonly unrefElement: UnwrapRef<typeof import('@vueuse/core')['unrefElement']>;
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>;
-    readonly updateLocale: UnwrapRef<typeof import('./stores/locales')['updateLocale']>;
-    readonly updateTheme: UnwrapRef<typeof import('./stores/theme')['updateTheme']>;
     readonly useAccountActions: UnwrapRef<
       typeof import('./composables/useAccountActions')['useAccountActions']
     >;

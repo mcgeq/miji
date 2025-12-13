@@ -68,37 +68,3 @@ export class ProjectMapper {
     }
   }
 }
-
-/**
- * 项目数据库操作
- */
-const projectMapper = new ProjectMapper();
-
-export async function listProjects(): Promise<Projects[]> {
-  return projectMapper.list();
-}
-
-export async function getProject(serialNum: string): Promise<Projects | null> {
-  return projectMapper.getById(serialNum);
-}
-
-export async function createProject(data: ProjectCreate): Promise<Projects> {
-  return projectMapper.create(data);
-}
-
-export async function updateProject(serialNum: string, data: ProjectUpdate): Promise<Projects> {
-  return projectMapper.update(serialNum, data);
-}
-
-export async function deleteProject(serialNum: string): Promise<void> {
-  return projectMapper.delete(serialNum);
-}
-
-// Legacy export for backward compatibility
-export const ProjectDb = {
-  listProjects,
-  getProject,
-  createProject,
-  updateProject,
-  deleteProject,
-};

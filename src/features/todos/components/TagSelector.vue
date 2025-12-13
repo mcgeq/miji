@@ -2,7 +2,7 @@
   import { Search, Tag, X } from 'lucide-vue-next';
   import { Modal } from '@/components/ui';
   import type { Tags, TagsWithUsageStats } from '@/schema/tags';
-  import { TagDb } from '@/services/tags';
+  import { tagService } from '@/services/tagService';
 
   const props = defineProps<{
     open: boolean;
@@ -28,7 +28,7 @@
     loading.value = true;
     error.value = null;
     try {
-      const tags = await TagDb.listTags();
+      const tags = await tagService.list();
       availableTags.value = tags;
     } catch (err) {
       error.value = '加载标签失败';

@@ -2,8 +2,8 @@
   import { FileCheck, Hash, Pencil, Plus, Trash2 } from 'lucide-vue-next';
   import { Card, Tooltip } from '@/components/ui';
   import type { Tags, TagsWithUsageStats } from '@/schema/tags';
+  import { tagService } from '@/services/tagService';
   import type { TagCreate, TagUpdate } from '@/services/tags';
-  import { TagDb } from '@/services/tags';
   import { toast } from '@/utils/toast';
   import TagCreateModal from '../components/TagCreateModal.vue';
   import TagEditModal from '../components/TagEditModal.vue';
@@ -20,7 +20,7 @@
   async function loadTags() {
     loading.value = true;
     try {
-      const tags = await TagDb.listTags();
+      const tags = await tagService.list();
       tagsMap.value = new Map(tags.map(t => [t.serialNum, t]));
     } catch (error) {
       console.error('加载标签列表失败:', error);
@@ -38,7 +38,7 @@
   // 创建标签
   async function handleCreateConfirm(data: TagCreate) {
     try {
-      const newTag = await TagDb.createTag(data);
+      const newTag = await tagService.create(data);
       tagsMap.value.set(newTag.serialNum, newTag);
       toast.success(`标签"${newTag.name}"创建成功`);
       showCreateModal.value = false;
@@ -60,7 +60,7 @@
   // 编辑标签
   async function handleEditConfirm(serialNum: string, data: TagUpdate) {
     try {
-      const updatedTag = await TagDb.updateTag(serialNum, data);
+      const updatedTag = await tagService.update(serialNum, data);
       tagsMap.value.set(serialNum, updatedTag);
       toast.success(`标签"${updatedTag.name}"更新成功`);
       showEditModal.value = false;
@@ -77,7 +77,7 @@
     if (!tag) return;
 
     try {
-      await TagDb.deleteTag(serialNum);
+      await tagService.delete(serialNum);
       tagsMap.value.delete(serialNum);
       toast.success(`标签"${tag.name}"删除成功`);
     } catch (error) {

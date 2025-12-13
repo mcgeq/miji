@@ -3,7 +3,7 @@
   import Card from '@/components/ui/Card.vue';
   import type { Projects, ProjectWithUsageStats } from '@/schema/todos';
   import type { ProjectCreate, ProjectUpdate } from '@/services/projects';
-  import { ProjectDb } from '@/services/projects';
+  import { projectService } from '@/services/projectsService';
   import { ProjectTagsDb } from '@/services/projectTags';
   import { toast } from '@/utils/toast';
   import ProjectCreateModal from '../components/ProjectCreateModal.vue';
@@ -21,7 +21,7 @@
   async function loadProjects() {
     loading.value = true;
     try {
-      const projects = await ProjectDb.listProjects();
+      const projects = await projectService.list();
       projectsMap.value = new Map(projects.map(p => [p.serialNum, p]));
     } catch (error) {
       console.error('加载项目列表失败:', error);
@@ -39,7 +39,7 @@
   // 创建项目
   async function handleCreateConfirm(data: ProjectCreate, tags: string[]) {
     try {
-      const newProject = await ProjectDb.createProject(data);
+      const newProject = await projectService.create(data);
 
       // 如果有选中的标签，保存标签关联
       if (tags.length > 0) {
@@ -67,7 +67,7 @@
   // 编辑项目
   async function handleEditConfirm(serialNum: string, data: ProjectUpdate, tags: string[]) {
     try {
-      const updatedProject = await ProjectDb.updateProject(serialNum, data);
+      const updatedProject = await projectService.update(serialNum, data);
 
       // 更新标签关联
       await ProjectTagsDb.updateProjectTags(serialNum, tags);
@@ -88,7 +88,7 @@
     if (!project) return;
 
     try {
-      await ProjectDb.deleteProject(serialNum);
+      await projectService.delete(serialNum);
       projectsMap.value.delete(serialNum);
       toast.success(`项目"${project.name}"删除成功`);
     } catch (error) {

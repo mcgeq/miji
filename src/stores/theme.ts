@@ -322,45 +322,5 @@ export const useThemeStore = defineStore(
   },
 );
 
-// =============================================================================
-// 向后兼容性导出
-// =============================================================================
-
-/**
- * @deprecated 使用 useThemeStore() 替代
- * 为了向后兼容而保留
- */
-export async function startThemeStore(): Promise<void> {
-  const store = useThemeStore();
-  // 启动 Tauri store 持久化和同步
-  await store.$tauri.start();
-  // 初始化 store 逻辑
-  await store.init();
-}
-
-/**
- * @deprecated 使用 useThemeStore().getCurrentTheme() 替代
- */
-export function getCurrentTheme(): ThemeMode {
-  const store = useThemeStore();
-  return store.getCurrentTheme();
-}
-
-/**
- * @deprecated 使用 useThemeStore().setTheme() 替代
- */
-export function updateTheme(newTheme: ThemeMode | null): void {
-  const store = useThemeStore();
-  store.setTheme(newTheme || DEFAULT_THEME);
-}
-
-/**
- * @deprecated 使用 useThemeStore().resetToDefault() 替代
- */
-export function resetTheme(): void {
-  const store = useThemeStore();
-  store.resetToDefault();
-}
-
 // 导出类型定义
 export type { ThemeOption };

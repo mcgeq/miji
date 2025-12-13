@@ -3,9 +3,9 @@
   import { storeToRefs } from 'pinia';
   import Button from '@/components/ui/Button.vue';
   import Card from '@/components/ui/Card.vue';
-  import { calculatePeriodDuration } from '@/features/health/period/utils/periodUtils';
   import type { PeriodRecords } from '@/schema/health/period';
   import { usePeriodStore as usePeriodStores } from '@/stores/periodStore';
+  import { DateUtils } from '@/utils/date';
 
   const emit = defineEmits<{
     addRecord: [];
@@ -112,7 +112,7 @@
           class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2"
         >
           <div class="text-sm text-gray-700 dark:text-gray-300 truncate">
-            {{ isPeriodActive(record) ? `预计持续 ${calculatePeriodDuration(record)} 天` : `已持续 ${calculatePeriodDuration(record)} 天` }}
+            {{ isPeriodActive(record) ? `预计持续 ${DateUtils.daysBetweenInclusive(record.startDate, record.endDate)} 天` : `已持续 ${DateUtils.daysBetweenInclusive(record.startDate, record.endDate)} 天` }}
           </div>
 
           <div

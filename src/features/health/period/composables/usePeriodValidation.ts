@@ -11,8 +11,9 @@ export function usePeriodValidation() {
       return;
     }
     const dateObj = new Date(date);
-    const today = new Date();
-    if (dateObj > today) {
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    if (dateObj > todayEnd) {
       addValidationError('date', '日期不能超过今天');
     }
   };

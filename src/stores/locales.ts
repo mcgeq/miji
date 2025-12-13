@@ -285,46 +285,6 @@ export const useLocaleStore = defineStore(
   },
 );
 
-// =============================================================================
-// 向后兼容性导出
-// =============================================================================
-
-/**
- * @deprecated 使用 useLocaleStore() 替代
- * 为了向后兼容而保留
- */
-export async function startLocaleStore(): Promise<void> {
-  const store = useLocaleStore();
-  // 启动 Tauri store 持久化和同步
-  await store.$tauri.start();
-  // 初始化 store 逻辑
-  await store.init();
-}
-
-/**
- * @deprecated 使用 useLocaleStore().getCurrentLocale() 替代
- */
-export function getCurrentLocale(): string {
-  const store = useLocaleStore();
-  return store.getCurrentLocale();
-}
-
-/**
- * @deprecated 使用 useLocaleStore().setLocale() 替代
- */
-export function updateLocale(newLocale: string | null): void {
-  const store = useLocaleStore();
-  store.setLocale(newLocale || DEFAULT_LOCALE);
-}
-
-/**
- * @deprecated 使用 useLocaleStore().resetToDefault() 替代
- */
-export function resetLocale(): void {
-  const store = useLocaleStore();
-  store.resetToDefault();
-}
-
 // 导出类型定义
 export type { SupportedLocale };
 

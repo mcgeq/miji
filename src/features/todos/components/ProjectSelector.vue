@@ -2,7 +2,7 @@
   import { Folder, Search, X } from 'lucide-vue-next';
   import { Modal } from '@/components/ui';
   import type { Projects, ProjectWithUsageStats } from '@/schema/todos';
-  import { ProjectDb } from '@/services/projects';
+  import { projectService } from '@/services/projectsService';
 
   const props = defineProps<{
     open: boolean;
@@ -28,7 +28,7 @@
     loading.value = true;
     error.value = null;
     try {
-      const projects = await ProjectDb.listProjects();
+      const projects = await projectService.list();
       // 只显示未归档的项目
       availableProjects.value = projects.filter(p => !p.isArchived);
     } catch (err) {

@@ -2,7 +2,7 @@
   import { Hash, X } from 'lucide-vue-next';
   import { computed, onMounted, ref } from 'vue';
   import type { Tags } from '@/schema/tags';
-  import { TagDb } from '@/services/tags';
+  import { tagService } from '@/services/tagService';
 
   interface Props {
     modelValue: string[]; // 已选择的标签 serialNum 数组
@@ -27,7 +27,7 @@
   async function loadTags() {
     loading.value = true;
     try {
-      allTags.value = await TagDb.listTags();
+      allTags.value = await tagService.list();
     } catch (error) {
       console.error('加载标签失败:', error);
     } finally {
