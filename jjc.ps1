@@ -44,6 +44,16 @@ catch {
     exit 1
 }
 
+function Get-PowerShellExecutable {
+    try {
+        $null = Get-Command pwsh -ErrorAction Stop
+        return "pwsh"
+    }
+    catch {
+        return "powershell"
+    }
+}
+
 Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Cyan
 Write-Host "Jujutsu Format and Commit" -ForegroundColor Cyan
 Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Cyan
@@ -52,13 +62,62 @@ Write-Host ""
 # Step 1: Format
 Write-Host "[1/3] " -ForegroundColor Yellow -NoNewline
 Write-Host "Formatting changed files..." -ForegroundColor Cyan
-& .\jj-fmt.ps1
 
-if ($LASTEXITCODE -ne 0) {
+$psExe = Get-PowerShellExecutable
+$fmtLogDir = Join-Path $PSScriptRoot ".jj"
+if (-not (Test-Path $fmtLogDir)) {
+    New-Item -ItemType Directory -Path $fmtLogDir | Out-Null
+}
+
+$fmtLog = Join-Path $fmtLogDir ("jj-fmt-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".log")
+
+Write-Host "" 
+Write-Host "Formatter log: $fmtLog" -ForegroundColor DarkGray
+
+& $psExe -NoProfile -ExecutionPolicy Bypass -File ".\jj-fmt.ps1" *>> $fmtLog
+$fmtExitCode = $LASTEXITCODE
+
+if ($fmtExitCode -ne 0) {
     Write-Host ""
     Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Cyan
     Write-Host "Error: Formatting failed" -ForegroundColor Red
     Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Cyan
+
+    Write-Host "" 
+    Write-Host "Diagnostics:" -ForegroundColor Yellow
+    Write-Host "  - Log file: $fmtLog" -ForegroundColor Yellow
+    Write-Host "  - Re-run formatter with verbose output:" -ForegroundColor Yellow
+    Write-Host "      .\jj-fmt.ps1 -Verbose" -ForegroundColor Yellow
+    Write-Host "" 
+    Write-Host "Recent formatter output (from log):" -ForegroundColor Yellow
+
+    try {
+        Get-Content -Path $fmtLog -Tail 200 | ForEach-Object { Write-Host $_ }
+    }
+    catch {
+        Write-Host "(Failed to read log file: $fmtLog)" -ForegroundColor Yellow
+    }
+
+    Write-Host "" 
+    Write-Host "Re-running formatter in verbose mode to show file list and exact errors..." -ForegroundColor Yellow
+
+    $fmtVerboseLog = Join-Path $fmtLogDir ("jj-fmt-" + (Get-Date -Format "yyyyMMdd-HHmmss") + "-verbose.log")
+    Write-Host "Verbose formatter log: $fmtVerboseLog" -ForegroundColor DarkGray
+
+    & $psExe -NoProfile -ExecutionPolicy Bypass -File ".\jj-fmt.ps1" -Verbose *>> $fmtVerboseLog
+    $fmtVerboseExitCode = $LASTEXITCODE
+
+    if ($fmtVerboseExitCode -ne 0) {
+        Write-Host "" 
+        Write-Host "Recent verbose output (from log):" -ForegroundColor Yellow
+        try {
+            Get-Content -Path $fmtVerboseLog -Tail 250 | ForEach-Object { Write-Host $_ }
+        }
+        catch {
+            Write-Host "(Failed to read verbose log file: $fmtVerboseLog)" -ForegroundColor Yellow
+        }
+    }
+
     exit 1
 }
 
