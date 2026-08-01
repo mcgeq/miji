@@ -1000,8 +1000,8 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
   }
 
   DateTime _dateOnlyUtc(DateTime date) {
-    final utc = date.toUtc();
-    return DateTime.utc(utc.year, utc.month, utc.day);
+    final local = date.toLocal();
+    return DateTime.utc(local.year, local.month, local.day);
   }
 
   DateTime? _nullableDateOnlyUtc(DateTime? date) {
