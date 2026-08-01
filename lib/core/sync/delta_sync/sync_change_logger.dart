@@ -49,6 +49,11 @@ class SyncChangeLogger {
       'money_auto_posting_templates';
   static const moneyAutoPostingRunsTableName = 'money_auto_posting_runs';
 
+  // Checkin tables
+  static const checkinPlansTableName = 'checkin_plans';
+  static const checkinRecordsTableName = 'checkin_records';
+  static const checkinPhotosTableName = 'checkin_photos';
+
   final AppDatabase database;
   final SyncIdentityResolver identityResolver;
   final String Function() _createId;
@@ -369,6 +374,63 @@ class SyncChangeLogger {
     await recordChange(
       userId: userId,
       tableName: moneyAutoPostingRunsTableName,
+      recordId: recordId,
+      operation: operation,
+      changedFields: changedFields,
+      beforeVersion: beforeVersion,
+      afterVersion: afterVersion,
+    );
+  }
+
+  Future<void> recordCheckinPlanChange({
+    required String userId,
+    required String recordId,
+    required SyncChangeOperation operation,
+    required Map<String, Object?> changedFields,
+    int? beforeVersion,
+    int? afterVersion,
+  }) async {
+    await recordChange(
+      userId: userId,
+      tableName: checkinPlansTableName,
+      recordId: recordId,
+      operation: operation,
+      changedFields: changedFields,
+      beforeVersion: beforeVersion,
+      afterVersion: afterVersion,
+    );
+  }
+
+  Future<void> recordCheckinRecordChange({
+    required String userId,
+    required String recordId,
+    required SyncChangeOperation operation,
+    required Map<String, Object?> changedFields,
+    int? beforeVersion,
+    int? afterVersion,
+  }) async {
+    await recordChange(
+      userId: userId,
+      tableName: checkinRecordsTableName,
+      recordId: recordId,
+      operation: operation,
+      changedFields: changedFields,
+      beforeVersion: beforeVersion,
+      afterVersion: afterVersion,
+    );
+  }
+
+  Future<void> recordCheckinPhotoChange({
+    required String userId,
+    required String recordId,
+    required SyncChangeOperation operation,
+    required Map<String, Object?> changedFields,
+    int? beforeVersion,
+    int? afterVersion,
+  }) async {
+    await recordChange(
+      userId: userId,
+      tableName: checkinPhotosTableName,
       recordId: recordId,
       operation: operation,
       changedFields: changedFields,

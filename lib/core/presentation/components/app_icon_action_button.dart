@@ -12,6 +12,8 @@ class AppIconActionButton extends StatelessWidget {
     this.variant = AppIconActionVariant.plain,
     this.visualDensity = VisualDensity.compact,
     this.iconSize,
+    this.size,
+    this.padding,
   }) : assert(icon != null || child != null, 'icon or child must be provided');
 
   final String tooltip;
@@ -21,35 +23,50 @@ class AppIconActionButton extends StatelessWidget {
   final AppIconActionVariant variant;
   final VisualDensity visualDensity;
   final double? iconSize;
+  final double? size;
+  final EdgeInsetsGeometry? padding;
 
   @override
   Widget build(BuildContext context) {
     final iconWidget = child ?? Icon(icon, size: iconSize);
-    return switch (variant) {
-      AppIconActionVariant.outlined => IconButton.outlined(
-        tooltip: tooltip,
-        onPressed: onPressed,
-        visualDensity: visualDensity,
-        icon: iconWidget,
+
+    final customStyle = ButtonStyle(
+      minimumSize: size != null
+          ? WidgetStateProperty.all(Size(size!, size!))
+          : null,
+      padding: padding != null ? WidgetStateProperty.all(padding) : null,
+    );
+
+    // 使用 switch 表达式（无 default）
+    final baseStyle = switch (variant) {
+      AppIconActionVariant.outlined => IconButton.styleFrom(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(4)),
+        ),
+        side: const BorderSide(color: Colors.grey),
       ),
-      AppIconActionVariant.filled => IconButton.filled(
-        tooltip: tooltip,
-        onPressed: onPressed,
-        visualDensity: visualDensity,
-        icon: iconWidget,
+      AppIconActionVariant.filled => IconButton.styleFrom(
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
       ),
-      AppIconActionVariant.filledTonal => IconButton.filledTonal(
-        tooltip: tooltip,
-        onPressed: onPressed,
-        visualDensity: visualDensity,
-        icon: iconWidget,
+      AppIconActionVariant.filledTonal => IconButton.styleFrom(
+        backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+        foregroundColor: Theme.of(context).primaryColor,
       ),
-      AppIconActionVariant.plain => IconButton(
-        tooltip: tooltip,
-        onPressed: onPressed,
-        visualDensity: visualDensity,
-        icon: iconWidget,
-      ),
+      AppIconActionVariant.plain => IconButton.styleFrom(),
     };
+
+    final mergedStyle = baseStyle.copyWith(
+      minimumSize: customStyle.minimumSize,
+      padding: customStyle.padding,
+    );
+
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      visualDensity: visualDensity,
+      icon: iconWidget,
+      style: mergedStyle,
+    );
   }
 }

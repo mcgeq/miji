@@ -16,7 +16,13 @@ class AppRoutes {
   static const settingsAbout = '/app/settings/about';
   static const unlock = '/app/unlock';
 
-  static const sensitiveRoutes = <String>{bookkeeping, health};
+  // GTD / 打卡子路由
+  static const gtdPlans = '/app/gtd/plans';
+  static const gtdPlansCreate = '/app/gtd/plans/create';
+  static const gtdPlanDetail = '/app/gtd/plans/:planId';
+  static const gtdCheckinPhoto = '/app/gtd/checkin/photo/:planId';
+
+  static const sensitiveRoutes = <String>{bookkeeping, health, gtd};
 
   static bool isSensitivePath(String path) {
     return sensitiveRoutes.any(

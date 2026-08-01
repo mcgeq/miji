@@ -10,6 +10,10 @@ import 'package:miji/features/auth/presentation/locked_auth_page.dart';
 import 'package:miji/features/auth/presentation/sensitive_unlock_page.dart';
 import 'package:miji/features/bookkeeping/presentation/bookkeeping_page.dart';
 import 'package:miji/features/gtd/presentation/gtd_page.dart';
+import 'package:miji/features/gtd/presentation/plans/plan_list_page.dart';
+import 'package:miji/features/gtd/presentation/plans/plan_form_page.dart';
+import 'package:miji/features/gtd/presentation/plans/plan_detail_page.dart';
+import 'package:miji/features/gtd/presentation/checkin/photo_checkin_page.dart';
 import 'package:miji/features/health/presentation/health_page.dart';
 import 'package:miji/features/home/presentation/home_page.dart';
 import 'package:miji/features/settings/presentation/settings_page.dart';
@@ -99,6 +103,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.gtd,
             builder: (context, state) => const GtdPage(),
+            routes: [
+              GoRoute(
+                path: 'plans',
+                builder: (context, state) => const PlanListPage(),
+              ),
+              GoRoute(
+                path: 'plans/create',
+                builder: (context, state) {
+                  final editId = state.uri.queryParameters['edit'];
+                  return PlanFormPage(editPlanId: editId);
+                },
+              ),
+              GoRoute(
+                path: 'plans/:planId',
+                builder: (context, state) {
+                  final planId = state.pathParameters['planId']!;
+                  return PlanDetailPage(planId: planId);
+                },
+              ),
+              GoRoute(
+                path: 'checkin/photo/:planId',
+                builder: (context, state) {
+                  final planId = state.pathParameters['planId']!;
+                  return PhotoCheckinPage(planId: planId);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoutes.bookkeeping,

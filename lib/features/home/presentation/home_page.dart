@@ -25,6 +25,7 @@ import 'package:miji/features/home/presentation/home_month_budget_card.dart';
 import 'package:miji/features/home/presentation/home_recent_transactions_panel.dart';
 import 'package:miji/features/home/presentation/home_today_spending_card.dart';
 import 'package:miji/features/home/presentation/home_urgent_reminders_panel.dart';
+import 'package:miji/features/gtd/providers/checkin_providers.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -255,6 +256,7 @@ class _HomeDashboard extends ConsumerWidget {
           ),
           onOpenAll: () => _openRemindersPage(context),
         );
+        final checkinCard = _buildCheckinCard(context, ref);
         final recentPanel = HomeRecentTransactionsPanel(
           items: recentItems.maybeWhen(
             data: (items) => items,
@@ -291,6 +293,11 @@ class _HomeDashboard extends ConsumerWidget {
                 AppSectionEntrance(
                   delay: const Duration(milliseconds: 40),
                   child: greeting,
+                ),
+                const SizedBox(height: 12),
+                AppSectionEntrance(
+                  delay: const Duration(milliseconds: 55),
+                  child: checkinCard,
                 ),
                 const SizedBox(height: 12),
                 AppSectionEntrance(
@@ -335,6 +342,11 @@ class _HomeDashboard extends ConsumerWidget {
                           AppSectionEntrance(
                             delay: const Duration(milliseconds: 40),
                             child: greeting,
+                          ),
+                          const SizedBox(height: 12),
+                          AppSectionEntrance(
+                            delay: const Duration(milliseconds: 55),
+                            child: checkinCard,
                           ),
                           const SizedBox(height: 12),
                           AppSectionEntrance(
@@ -385,6 +397,88 @@ class _HomeDashboard extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildCheckinCard(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final progressAsync = ref.watch(todayProgressProvider);
+
+    return progressAsync.when(
+      data: (progressList) {
+        if (progressList.isEmpty) return const SizedBox.shrink();
+
+        final completed = progressList
+            .where((p) => p.completionRate >= 1.0)
+            .length;
+        final total = progressList.length;
+        final rate = total > 0 ? completed / total : 0.0;
+
+        return Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => context.push(AppRoutes.gtd),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.checklist_rounded,
+                      size: 20,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '今日打卡',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '已完成 $completed / $total 项',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: rate,
+                            minHeight: 4,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: theme.colorScheme.outline,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 

@@ -656,7 +656,7 @@ class _NavigationItem {
 
 const _navigationItems = [
   _NavigationItem(
-    label: 'GTD',
+    label: '打卡',
     path: AppRoutes.gtd,
     icon: Icons.checklist_rounded,
     selectedIcon: Icons.task_alt_rounded,
@@ -689,7 +689,7 @@ const _navigationItems = [
 
 const _mobileNavigationItems = [
   _NavigationItem(
-    label: 'GTD',
+    label: '打卡',
     path: AppRoutes.gtd,
     icon: Icons.checklist_rounded,
     selectedIcon: Icons.task_alt_rounded,

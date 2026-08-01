@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import 'package:miji/core/database/app_database_path.dart';
+import 'package:miji/core/database/tables/checkin/checkin_tables.dart';
 import 'package:miji/core/database/tables/health/health_daily_record_tables.dart';
 import 'package:miji/core/database/tables/health/health_period_tables.dart';
 import 'package:miji/core/database/tables/health/health_reproductive_health_tables.dart';
@@ -73,6 +74,9 @@ part 'app_database.g.dart';
     HealthPregnancyRecords,
     HealthMedicationRecords,
     MoneyAssetSnapshots,
+    CheckinPlans,
+    CheckinRecords,
+    CheckinPhotos,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -88,7 +92,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration {
@@ -179,6 +183,11 @@ class AppDatabase extends _$AppDatabase {
             'money_asset_snapshots_user_account_date '
             'ON money_asset_snapshots(user_id, account_id, captured_date)',
           );
+        }
+        if (from < 14) {
+          await migrator.createTable(checkinPlans);
+          await migrator.createTable(checkinRecords);
+          await migrator.createTable(checkinPhotos);
         }
       },
     );
