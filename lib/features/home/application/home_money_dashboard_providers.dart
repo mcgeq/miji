@@ -173,11 +173,29 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
     );
   }
 
+  final session = ref.watch(authSessionControllerProvider);
+  if (!session.isUnlocked || session.userId == null) {
+    return HomeMonthBudgetSummary.empty(
+      currencyCode: ledger?.baseCurrencyCode ?? 'CNY',
+      remainingDays: scope.remainingDays,
+    );
+  }
+
+  final repository = ref.watch(moneyRepositoryProvider);
+  final pendingAmount = await repository.getPendingAutoPostingAmountForBudget(
+    session.userId!,
+    budget.id,
+    scope.start,
+    scope.endExclusive,
+  );
+
   final now = DateTime.now();
   final pace = homeBudgetPeriodPaceFor(
     budget,
     DateTime(now.year, now.month, now.day),
   );
+
+  final totalUsedMinor = budget.usedAmountMinor + pendingAmount;
 
   return HomeMonthBudgetSummary(
     hasBudget: true,
@@ -185,12 +203,15 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
     budgetId: budget.id,
     budgetName: budget.name,
     totalMinor: budget.amountMinor,
-    usedMinor: budget.usedAmountMinor,
-    remainingMinor: budget.remainingAmountMinor,
-    progress: budget.progress,
+    usedMinor: totalUsedMinor,
+    remainingMinor: budget.amountMinor - totalUsedMinor,
+    progress: totalUsedMinor / budget.amountMinor,
     periodProgress: pace.periodProgress,
-    paceRatio: pace.paceRatioFor(budget.progress),
-    paceLabel: homeBudgetPaceLabelFor(budget.progress, pace.periodProgress),
+    paceRatio: pace.paceRatioFor(totalUsedMinor / budget.amountMinor),
+    paceLabel: homeBudgetPaceLabelFor(
+      totalUsedMinor / budget.amountMinor,
+      pace.periodProgress,
+    ),
     remainingDays: pace.remainingDays,
   );
 });

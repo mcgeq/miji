@@ -376,6 +376,13 @@ abstract class MoneyRepository {
     DateTime? now,
   });
 
+  Future<int> getPendingAutoPostingAmountForBudget(
+    String userId,
+    String budgetId,
+    DateTime periodStart,
+    DateTime periodEnd,
+  );
+
   Future<void> deleteBudgetAllocation(String userId, String allocationId);
 
   Future<MoneyTransactionPage> listTransactions(

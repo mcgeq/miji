@@ -337,6 +337,193 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
     }
   }
 
+  @override
+  Future<int> getPendingAutoPostingAmountForBudget(
+    String userId,
+    String budgetId,
+    DateTime periodStart,
+    DateTime periodEnd,
+  ) async {
+    await ensureReadyForUser(userId);
+    final budget = await _getBudgetForUser(userId, budgetId);
+    final scope = _readBudgetScope(budget);
+    final periodStartUtc = periodStart.toUtc();
+    final periodEndUtc = periodEnd.toUtc();
+
+    final templateRows =
+        await (database.select(database.moneyAutoPostingTemplates)..where(
+              (row) =>
+                  row.userId.equals(userId) &
+                  row.isActive.equals(true) &
+                  row.isDeleted.equals(false),
+            ))
+            .get();
+
+    var pendingAmount = 0;
+
+    for (final row in templateRows) {
+      final template = _mapAutoPostingTemplate(row);
+
+      if (!_autoPostingTemplateMatchesBudgetScope(template, scope)) {
+        continue;
+      }
+
+      final occurrences = _occurrencesWithinPeriod(
+        template,
+        periodStartUtc,
+        periodEndUtc,
+      );
+
+      for (final occurrence in occurrences) {
+        final run = await _getAutoPostingRunForOccurrence(
+          userId,
+          template.id,
+          occurrence.occurrenceKey,
+        );
+        if (run == null ||
+            run.status != MoneyAutoPostingRunStatus.posted.storageValue) {
+          pendingAmount += template.amountMinor;
+        }
+      }
+    }
+
+    return pendingAmount;
+  }
+
+  bool _autoPostingTemplateMatchesBudgetScope(
+    MoneyAutoPostingTemplateEntity template,
+    _BudgetScope scope,
+  ) {
+    if (scope.accountId != null && template.accountId != scope.accountId) {
+      return false;
+    }
+    if (scope.categoryId != null && template.categoryId != scope.categoryId) {
+      return false;
+    }
+    if (scope.subCategoryId != null &&
+        template.subCategoryId != scope.subCategoryId) {
+      return false;
+    }
+    return true;
+  }
+
+  Iterable<_AutoPostingOccurrence> _occurrencesWithinPeriod(
+    MoneyAutoPostingTemplateEntity template,
+    DateTime periodStartUtc,
+    DateTime periodEndUtc,
+  ) {
+    final startDate = _dateOnlyUtc(template.startsOn);
+    final templateEndDate = template.endsOn == null
+        ? _dateOnlyUtc(periodEndUtc)
+        : _dateOnlyUtc(template.endsOn!);
+    final endDate = templateEndDate.isBefore(_dateOnlyUtc(periodEndUtc))
+        ? templateEndDate
+        : _dateOnlyUtc(periodEndUtc);
+    if (endDate.isBefore(startDate)) {
+      return const <_AutoPostingOccurrence>[];
+    }
+
+    switch (template.frequency) {
+      case MoneyAutoPostingFrequency.daily:
+        return _dailyOccurrencesWithinPeriod(
+          template,
+          startDate,
+          endDate,
+          periodStartUtc,
+          periodEndUtc,
+        );
+      case MoneyAutoPostingFrequency.weekly:
+        return _weeklyOccurrencesWithinPeriod(
+          template,
+          startDate,
+          endDate,
+          periodStartUtc,
+          periodEndUtc,
+        );
+      case MoneyAutoPostingFrequency.monthly:
+        return _monthlyOccurrencesWithinPeriod(
+          template,
+          startDate,
+          endDate,
+          periodStartUtc,
+          periodEndUtc,
+        );
+    }
+  }
+
+  Iterable<_AutoPostingOccurrence> _dailyOccurrencesWithinPeriod(
+    MoneyAutoPostingTemplateEntity template,
+    DateTime startDate,
+    DateTime endDate,
+    DateTime periodStartUtc,
+    DateTime periodEndUtc,
+  ) {
+    final occurrences = <_AutoPostingOccurrence>[];
+    var date = startDate;
+    while (!date.isAfter(endDate)) {
+      final scheduledFor = _autoPostingScheduledFor(template, date);
+      if (!scheduledFor.isBefore(periodStartUtc) &&
+          scheduledFor.isBefore(periodEndUtc)) {
+        occurrences.add(_autoPostingOccurrence(date, scheduledFor));
+      }
+      date = date.add(const Duration(days: 1));
+    }
+    return occurrences;
+  }
+
+  Iterable<_AutoPostingOccurrence> _weeklyOccurrencesWithinPeriod(
+    MoneyAutoPostingTemplateEntity template,
+    DateTime startDate,
+    DateTime endDate,
+    DateTime periodStartUtc,
+    DateTime periodEndUtc,
+  ) {
+    final weekday = template.weekday ?? startDate.weekday;
+    final occurrences = <_AutoPostingOccurrence>[];
+    var date = startDate;
+    while (date.weekday != weekday && !date.isAfter(endDate)) {
+      date = date.add(const Duration(days: 1));
+    }
+    while (!date.isAfter(endDate)) {
+      final scheduledFor = _autoPostingScheduledFor(template, date);
+      if (!scheduledFor.isBefore(periodStartUtc) &&
+          scheduledFor.isBefore(periodEndUtc)) {
+        occurrences.add(_autoPostingOccurrence(date, scheduledFor));
+      }
+      date = date.add(const Duration(days: 7));
+    }
+    return occurrences;
+  }
+
+  Iterable<_AutoPostingOccurrence> _monthlyOccurrencesWithinPeriod(
+    MoneyAutoPostingTemplateEntity template,
+    DateTime startDate,
+    DateTime endDate,
+    DateTime periodStartUtc,
+    DateTime periodEndUtc,
+  ) {
+    final dayOfMonth = template.dayOfMonth ?? startDate.day;
+    final occurrences = <_AutoPostingOccurrence>[];
+    var monthCursor = DateTime.utc(startDate.year, startDate.month);
+    final endMonth = DateTime.utc(endDate.year, endDate.month);
+    while (!monthCursor.isAfter(endMonth)) {
+      final date = _monthlyAutoPostingDate(
+        monthCursor.year,
+        monthCursor.month,
+        dayOfMonth,
+      );
+      if (!date.isBefore(startDate) && !date.isAfter(endDate)) {
+        final scheduledFor = _autoPostingScheduledFor(template, date);
+        if (!scheduledFor.isBefore(periodStartUtc) &&
+            scheduledFor.isBefore(periodEndUtc)) {
+          occurrences.add(_autoPostingOccurrence(date, scheduledFor));
+        }
+      }
+      monthCursor = DateTime.utc(monthCursor.year, monthCursor.month + 1);
+    }
+    return occurrences;
+  }
+
   Iterable<_AutoPostingOccurrence> _dueAutoPostingOccurrences(
     MoneyAutoPostingTemplateEntity template,
     DateTime now,
