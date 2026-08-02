@@ -117,10 +117,11 @@ class MoneyTransactionActions {
 
     final result = await showAppResponsiveDialog<int>(
       context: context,
-      expandCompactSheet: true,
       builder: (context) {
         return _TransactionRefundDialog(
           currencyCode: transaction.currencyCode,
+          totalAmountMinor: transaction.amountMinor,
+          refundedAmountMinor: transaction.refundAmountMinor,
           maxAmountMinor:
               transaction.amountMinor - transaction.refundAmountMinor,
         );
@@ -175,10 +176,14 @@ class MoneyTransactionActions {
 class _TransactionRefundDialog extends StatefulWidget {
   const _TransactionRefundDialog({
     required this.currencyCode,
+    required this.totalAmountMinor,
+    required this.refundedAmountMinor,
     required this.maxAmountMinor,
   });
 
   final String currencyCode;
+  final int totalAmountMinor;
+  final int refundedAmountMinor;
   final int maxAmountMinor;
 
   @override
@@ -215,6 +220,13 @@ class _TransactionRefundDialogState extends State<_TransactionRefundDialog> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _RefundAmountSummary(
+            currencyCode: widget.currencyCode,
+            totalAmountMinor: widget.totalAmountMinor,
+            refundedAmountMinor: widget.refundedAmountMinor,
+            remainingAmountMinor: widget.maxAmountMinor,
+          ),
+          SizedBox(height: spacing.fieldGap),
           TextField(
             controller: _controller,
             autofocus: true,
@@ -253,6 +265,101 @@ class _TransactionRefundDialogState extends State<_TransactionRefundDialog> {
         },
         confirmTooltip: '确认退款',
         confirmIcon: Icons.reply_rounded,
+      ),
+    );
+  }
+}
+
+class _RefundAmountSummary extends StatelessWidget {
+  const _RefundAmountSummary({
+    required this.currencyCode,
+    required this.totalAmountMinor,
+    required this.refundedAmountMinor,
+    required this.remainingAmountMinor,
+  });
+
+  final String currencyCode;
+  final int totalAmountMinor;
+  final int refundedAmountMinor;
+  final int remainingAmountMinor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final spacing = theme.spacingTokens;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: spacing.cardPadding,
+          vertical: spacing.fieldGap,
+        ),
+        child: Row(
+          children: [
+            _SummaryItem(
+              label: '原金额',
+              value: formatMoneyMinor(totalAmountMinor, currencyCode),
+            ),
+            const SizedBox(width: 12),
+            _SummaryItem(
+              label: '已退款',
+              value: formatMoneyMinor(refundedAmountMinor, currencyCode),
+            ),
+            const SizedBox(width: 12),
+            _SummaryItem(
+              label: '剩余可退',
+              value: formatMoneyMinor(remainingAmountMinor, currencyCode),
+              emphasize: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryItem extends StatelessWidget {
+  const _SummaryItem({
+    required this.label,
+    required this.value,
+    this.emphasize = false,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasize;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: emphasize ? colorScheme.primary : colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
       ),
     );
   }
