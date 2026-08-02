@@ -257,6 +257,13 @@ class DeltaSyncService {
         return _readLocalLedgerAccountRecord(change);
       case SyncChangeLogger.moneyBillRemindersTableName:
         return _readLocalBillReminderRecord(change);
+      // V1.1: Todo tables
+      case SyncChangeLogger.todoTasksTableName:
+        return _readLocalTodoTaskRecord(change);
+      case SyncChangeLogger.todoTagsTableName:
+        return _readLocalTodoTagRecord(change);
+      case SyncChangeLogger.todoRecurrenceRulesTableName:
+        return _readLocalTodoRecurrenceRuleRecord(change);
     }
     return null;
   }
@@ -923,6 +930,105 @@ class DeltaSyncService {
     return null;
   }
 
+  // ---- V1.1: Todo reader methods ----
+
+  Future<DeltaLocalRecord?> _readLocalTodoTaskRecord(
+    DeltaChangeRecord change,
+  ) async {
+    final row = await (database.select(
+      database.todoTasks,
+    )..where((r) => r.id.equals(change.recordId))).getSingleOrNull();
+    if (row == null) return null;
+    return DeltaLocalRecord(
+      table: change.table,
+      recordId: change.recordId,
+      version: row.version,
+      snapshot: {
+        'id': row.id,
+        'user_id': row.userId,
+        'title': row.title,
+        'notes': row.notes,
+        'status': row.status,
+        'priority': row.priority,
+        'scheduled_date': row.scheduledDate,
+        'due_at': row.dueAt?.toUtc().toIso8601String(),
+        'category_id': row.categoryId,
+        'parent_task_id': row.parentTaskId,
+        'sort_order': row.sortOrder,
+        'is_recurrence_template': row.isRecurrenceTemplate,
+        'recurrence_rule_id': row.recurrenceRuleId,
+        'occurrence_date': row.occurrenceDate,
+        'reminder_at': row.reminderAt?.toUtc().toIso8601String(),
+        'device_id': row.deviceId,
+        'version': row.version,
+        'is_deleted': row.isDeleted,
+        'deleted_at': row.deletedAt?.toUtc().toIso8601String(),
+        'created_at': row.createdAt.toUtc().toIso8601String(),
+        'updated_at': row.updatedAt.toUtc().toIso8601String(),
+      },
+    );
+  }
+
+  Future<DeltaLocalRecord?> _readLocalTodoTagRecord(
+    DeltaChangeRecord change,
+  ) async {
+    final row = await (database.select(
+      database.todoTags,
+    )..where((r) => r.id.equals(change.recordId))).getSingleOrNull();
+    if (row == null) return null;
+    return DeltaLocalRecord(
+      table: change.table,
+      recordId: change.recordId,
+      version: row.version,
+      snapshot: {
+        'id': row.id,
+        'user_id': row.userId,
+        'name': row.name,
+        'color': row.color,
+        'device_id': row.deviceId,
+        'version': row.version,
+        'is_deleted': row.isDeleted,
+        'deleted_at': row.deletedAt?.toUtc().toIso8601String(),
+        'created_at': row.createdAt.toUtc().toIso8601String(),
+        'updated_at': row.updatedAt.toUtc().toIso8601String(),
+      },
+    );
+  }
+
+  Future<DeltaLocalRecord?> _readLocalTodoRecurrenceRuleRecord(
+    DeltaChangeRecord change,
+  ) async {
+    final row = await (database.select(
+      database.todoRecurrenceRules,
+    )..where((r) => r.id.equals(change.recordId))).getSingleOrNull();
+    if (row == null) return null;
+    return DeltaLocalRecord(
+      table: change.table,
+      recordId: change.recordId,
+      version: row.version,
+      snapshot: {
+        'id': row.id,
+        'user_id': row.userId,
+        'template_task_id': row.templateTaskId,
+        'frequency_type': row.frequencyType,
+        'interval': row.interval_,
+        'days_of_week_json': row.daysOfWeekJson,
+        'day_of_month': row.dayOfMonth,
+        'month_of_year': row.monthOfYear,
+        'day_of_year': row.dayOfYear,
+        'ends_at': row.endsAt?.toUtc().toIso8601String(),
+        'reminder_mode': row.reminderMode,
+        'reminder_config_json': row.reminderConfigJson,
+        'device_id': row.deviceId,
+        'version': row.version,
+        'is_deleted': row.isDeleted,
+        'deleted_at': row.deletedAt?.toUtc().toIso8601String(),
+        'created_at': row.createdAt.toUtc().toIso8601String(),
+        'updated_at': row.updatedAt.toUtc().toIso8601String(),
+      },
+    );
+  }
+
   bool _isSupportedMoneyTable(String tableName) {
     return switch (tableName) {
       SyncChangeLogger.moneyTransactionsTableName ||
@@ -939,7 +1045,10 @@ class DeltaSyncService {
       SyncChangeLogger.moneyBudgetAllocationsTableName ||
       SyncChangeLogger.moneySplitRulesTableName ||
       SyncChangeLogger.moneyLedgerAccountsTableName ||
-      SyncChangeLogger.moneyBillRemindersTableName => true,
+      SyncChangeLogger.moneyBillRemindersTableName ||
+      SyncChangeLogger.todoTasksTableName ||
+      SyncChangeLogger.todoTagsTableName ||
+      SyncChangeLogger.todoRecurrenceRulesTableName => true,
       _ => false,
     };
   }

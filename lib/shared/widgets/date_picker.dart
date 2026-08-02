@@ -13,6 +13,8 @@ class DateTimePicker extends StatelessWidget {
     this.lastDate,
     this.showTime = true,
     this.label,
+    this.clearable = false,
+    this.onClear,
   });
 
   final DateTime selectedDate;
@@ -21,6 +23,8 @@ class DateTimePicker extends StatelessWidget {
   final DateTime? lastDate;
   final bool showTime;
   final String? label;
+  final bool clearable;
+  final VoidCallback? onClear;
 
   String get _formattedDate {
     final month = selectedDate.month.toString().padLeft(2, '0');
@@ -74,6 +78,21 @@ class DateTimePicker extends StatelessWidget {
                   ),
                 ),
               ),
+              if (clearable) ...[
+                const SizedBox(width: 4),
+                InkWell(
+                  onTap: onClear,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 15,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

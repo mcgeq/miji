@@ -4,19 +4,24 @@ import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
-import 'package:miji/core/presentation/components/app_section_header.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/presentation/checkin/record_detail_sheet.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
+import 'package:miji/features/todo/presentation/today_action_list_view.dart';
+import 'package:miji/features/todo/presentation/todo_task_list_view.dart';
+import 'package:miji/features/todo/providers/todo_providers.dart';
+import 'package:miji/features/todo/domain/todo_models.dart';
+import 'package:miji/features/todo/presentation/todo_stats_view.dart';
 
 // ---------------------------------------------------------------------------
 // 主壳页
 // ---------------------------------------------------------------------------
 
-enum _GtdPanel { today, calendar, statistics }
+enum _GtdPanel { today, tasks, habits, calendar, statistics }
 
 class GtdPage extends ConsumerStatefulWidget {
   const GtdPage({super.key});
@@ -27,17 +32,35 @@ class GtdPage extends ConsumerStatefulWidget {
 
 class _GtdPageState extends ConsumerState<GtdPage> {
   var _selectedPanel = _GtdPanel.today;
+  late final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final panelSelector = AppSlidingSegmentedControl<_GtdPanel>(
-      minSegmentWidth: 80,
+      minSegmentWidth: 52,
+      showLabels: false,
       value: _selectedPanel,
       segments: const [
         AppSlidingSegment(
           value: _GtdPanel.today,
           icon: Icons.today_rounded,
           label: '今日',
+        ),
+        AppSlidingSegment(
+          value: _GtdPanel.tasks,
+          icon: Icons.task_alt_rounded,
+          label: '任务',
+        ),
+        AppSlidingSegment(
+          value: _GtdPanel.habits,
+          icon: Icons.checklist_rounded,
+          label: '习惯',
         ),
         AppSlidingSegment(
           value: _GtdPanel.calendar,
@@ -51,68 +74,154 @@ class _GtdPageState extends ConsumerState<GtdPage> {
         ),
       ],
       onChanged: (panel) {
-        setState(() => _selectedPanel = panel);
+        setState(() {
+          _selectedPanel = panel;
+          _pageController.jumpToPage(panel.index);
+        });
       },
     );
 
     return AppPageFrame(
       maxWidth: 760,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: Row(
-              children: [
-                Expanded(flex: 3, child: panelSelector),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 1,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      AppIconActionButton(
-                        icon: Icons.add_rounded,
-                        tooltip: '新建计划',
-                        size: 36,
-                        iconSize: 20,
-                        padding: const EdgeInsets.all(4),
-                        onPressed: () {
-                          context.push('/app/gtd/plans/create');
-                        },
-                      ),
-                      AppIconActionButton(
-                        icon: Icons.list_rounded,
-                        tooltip: '管理计划',
-                        size: 36,
-                        iconSize: 20,
-                        padding: const EdgeInsets.all(4),
-                        onPressed: () {
-                          context.push('/app/gtd/plans');
-                        },
-                      ),
-                      // AppIconActionButton(
-                      //   icon: Icons.download_rounded,
-                      //   tooltip: '导出数据',
-                      //   onPressed: () => _exportData(context, ref),
-                      // ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          Expanded(child: _buildSelectedTab()),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final responsive = AppResponsive.of(
+            context,
+            width: constraints.maxWidth,
+          );
+          if (responsive.isCompact) {
+            return _buildCompactLayout(panelSelector);
+          }
+          return _buildExpandedLayout(panelSelector);
+        },
       ),
+    );
+  }
+
+  /// Mobile: centered icon-only tabs + PageView.
+  Widget _buildCompactLayout(Widget panelSelector) {
+    return Column(
+      children: [
+        const SizedBox(height: 10),
+        Center(child: panelSelector),
+        const SizedBox(height: 14),
+        Expanded(child: _buildPageView()),
+      ],
+    );
+  }
+
+  /// Tablet/desktop: icon-only tabs + action buttons in a Row.
+  Widget _buildExpandedLayout(Widget panelSelector) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          child: Row(
+            children: [
+              Expanded(flex: 3, child: panelSelector),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 1,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: _buildToolbarActions(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Expanded(child: _buildSelectedTab()),
+      ],
+    );
+  }
+
+  Widget _buildPageView() {
+    return PageView(
+      controller: _pageController,
+      onPageChanged: (index) {
+        setState(() => _selectedPanel = _GtdPanel.values[index]);
+      },
+      children: const [
+        TodayActionListView(),
+        TodoTaskListView(),
+        _TodayTab(),
+        _CalendarTab(),
+        V2StatisticsTab(),
+      ],
     );
   }
 
   Widget _buildSelectedTab() {
     return switch (_selectedPanel) {
-      _GtdPanel.today => const _TodayTab(),
+      _GtdPanel.today => const TodayActionListView(),
+      _GtdPanel.tasks => const TodoTaskListView(),
+      _GtdPanel.habits => const _TodayTab(),
       _GtdPanel.calendar => const _CalendarTab(),
-      _GtdPanel.statistics => const _StatisticsTab(),
+      _GtdPanel.statistics => const V2StatisticsTab(),
+    };
+  }
+
+  List<Widget> _buildToolbarActions() {
+    return switch (_selectedPanel) {
+      _GtdPanel.today => [
+        AppIconActionButton(
+          icon: Icons.add_rounded,
+          tooltip: '新建计划',
+          size: 36,
+          iconSize: 20,
+          padding: const EdgeInsets.all(4),
+          onPressed: () {
+            context.push('/app/gtd/plans/create');
+          },
+        ),
+      ],
+      _GtdPanel.tasks => [
+        AppIconActionButton(
+          icon: Icons.add_rounded,
+          tooltip: '新建任务',
+          size: 36,
+          iconSize: 20,
+          padding: const EdgeInsets.all(4),
+          onPressed: () {
+            // TODO: 打开快速创建任务 BottomSheet
+          },
+        ),
+      ],
+      _GtdPanel.habits => [
+        AppIconActionButton(
+          icon: Icons.add_rounded,
+          tooltip: '新建计划',
+          size: 36,
+          iconSize: 20,
+          padding: const EdgeInsets.all(4),
+          onPressed: () {
+            context.push('/app/gtd/plans/create');
+          },
+        ),
+        AppIconActionButton(
+          icon: Icons.list_rounded,
+          tooltip: '管理计划',
+          size: 36,
+          iconSize: 20,
+          padding: const EdgeInsets.all(4),
+          onPressed: () {
+            context.push('/app/gtd/plans');
+          },
+        ),
+      ],
+      _GtdPanel.calendar || _GtdPanel.statistics => [
+        AppIconActionButton(
+          icon: Icons.add_rounded,
+          tooltip: '新建计划',
+          size: 36,
+          iconSize: 20,
+          padding: const EdgeInsets.all(4),
+          onPressed: () {
+            context.push('/app/gtd/plans/create');
+          },
+        ),
+      ],
     };
   }
 }
@@ -536,6 +645,9 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
     final theme = Theme.of(context);
     final summariesAsync = ref.watch(dailySummariesProvider);
     final recordsAsync = ref.watch(recordsByDateProvider);
+    // V1.1: selected day Todo tasks
+    final sel = _selectedDay ?? _focusedDay;
+    final todoTasksAsync = ref.watch(todoTasksByDateProvider(sel));
 
     final summaryMap = <DateTime, DailyCheckinSummary>{};
     summariesAsync.whenData((list) {
@@ -546,7 +658,6 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
 
     return Column(
       children: [
-        // 月历
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: TableCalendar(
@@ -595,7 +706,6 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
                 final key = DateTime.utc(day.year, day.month, day.day);
                 final summary = summaryMap[key];
                 if (summary == null || summary.completedPlans == 0) return null;
-
                 final rate = summary.totalPlans > 0
                     ? summary.completedPlans / summary.totalPlans
                     : 0.0;
@@ -604,7 +714,6 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
                     : rate >= 0.5
                     ? Colors.orange
                     : theme.colorScheme.outline;
-
                 return Positioned(
                   bottom: 1,
                   child: Container(
@@ -621,33 +730,171 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
           ),
         ),
         const Divider(height: 1),
-        // 当日打卡记录
+        // V1.1: Todo + 习惯详情
         Expanded(
-          child: recordsAsync.when(
-            data: (records) {
-              if (records.isEmpty) {
-                return Center(
-                  child: Text(
-                    '当天没有打卡记录',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                itemCount: records.length,
-                itemBuilder: (context, index) {
-                  return _RecordCard(record: records[index]);
-                },
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: Text('加载失败: $err')),
+          child: _SelectedDayContent(
+            recordsAsync: recordsAsync,
+            todoTasksAsync: todoTasksAsync,
           ),
         ),
       ],
+    );
+  }
+}
+
+// V1.1: 日历日期详情（Todo + 习惯）
+class _SelectedDayContent extends ConsumerWidget {
+  const _SelectedDayContent({
+    required this.recordsAsync,
+    required this.todoTasksAsync,
+  });
+  final AsyncValue<List<CheckinRecord>> recordsAsync;
+  final AsyncValue<List<TodoTask>> todoTasksAsync;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    if (todoTasksAsync.isLoading || recordsAsync.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final todoTasks = todoTasksAsync.maybeWhen(
+      data: (t) => t,
+      orElse: () => <TodoTask>[],
+    );
+    final records = recordsAsync.maybeWhen(
+      data: (r) => r,
+      orElse: () => <CheckinRecord>[],
+    );
+    if (todoTasks.isEmpty && records.isEmpty) {
+      return Center(
+        child: Text(
+          '当天没有任务或打卡记录',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.outline,
+          ),
+        ),
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        if (todoTasks.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              '任务',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ...todoTasks.map((task) => _TodoDayCard(task: task)),
+          if (records.isNotEmpty) const SizedBox(height: 12),
+        ],
+        if (records.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              '习惯',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: colorScheme.tertiary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ...records.map((record) => _RecordCard(record: record)),
+        ],
+      ],
+    );
+  }
+}
+
+class _TodoDayCard extends ConsumerWidget {
+  const _TodoDayCard({required this.task});
+  final TodoTask task;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isCompleted = task.status == TodoTaskStatus.completed;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => context.push('/app/gtd/tasks/${task.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              Icon(
+                isCompleted
+                    ? Icons.check_circle_rounded
+                    : task.priority == TodoTaskPriority.high
+                    ? Icons.flag_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                size: 18,
+                color: isCompleted
+                    ? Colors.green.shade400
+                    : task.isOverdue
+                    ? colorScheme.error
+                    : colorScheme.outline,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  task.title,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    decoration: isCompleted ? TextDecoration.lineThrough : null,
+                    color: isCompleted
+                        ? colorScheme.outline
+                        : colorScheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (task.tags.isNotEmpty)
+                ...task.tags
+                    .take(1)
+                    .map(
+                      (tag) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Color(
+                            int.parse(tag.color.replaceFirst('#', '0xff')),
+                          ).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          tag.name,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 9,
+                            color: Color(
+                              int.parse(tag.color.replaceFirst('#', '0xff')),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+              if (task.dueAt != null) ...[
+                const SizedBox(width: 6),
+                Text(
+                  '${task.dueAt!.hour.toString().padLeft(2, '0')}:${task.dueAt!.minute.toString().padLeft(2, '0')}',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.outline,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -706,186 +953,6 @@ class _RecordCard extends ConsumerWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.outline,
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// 统计 Tab
-// ---------------------------------------------------------------------------
-
-class _StatisticsTab extends ConsumerWidget {
-  const _StatisticsTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final streakAsync = ref.watch(checkinStreakProvider);
-    final categoryStatsAsync = ref.watch(categoryStatsProvider);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      children: [
-        // 连续打卡天数
-        streakAsync.when(
-          data: (streak) => Row(
-            children: [
-              _StatCard(
-                label: '当前连续',
-                value: '${streak.currentStreak}',
-                unit: '天',
-                icon: Icons.local_fire_department_rounded,
-                color: streak.currentStreak > 0
-                    ? Colors.orange
-                    : colorScheme.outline,
-              ),
-              const SizedBox(width: 12),
-              _StatCard(
-                label: '最长连续',
-                value: '${streak.longestStreak}',
-                unit: '天',
-                icon: Icons.emoji_events_rounded,
-                color: streak.longestStreak > 0
-                    ? Colors.amber.shade700
-                    : colorScheme.outline,
-              ),
-            ],
-          ),
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
-        const SizedBox(height: 24),
-        // 分类统计
-        AppSectionHeader(title: '本月分类统计'),
-        const SizedBox(height: 10),
-        categoryStatsAsync.when(
-          data: (stats) {
-            if (stats.isEmpty) {
-              return Text(
-                '暂无数据',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.outline,
-                ),
-              );
-            }
-            final total = stats.values.fold<int>(0, (a, b) => a + b);
-            return Column(
-              children: stats.entries.map((entry) {
-                final rate = total > 0 ? entry.value / total : 0.0;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 72,
-                        child: Text(
-                          entry.key,
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ),
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(3),
-                          child: LinearProgressIndicator(
-                            value: rate,
-                            minHeight: 8,
-                            backgroundColor:
-                                colorScheme.surfaceContainerHighest,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 32,
-                        child: Text(
-                          '${entry.value}',
-                          textAlign: TextAlign.right,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Text('加载失败: $err'),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// 统计卡片
-// ---------------------------------------------------------------------------
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.unit,
-    required this.icon,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final String unit;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Expanded(
-      child: Material(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 32),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  RichText(
-                    text: TextSpan(
-                      text: value,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: ' $unit',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ],
           ),

@@ -22,6 +22,10 @@ class AppRoutes {
   static const gtdPlanDetail = '/app/gtd/plans/:planId';
   static const gtdCheckinPhoto = '/app/gtd/checkin/photo/:planId';
 
+  // Todo 子路由
+  static const gtdTaskDetail = '/app/gtd/tasks/:taskId';
+  static const gtdTaskCreate = '/app/gtd/tasks/create';
+
   static const sensitiveRoutes = <String>{bookkeeping, health, gtd};
 
   static bool isSensitivePath(String path) {

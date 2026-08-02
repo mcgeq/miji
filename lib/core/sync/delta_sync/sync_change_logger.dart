@@ -54,6 +54,11 @@ class SyncChangeLogger {
   static const checkinRecordsTableName = 'checkin_records';
   static const checkinPhotosTableName = 'checkin_photos';
 
+  // Todo tables (V1.1)
+  static const todoTasksTableName = 'todo_tasks';
+  static const todoTagsTableName = 'todo_tags';
+  static const todoRecurrenceRulesTableName = 'todo_recurrence_rules';
+
   final AppDatabase database;
   final SyncIdentityResolver identityResolver;
   final String Function() _createId;
@@ -431,6 +436,65 @@ class SyncChangeLogger {
     await recordChange(
       userId: userId,
       tableName: checkinPhotosTableName,
+      recordId: recordId,
+      operation: operation,
+      changedFields: changedFields,
+      beforeVersion: beforeVersion,
+      afterVersion: afterVersion,
+    );
+  }
+
+  // ---- Todo (V1.1) ----
+
+  Future<void> recordTodoTaskChange({
+    required String userId,
+    required String recordId,
+    required SyncChangeOperation operation,
+    required Map<String, Object?> changedFields,
+    int? beforeVersion,
+    int? afterVersion,
+  }) async {
+    await recordChange(
+      userId: userId,
+      tableName: todoTasksTableName,
+      recordId: recordId,
+      operation: operation,
+      changedFields: changedFields,
+      beforeVersion: beforeVersion,
+      afterVersion: afterVersion,
+    );
+  }
+
+  Future<void> recordTodoTagChange({
+    required String userId,
+    required String recordId,
+    required SyncChangeOperation operation,
+    required Map<String, Object?> changedFields,
+    int? beforeVersion,
+    int? afterVersion,
+  }) async {
+    await recordChange(
+      userId: userId,
+      tableName: todoTagsTableName,
+      recordId: recordId,
+      operation: operation,
+      changedFields: changedFields,
+      beforeVersion: beforeVersion,
+      afterVersion: afterVersion,
+    );
+  }
+
+  Future<void> recordTodoRecurrenceRuleChange({
+    required String userId,
+    required String recordId,
+    required SyncChangeOperation operation,
+    required Map<String, Object?> changedFields,
+    int? beforeVersion,
+    int? afterVersion,
+  }) async {
+    await recordChange(
+      userId: userId,
+      tableName: todoRecurrenceRulesTableName,
       recordId: recordId,
       operation: operation,
       changedFields: changedFields,

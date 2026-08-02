@@ -122,14 +122,43 @@ class _PlanTile extends ConsumerWidget {
         trailing: PopupMenuButton<String>(
           onSelected: (value) => _onAction(ref, value),
           itemBuilder: (context) => [
-            const PopupMenuItem(value: 'edit', child: Text('编辑')),
+            PopupMenuItem(
+              value: 'edit',
+              child: Center(
+                child: Tooltip(
+                  message: '编辑',
+                  child: Icon(
+                    Icons.edit_outlined,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
             PopupMenuItem(
               value: isArchived ? 'unarchive' : 'archive',
-              child: Text(isArchived ? '取消归档' : '归档'),
+              child: Center(
+                child: Tooltip(
+                  message: isArchived ? '取消归档' : '归档',
+                  child: Icon(
+                    isArchived
+                        ? Icons.unarchive_rounded
+                        : Icons.archive_rounded,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
-              child: Text('删除', style: TextStyle(color: Colors.red)),
+              child: Center(
+                child: Tooltip(
+                  message: '删除',
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    color: colorScheme.error,
+                  ),
+                ),
+              ),
             ),
           ],
         ),

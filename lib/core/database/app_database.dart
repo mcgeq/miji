@@ -3,6 +3,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 
 import 'package:miji/core/database/app_database_path.dart';
 import 'package:miji/core/database/tables/checkin/checkin_tables.dart';
+import 'package:miji/core/database/tables/todo/todo_tables.dart';
 import 'package:miji/core/database/tables/health/health_daily_record_tables.dart';
 import 'package:miji/core/database/tables/health/health_period_tables.dart';
 import 'package:miji/core/database/tables/health/health_reproductive_health_tables.dart';
@@ -77,6 +78,11 @@ part 'app_database.g.dart';
     CheckinPlans,
     CheckinRecords,
     CheckinPhotos,
+    TodoTasks,
+    TodoCategories,
+    TodoTags,
+    TodoTaskTags,
+    TodoRecurrenceRules,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -92,7 +98,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration {
@@ -195,6 +201,28 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'DROP INDEX IF EXISTS checkin_records_user_plan_date_unique',
           );
+        }
+        if (from < 16) {
+          // todo 表首次创建：当前表定义已包含 V1.1/V1.2 的全部新列，
+          // 因此后续 addColumn 步骤必须跳过，否则会报重复列错误。
+          await migrator.createTable(todoTasks);
+          await migrator.createTable(todoCategories);
+        } else if (from < 17) {
+          // v16 库：todo_tasks 只有基础列，需要补齐 V1.1 字段。
+          await migrator.addColumn(todoTasks, todoTasks.isRecurrenceTemplate);
+          await migrator.addColumn(todoTasks, todoTasks.recurrenceRuleId);
+          await migrator.addColumn(todoTasks, todoTasks.occurrenceDate);
+          await migrator.addColumn(todoTasks, todoTasks.reminderAt);
+        }
+        if (from < 17) {
+          // V1.1: 标签、重复规则表
+          await migrator.createTable(todoTags);
+          await migrator.createTable(todoTaskTags);
+          await migrator.createTable(todoRecurrenceRules);
+        }
+        if (from >= 16 && from < 18) {
+          // V1.2: Markdown 正文（from < 16 时表已带此列）
+          await migrator.addColumn(todoTasks, todoTasks.markdownBody);
         }
       },
     );

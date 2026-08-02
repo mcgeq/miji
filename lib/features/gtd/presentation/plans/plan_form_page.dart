@@ -7,6 +7,8 @@ import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
+import 'package:miji/shared/widgets/app_text_field.dart';
+import 'package:miji/shared/widgets/form_dropdown.dart';
 
 /// 计划创建/编辑页
 class PlanFormPage extends ConsumerStatefulWidget {
@@ -80,160 +82,153 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          TextField(
+          AppTextField(
             controller: _nameController,
-            decoration: const InputDecoration(
-              labelText: '计划名称',
-              hintText: '例如：喝水、学习、跑步',
-              border: OutlineInputBorder(),
-            ),
+            labelText: '计划名称',
+            hintText: '例如：喝水、学习、跑步',
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: _iconController,
-            decoration: const InputDecoration(
-              labelText: '图标 (emoji)',
-              border: OutlineInputBorder(),
-            ),
-          ),
+          AppTextField(controller: _iconController, labelText: '图标 (emoji)'),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: _category,
-            decoration: const InputDecoration(
-              labelText: '分类',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(value: '健康习惯', child: Text('💧 健康习惯')),
-              DropdownMenuItem(value: '学习成长', child: Text('📚 学习成长')),
-              DropdownMenuItem(value: '运动', child: Text('🏃 运动')),
-              DropdownMenuItem(value: '生活记录', child: Text('📸 生活记录')),
-              DropdownMenuItem(value: '纪念日', child: Text('🎉 纪念日')),
-              DropdownMenuItem(value: '其他', child: Text('📌 其他')),
-            ],
-            onChanged: (v) => setState(() => _category = v!),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<CheckinPlanType>(
-            initialValue: _planType,
-            decoration: const InputDecoration(
-              labelText: '计划类型',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(
-                value: CheckinPlanType.cyclic,
-                child: Text('循环计划'),
+          FormDropdown<String>(
+            initialSelection: _category,
+            label: '分类',
+            enableFilter: true,
+            onSelected: (v) {
+              if (v != null) setState(() => _category = v);
+            },
+            entries: const [
+              DropdownMenuEntry(
+                value: '健康习惯',
+                label: '健康习惯',
+                labelWidget: Text('💧 健康习惯'),
               ),
-              DropdownMenuItem(
-                value: CheckinPlanType.event,
-                child: Text('事件计划'),
+              DropdownMenuEntry(
+                value: '学习成长',
+                label: '学习成长',
+                labelWidget: Text('📚 学习成长'),
+              ),
+              DropdownMenuEntry(
+                value: '运动',
+                label: '运动',
+                labelWidget: Text('🏃 运动'),
+              ),
+              DropdownMenuEntry(
+                value: '生活记录',
+                label: '生活记录',
+                labelWidget: Text('📸 生活记录'),
+              ),
+              DropdownMenuEntry(
+                value: '纪念日',
+                label: '纪念日',
+                labelWidget: Text('🎉 纪念日'),
+              ),
+              DropdownMenuEntry(
+                value: '其他',
+                label: '其他',
+                labelWidget: Text('📌 其他'),
               ),
             ],
-            onChanged: (v) => setState(() => _planType = v!),
+          ),
+          const SizedBox(height: 12),
+          FormDropdown<CheckinPlanType>(
+            initialSelection: _planType,
+            label: '计划类型',
+            onSelected: (v) {
+              if (v != null) setState(() => _planType = v);
+            },
+            entries: const [
+              DropdownMenuEntry(value: CheckinPlanType.cyclic, label: '循环计划'),
+              DropdownMenuEntry(value: CheckinPlanType.event, label: '事件计划'),
+            ],
           ),
           if (!_isEventType) ...[
             const SizedBox(height: 12),
-            DropdownButtonFormField<CheckinFrequencyType>(
-              initialValue: _frequencyType,
-              decoration: const InputDecoration(
-                labelText: '打卡频率',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(
+            FormDropdown<CheckinFrequencyType>(
+              initialSelection: _frequencyType,
+              label: '打卡频率',
+              onSelected: (v) {
+                if (v != null) setState(() => _frequencyType = v);
+              },
+              entries: const [
+                DropdownMenuEntry(
                   value: CheckinFrequencyType.daily,
-                  child: Text('每天'),
+                  label: '每天',
                 ),
-                DropdownMenuItem(
+                DropdownMenuEntry(
                   value: CheckinFrequencyType.weekly,
-                  child: Text('每周'),
+                  label: '每周',
                 ),
-                DropdownMenuItem(
+                DropdownMenuEntry(
                   value: CheckinFrequencyType.monthly,
-                  child: Text('每月'),
+                  label: '每月',
                 ),
               ],
-              onChanged: (v) => setState(() => _frequencyType = v!),
             ),
           ],
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: TextField(
+                child: AppTextField(
                   controller: _targetController,
-                  decoration: const InputDecoration(
-                    labelText: '每日目标',
-                    border: OutlineInputBorder(),
-                  ),
+                  labelText: '每日目标',
                   keyboardType: TextInputType.number,
                 ),
               ),
               const SizedBox(width: 12),
-              SizedBox(
+              FormDropdown<String>(
+                initialSelection: _targetUnit,
+                label: '单位',
                 width: 100,
-                child: DropdownButtonFormField<String>(
-                  initialValue: _targetUnit,
-                  decoration: const InputDecoration(
-                    labelText: '单位',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: '次', child: Text('次')),
-                    DropdownMenuItem(value: '分钟', child: Text('分钟')),
-                    DropdownMenuItem(value: '杯', child: Text('杯')),
-                    DropdownMenuItem(value: '升', child: Text('升')),
-                    DropdownMenuItem(value: '张', child: Text('张')),
-                    DropdownMenuItem(value: '个', child: Text('个')),
-                    DropdownMenuItem(value: '步', child: Text('步')),
-                  ],
-                  onChanged: (v) => setState(() => _targetUnit = v!),
-                ),
+                onSelected: (v) {
+                  if (v != null) setState(() => _targetUnit = v);
+                },
+                entries: const [
+                  DropdownMenuEntry(value: '次', label: '次'),
+                  DropdownMenuEntry(value: '分钟', label: '分钟'),
+                  DropdownMenuEntry(value: '杯', label: '杯'),
+                  DropdownMenuEntry(value: '升', label: '升'),
+                  DropdownMenuEntry(value: '张', label: '张'),
+                  DropdownMenuEntry(value: '个', label: '个'),
+                  DropdownMenuEntry(value: '步', label: '步'),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<CheckinTriggerMode>(
-            initialValue: _triggerMode,
-            decoration: const InputDecoration(
-              labelText: '触发方式',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(
+          FormDropdown<CheckinTriggerMode>(
+            initialSelection: _triggerMode,
+            label: '触发方式',
+            onSelected: (v) {
+              if (v != null) setState(() => _triggerMode = v);
+            },
+            entries: const [
+              DropdownMenuEntry(
                 value: CheckinTriggerMode.button,
-                child: Text('按钮计数'),
+                label: '按钮计数',
               ),
-              DropdownMenuItem(
-                value: CheckinTriggerMode.timer,
-                child: Text('计时器'),
-              ),
-              DropdownMenuItem(
-                value: CheckinTriggerMode.photo,
-                child: Text('拍照打卡'),
-              ),
+              DropdownMenuEntry(value: CheckinTriggerMode.timer, label: '计时器'),
+              DropdownMenuEntry(value: CheckinTriggerMode.photo, label: '拍照打卡'),
             ],
-            onChanged: (v) => setState(() => _triggerMode = v!),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<CheckinRecordGranularity>(
-            initialValue: _recordGranularity,
-            decoration: const InputDecoration(
-              labelText: '记录模式',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(
+          FormDropdown<CheckinRecordGranularity>(
+            initialSelection: _recordGranularity,
+            label: '记录模式',
+            onSelected: (v) {
+              if (v != null) setState(() => _recordGranularity = v);
+            },
+            entries: const [
+              DropdownMenuEntry(
                 value: CheckinRecordGranularity.merged,
-                child: Text('每日合并（一天一条记录，自动累加）'),
+                label: '每日合并（一天一条记录，自动累加）',
               ),
-              DropdownMenuItem(
+              DropdownMenuEntry(
                 value: CheckinRecordGranularity.detailed,
-                child: Text('每次独立（每次操作一条记录）'),
+                label: '每次独立（每次操作一条记录）',
               ),
             ],
-            onChanged: (v) => setState(() => _recordGranularity = v!),
           ),
           const SizedBox(height: 12),
           SwitchListTile(
@@ -248,10 +243,11 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
               child: InkWell(
                 onTap: () => _pickTime(context),
                 child: InputDecorator(
-                  decoration: const InputDecoration(
+                  decoration: appInputDecoration(
+                    context,
                     labelText: '提醒时间',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.access_time),
+                    enabled: true,
+                    suffixIcon: const Icon(Icons.access_time_rounded, size: 18),
                   ),
                   child: Text(_reminderTime),
                 ),

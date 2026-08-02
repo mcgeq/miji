@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
@@ -19,14 +20,17 @@ import 'package:miji/features/bookkeeping/presentation/budgets/budget_form_dialo
 import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transfer_form_dialog.dart';
+import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
 
 enum _MoneyQuickAction {
   expense,
   income,
   transfer,
+  task,
   account,
   installment,
   budget,
+  plan,
 }
 
 enum MoneyQuickActionFabPlacement { bottomRight, centerDocked }
@@ -131,12 +135,18 @@ class _MoneyQuickActionFabState extends ConsumerState<MoneyQuickActionFab> {
         await _openTransactionDialog(MoneyTransactionType.income);
       case _MoneyQuickAction.transfer:
         await _openTransferDialog();
+      case _MoneyQuickAction.task:
+        await _openTaskSheet();
       case _MoneyQuickAction.account:
         await _openAccountDialog();
       case _MoneyQuickAction.installment:
         await _openInstallmentDialog();
       case _MoneyQuickAction.budget:
         await _openBudgetDialog();
+      case _MoneyQuickAction.plan:
+        if (context.mounted) {
+          context.push('/app/gtd/plans/create');
+        }
     }
   }
 
@@ -219,6 +229,13 @@ class _MoneyQuickActionFabState extends ConsumerState<MoneyQuickActionFab> {
     } catch (error) {
       if (!mounted) return;
       AppToast.error(_ensureToast(), context, _errorText(error, '转账失败'));
+    }
+  }
+
+  Future<void> _openTaskSheet() async {
+    final result = await showTodoQuickCreateSheet(context);
+    if (result == true && mounted) {
+      AppToast.success(_ensureToast(), context, '任务已创建');
     }
   }
 
@@ -365,6 +382,11 @@ class _MoneyQuickActionSheet extends StatelessWidget {
         label: '转账',
       ),
       _ActionItem(
+        action: _MoneyQuickAction.task,
+        icon: Icons.task_alt_rounded,
+        label: '任务',
+      ),
+      _ActionItem(
         action: _MoneyQuickAction.account,
         icon: Icons.account_balance_wallet_rounded,
         label: '账户',
@@ -378,6 +400,11 @@ class _MoneyQuickActionSheet extends StatelessWidget {
         action: _MoneyQuickAction.budget,
         icon: Icons.flag_rounded,
         label: '预算',
+      ),
+      _ActionItem(
+        action: _MoneyQuickAction.plan,
+        icon: Icons.check_circle_outline_rounded,
+        label: '计划',
       ),
     ];
 
@@ -427,10 +454,10 @@ class _MoneyQuickActionSheet extends StatelessWidget {
                         child: GridView.count(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 1.12,
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 6,
+                          crossAxisSpacing: 6,
+                          childAspectRatio: 1.08,
                           children: [
                             for (final item in actions)
                               _QuickActionGridTile(
@@ -536,14 +563,14 @@ class _QuickActionGridTile extends StatelessWidget {
             button: true,
             label: item.label,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 38,
-                    height: 38,
+                    width: 32,
+                    height: 32,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
@@ -552,7 +579,7 @@ class _QuickActionGridTile extends StatelessWidget {
                     child: Icon(
                       item.icon,
                       color: colorScheme.onPrimaryContainer,
-                      size: 22,
+                      size: 18,
                     ),
                   ),
                   const SizedBox(height: 6),

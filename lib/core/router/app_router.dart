@@ -14,6 +14,7 @@ import 'package:miji/features/gtd/presentation/plans/plan_list_page.dart';
 import 'package:miji/features/gtd/presentation/plans/plan_form_page.dart';
 import 'package:miji/features/gtd/presentation/plans/plan_detail_page.dart';
 import 'package:miji/features/gtd/presentation/checkin/photo_checkin_page.dart';
+import 'package:miji/features/todo/presentation/todo_task_detail_page.dart';
 import 'package:miji/features/health/presentation/health_page.dart';
 import 'package:miji/features/home/presentation/home_page.dart';
 import 'package:miji/features/settings/presentation/settings_page.dart';
@@ -127,6 +128,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) {
                   final planId = state.pathParameters['planId']!;
                   return PhotoCheckinPage(planId: planId);
+                },
+              ),
+              GoRoute(
+                path: 'tasks/create',
+                builder: (context, state) {
+                  return const TodoTaskDetailPage(taskId: 'new');
+                },
+              ),
+              GoRoute(
+                path: 'tasks/:taskId',
+                builder: (context, state) {
+                  final taskId = state.pathParameters['taskId']!;
+                  return TodoTaskDetailPage(taskId: taskId);
                 },
               ),
             ],

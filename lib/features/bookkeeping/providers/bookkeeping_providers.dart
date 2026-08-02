@@ -387,23 +387,31 @@ final currentUserEffectiveTransactionLedgerProvider =
     });
 
 final currentUserCurrentLedgerMembersProvider =
-    StreamProvider.autoDispose<List<MoneyMemberEntity>>((ref) async* {
-      _watchMoneyDataRefresh(ref);
+    StreamProvider.autoDispose<List<MoneyMemberEntity>>((ref) {
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
-        yield const <MoneyMemberEntity>[];
-        return;
+        return Stream.value(const <MoneyMemberEntity>[]);
       }
 
       final ledger = ref.watch(currentUserCurrentLedgerValueProvider);
       if (ledger == null) {
-        yield const <MoneyMemberEntity>[];
-        return;
+        return Stream.value(const <MoneyMemberEntity>[]);
       }
 
-      yield* ref
+      final controller = StreamController<List<MoneyMemberEntity>>();
+      final subscription = ref
           .watch(moneyRepositoryProvider)
-          .watchMembersForLedger(session.userId!, ledger.id);
+          .watchMembersForLedger(session.userId!, ledger.id)
+          .listen(
+            controller.add,
+            onError: controller.addError,
+            onDone: controller.close,
+          );
+      ref.onDispose(() {
+        subscription.cancel();
+        controller.close();
+      });
+      return controller.stream;
     });
 
 final moneyStatisticsFilterProvider =
@@ -713,33 +721,61 @@ MoneyLedgerEntity? _resolveCurrentLedgerFromList(
 }
 
 final currentUserCategoryCatalogProvider = StreamProvider.autoDispose
-    .family<MoneyCategoryCatalog, MoneyCategoryKind>((ref, kind) async* {
-      _watchMoneyDataRefresh(ref);
+    .family<MoneyCategoryCatalog, MoneyCategoryKind>((ref, kind) {
+      // 使用 StreamController + ref.onDispose 避免 async* generator 在
+      // provider dispose 后恢复时 ref.watch 抛 StateError。
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
-        yield const MoneyCategoryCatalog.empty();
-        return;
+        return Stream.value(const MoneyCategoryCatalog.empty());
       }
 
       final repository = ref.watch(moneyRepositoryProvider);
-      yield* repository.watchCategoryCatalogForUser(session.userId!, kind);
+      final controller = StreamController<MoneyCategoryCatalog>();
+
+      final subscription = repository
+          .watchCategoryCatalogForUser(session.userId!, kind)
+          .listen(
+            controller.add,
+            onError: controller.addError,
+            onDone: controller.close,
+          );
+
+      ref.onDispose(() {
+        subscription.cancel();
+        controller.close();
+      });
+
+      return controller.stream;
     });
 
 final currentUserCategoryManagementCatalogProvider = StreamProvider.autoDispose
-    .family<MoneyCategoryCatalog, MoneyCategoryKind>((ref, kind) async* {
-      _watchMoneyDataRefresh(ref);
+    .family<MoneyCategoryCatalog, MoneyCategoryKind>((ref, kind) {
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
-        yield const MoneyCategoryCatalog.empty();
-        return;
+        return Stream.value(const MoneyCategoryCatalog.empty());
       }
 
       final repository = ref.watch(moneyRepositoryProvider);
-      yield* repository.watchCategoryCatalogForUser(
-        session.userId!,
-        kind,
-        includeDeleted: true,
-      );
+      final controller = StreamController<MoneyCategoryCatalog>();
+
+      final subscription = repository
+          .watchCategoryCatalogForUser(
+            session.userId!,
+            kind,
+            includeDeleted: true,
+          )
+          .listen(
+            controller.add,
+            onError: controller.addError,
+            onDone: controller.close,
+          );
+
+      ref.onDispose(() {
+        subscription.cancel();
+        controller.close();
+      });
+
+      return controller.stream;
     });
 
 final currentUserPaymentMethodUsageRanksProvider =
@@ -967,7 +1003,6 @@ final currentUserReminderCenterHistoryProvider =
     });
 final currentUserInstallmentPlansProvider =
     StreamProvider.autoDispose<List<MoneyInstallmentPlanEntity>>((ref) async* {
-      _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
         yield const <MoneyInstallmentPlanEntity>[];
@@ -1077,7 +1112,13 @@ class MoneyDataRefreshVersionController extends Notifier<int> {
 }
 
 void _watchMoneyDataRefresh(Ref ref) {
-  ref.watch(moneyDataRefreshVersionProvider);
+  // StreamProvider.autoDispose 的 async* generator 在 dispose 后恢复时会抛异常。
+  // Ref 失效时 ref.watch 会抛 Error，用 catch 安全降级。
+  try {
+    ref.watch(moneyDataRefreshVersionProvider);
+  } catch (_) {
+    // Provider 已 dispose，忽略。
+  }
 }
 
 class CurrentUserBudgetAlertNotificationActions {
