@@ -28,6 +28,19 @@ final checkinTimerProvider =
 // 计划列表
 // ---------------------------------------------------------------------------
 
+/// 计划变更（增删改/归档/取消归档）后统一刷新所有打卡数据。
+void invalidateCheckinData(WidgetRef ref) {
+  ref.invalidate(activePlansProvider);
+  ref.invalidate(allPlansProvider);
+  ref.invalidate(todayProgressProvider);
+  ref.invalidate(recordsByDateProvider);
+  ref.invalidate(dailySummariesProvider);
+  ref.invalidate(checkinStreakProvider);
+  ref.invalidate(categoryStatsProvider);
+  ref.invalidate(moodDistributionProvider);
+  ref.invalidate(planTrendProvider);
+}
+
 final activePlansProvider = FutureProvider<List<CheckinPlan>>((ref) async {
   final session = ref.watch(authSessionControllerProvider);
   final userId = session.userId;

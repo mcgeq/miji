@@ -46,7 +46,7 @@ const _healthHabitTemplates = [
     targetValue: 8,
     targetUnit: '杯',
     triggerMode: 'button',
-    recordGranularity: 'merged',
+    recordGranularity: 'detailed',
     defaultVisibility: 'private',
   ),
   CheckinPlanTemplate(

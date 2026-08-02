@@ -159,8 +159,7 @@ class _PlanTile extends ConsumerWidget {
       case 'archive':
         await repo.archivePlan(plan.id, true);
         ref.read(appNotificationServiceProvider).cancelCheckinReminder(plan.id);
-        ref.invalidate(allPlansProvider);
-        ref.invalidate(activePlansProvider);
+        invalidateCheckinData(ref);
         break;
       case 'unarchive':
         await repo.archivePlan(plan.id, false);
@@ -173,14 +172,12 @@ class _PlanTile extends ConsumerWidget {
                 timeString: plan.reminderTime!,
               );
         }
-        ref.invalidate(allPlansProvider);
-        ref.invalidate(activePlansProvider);
+        invalidateCheckinData(ref);
         break;
       case 'delete':
         await repo.deletePlan(plan.id);
         ref.read(appNotificationServiceProvider).cancelCheckinReminder(plan.id);
-        ref.invalidate(allPlansProvider);
-        ref.invalidate(activePlansProvider);
+        invalidateCheckinData(ref);
         break;
     }
   }

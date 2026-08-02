@@ -89,12 +89,11 @@ class DatabaseSeedRunner {
   }
 
   Future<void> _seedCheckinDefaults(String userId, DateTime now) async {
+    // 只要该用户曾经有过任何计划（包括已软删除的），就不再预置默认计划，
+    // 避免用户删光默认计划后，下次启动/升级应用时又被重新创建。
     final existingPlan =
         await (database.select(database.checkinPlans)
-              ..where(
-                (row) =>
-                    row.userId.equals(userId) & row.isDeleted.equals(false),
-              )
+              ..where((row) => row.userId.equals(userId))
               ..limit(1))
             .getSingleOrNull();
 

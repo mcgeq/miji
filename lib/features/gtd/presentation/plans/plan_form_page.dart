@@ -183,6 +183,7 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
                     DropdownMenuItem(value: '次', child: Text('次')),
                     DropdownMenuItem(value: '分钟', child: Text('分钟')),
                     DropdownMenuItem(value: '杯', child: Text('杯')),
+                    DropdownMenuItem(value: '升', child: Text('升')),
                     DropdownMenuItem(value: '张', child: Text('张')),
                     DropdownMenuItem(value: '个', child: Text('个')),
                     DropdownMenuItem(value: '步', child: Text('步')),
@@ -328,9 +329,7 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
         }
       }
 
-      ref.invalidate(allPlansProvider);
-      ref.invalidate(activePlansProvider);
-      ref.invalidate(todayProgressProvider);
+      invalidateCheckinData(ref);
 
       // 编辑模式：更新提醒
       if (_isEdit && widget.editPlanId != null) {

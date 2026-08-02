@@ -9,6 +9,7 @@ import 'package:miji/core/presentation/components/app_section_header.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
+import 'package:miji/features/gtd/presentation/checkin/record_detail_sheet.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 
 // ---------------------------------------------------------------------------
@@ -330,6 +331,10 @@ class _PlanProgressCard extends ConsumerWidget {
     if (p.plan.targetUnit == '杯') {
       return '${p.currentValue.toInt()} / ${p.plan.targetValue.toInt()} 杯';
     }
+    if (p.plan.targetUnit == '升') {
+      return '${p.currentValue.toStringAsFixed(1)} / '
+          '${p.plan.targetValue.toStringAsFixed(1)} 升';
+    }
     return '${p.currentValue.toInt()} / ${p.plan.targetValue.toInt()} ${p.plan.targetUnit}';
   }
 }
@@ -376,9 +381,7 @@ class _QuickAddButton extends ConsumerWidget {
       numericValue: 1,
     );
     await repo.upsertRecord(draft, plan.userId);
-    ref.invalidate(todayProgressProvider);
-    ref.invalidate(recordsByDateProvider);
-    ref.invalidate(checkinStreakProvider);
+    invalidateCheckinData(ref);
   }
 }
 
@@ -475,8 +478,7 @@ class _TimerButton extends ConsumerWidget {
       durationSeconds: seconds,
     );
     await repo.upsertRecord(draft, plan.userId);
-    ref.invalidate(todayProgressProvider);
-    ref.invalidate(recordsByDateProvider);
+    invalidateCheckinData(ref);
   }
 }
 
@@ -654,55 +656,59 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
 // 打卡记录卡片（日历 tab 用）
 // ---------------------------------------------------------------------------
 
-class _RecordCard extends StatelessWidget {
+class _RecordCard extends ConsumerWidget {
   const _RecordCard({required this.record});
 
   final CheckinRecord record;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Text(switch (record.plan?.triggerMode) {
-              CheckinTriggerMode.photo => '📸',
-              CheckinTriggerMode.timer => '⏱️',
-              _ => record.plan?.icon ?? '📌',
-            }, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    record.plan?.name ?? '未知计划',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  if (record.notes != null && record.notes!.isNotEmpty)
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => showCheckinRecordDetailSheet(context, ref, record),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Text(switch (record.plan?.triggerMode) {
+                CheckinTriggerMode.photo => '📸',
+                CheckinTriggerMode.timer => '⏱️',
+                _ => record.plan?.icon ?? '📌',
+              }, style: const TextStyle(fontSize: 20)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      record.notes!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      record.plan?.name ?? '未知计划',
+                      style: theme.textTheme.titleSmall,
                     ),
-                ],
+                    if (record.notes != null && record.notes!.isNotEmpty)
+                      Text(
+                        record.notes!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
               ),
-            ),
-            Text(
-              '${record.completedAt.hour}:${record.completedAt.minute.toString().padLeft(2, '0')}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.outline,
+              Text(
+                '${record.completedAt.hour}:${record.completedAt.minute.toString().padLeft(2, '0')}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.outline,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

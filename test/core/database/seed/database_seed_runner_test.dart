@@ -78,4 +78,46 @@ void main() {
     )..where((row) => row.id.equals(category.id))).getSingle();
     expect(after.name, '自定义名称');
   });
+
+  test('re-running seedUserDefaults does not resurrect soft-deleted '
+      'default checkin plans', () async {
+    const userId = 'user-1';
+    await seedRunner.seedUserDefaults(userId);
+
+    final plans = await (database.select(
+      database.checkinPlans,
+    )..where((row) => row.userId.equals(userId))).get();
+    expect(plans.length, 3);
+
+    await (database.update(
+      database.checkinPlans,
+    )..where((row) => row.userId.equals(userId))).write(
+      CheckinPlansCompanion(
+        isDeleted: const Value(true),
+        deletedAt: Value(DateTime.utc(2026, 7, 1)),
+      ),
+    );
+
+    await seedRunner.seedUserDefaults(userId);
+
+    final after = await (database.select(
+      database.checkinPlans,
+    )..where((row) => row.userId.equals(userId))).get();
+    expect(after.length, 3);
+    expect(after.every((plan) => plan.isDeleted), isTrue);
+  });
+
+  test(
+    'seedUserDefaults seeds default checkin plans only once per user',
+    () async {
+      const userId = 'user-2';
+      await seedRunner.seedUserDefaults(userId);
+      await seedRunner.seedUserDefaults(userId);
+
+      final plans = await (database.select(
+        database.checkinPlans,
+      )..where((row) => row.userId.equals(userId))).get();
+      expect(plans.length, 3);
+    },
+  );
 }

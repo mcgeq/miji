@@ -216,7 +216,7 @@ class DriftCheckinRepository implements CheckinRepository {
               ..orderBy([(row) => OrderingTerm.desc(row.completedAt)]))
             .get();
 
-    return Future.wait(rows.map(_recordFromRow));
+    return _attachPlans(await Future.wait(rows.map(_recordFromRow)));
   }
 
   @override
@@ -270,6 +270,17 @@ class DriftCheckinRepository implements CheckinRepository {
     final now = _now();
     final dateKey = _dateOnly(draft.recordDate).millisecondsSinceEpoch;
 
+    // 「每次独立」的计划：每次打卡都生成一条独立记录，保留各自时间；
+    // 「每日合并」的计划：按（计划 + 日期）累加，并在 extraJson 记录每次打卡时间。
+    final planRow = await (database.select(
+      database.checkinPlans,
+    )..where((row) => row.id.equals(draft.planId))).getSingleOrNull();
+    final isDetailed =
+        planRow?.recordGranularity == CheckinRecordGranularity.detailed.value;
+    if (isDetailed) {
+      return createRecord(draft, userId);
+    }
+
     final existing =
         await (database.select(database.checkinRecords)
               ..where(
@@ -298,6 +309,9 @@ class DriftCheckinRepository implements CheckinRepository {
           durationSeconds: Value(
             (existing.durationSeconds ?? 0) + (draft.durationSeconds ?? 0),
           ),
+          extraJson: Value(
+            _appendCheckinTime(existing.extraJson, draft.completedAt),
+          ),
           version: Value(existing.version + 1),
           updatedAt: Value(now),
         ),
@@ -307,9 +321,25 @@ class DriftCheckinRepository implements CheckinRepository {
         database.checkinRecords,
       )..where((row) => row.id.equals(existing.id))).getSingle();
       return _recordFromRow(updated);
-    } else {
-      return createRecord(draft, userId);
     }
+
+    final created = await createRecord(draft, userId);
+    final createdRow = await (database.select(
+      database.checkinRecords,
+    )..where((row) => row.id.equals(created.id))).getSingle();
+    await (database.update(
+      database.checkinRecords,
+    )..where((row) => row.id.equals(created.id))).write(
+      db.CheckinRecordsCompanion(
+        extraJson: Value(
+          _appendCheckinTime(createdRow.extraJson, draft.completedAt),
+        ),
+      ),
+    );
+    final updated = await (database.select(
+      database.checkinRecords,
+    )..where((row) => row.id.equals(created.id))).getSingle();
+    return _recordFromRow(updated);
   }
 
   @override
@@ -698,6 +728,56 @@ class DriftCheckinRepository implements CheckinRepository {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );
+  }
+
+  /// 在记录的 extraJson 中追加一次打卡时间（每日合并模式用）。
+  String? _appendCheckinTime(String? extraJson, DateTime completedAt) {
+    final map = (extraJson == null || extraJson.isEmpty)
+        ? <String, dynamic>{}
+        : (jsonDecode(extraJson) as Map<String, dynamic>);
+    final times = (map['checkinTimes'] as List?)?.cast<String>() ?? <String>[];
+    times.add(completedAt.toUtc().toIso8601String());
+    map['checkinTimes'] = times;
+    return jsonEncode(map);
+  }
+
+  /// 为记录附上所属计划（含已软删除的计划，保证历史记录仍能显示名称）。
+  Future<List<CheckinRecord>> _attachPlans(List<CheckinRecord> records) async {
+    if (records.isEmpty) return records;
+
+    final planIds = records.map((r) => r.planId).toSet().toList();
+    final planRows = await (database.select(
+      database.checkinPlans,
+    )..where((row) => row.id.isIn(planIds))).get();
+    final planMap = {for (final p in planRows) p.id: _planFromRow(p)};
+
+    return records
+        .map(
+          (record) => CheckinRecord(
+            id: record.id,
+            userId: record.userId,
+            planId: record.planId,
+            recordDate: record.recordDate,
+            completedAt: record.completedAt,
+            count: record.count,
+            numericValue: record.numericValue,
+            durationSeconds: record.durationSeconds,
+            mood: record.mood,
+            notes: record.notes,
+            visibility: record.visibility,
+            locationJson: record.locationJson,
+            extraJson: record.extraJson,
+            deviceId: record.deviceId,
+            version: record.version,
+            isDeleted: record.isDeleted,
+            deletedAt: record.deletedAt,
+            createdAt: record.createdAt,
+            updatedAt: record.updatedAt,
+            plan: planMap[record.planId],
+            photos: record.photos,
+          ),
+        )
+        .toList();
   }
 
   Future<CheckinRecord> _recordFromRow(db.CheckinRecord row) async {

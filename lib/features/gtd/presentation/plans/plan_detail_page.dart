@@ -47,7 +47,7 @@ class PlanDetailPage extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${plan.category} · 目标: ${plan.targetValue.toInt()} ${plan.targetUnit}',
+                              '${plan.category} · 目标: ${plan.targetUnit == '升' ? plan.targetValue.toStringAsFixed(1) : plan.targetValue.toInt()} ${plan.targetUnit}',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),

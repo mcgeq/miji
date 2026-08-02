@@ -92,7 +92,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration {
@@ -188,6 +188,13 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(checkinPlans);
           await migrator.createTable(checkinRecords);
           await migrator.createTable(checkinPhotos);
+        }
+        if (from < 15) {
+          // 支持「每次独立」记录：同一天同计划可有多条记录，
+          // 合并去重改由 repository 的 upsert 查询保证。
+          await customStatement(
+            'DROP INDEX IF EXISTS checkin_records_user_plan_date_unique',
+          );
         }
       },
     );

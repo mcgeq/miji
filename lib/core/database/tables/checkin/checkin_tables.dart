@@ -82,12 +82,10 @@ class CheckinPlans extends Table {
 // ---------------------------------------------------------------------------
 // checkin_records — 打卡记录（每日合并 or 每次独立）
 // ---------------------------------------------------------------------------
+// 注意：不再对 (user_id, plan_id, record_date) 建唯一索引。
+// 「每日合并」的去重由 repository 的 upsert 查询保证；
+// 「每次独立」需要同一天同计划存在多条记录。
 
-@TableIndex.sql(
-  'CREATE UNIQUE INDEX checkin_records_user_plan_date_unique '
-  'ON checkin_records(user_id, plan_id, record_date) '
-  'WHERE is_deleted = 0',
-)
 class CheckinRecords extends Table {
   TextColumn get id => text()();
 
