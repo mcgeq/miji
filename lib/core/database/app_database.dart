@@ -98,7 +98,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration {
@@ -223,6 +223,13 @@ class AppDatabase extends _$AppDatabase {
         if (from >= 16 && from < 18) {
           // V1.2: Markdown 正文（from < 16 时表已带此列）
           await migrator.addColumn(todoTasks, todoTasks.markdownBody);
+        }
+        if (from < 19) {
+          // V1.3: 首页今日行动卡片显示开关
+          await migrator.addColumn(
+            userPreferences,
+            userPreferences.showHomeTodayAction,
+          );
         }
       },
     );

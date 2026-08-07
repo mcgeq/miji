@@ -33,6 +33,7 @@ import 'package:miji/core/user/domain/user_entity.dart';
 import 'package:miji/core/user/providers/user_providers.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/settings/presentation/data_sync_section.dart';
+import 'package:miji/shared/widgets/app_switch_field.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
@@ -1369,6 +1370,7 @@ class _AppearanceSection extends ConsumerStatefulWidget {
 
 class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
   AppThemeModePreference? _savingThemeMode;
+  bool? _savingHomeTodayAction;
   FToast? _toast;
 
   Future<void> _updateThemeMode(AppThemeModePreference themeMode) async {
@@ -1437,57 +1439,116 @@ class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
       );
     }
 
-    return AppContentPanel(
-      leadingIcon: Icons.palette_outlined,
-      leadingColor: colorScheme.secondary,
-      title: '外观主题',
-      subtitle: '明暗模式',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SegmentedButton<AppThemeModePreference>(
-            segments: const [
-              ButtonSegment(
-                value: AppThemeModePreference.system,
-                icon: Icon(Icons.brightness_auto_rounded),
-                label: Text('系统'),
-              ),
-              ButtonSegment(
-                value: AppThemeModePreference.light,
-                icon: Icon(Icons.light_mode_rounded),
-                label: Text('浅色'),
-              ),
-              ButtonSegment(
-                value: AppThemeModePreference.dark,
-                icon: Icon(Icons.dark_mode_rounded),
-                label: Text('深色'),
-              ),
-            ],
-            selected: {selectedThemeMode},
-            onSelectionChanged: _savingThemeMode == null
-                ? (selection) => _updateThemeMode(selection.single)
-                : null,
-            showSelectedIcon: false,
-            style: ButtonStyle(
-              visualDensity: VisualDensity.compact,
-              textStyle: WidgetStatePropertyAll(
-                theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppContentPanel(
+          leadingIcon: Icons.palette_outlined,
+          leadingColor: colorScheme.secondary,
+          title: '外观主题',
+          subtitle: '明暗模式',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SegmentedButton<AppThemeModePreference>(
+                segments: const [
+                  ButtonSegment(
+                    value: AppThemeModePreference.system,
+                    icon: Icon(Icons.brightness_auto_rounded),
+                    label: Text('系统'),
+                  ),
+                  ButtonSegment(
+                    value: AppThemeModePreference.light,
+                    icon: Icon(Icons.light_mode_rounded),
+                    label: Text('浅色'),
+                  ),
+                  ButtonSegment(
+                    value: AppThemeModePreference.dark,
+                    icon: Icon(Icons.dark_mode_rounded),
+                    label: Text('深色'),
+                  ),
+                ],
+                selected: {selectedThemeMode},
+                onSelectionChanged: _savingThemeMode == null
+                    ? (selection) => _updateThemeMode(selection.single)
+                    : null,
+                showSelectedIcon: false,
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: WidgetStatePropertyAll(
+                    theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              if (_savingThemeMode != null) ...[
+                const SizedBox(height: 10),
+                LinearProgressIndicator(
+                  minHeight: 3,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ],
+            ],
           ),
-          if (_savingThemeMode != null) ...[
-            const SizedBox(height: 10),
-            LinearProgressIndicator(
-              minHeight: 3,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ],
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+        AppContentPanel(
+          leadingIcon: Icons.home_outlined,
+          leadingColor: colorScheme.primary,
+          title: '首页显示',
+          subtitle: '控制首页各区块的显示',
+          child: AppSwitchField(
+            title: '今日行动',
+            subtitle: '在首页顶部显示今日行动卡片',
+            icon: Icons.today_outlined,
+            value: preferences.showHomeTodayAction,
+            onChanged: _savingHomeTodayAction == null
+                ? (value) => _updateShowHomeTodayAction(value)
+                : null,
+          ),
+        ),
+      ],
     );
+  }
+
+  Future<void> _updateShowHomeTodayAction(bool show) async {
+    final userId = widget.userId;
+    final preferences = widget.preferences;
+
+    if (userId == null || preferences == null) {
+      return;
+    }
+
+    setState(() {
+      _savingHomeTodayAction = show;
+    });
+
+    try {
+      await ref
+          .read(preferencesRepositoryProvider)
+          .updateShowHomeTodayAction(userId, show);
+      ref.invalidate(currentUserPreferencesProvider);
+
+      if (!mounted) {
+        return;
+      }
+
+      AppToast.success(_ensureToast(), context, '首页显示已更新');
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      AppToast.error(_ensureToast(), context, '首页显示更新失败，请重试');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _savingHomeTodayAction = null;
+        });
+      }
+    }
   }
 
   FToast _ensureToast() {

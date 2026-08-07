@@ -45,6 +45,7 @@ class UserPreferencesEntity {
     this.locale,
     this.timezone,
     this.currencyCode,
+    this.showHomeTodayAction = true,
   });
 
   final String userId;
@@ -54,6 +55,7 @@ class UserPreferencesEntity {
   final String? locale;
   final String? timezone;
   final String? currencyCode;
+  final bool showHomeTodayAction;
   final DateTime createdAt;
   final DateTime updatedAt;
 }

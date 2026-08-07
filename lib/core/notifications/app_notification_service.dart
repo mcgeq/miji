@@ -68,24 +68,30 @@ class AppNotificationService {
     }
     final allowed = await ensureCanNotify();
     if (!allowed) {
+      debugPrint('[notify] 通知权限未授予，跳过：channel=$channelId');
       return false;
     }
 
-    await _plugin.show(
-      id: id,
-      title: title,
-      body: body,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          channelId,
-          channelName,
-          channelDescription: channelDescription,
-          importance: Importance.high,
-          priority: Priority.high,
+    try {
+      await _plugin.show(
+        id: id,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            channelId,
+            channelName,
+            channelDescription: channelDescription,
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
         ),
-      ),
-      payload: payload,
-    );
+        payload: payload,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('[notify] 通知发送失败: $error\n$stackTrace');
+      return false;
+    }
     return true;
   }
 

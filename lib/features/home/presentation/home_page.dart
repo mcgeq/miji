@@ -8,6 +8,7 @@ import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_section_entrance.dart';
+import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/core/user/providers/user_providers.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
@@ -34,12 +35,18 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
+    final showTodayAction = ref
+        .watch(currentUserPreferencesProvider)
+        .maybeWhen(
+          data: (value) => value?.showHomeTodayAction ?? true,
+          orElse: () => true,
+        );
 
     return currentUser.when(
-      data: (_) => const Stack(
+      data: (_) => Stack(
         children: [
-          AppPageFrame(child: _HomeDashboard()),
-          _HomeMoneyDataPreloader(),
+          AppPageFrame(child: _HomeDashboard(showTodayAction: showTodayAction)),
+          const _HomeMoneyDataPreloader(),
         ],
       ),
       loading: () =>
@@ -122,7 +129,9 @@ class _HomeMoneyDataPreloaderState
 }
 
 class _HomeDashboard extends ConsumerWidget {
-  const _HomeDashboard();
+  const _HomeDashboard({required this.showTodayAction});
+
+  final bool showTodayAction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -296,11 +305,13 @@ class _HomeDashboard extends ConsumerWidget {
                   child: greeting,
                 ),
                 const SizedBox(height: 12),
-                AppSectionEntrance(
-                  delay: const Duration(milliseconds: 55),
-                  child: todayActionCard,
-                ),
-                const SizedBox(height: 12),
+                if (showTodayAction) ...[
+                  AppSectionEntrance(
+                    delay: const Duration(milliseconds: 55),
+                    child: todayActionCard,
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 AppSectionEntrance(
                   delay: const Duration(milliseconds: 70),
                   child: todayCard,
@@ -345,11 +356,13 @@ class _HomeDashboard extends ConsumerWidget {
                             child: greeting,
                           ),
                           const SizedBox(height: 12),
-                          AppSectionEntrance(
-                            delay: const Duration(milliseconds: 55),
-                            child: todayActionCard,
-                          ),
-                          const SizedBox(height: 12),
+                          if (showTodayAction) ...[
+                            AppSectionEntrance(
+                              delay: const Duration(milliseconds: 55),
+                              child: todayActionCard,
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           AppSectionEntrance(
                             delay: const Duration(milliseconds: 100),
                             child: todayCard,

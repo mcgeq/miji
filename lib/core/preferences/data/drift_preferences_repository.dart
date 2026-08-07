@@ -146,6 +146,34 @@ class DriftPreferencesRepository implements PreferencesRepository {
     }
   }
 
+  @override
+  Future<void> updateShowHomeTodayAction(String userId, bool show) async {
+    try {
+      final updatedRows =
+          await (database.update(
+            database.userPreferences,
+          )..where((preferences) => preferences.userId.equals(userId))).write(
+            UserPreferencesCompanion(
+              showHomeTodayAction: Value(show),
+              updatedAt: Value(DateTime.now().toUtc()),
+            ),
+          );
+
+      if (updatedRows == 0) {
+        throw const PreferencesRepositoryException(
+          PreferencesRepositoryErrorCode.preferencesNotFound,
+        );
+      }
+    } on PreferencesRepositoryException {
+      rethrow;
+    } catch (error) {
+      throw PreferencesRepositoryException(
+        PreferencesRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
   UserPreferencesEntity _mapPreferences(UserPreference preferences) {
     return UserPreferencesEntity(
       userId: preferences.userId,
@@ -157,6 +185,7 @@ class DriftPreferencesRepository implements PreferencesRepository {
       locale: preferences.locale,
       timezone: preferences.timezone,
       currencyCode: preferences.currencyCode,
+      showHomeTodayAction: preferences.showHomeTodayAction,
       createdAt: preferences.createdAt,
       updatedAt: preferences.updatedAt,
     );

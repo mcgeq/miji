@@ -410,48 +410,101 @@ class _Footer extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final weekExpense = weekPoints.fold<int>(
+      0,
+      (sum, p) => sum + p.expenseMinor,
+    );
+    final weekIncome = weekPoints.fold<int>(0, (sum, p) => sum + p.incomeMinor);
+    final weekCount = weekPoints.fold<int>(
+      0,
+      (sum, p) => sum + p.transactionCount,
+    );
+
+    final selectedPoint = isCurrentMonth && selectedIndex < weekPoints.length
+        ? weekPoints[selectedIndex]
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Row 1: monthly totals
         Row(
           children: [
-            _FooterLabel(
-              label: '本月支出',
-              value: _compactAmount(summary.monthExpenseMinor),
-              color: theme.moneyColors.expense,
+            Expanded(
+              child: _OverviewMetricTile(
+                label: '本月支出',
+                value: _compactAmount(summary.monthExpenseMinor),
+                color: theme.moneyColors.expense,
+              ),
             ),
-            const SizedBox(width: 14),
-            _FooterLabel(
-              label: '本月收入',
-              value: _compactSignedAmount(summary.monthIncomeMinor),
-              color: theme.moneyColors.income,
+            const SizedBox(width: 8),
+            Expanded(
+              child: _OverviewMetricTile(
+                label: '本月收入',
+                value: _compactSignedAmount(summary.monthIncomeMinor),
+                color: theme.moneyColors.income,
+              ),
             ),
-            const SizedBox(width: 14),
-            _FooterLabel(
-              label: '结余',
-              value: _compactSignedAmount(summary.monthNetMinor),
-              color: summary.monthNetMinor >= 0
-                  ? theme.moneyColors.income
-                  : theme.moneyColors.expense,
+            const SizedBox(width: 8),
+            Expanded(
+              child: _OverviewMetricTile(
+                label: '结余',
+                value: _compactSignedAmount(summary.monthNetMinor),
+                color: summary.monthNetMinor >= 0
+                    ? theme.moneyColors.income
+                    : theme.moneyColors.expense,
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        // Row 2: week summary + today income + dots
+        const SizedBox(height: 8),
+        // Row 2: week summary + selected day income
+        Row(
+          children: [
+            Expanded(
+              child: _OverviewMetricTile(
+                label: '周支出',
+                value: _compactAmount(weekExpense),
+                color: theme.moneyColors.expense,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _OverviewMetricTile(
+                label: '周收入',
+                value: _compactSignedAmount(weekIncome),
+                color: theme.moneyColors.income,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: selectedPoint == null
+                  ? _OverviewMetricTile(
+                      label: '周结余',
+                      value: _compactSignedAmount(weekIncome - weekExpense),
+                      color: weekIncome - weekExpense >= 0
+                          ? theme.moneyColors.income
+                          : theme.moneyColors.expense,
+                    )
+                  : _OverviewMetricTile(
+                      label: _selectedDayLabel(selectedPoint),
+                      value: _compactSignedAmount(selectedPoint.incomeMinor),
+                      color: theme.moneyColors.income,
+                    ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Row 3: week dots
         Row(
           children: [
             Text(
-              _weekSummaryLabel(),
+              '$weekCount 笔',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 letterSpacing: 0,
               ),
             ),
-            if (isCurrentMonth && selectedIndex < weekPoints.length) ...[
-              const SizedBox(width: 14),
-              _DailyIncomeLabel(point: weekPoints[selectedIndex], theme: theme),
-            ],
             const Spacer(),
             _WeekDots(
               totalWeeks: totalWeeks,
@@ -464,26 +517,21 @@ class _Footer extends StatelessWidget {
     );
   }
 
+  String _selectedDayLabel(HomeDailySpendingPoint point) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return point.date == today && isCurrentMonth
+        ? '今日收入'
+        : '${DateFormat('M/d').format(point.date)}收入';
+  }
+
   int _activeDotIndex() {
     return weekOffset.clamp(0, totalWeeks - 1);
   }
-
-  String _weekSummaryLabel() {
-    final weekExpense = weekPoints.fold<int>(
-      0,
-      (sum, p) => sum + p.expenseMinor,
-    );
-    final weekIncome = weekPoints.fold<int>(0, (sum, p) => sum + p.incomeMinor);
-    final weekCount = weekPoints.fold<int>(
-      0,
-      (sum, p) => sum + p.transactionCount,
-    );
-    return '周支出 ${_compactAmount(weekExpense)} · 收入 ${_compactSignedAmount(weekIncome)} · $weekCount笔';
-  }
 }
 
-class _FooterLabel extends StatelessWidget {
-  const _FooterLabel({
+class _OverviewMetricTile extends StatelessWidget {
+  const _OverviewMetricTile({
     required this.label,
     required this.value,
     required this.color,
@@ -498,48 +546,42 @@ class _FooterLabel extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Text.rich(
-      TextSpan(
-        text: '$label ',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-          letterSpacing: 0,
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.16)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          TextSpan(
-            text: value,
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
+              color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
               letterSpacing: 0,
             ),
           ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
         ],
-      ),
-    );
-  }
-}
-
-class _DailyIncomeLabel extends StatelessWidget {
-  const _DailyIncomeLabel({required this.point, required this.theme});
-
-  final HomeDailySpendingPoint point;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final isToday = point.date == today;
-    final prefix = isToday
-        ? '今日收入'
-        : '${DateFormat('M/d').format(point.date)}收入';
-
-    return Text(
-      '$prefix ${_compactSignedAmount(point.incomeMinor)}',
-      style: theme.textTheme.labelSmall?.copyWith(
-        color: theme.moneyColors.income,
-        letterSpacing: 0,
       ),
     );
   }

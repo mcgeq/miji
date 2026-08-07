@@ -14,6 +14,8 @@ abstract class PreferencesRepository {
     String userId,
     SensitiveAccessTtlOption ttlOption,
   );
+
+  Future<void> updateShowHomeTodayAction(String userId, bool show);
 }
 
 enum PreferencesRepositoryErrorCode {

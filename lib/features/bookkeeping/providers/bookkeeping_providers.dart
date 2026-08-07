@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:miji/core/auth/application/auth_session_controller.dart';
@@ -1126,12 +1127,27 @@ class CurrentUserBudgetAlertNotificationActions {
 
   final Ref _ref;
   bool _running = false;
+  bool _pending = false;
 
   Future<void> scanNow() async {
     if (_running) {
+      // 扫描期间数据可能又变了（如刚记账），标记待重扫，结束后补一次，
+      // 避免用旧预算数据扫描而漏掉通知。
+      _pending = true;
       return;
     }
     _running = true;
+    try {
+      do {
+        _pending = false;
+        await _scanOnce();
+      } while (_pending);
+    } finally {
+      _running = false;
+    }
+  }
+
+  Future<void> _scanOnce() async {
     try {
       final session = _ref.read(authSessionControllerProvider);
       final userId = session.userId;
@@ -1143,10 +1159,8 @@ class CurrentUserBudgetAlertNotificationActions {
       await _ref
           .read(moneyBudgetAlertNotificationServiceProvider)
           .scanAndNotify(userId: userId, budgets: budgets);
-    } catch (_) {
-      // Budget notifications must never block bookkeeping refreshes.
-    } finally {
-      _running = false;
+    } catch (error, stackTrace) {
+      debugPrint('[budget-alert] 扫描失败: $error\n$stackTrace');
     }
   }
 }

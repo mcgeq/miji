@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:miji/core/notifications/app_notification_service.dart';
@@ -43,6 +44,11 @@ class MoneyBudgetAlertNotificationService {
       );
       if (shown) {
         await prefs.setString(storageKey, alertToken);
+      } else {
+        debugPrint(
+          '[budget-alert] 通知发送失败（权限未授予或平台不支持）：'
+          'budget=${budget.id} stage=${alert.stage}',
+        );
       }
     }
   }
@@ -75,7 +81,7 @@ class MoneyBudgetAlertNotificationService {
     if (budget.progress >= 1) {
       if (budget.isIncomeTarget) {
         return _BudgetAlert(
-          stage: _BudgetAlertStage.hundred,
+          stage: '100',
           title: '收入目标已达 100%',
           body:
               '${budget.name} 已完成，目标 ${formatMoneyMinor(budget.amountMinor, budget.currencyCode)}，'
@@ -83,7 +89,7 @@ class MoneyBudgetAlertNotificationService {
         );
       }
       return _BudgetAlert(
-        stage: _BudgetAlertStage.hundred,
+        stage: '100',
         title: '预算已达 100%',
         body:
             '${budget.name} 已使用 ${_percentText(budget.progress)}，'
@@ -92,18 +98,31 @@ class MoneyBudgetAlertNotificationService {
       );
     }
 
-    if (budget.progress >= 0.8) {
-      return _BudgetAlert(
-        stage: _BudgetAlertStage.eighty,
-        title: '预算已达 80%',
-        body:
-            '${budget.name} 已使用 ${_percentText(budget.progress)}，达到 80% 提醒线。'
-            ' 当前已用 ${formatMoneyMinor(budget.usedAmountMinor, budget.currencyCode)}，'
-            '剩余 ${formatMoneyMinor(budget.remainingAmountMinor, budget.currencyCode)}。',
-      );
+    final threshold = budget.alertThresholdPercent;
+    if (threshold == null ||
+        threshold <= 0 ||
+        budget.progress * 100 < threshold) {
+      return null;
     }
 
-    return null;
+    if (budget.isIncomeTarget) {
+      return _BudgetAlert(
+        stage: '$threshold',
+        title: '收入目标已达 $threshold%',
+        body:
+            '${budget.name} 已使用 ${_percentText(budget.progress)}，达到 $threshold% 提醒线。'
+            ' 当前已达 ${formatMoneyMinor(budget.usedAmountMinor, budget.currencyCode)}，'
+            '目标 ${formatMoneyMinor(budget.amountMinor, budget.currencyCode)}。',
+      );
+    }
+    return _BudgetAlert(
+      stage: '$threshold',
+      title: '预算已达 $threshold%',
+      body:
+          '${budget.name} 已使用 ${_percentText(budget.progress)}，达到 $threshold% 提醒线。'
+          ' 当前已用 ${formatMoneyMinor(budget.usedAmountMinor, budget.currencyCode)}，'
+          '剩余 ${formatMoneyMinor(budget.remainingAmountMinor, budget.currencyCode)}。',
+    );
   }
 
   Future<bool> _isSnoozed(
@@ -131,7 +150,7 @@ class MoneyBudgetAlertNotificationService {
     _BudgetAlert alert,
     DateTime today,
   ) {
-    return '${budget.periodStart.millisecondsSinceEpoch}:${_dateKey(today)}:${alert.stage.storageValue}';
+    return '${budget.periodStart.millisecondsSinceEpoch}:${_dateKey(today)}:${alert.stage}';
   }
 
   String _storageKey(String userId, String budgetId) {
@@ -166,15 +185,6 @@ class MoneyBudgetAlertNotificationService {
   }
 }
 
-enum _BudgetAlertStage {
-  eighty('80'),
-  hundred('100');
-
-  const _BudgetAlertStage(this.storageValue);
-
-  final String storageValue;
-}
-
 class _BudgetAlert {
   const _BudgetAlert({
     required this.stage,
@@ -182,7 +192,8 @@ class _BudgetAlert {
     required this.body,
   });
 
-  final _BudgetAlertStage stage;
+  /// 触发阶段标识（如 '70'、'90'、'100'），参与通知去重 token。
+  final String stage;
   final String title;
   final String body;
 }

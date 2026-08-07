@@ -18,6 +18,9 @@ class UserPreferences extends Table {
   TextColumn get sensitiveAccessTtl =>
       text().withDefault(const Constant('10m'))();
 
+  BoolColumn get showHomeTodayAction =>
+      boolean().withDefault(const Constant(true))();
+
   DateTimeColumn get createdAt => dateTime()();
 
   DateTimeColumn get updatedAt => dateTime()();

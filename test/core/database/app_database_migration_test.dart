@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/core/database/app_database.dart';
 
 /// Reproduces the phone upgrade path: an existing database from a previous
-/// release (schema v15/v16/v17) is opened by the current v18 code.
+/// release (schema v15/v16/v17/v18) is opened by the current v19 code.
 ///
 /// The old database is simulated by creating the current schema, dropping the
 /// todo tables (which did not exist at v15) or the V1.1 columns (v16), then
@@ -47,10 +47,13 @@ void main() {
     await v18db.customStatement('DROP TABLE IF EXISTS todo_recurrence_rules');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_tasks');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_categories');
+    await v18db.customStatement(
+      'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
+    );
     await v18db.customStatement('PRAGMA user_version = 15');
     await v18db.close();
 
-    // Reopen with the current schema: this runs the 15 -> 18 migration.
+    // Reopen with the current schema: this runs the 15 -> 19 migration.
     final db = AppDatabase(NativeDatabase(dbFile));
     await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
 
@@ -110,12 +113,16 @@ void main() {
     await v18db.customStatement(
       'ALTER TABLE todo_tasks DROP COLUMN markdown_body',
     );
+    await v18db.customStatement(
+      'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
+    );
     await v18db.customStatement('DROP TABLE IF EXISTS todo_task_tags');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_tags');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_recurrence_rules');
     await v18db.customStatement('PRAGMA user_version = 16');
     await v18db.close();
 
+    // Reopen with the current schema: this runs the 16 -> 19 migration.
     final db = AppDatabase(NativeDatabase(dbFile));
     await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
 
@@ -156,6 +163,9 @@ void main() {
     await v18db.customStatement(
       'ALTER TABLE todo_tasks DROP COLUMN markdown_body',
     );
+    await v18db.customStatement(
+      'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
+    );
     await v18db.customStatement('PRAGMA user_version = 17');
     await v18db.close();
 
@@ -177,4 +187,58 @@ void main() {
     expect(await (db.select(db.todoTags)).get(), isEmpty);
     await db.close();
   });
+
+  test(
+    'v18 -> v19 upgrade adds show_home_today_action with default true',
+    () async {
+      final now = DateTime.now().toUtc();
+
+      final v19db = AppDatabase(NativeDatabase(dbFile));
+      await v19db
+          .into(v19db.users)
+          .insert(
+            UsersCompanion.insert(
+              id: 'user-1',
+              username: 'demo',
+              email: 'demo@example.com',
+              displayName: 'Demo',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await v19db
+          .into(v19db.userPreferences)
+          .insert(
+            UserPreferencesCompanion.insert(
+              userId: 'user-1',
+              themeSeedColor: 0xFF6750A4,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      // Simulate a v18 release: drop the V1.3 column that v18 lacked.
+      await v19db.customStatement(
+        'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
+      );
+      await v19db.customStatement('PRAGMA user_version = 18');
+      await v19db.close();
+
+      // Reopen with the current schema: this runs the 18 -> 19 migration.
+      final db = AppDatabase(NativeDatabase(dbFile));
+      await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+      final columns = await db
+          .customSelect('PRAGMA table_info(user_preferences)')
+          .get()
+          .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+      expect(columns, contains('show_home_today_action'));
+
+      // Existing rows keep data and the new column defaults to true.
+      final preferences = await (db.select(db.userPreferences)).getSingle();
+      expect(preferences.userId, 'user-1');
+      expect(preferences.showHomeTodayAction, isTrue);
+      await db.close();
+    },
+  );
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
@@ -13,6 +14,12 @@ import 'package:miji/core/theme/app_theme.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // 强制开启语义树：语义信息默认只在有无障碍服务连接时收集，
+  // 而厂商系统（如 MIUI）的滚动截屏服务依赖无障碍节点判断页面
+  // 是否存在可滚动内容；没有语义树时「截长屏」按钮会置灰。
+  // 返回的 SemanticsHandle 无需释放：引用计数始终 >0，语义常开。
+  SemanticsBinding.instance.ensureSemantics();
   runApp(const ProviderScope(child: MijiApp()));
 }
 

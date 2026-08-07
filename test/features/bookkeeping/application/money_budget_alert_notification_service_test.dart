@@ -29,6 +29,74 @@ void main() {
     expect(notifications.budgetAlerts.single.title, contains('80%'));
   });
 
+  test('uses the configured threshold instead of a hardcoded one', () async {
+    final notifications = _FakeNotificationService();
+    final service = MoneyBudgetAlertNotificationService(
+      notificationService: notifications,
+      now: () => DateTime(2026, 7, 19, 10),
+    );
+
+    await service.scanAndNotify(
+      userId: 'user-1',
+      budgets: [
+        _budget(
+          id: 'seventy',
+          usedAmountMinor: 7500,
+          alertThresholdPercent: 70,
+        ),
+      ],
+    );
+
+    expect(notifications.budgetAlerts, hasLength(1));
+    expect(notifications.budgetAlerts.single.title, contains('70%'));
+  });
+
+  test('does not notify below the configured threshold', () async {
+    final notifications = _FakeNotificationService();
+    final service = MoneyBudgetAlertNotificationService(
+      notificationService: notifications,
+      now: () => DateTime(2026, 7, 19, 10),
+    );
+
+    await service.scanAndNotify(
+      userId: 'user-1',
+      budgets: [
+        _budget(id: 'ninety', usedAmountMinor: 8500, alertThresholdPercent: 90),
+      ],
+    );
+
+    expect(notifications.budgetAlerts, isEmpty);
+  });
+
+  test('notifies threshold stage then 100 percent stage', () async {
+    final notifications = _FakeNotificationService();
+    final service = MoneyBudgetAlertNotificationService(
+      notificationService: notifications,
+      now: () => DateTime(2026, 7, 19, 10),
+    );
+
+    await service.scanAndNotify(
+      userId: 'user-1',
+      budgets: [
+        _budget(id: 'ninety', usedAmountMinor: 9000, alertThresholdPercent: 90),
+      ],
+    );
+    await service.scanAndNotify(
+      userId: 'user-1',
+      budgets: [
+        _budget(
+          id: 'ninety',
+          usedAmountMinor: 10000,
+          alertThresholdPercent: 90,
+        ),
+      ],
+    );
+
+    expect(notifications.budgetAlerts, hasLength(2));
+    expect(notifications.budgetAlerts.first.title, contains('90%'));
+    expect(notifications.budgetAlerts.last.title, contains('100%'));
+  });
+
   test('notifies again on the next day for the same stage', () async {
     final notifications = _FakeNotificationService();
 
@@ -114,6 +182,7 @@ MoneyBudgetEntity _budget({
   int amountMinor = 10000,
   required int usedAmountMinor,
   bool alertEnabled = true,
+  int? alertThresholdPercent = 80,
 }) {
   return MoneyBudgetEntity(
     id: id,
@@ -133,7 +202,7 @@ MoneyBudgetEntity _budget({
     usedAmountMinor: usedAmountMinor,
     isActive: true,
     alertEnabled: alertEnabled,
-    alertThresholdPercent: 80,
+    alertThresholdPercent: alertThresholdPercent,
     createdAt: DateTime(2026, 7),
     updatedAt: DateTime(2026, 7),
   );
