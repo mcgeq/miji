@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
+import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 
 class TransactionDetailContent extends ConsumerWidget {
@@ -54,6 +59,13 @@ class TransactionDetailContent extends ConsumerWidget {
       currentUserTransactionLedgersProvider(transaction.id),
     );
     final isReadOnly = transaction.isInstallmentPosting;
+    final installmentPlans = ref
+        .watch(currentUserInstallmentPlansProvider)
+        .maybeWhen(
+          data: (items) => items,
+          orElse: () => const <MoneyInstallmentPlanEntity>[],
+        );
+    final installmentPlan = _findInstallmentPlan(installmentPlans);
     final familyLedgerCount = ledgerMemberships.maybeWhen(
       data: (items) => items.where((ledger) => ledger.isFamily).length,
       orElse: () => 0,
@@ -171,7 +183,11 @@ class TransactionDetailContent extends ConsumerWidget {
               if (_hasText(transaction.installmentPlanId))
                 _DetailLine(
                   label: '分期计划',
-                  value: transaction.installmentPlanId!,
+                  value:
+                      installmentPlan?.name ?? transaction.installmentPlanId!,
+                  onTap: installmentPlan == null
+                      ? null
+                      : () => _openInstallmentDetails(context, ref),
                 ),
               if (transaction.refundAmountMinor > 0)
                 _DetailLine(
@@ -319,6 +335,62 @@ class TransactionDetailContent extends ConsumerWidget {
 
   bool _hasText(String? value) {
     return value != null && value.trim().isNotEmpty;
+  }
+
+  MoneyInstallmentPlanEntity? _findInstallmentPlan(
+    List<MoneyInstallmentPlanEntity> plans,
+  ) {
+    final planId = transaction.installmentPlanId;
+    if (planId == null) {
+      return null;
+    }
+    for (final plan in plans) {
+      if (plan.id == planId) {
+        return plan;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _openInstallmentDetails(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final planId = transaction.installmentPlanId;
+    if (planId == null) {
+      return;
+    }
+    final plans =
+        ref.read(currentUserInstallmentPlansProvider).value ??
+        const <MoneyInstallmentPlanEntity>[];
+    final plan = _findInstallmentPlan(plans);
+    if (plan == null) {
+      AppToast.error(FToast()..init(context), context, '分期计划不可用');
+      return;
+    }
+    MoneyAccountEntity? account;
+    for (final item in accounts) {
+      if (item.id == plan.accountId) {
+        account = item;
+        break;
+      }
+    }
+    final category = expenseCatalog.categoryById(plan.categoryId);
+    final subCategory = expenseCatalog.subCategoryById(plan.subCategoryId);
+    final categoryText = category == null
+        ? '分类不可用'
+        : subCategory == null
+        ? category.name
+        : '${category.name} / ${subCategory.name}';
+
+    await showAppResponsiveDialog<void>(
+      context: context,
+      builder: (context) => InstallmentDetailsDialog(
+        plan: plan,
+        account: account,
+        categoryText: categoryText,
+      ),
+    );
   }
 
   String _dateTimeText(DateTime dateTime) {
@@ -662,10 +734,11 @@ class _DetailSection extends StatelessWidget {
 }
 
 class _DetailLine extends StatelessWidget {
-  const _DetailLine({required this.label, required this.value});
+  const _DetailLine({required this.label, required this.value, this.onTap});
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -687,14 +760,40 @@ class _DetailLine extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0,
-            ),
-          ),
+          child: onTap == null
+              ? Text(
+                  value,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0,
+                  ),
+                )
+              : InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          value,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                ),
         ),
       ],
     );

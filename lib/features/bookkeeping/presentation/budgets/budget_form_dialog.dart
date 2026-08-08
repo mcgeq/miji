@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/presentation/components/app_color_picker.dart';
+import 'package:miji/core/presentation/components/app_form_hint.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
@@ -38,6 +39,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
   MoneyBudgetTrackingType _trackingType = MoneyBudgetTrackingType.expenseLimit;
   MoneyBudgetPeriodType _periodType = MoneyBudgetPeriodType.monthly;
   MoneyBudgetScopeType _scopeType = MoneyBudgetScopeType.all;
+  String? _ledgerId;
   String? _categoryId;
   String? _subCategoryId;
   String? _accountId;
@@ -65,6 +67,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     _categoryId = budget?.categoryId;
     _subCategoryId = budget?.subCategoryId;
     _accountId = budget?.accountId;
+    _ledgerId = budget?.ledgerId;
     _trackingType =
         budget?.trackingType ?? MoneyBudgetTrackingType.expenseLimit;
     _periodType = budget?.periodType ?? MoneyBudgetPeriodType.monthly;
@@ -98,12 +101,18 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
         ? MoneyCategoryKind.income
         : MoneyCategoryKind.expense;
     final catalog = ref.watch(currentUserCategoryCatalogProvider(categoryKind));
+    final ledgers = ref.watch(currentUserMoneyLedgersProvider);
+    final ledgerRows = ledgers.maybeWhen(
+      data: (items) => items,
+      orElse: () => null,
+    );
     final currentLedger = ref.watch(currentUserCurrentLedgerValueProvider);
-    final accounts = currentLedger == null
+    final selectedLedger = _ledgerFrom(ledgerRows, _ledgerId) ?? currentLedger;
+    final accounts = selectedLedger == null
         ? const AsyncValue<List<MoneyAccountEntity>>.data(
             <MoneyAccountEntity>[],
           )
-        : ref.watch(currentUserMoneyLedgerAccountsProvider(currentLedger.id));
+        : ref.watch(currentUserMoneyLedgerAccountsProvider(selectedLedger.id));
     final selectedAccount = accounts.maybeWhen(
       data: (value) => _accountById(value, _accountId),
       orElse: () => null,
@@ -121,6 +130,8 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     final amountLabel = _trackingType == MoneyBudgetTrackingType.incomeTarget
         ? '目标金额'
         : '预算金额';
+    final canChangeLedger =
+        !_isEditing || (widget.budget?.usedAmountMinor ?? 0) <= 0;
 
     return AppDialogScaffold(
       title: _isEditing ? '编辑预算' : '新增预算',
@@ -131,8 +142,44 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
         key: _formKey,
         child: AppFormColumn(
           children: [
-            if (currentLedger != null)
-              _BudgetLedgerNotice(ledger: currentLedger, isEditing: _isEditing),
+            if (canChangeLedger)
+              ledgers.when(
+                data: (items) => FormDropdown<String?>(
+                  initialSelection: _ledgerId,
+                  label: '所属账本',
+                  leadingIcon: const Icon(Icons.menu_book_rounded),
+                  width: double.infinity,
+                  enableFilter: true,
+                  entries: [
+                    for (final ledger in items)
+                      DropdownMenuEntry<String?>(
+                        value: ledger.id,
+                        label: ledger.name,
+                        labelWidget: _BudgetLedgerMenuItem(ledger: ledger),
+                      ),
+                  ],
+                  onSelected: (value) {
+                    if (value == _ledgerId) {
+                      return;
+                    }
+                    setState(() {
+                      _ledgerId = value;
+                      _categoryId = null;
+                      _subCategoryId = null;
+                      _accountId = null;
+                      _categoryErrorText = null;
+                      _scopeErrorText = null;
+                      if (_periodType == MoneyBudgetPeriodType.billingCycle) {
+                        _periodType = MoneyBudgetPeriodType.monthly;
+                      }
+                    });
+                  },
+                ),
+                loading: () => const AppFormHint(text: '账本加载中...'),
+                error: (error, stackTrace) => const Text('账本读取失败'),
+              )
+            else if (selectedLedger != null)
+              _BudgetLedgerNotice(ledger: selectedLedger, isEditing: true),
             AppTextFormField(
               controller: _nameController,
               autofocus: true,
@@ -167,27 +214,20 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               },
             ),
             AppSlidingSegmentedControl<MoneyBudgetScopeType>(
-              minSegmentWidth: 88,
+              minSegmentWidth: 80,
               value: _scopeType,
               segments: const [
-                AppSlidingSegment(
-                  value: MoneyBudgetScopeType.all,
-                  icon: Icons.all_inclusive_rounded,
-                  label: '全部范围',
-                ),
+                AppSlidingSegment(value: MoneyBudgetScopeType.all, label: '全部'),
                 AppSlidingSegment(
                   value: MoneyBudgetScopeType.category,
-                  icon: Icons.category_rounded,
                   label: '分类',
                 ),
                 AppSlidingSegment(
                   value: MoneyBudgetScopeType.account,
-                  icon: Icons.account_balance_wallet_rounded,
                   label: '账户',
                 ),
                 AppSlidingSegment(
                   value: MoneyBudgetScopeType.categoryAccount,
-                  icon: Icons.account_tree_rounded,
                   label: '分类+账户',
                 ),
               ],
@@ -371,11 +411,16 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
       return;
     }
     if (_periodType == MoneyBudgetPeriodType.billingCycle) {
-      final currentLedger = ref.read(currentUserCurrentLedgerValueProvider);
-      final account = currentLedger == null
+      final ledgerRows = ref
+          .read(currentUserMoneyLedgersProvider)
+          .maybeWhen(data: (items) => items, orElse: () => null);
+      final ledger =
+          _ledgerFrom(ledgerRows, _ledgerId) ??
+          ref.read(currentUserCurrentLedgerValueProvider);
+      final account = ledger == null
           ? null
           : ref
-                .read(currentUserMoneyLedgerAccountsProvider(currentLedger.id))
+                .read(currentUserMoneyLedgerAccountsProvider(ledger.id))
                 .maybeWhen(
                   data: (value) => _accountById(value, _accountId),
                   orElse: () => null,
@@ -422,6 +467,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
           ? MoneyBudgetDraft(
               name: name,
               description: description.isEmpty ? null : description,
+              ledgerId: _ledgerId,
               trackingType: _trackingType,
               periodType: _periodType,
               repeatInterval: 1,
@@ -437,7 +483,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
           : MoneyBudgetUpdate(
               id: budget.id,
               name: name,
-              ledgerId: budget.ledgerId,
+              ledgerId: _ledgerId ?? budget.ledgerId,
               description: description.isEmpty ? null : description,
               trackingType: _trackingType,
               periodType: _periodType,
@@ -504,6 +550,61 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     }
     return null;
   }
+
+  MoneyLedgerEntity? _ledgerFrom(
+    List<MoneyLedgerEntity>? ledgers,
+    String? ledgerId,
+  ) {
+    if (ledgers == null || ledgerId == null) {
+      return null;
+    }
+    for (final ledger in ledgers) {
+      if (ledger.id == ledgerId) {
+        return ledger;
+      }
+    }
+    return null;
+  }
+}
+
+class _BudgetLedgerMenuItem extends StatelessWidget {
+  const _BudgetLedgerMenuItem({required this.ledger});
+
+  final MoneyLedgerEntity ledger;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isFamily = ledger.isFamily;
+
+    return Row(
+      children: [
+        Icon(
+          isFamily ? Icons.diversity_3_rounded : Icons.person_outline_rounded,
+          size: 18,
+          color: isFamily ? colorScheme.tertiary : colorScheme.secondary,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            ledger.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(letterSpacing: 0),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          isFamily ? '家庭' : '个人',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _BudgetLedgerNotice extends StatelessWidget {
@@ -558,7 +659,7 @@ class _BudgetLedgerNotice extends StatelessWidget {
             ),
           ),
           Tooltip(
-            message: '预算会自动绑定到这个账本',
+            message: isEditing ? '预算已产生使用记录，账本不可更换' : '预算会自动绑定到这个账本',
             child: Icon(
               Icons.lock_outline_rounded,
               size: 18,

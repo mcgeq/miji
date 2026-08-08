@@ -49,82 +49,94 @@ class AppSlidingSegmentedControl<T> extends StatelessWidget {
       (segment) => segment.value == value,
     );
     final activeIndex = selectedIndex < 0 ? 0 : selectedIndex;
-    final totalWidth = minSegmentWidth * segments.length;
+    final minTotalWidth = minSegmentWidth * segments.length;
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      clipBehavior: Clip.none,
-      child: SizedBox(
-        height: controlHeight,
-        width: totalWidth,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final segmentWidth = constraints.maxWidth / segments.length;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final resolvedWidth =
+            availableWidth.isFinite && availableWidth >= minTotalWidth
+            ? availableWidth
+            : minTotalWidth;
 
-            final decoration = showTrack
-                ? BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.62,
-                    ),
-                    borderRadius: BorderRadius.circular(radius.pill),
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.38),
-                    ),
-                  )
-                : const BoxDecoration();
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          clipBehavior: Clip.none,
+          child: SizedBox(
+            height: controlHeight,
+            width: resolvedWidth,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final segmentWidth = constraints.maxWidth / segments.length;
 
-            return DecoratedBox(
-              decoration: decoration,
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(radius.pill),
-                clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  children: [
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOutCubic,
-                      top: 3,
-                      bottom: 3,
-                      left: 3 + activeIndex * segmentWidth,
-                      width: segmentWidth - 6,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary,
-                          borderRadius: BorderRadius.circular(radius.pill),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.primary.withValues(
-                                alpha: 0.18,
-                              ),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                final decoration = showTrack
+                    ? BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.62,
                         ),
-                      ),
-                    ),
-                    Row(
+                        borderRadius: BorderRadius.circular(radius.pill),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.38,
+                          ),
+                        ),
+                      )
+                    : const BoxDecoration();
+
+                return DecoratedBox(
+                  decoration: decoration,
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(radius.pill),
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
                       children: [
-                        for (final segment in segments)
-                          Expanded(
-                            child: _SlidingSegmentButton<T>(
-                              segment: segment,
-                              selected: segment.value == value,
-                              showLabel: showLabels,
-                              onTap: () => onChanged(segment.value),
+                        AnimatedPositioned(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOutCubic,
+                          top: 3,
+                          bottom: 3,
+                          left: 3 + activeIndex * segmentWidth,
+                          width: segmentWidth - 6,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary,
+                              borderRadius: BorderRadius.circular(radius.pill),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colorScheme.primary.withValues(
+                                    alpha: 0.18,
+                                  ),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
                           ),
+                        ),
+                        Row(
+                          children: [
+                            for (final segment in segments)
+                              Expanded(
+                                child: _SlidingSegmentButton<T>(
+                                  segment: segment,
+                                  selected: segment.value == value,
+                                  showLabel: showLabels,
+                                  onTap: () => onChanged(segment.value),
+                                ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -156,7 +168,7 @@ class _SlidingSegmentButton<T> extends StatelessWidget {
       customBorder: const StadiumBorder(),
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

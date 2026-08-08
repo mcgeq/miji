@@ -1042,6 +1042,21 @@ final currentUserInstallmentDetailsProvider = StreamProvider.autoDispose
       yield* repository.watchInstallmentDetailsForPlan(userId, planId);
     });
 
+final currentUserTransactionProvider = FutureProvider.autoDispose
+    .family<MoneyTransactionEntity, String>((ref, transactionId) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.databaseReadFailed,
+        );
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      await repository.ensureReadyForUser(session.userId!);
+      return repository.getTransactionForUser(session.userId!, transactionId);
+    });
+
 final currentUserSplitRulesProvider = StreamProvider.autoDispose
     .family<List<MoneySplitRuleEntity>, String>((ref, ledgerId) async* {
       _watchMoneyDataRefresh(ref);
@@ -1431,7 +1446,7 @@ class CurrentUserMoneyBudgetActions {
 
   Future<void> createBudget(MoneyBudgetDraft draft) async {
     final userId = _requireUnlockedUserId();
-    final ledgerId = await _requireCurrentLedgerId();
+    final ledgerId = draft.ledgerId ?? await _requireCurrentLedgerId();
     await _ref
         .read(moneyRepositoryProvider)
         .createBudget(userId, _draftWithLedger(draft, ledgerId));

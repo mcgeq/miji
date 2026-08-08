@@ -103,99 +103,114 @@ class _TransactionSplitDialogState
                 amountMinor: widget.amountMinor,
                 currencyCode: widget.currencyCode,
               ),
-              AppSlidingSegmentedControl<MoneySplitType>(
-                minSegmentWidth: 86,
-                value: _splitType,
-                segments: MoneySplitType.values
-                    .map(
-                      (type) => AppSlidingSegment<MoneySplitType>(
-                        value: type,
-                        label: type.label,
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() => _splitType = value);
-                },
-              ),
-              if (activeRules.isNotEmpty)
-                FormDropdown<String>(
-                  key: ValueKey(
-                    'split-rule-${activeRules.length}-$_ruleApplyVersion',
+              AppFormRow(
+                compactBreakpoint: 460,
+                flexes: const [3, 2],
+                children: [
+                  AppSlidingSegmentedControl<MoneySplitType>(
+                    minSegmentWidth: 86,
+                    value: _splitType,
+                    segments: MoneySplitType.values
+                        .map(
+                          (type) => AppSlidingSegment<MoneySplitType>(
+                            value: type,
+                            label: type.label,
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() => _splitType = value);
+                    },
                   ),
-                  initialSelection: null,
-                  label: '应用模板',
-                  leadingIcon: const Icon(Icons.playlist_add_check_rounded),
-                  width: double.infinity,
-                  enableFilter: true,
-                  entries: activeRules
-                      .map(
-                        (rule) => DropdownMenuEntry<String>(
-                          value: rule.id,
-                          label: rule.name,
-                        ),
-                      )
-                      .toList(),
-                  onSelected: (ruleId) {
-                    MoneySplitRuleEntity? rule;
-                    for (final item in activeRules) {
-                      if (item.id == ruleId) {
-                        rule = item;
-                        break;
-                      }
-                    }
-                    if (rule != null) {
-                      _applyRule(rule);
-                    }
-                  },
-                ),
-              FormDropdown<String>(
-                initialSelection: _payerMemberId,
-                label: '付款人',
-                leadingIcon: const Icon(Icons.person_pin_circle_outlined),
-                width: double.infinity,
-                enableFilter: true,
-                entries: value
-                    .map(
-                      (member) => DropdownMenuEntry<String>(
-                        value: member.id,
-                        label: member.name,
+                  if (activeRules.isNotEmpty)
+                    FormDropdown<String>(
+                      key: ValueKey(
+                        'split-rule-${activeRules.length}-$_ruleApplyVersion',
                       ),
-                    )
-                    .toList(),
-                onSelected: (memberId) {
-                  setState(() {
-                    _payerMemberId = memberId;
-                    if (memberId != null) {
-                      _selectedMemberIds.add(memberId);
-                    }
-                  });
-                },
+                      initialSelection: null,
+                      label: '应用模板',
+                      leadingIcon: const Icon(Icons.playlist_add_check_rounded),
+                      width: double.infinity,
+                      enableFilter: true,
+                      entries: activeRules
+                          .map(
+                            (rule) => DropdownMenuEntry<String>(
+                              value: rule.id,
+                              label: rule.name,
+                            ),
+                          )
+                          .toList(),
+                      onSelected: (ruleId) {
+                        MoneySplitRuleEntity? rule;
+                        for (final item in activeRules) {
+                          if (item.id == ruleId) {
+                            rule = item;
+                            break;
+                          }
+                        }
+                        if (rule != null) {
+                          _applyRule(rule);
+                        }
+                      },
+                    ),
+                ],
               ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: AppIconActionButton(
-                  tooltip: '添加成员',
-                  onPressed: _isAddingMember ? null : _addMember,
-                  icon: Icons.person_add_alt_1_rounded,
-                  variant: AppIconActionVariant.outlined,
-                ),
+              AppFormRow(
+                compactBreakpoint: 420,
+                flexes: const [4, 1],
+                children: [
+                  FormDropdown<String>(
+                    initialSelection: _payerMemberId,
+                    label: '付款人',
+                    leadingIcon: const Icon(Icons.person_pin_circle_outlined),
+                    width: double.infinity,
+                    enableFilter: true,
+                    entries: value
+                        .map(
+                          (member) => DropdownMenuEntry<String>(
+                            value: member.id,
+                            label: member.name,
+                          ),
+                        )
+                        .toList(),
+                    onSelected: (memberId) {
+                      setState(() {
+                        _payerMemberId = memberId;
+                        if (memberId != null) {
+                          _selectedMemberIds.add(memberId);
+                        }
+                      });
+                    },
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: AppIconActionButton(
+                      tooltip: '添加成员',
+                      onPressed: _isAddingMember ? null : _addMember,
+                      icon: Icons.person_add_alt_1_rounded,
+                      variant: AppIconActionVariant.outlined,
+                    ),
+                  ),
+                ],
               ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: AppIconActionButton(
-                  tooltip: '管理模板',
-                  onPressed: _openRuleManager,
-                  icon: Icons.tune_rounded,
-                  variant: AppIconActionVariant.outlined,
-                ),
-              ),
-              Text(
-                '参与成员',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '参与成员',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                  AppIconActionButton(
+                    tooltip: '管理模板',
+                    onPressed: _openRuleManager,
+                    icon: Icons.tune_rounded,
+                    variant: AppIconActionVariant.plain,
+                  ),
+                ],
               ),
               if (value.length < 2)
                 Text(
@@ -211,21 +226,13 @@ class _TransactionSplitDialogState
                 labelText: '备注',
                 maxLines: 2,
               ),
-              if (_errorText != null)
-                Text(
-                  _errorText!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.error,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0,
-                  ),
-                ),
             ],
           );
         },
         loading: () => const LinearProgressIndicator(),
         error: (error, stackTrace) => const Text('成员读取失败'),
       ),
+      errorText: _errorText,
       actions: appDialogIconActions(
         onCancel: () => Navigator.of(context).pop(),
         onConfirm: _submit,

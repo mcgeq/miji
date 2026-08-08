@@ -396,6 +396,11 @@ abstract class MoneyRepository {
     String? ledgerId,
   });
 
+  Future<MoneyTransactionEntity> getTransactionForUser(
+    String userId,
+    String transactionId,
+  );
+
   Future<MoneyStatisticsSummary> getStatisticsForUser(
     String userId,
     MoneyStatisticsQuery query,

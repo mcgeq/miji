@@ -59,7 +59,7 @@ void main() {
     await tester.tap(find.textContaining(_foodCategory.name).last);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining(_sharedCashAccount.name), findsOneWidget);
+    expect(find.textContaining(_sharedCashAccount.name), findsNWidgets(2));
     expect(find.textContaining(_foodCategory.name), findsOneWidget);
 
     await tester.tap(find.text(_familyLedgerA.name));
@@ -67,7 +67,7 @@ void main() {
     await tester.tap(find.textContaining(_familyLedgerB.name).last);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining(_sharedCashAccount.name), findsOneWidget);
+    expect(find.textContaining(_sharedCashAccount.name), findsNWidgets(2));
     expect(find.textContaining(_foodCategory.name), findsOneWidget);
   });
 }

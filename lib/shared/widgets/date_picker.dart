@@ -15,6 +15,7 @@ class DateTimePicker extends StatelessWidget {
     this.label,
     this.clearable = false,
     this.onClear,
+    this.showQuickOptions = false,
   });
 
   final DateTime selectedDate;
@@ -25,6 +26,7 @@ class DateTimePicker extends StatelessWidget {
   final String? label;
   final bool clearable;
   final VoidCallback? onClear;
+  final bool showQuickOptions;
 
   String get _formattedDate {
     final month = selectedDate.month.toString().padLeft(2, '0');
@@ -42,60 +44,110 @@ class DateTimePicker extends StatelessWidget {
     final radius = theme.radiusTokens;
     final controls = theme.controlTokens;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _pickDate(context),
-        borderRadius: BorderRadius.circular(radius.md),
-        child: Container(
-          constraints: BoxConstraints(minHeight: controls.compactFieldHeight),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: appFieldFillColor(colorScheme, enabled: true),
-            borderRadius: BorderRadius.circular(radius.md),
-            border: Border.all(
-              color: appFieldBorderColor(colorScheme, enabled: true),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showQuickOptions) ...[
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Icon(
-                Icons.calendar_month_rounded,
-                size: 18,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label ?? _formattedDate,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0,
-                  ),
+              for (final option in const [
+                _QuickDateOption(label: '今天', dayOffset: 0),
+                _QuickDateOption(label: '昨天', dayOffset: -1),
+                _QuickDateOption(label: '明天', dayOffset: 1),
+              ])
+                _QuickDateChip(
+                  label: option.label,
+                  selected: _matchesDay(option.dayOffset),
+                  onTap: () => _selectQuickDate(option.dayOffset),
                 ),
-              ),
-              if (clearable) ...[
-                const SizedBox(width: 4),
-                InkWell(
-                  onTap: onClear,
-                  borderRadius: BorderRadius.circular(999),
-                  child: Padding(
-                    padding: const EdgeInsets.all(3),
-                    child: Icon(
-                      Icons.close_rounded,
-                      size: 15,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
+          const SizedBox(height: 8),
+        ],
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _pickDate(context),
+            borderRadius: BorderRadius.circular(radius.md),
+            child: Container(
+              constraints: BoxConstraints(
+                minHeight: controls.compactFieldHeight,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: appFieldFillColor(colorScheme, enabled: true),
+                borderRadius: BorderRadius.circular(radius.md),
+                border: Border.all(
+                  color: appFieldBorderColor(colorScheme, enabled: true),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.calendar_month_rounded,
+                    size: 18,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label ?? _formattedDate,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                  if (clearable) ...[
+                    const SizedBox(width: 4),
+                    InkWell(
+                      onTap: onClear,
+                      borderRadius: BorderRadius.circular(999),
+                      child: Padding(
+                        padding: const EdgeInsets.all(3),
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 15,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         ),
+      ],
+    );
+  }
+
+  bool _matchesDay(int dayOffset) {
+    final target = DateTime.now().add(Duration(days: dayOffset));
+    final value = selectedDate;
+    return value.year == target.year &&
+        value.month == target.month &&
+        value.day == target.day;
+  }
+
+  void _selectQuickDate(int dayOffset) {
+    final target = DateTime.now().add(Duration(days: dayOffset));
+    final value = selectedDate;
+    onChanged(
+      DateTime(
+        target.year,
+        target.month,
+        target.day,
+        value.hour,
+        value.minute,
+        value.second,
       ),
     );
   }
@@ -145,6 +197,41 @@ Future<DateTime?> showAppMonthPicker({
       lastMonth: lastMonth,
     ),
   );
+}
+
+class _QuickDateOption {
+  const _QuickDateOption({required this.label, required this.dayOffset});
+
+  final String label;
+  final int dayOffset;
+}
+
+class _QuickDateChip extends StatelessWidget {
+  const _QuickDateChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      labelStyle: theme.textTheme.labelMedium?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+      ),
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+    );
+  }
 }
 
 class _MonthPickerDialog extends StatefulWidget {

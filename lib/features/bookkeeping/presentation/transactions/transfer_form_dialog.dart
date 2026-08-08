@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/presentation/components/app_form_hint.dart';
+import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
+import 'package:miji/core/presentation/components/app_surface.dart';
 import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
@@ -99,6 +101,8 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
             controller: _amountController,
             labelText: '金额',
             currencyCode: 'CNY',
+            prominent: true,
+            onChanged: (_) => setState(() {}),
           ),
           accounts.when(
             data: (value) {
@@ -110,38 +114,64 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
               final fromAccount = _accountById(activeAccounts, _fromAccountId);
               final toAccount = _accountById(activeAccounts, _toAccountId);
               final hintText = _transferHintText(fromAccount, toAccount);
-              return AppFormColumn(
-                gap: 12,
-                children: [
-                  AccountSelector(
-                    accounts: fromAccounts,
-                    selectedAccountId: _fromAccountId,
-                    labelText: '转出账户',
-                    emptyText: '暂无可转出的账户',
-                    onChanged: (account) {
-                      setState(() {
-                        _fromAccountId = account?.id;
-                        if (!_transferToAccounts(
-                          activeAccounts,
-                        ).any((target) => target.id == _toAccountId)) {
-                          _toAccountId = null;
-                        }
-                      });
-                    },
-                  ),
-                  AccountSelector(
-                    accounts: toAccounts,
-                    selectedAccountId: _toAccountId,
-                    labelText: '转入账户',
-                    emptyText: '暂无可转入的账户',
-                    onChanged: (account) {
-                      setState(() {
-                        _toAccountId = account?.id;
-                      });
-                    },
-                  ),
-                  if (hintText != null) AppFormHint(text: hintText),
-                ],
+              return AppSurface(
+                tone: AppSurfaceTone.subtle,
+                padding: const EdgeInsets.all(12),
+                child: AppFormColumn(
+                  gap: 12,
+                  children: [
+                    AccountSelector(
+                      accounts: fromAccounts,
+                      selectedAccountId: _fromAccountId,
+                      labelText: '转出账户',
+                      emptyText: '暂无可转出的账户',
+                      onChanged: (account) {
+                        setState(() {
+                          _fromAccountId = account?.id;
+                          if (!_transferToAccounts(
+                            activeAccounts,
+                          ).any((target) => target.id == _toAccountId)) {
+                            _toAccountId = null;
+                          }
+                        });
+                      },
+                    ),
+                    Row(
+                      children: [
+                        const Expanded(child: Divider(height: 1)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: AppIconActionButton(
+                            tooltip: '交换转出与转入账户',
+                            onPressed: _canSwap(fromAccount, toAccount)
+                                ? _swapAccounts
+                                : null,
+                            icon: Icons.swap_vert_rounded,
+                            variant: AppIconActionVariant.outlined,
+                          ),
+                        ),
+                        const Expanded(child: Divider(height: 1)),
+                      ],
+                    ),
+                    AccountSelector(
+                      accounts: toAccounts,
+                      selectedAccountId: _toAccountId,
+                      labelText: '转入账户',
+                      emptyText: '暂无可转入的账户',
+                      onChanged: (account) {
+                        setState(() {
+                          _toAccountId = account?.id;
+                        });
+                      },
+                    ),
+                    if (hintText != null) AppFormHint(text: hintText),
+                    if (_balancePreviewText(fromAccount) != null)
+                      AppFormHint(
+                        text: _balancePreviewText(fromAccount)!,
+                        icon: Icons.account_balance_wallet_rounded,
+                      ),
+                  ],
+                ),
               );
             },
             loading: () => const LinearProgressIndicator(),
@@ -149,6 +179,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
           ),
           DateTimePicker(
             selectedDate: _transactionAt,
+            showQuickOptions: true,
             onChanged: (value) {
               setState(() => _transactionAt = value);
             },
@@ -165,13 +196,9 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
             labelText: '备注',
             prefixIcon: const Icon(Icons.notes_rounded),
           ),
-          if (_errorText != null)
-            Text(
-              _errorText!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
         ],
       ),
+      errorText: _errorText,
       actions: appDialogIconActions(
         onCancel: () => Navigator.of(context).pop(),
         onConfirm: _submit,
@@ -451,6 +478,38 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
       MoneyAccountType.cloudQuickPass => MoneyPaymentMethod.unionPay,
       _ => MoneyPaymentMethod.bankTransfer,
     };
+  }
+
+  String? _balancePreviewText(MoneyAccountEntity? fromAccount) {
+    if (fromAccount == null || fromAccount.isVirtual) {
+      return null;
+    }
+    try {
+      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
+      final remaining = fromAccount.balanceMinor - amountMinor;
+      return '转出后余额 ${formatMoneyMinor(remaining, fromAccount.currencyCode)}';
+    } on MoneyAmountParseException {
+      return null;
+    }
+  }
+
+  bool _canSwap(
+    MoneyAccountEntity? fromAccount,
+    MoneyAccountEntity? toAccount,
+  ) {
+    if (fromAccount == null || toAccount == null) {
+      return false;
+    }
+    return _canTransferFrom(toAccount) &&
+        _canTransferTo(fromAccount, toAccount);
+  }
+
+  void _swapAccounts() {
+    setState(() {
+      final from = _fromAccountId;
+      _fromAccountId = _toAccountId;
+      _toAccountId = from;
+    });
   }
 
   String? _transferHintText(

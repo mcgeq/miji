@@ -50,6 +50,7 @@ class AccountSelector extends StatelessWidget {
       children: [
         if (showQuickSelect && quickAccounts.isNotEmpty) ...[
           Wrap(
+            alignment: WrapAlignment.center,
             spacing: 8,
             runSpacing: 8,
             children: [

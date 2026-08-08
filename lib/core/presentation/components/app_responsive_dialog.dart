@@ -170,6 +170,7 @@ class AppDialogScaffold extends StatelessWidget {
     this.maxWidth,
     this.titleTextAlign = TextAlign.start,
     this.actionsAlignment = WrapAlignment.end,
+    this.errorText,
   });
 
   final String title;
@@ -179,6 +180,7 @@ class AppDialogScaffold extends StatelessWidget {
   final double? maxWidth;
   final TextAlign titleTextAlign;
   final WrapAlignment actionsAlignment;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -269,6 +271,8 @@ class AppDialogScaffold extends StatelessWidget {
       ),
     );
 
+    final error = _errorTextWidget(errorText, colorScheme, theme);
+
     final Widget child;
     if (expandedCompactSheet) {
       final footerReserveHeight =
@@ -278,6 +282,7 @@ class AppDialogScaffold extends StatelessWidget {
       child = _ExpandedCompactDialogLayout(
         header: header,
         body: body,
+        error: error,
         actionsFooter: actionsFooter,
         horizontalPadding: spacing.cardPadding,
         footerReserveHeight: footerReserveHeight,
@@ -289,6 +294,7 @@ class AppDialogScaffold extends StatelessWidget {
         children: [
           header,
           Flexible(child: scrollableBody()),
+          error,
           actionsFooter,
         ],
       );
@@ -317,12 +323,36 @@ class AppDialogScaffold extends StatelessWidget {
       child: content,
     );
   }
+
+  Widget _errorTextWidget(
+    String? errorText,
+    ColorScheme colorScheme,
+    ThemeData theme,
+  ) {
+    final text = errorText?.trim() ?? '';
+    if (text.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: colorScheme.error,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0,
+        ),
+      ),
+    );
+  }
 }
 
 class _ExpandedCompactDialogLayout extends StatefulWidget {
   const _ExpandedCompactDialogLayout({
     required this.header,
     required this.body,
+    required this.error,
     required this.actionsFooter,
     required this.horizontalPadding,
     required this.footerReserveHeight,
@@ -330,6 +360,7 @@ class _ExpandedCompactDialogLayout extends StatefulWidget {
 
   final Widget header;
   final Widget body;
+  final Widget error;
   final Widget actionsFooter;
   final double horizontalPadding;
   final double footerReserveHeight;
@@ -414,7 +445,11 @@ class _ExpandedCompactDialogLayoutState
                     left: 0,
                     right: 0,
                     bottom: inset,
-                    child: widget.actionsFooter,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [widget.error, widget.actionsFooter],
+                    ),
                   ),
                 ],
               );

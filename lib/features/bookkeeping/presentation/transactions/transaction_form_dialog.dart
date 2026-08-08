@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
+import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_form_hint.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
@@ -16,11 +18,14 @@ import 'package:miji/shared/widgets/form_dropdown.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_split_dialog.dart';
 
 class TransactionCreateFormResult {
@@ -194,6 +199,11 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         ? MoneyCategoryKind.income
         : MoneyCategoryKind.expense;
     final catalog = ref.watch(currentUserCategoryCatalogProvider(kind));
+    final installmentAmountMinor = _installmentEntryAmountMinor;
+    final showInstallmentEntry =
+        installmentAmountMinor != null &&
+        installmentAmountMinor > 0 &&
+        selectedAccount?.type.isCreditLike == true;
     _loadRememberedDefaultsOnce(selectedLedger?.id);
 
     return AppDialogScaffold(
@@ -241,13 +251,12 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
             labelText: '金额',
             currencyCode: 'CNY',
             autofocus: !_isEditing,
-            onChanged: canConfigureSplit
-                ? (_) {
-                    if (_splitConfig != null) {
-                      setState(() {});
-                    }
-                  }
-                : null,
+            prominent: true,
+            onChanged: _isEditing
+                ? null
+                : (_) {
+                    setState(() {});
+                  },
           ),
           accounts.when(
             data: (value) => AccountSelector(
@@ -258,6 +267,8 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               emptyText: widget.type == MoneyTransactionType.income
                   ? '暂无可用于收入的账户'
                   : '暂无可选账户',
+              showQuickSelect: true,
+              quickSelectCount: 2,
               onChanged: (account) {
                 setState(() {
                   _accountId = account?.id;
@@ -277,6 +288,16 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
             error: (error, stackTrace) => const Text('账户读取失败'),
           ),
           if (accountRuleHint != null) AppFormHint(text: accountRuleHint),
+          if (showInstallmentEntry)
+            _InstallmentPaymentEntry(
+              onTap: () => _openInstallmentFromExpense(
+                accountRows: accountRows,
+                catalog: catalog.maybeWhen(
+                  data: (value) => value,
+                  orElse: () => const MoneyCategoryCatalog.empty(),
+                ),
+              ),
+            ),
           catalog.when(
             data: (value) => widget.showCategorySelector
                 ? CategorySelector(
@@ -305,6 +326,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           ),
           DateTimePicker(
             selectedDate: _transactionAt,
+            showQuickOptions: !_isEditing,
             onChanged: (value) {
               setState(() => _transactionAt = value);
             },
@@ -364,13 +386,9 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                       _splitConfigAmountMinor = null;
                     }),
             ),
-          if (_errorText != null)
-            Text(
-              _errorText!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
         ],
       ),
+      errorText: _errorText,
       actions: appDialogIconActions(
         onCancel: () => Navigator.of(context).pop(),
         onConfirm: _submit,
@@ -382,6 +400,88 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
   String get _dialogTitle {
     final action = _isEditing ? '编辑' : '记';
     return '$action${widget.type.label}';
+  }
+
+  int? get _installmentEntryAmountMinor {
+    if (_isEditing || widget.type != MoneyTransactionType.expense) {
+      return null;
+    }
+    try {
+      return parseMoneyAmountToMinor(_amountController.text);
+    } on MoneyAmountParseException {
+      return null;
+    }
+  }
+
+  Future<void> _openInstallmentFromExpense({
+    required List<MoneyAccountEntity> accountRows,
+    required MoneyCategoryCatalog catalog,
+  }) async {
+    final amountMinor = _installmentEntryAmountMinor;
+    final accountId = _accountId;
+    if (amountMinor == null || accountId == null || !mounted) {
+      return;
+    }
+
+    final category = catalog.categoryById(_categoryId);
+    final subCategory = catalog.subCategoryById(_subCategoryId);
+    final initialName = switch ((category, subCategory)) {
+      (null, _) => null,
+      (_, null) => category!.name,
+      _ => '${category!.name}/${subCategory!.name}',
+    };
+
+    final result = await showAppResponsiveDialog<MoneyInstallmentPlanDraft>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => InstallmentPlanFormDialog(
+        accounts: accountRows,
+        categoryCatalog: catalog,
+        initialAccountId: accountId,
+        initialCategoryId: _categoryId,
+        initialSubCategoryId: _subCategoryId,
+        initialPrincipalMinor: amountMinor,
+        initialName: initialName,
+      ),
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyInstallmentActionsProvider)
+          .createInstallmentPlan(result);
+      if (!mounted) return;
+      AppToast.success(_ensureToast(), context, '分期计划已创建');
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, _installmentErrorText(error));
+    }
+  }
+
+  FToast? _toast;
+
+  FToast _ensureToast() {
+    return _toast ??= (FToast()..init(context));
+  }
+
+  String _installmentErrorText(Object error) {
+    if (error is MoneyRepositoryException) {
+      return switch (error.code) {
+        MoneyRepositoryErrorCode.invalidInstallmentAmount => '请检查分期金额和期数',
+        MoneyRepositoryErrorCode.invalidInstallmentAccount => '请选择信用账户',
+        MoneyRepositoryErrorCode.installmentPlanNotFound => '分期计划不可用',
+        MoneyRepositoryErrorCode.invalidInstallmentStatus => '当前分期状态不可操作',
+        MoneyRepositoryErrorCode.creditCardLimitExceeded => '信用账户占用额度不能超过信用额度',
+        MoneyRepositoryErrorCode.accountNotFound => '账户不可用',
+        MoneyRepositoryErrorCode.databaseReadFailed => '读取失败',
+        MoneyRepositoryErrorCode.databaseWriteFailed => '保存失败',
+        _ => '操作失败',
+      };
+    }
+    return '操作失败';
   }
 
   void _loadRememberedDefaultsOnce(String? selectedLedgerId) {
@@ -1025,6 +1125,57 @@ class _SplitConfigSummary extends StatelessWidget {
             tooltip: '设置分摊',
             onPressed: enabled ? onConfigure : null,
             icon: Icons.tune_rounded,
+            variant: AppIconActionVariant.outlined,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InstallmentPaymentEntry extends StatelessWidget {
+  const _InstallmentPaymentEntry({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return AppSurface(
+      tone: AppSurfaceTone.subtle,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_month_rounded, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '分期支付',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '转为分期计划，首期到期自动入账',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          AppIconActionButton(
+            tooltip: '转为分期支付',
+            onPressed: onTap,
+            icon: Icons.arrow_forward_rounded,
             variant: AppIconActionVariant.outlined,
           ),
         ],

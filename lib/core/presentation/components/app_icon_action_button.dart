@@ -40,9 +40,7 @@ class AppIconActionButton extends StatelessWidget {
     // 使用 switch 表达式（无 default）
     final baseStyle = switch (variant) {
       AppIconActionVariant.outlined => IconButton.styleFrom(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(4)),
-        ),
+        shape: const StadiumBorder(),
         side: const BorderSide(color: Colors.grey),
       ),
       AppIconActionVariant.filled => IconButton.styleFrom(

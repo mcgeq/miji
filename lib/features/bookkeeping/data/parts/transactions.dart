@@ -688,6 +688,28 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
   }
 
   @override
+  Future<MoneyTransactionEntity> getTransactionForUser(
+    String userId,
+    String transactionId,
+  ) async {
+    try {
+      await ensureReadyForUser(userId);
+      return _mapTransaction(
+        await _getTransactionForUser(userId, transactionId),
+        tags: const <String>[],
+      );
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseReadFailed,
+        error,
+      );
+    }
+  }
+
+  @override
   Future<void> deleteTransaction(String userId, String transactionId) async {
     try {
       final transaction = await _getTransactionForUser(userId, transactionId);
