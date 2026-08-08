@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
+import 'package:miji/core/presentation/components/app_dialog_keyboard_scroll.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
@@ -7,6 +8,7 @@ const _dialogKeyboardTransitionDuration = Duration(milliseconds: 180);
 const _compactExpandedSheetTopGap = 12.0;
 const _compactExpandedSheetMinimumHeight = 332.0;
 const _compactDialogFooterReserveGap = 8.0;
+const _compactDialogErrorReserveHeight = 40.0;
 
 Future<T?> showAppResponsiveDialog<T>({
   required BuildContext context,
@@ -52,18 +54,9 @@ Future<T?> showAppResponsiveDialog<T>({
           return Material(
             color: Colors.transparent,
             child: SizedBox.expand(
-              child: Stack(
-                children: [
-                  AnimatedPositioned(
-                    duration: _dialogKeyboardTransitionDuration,
-                    curve: Curves.easeOutCubic,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    height: expandedHeight,
-                    child: sheet,
-                  ),
-                ],
+              child: SizedBox(
+                height: expandedHeight,
+                child: Align(alignment: Alignment.bottomCenter, child: sheet),
               ),
             ),
           );
@@ -235,19 +228,6 @@ class AppDialogScaffold extends StatelessWidget {
       ),
     );
 
-    Widget scrollableBody() {
-      return AnimatedSize(
-        duration: _dialogKeyboardTransitionDuration,
-        curve: Curves.easeOutCubic,
-        alignment: Alignment.topCenter,
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: EdgeInsets.symmetric(horizontal: spacing.cardPadding),
-          child: body,
-        ),
-      );
-    }
-
     final actionsFooter = DecoratedBox(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
@@ -273,19 +253,33 @@ class AppDialogScaffold extends StatelessWidget {
 
     final error = _errorTextWidget(errorText, colorScheme, theme);
 
+    final footerStack = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [error, actionsFooter],
+    );
+    final footerReserveHeight =
+        controls.iconButtonSize +
+        spacing.cardPadding * 2 +
+        _compactDialogFooterReserveGap +
+        _compactDialogErrorReserveHeight;
+
+    final keyboardScroll = AppDialogKeyboardScroll(
+      horizontalPadding: spacing.cardPadding,
+      footerReserve: footerReserveHeight,
+      footer: footerStack,
+      child: body,
+    );
+
     final Widget child;
     if (expandedCompactSheet) {
-      final footerReserveHeight =
-          controls.iconButtonSize +
-          spacing.cardPadding * 2 +
-          _compactDialogFooterReserveGap;
-      child = _ExpandedCompactDialogLayout(
-        header: header,
-        body: body,
-        error: error,
-        actionsFooter: actionsFooter,
-        horizontalPadding: spacing.cardPadding,
-        footerReserveHeight: footerReserveHeight,
+      child = Column(
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          header,
+          Expanded(child: keyboardScroll),
+        ],
       );
     } else {
       child = Column(
@@ -293,9 +287,7 @@ class AppDialogScaffold extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           header,
-          Flexible(child: scrollableBody()),
-          error,
-          actionsFooter,
+          Flexible(child: keyboardScroll),
         ],
       );
     }
@@ -345,188 +337,6 @@ class AppDialogScaffold extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _ExpandedCompactDialogLayout extends StatefulWidget {
-  const _ExpandedCompactDialogLayout({
-    required this.header,
-    required this.body,
-    required this.error,
-    required this.actionsFooter,
-    required this.horizontalPadding,
-    required this.footerReserveHeight,
-  });
-
-  final Widget header;
-  final Widget body;
-  final Widget error;
-  final Widget actionsFooter;
-  final double horizontalPadding;
-  final double footerReserveHeight;
-
-  @override
-  State<_ExpandedCompactDialogLayout> createState() =>
-      _ExpandedCompactDialogLayoutState();
-}
-
-class _ExpandedCompactDialogLayoutState
-    extends State<_ExpandedCompactDialogLayout>
-    with SingleTickerProviderStateMixin {
-  final ScrollController _scrollController = ScrollController();
-  late final AnimationController _keyboardAnimation;
-  double _insetFrom = 0;
-  double _insetTo = 0;
-  bool _focusScrollScheduled = false;
-
-  double get _animatedKeyboardInset =>
-      _insetFrom + (_insetTo - _insetFrom) * _keyboardAnimation.value;
-
-  @override
-  void initState() {
-    super.initState();
-    _keyboardAnimation = AnimationController(
-      vsync: this,
-      duration: _dialogKeyboardTransitionDuration,
-    )..addListener(_syncFocusedFieldWithKeyboard);
-    FocusManager.instance.addListener(_scheduleFocusedFieldVisibility);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    if (_insetTo != keyboardInset) {
-      _insetFrom = _animatedKeyboardInset;
-      _insetTo = keyboardInset;
-      _keyboardAnimation
-        ..stop()
-        ..value = 0;
-      if (_insetFrom != _insetTo) {
-        _keyboardAnimation.animateTo(
-          1,
-          duration: _dialogKeyboardTransitionDuration,
-          curve: Curves.easeOutCubic,
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    FocusManager.instance.removeListener(_scheduleFocusedFieldVisibility);
-    _keyboardAnimation.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.max,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        widget.header,
-        Expanded(
-          child: AnimatedBuilder(
-            animation: _keyboardAnimation,
-            builder: (context, child) {
-              final inset = _animatedKeyboardInset;
-              return Stack(
-                children: [
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    bottom: widget.footerReserveHeight + inset,
-                    child: child!,
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: inset,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [widget.error, widget.actionsFooter],
-                    ),
-                  ),
-                ],
-              );
-            },
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: EdgeInsets.symmetric(
-                horizontal: widget.horizontalPadding,
-              ),
-              child: widget.body,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _syncFocusedFieldWithKeyboard() {
-    if (_focusScrollScheduled) {
-      return;
-    }
-    _focusScrollScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusScrollScheduled = false;
-      if (!mounted || !_scrollController.hasClients) {
-        return;
-      }
-      final focusedContext = FocusManager.instance.primaryFocus?.context;
-      if (focusedContext == null) {
-        return;
-      }
-      final ownerContext =
-          _scrollController.position.context.notificationContext;
-      if (ownerContext == null) {
-        return;
-      }
-      var isInsideScrollable = false;
-      focusedContext.visitAncestorElements((element) {
-        if (identical(element, ownerContext)) {
-          isInsideScrollable = true;
-          return false;
-        }
-        return true;
-      });
-      if (!isInsideScrollable) {
-        return;
-      }
-      Scrollable.ensureVisible(
-        focusedContext,
-        duration: Duration.zero,
-        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
-      );
-    });
-  }
-
-  void _scheduleFocusedFieldVisibility() {
-    if (_focusScrollScheduled) {
-      return;
-    }
-    _focusScrollScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusScrollScheduled = false;
-      if (!mounted || !_scrollController.hasClients) {
-        return;
-      }
-      final focusedContext = FocusManager.instance.primaryFocus?.context;
-      if (focusedContext == null) {
-        return;
-      }
-      Scrollable.ensureVisible(
-        focusedContext,
-        duration: _dialogKeyboardTransitionDuration,
-        curve: Curves.easeOutCubic,
-        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
-      );
-    });
   }
 }
 
