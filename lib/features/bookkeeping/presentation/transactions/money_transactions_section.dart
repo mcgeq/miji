@@ -55,6 +55,7 @@ class _BudgetAppliedFilterSnapshot {
     required this.subCategoryId,
     required this.paymentMethod,
     required this.merchant,
+    required this.customPaymentMethodName,
     required this.dateStart,
     required this.dateEnd,
     required this.keyword,
@@ -66,6 +67,7 @@ class _BudgetAppliedFilterSnapshot {
   final String? subCategoryId;
   final MoneyPaymentMethod? paymentMethod;
   final String? merchant;
+  final String? customPaymentMethodName;
   final DateTime? dateStart;
   final DateTime? dateEnd;
   final String? keyword;
@@ -77,8 +79,10 @@ class _MoneyTransactionsSectionState
 
   FToast? _toast;
   late final TextEditingController _keywordController;
+  late final TextEditingController _merchantController;
   final List<MoneyTransactionEntity> _transactions = <MoneyTransactionEntity>[];
   Timer? _keywordDebounce;
+  Timer? _merchantDebounce;
   int _page = 1;
   int _loadSerial = 0;
   bool _hasMore = false;
@@ -92,6 +96,7 @@ class _MoneyTransactionsSectionState
   String? _subCategoryIdFilter;
   MoneyPaymentMethod? _paymentMethodFilter;
   String? _merchantFilter;
+  String? _customPaymentMethodNameFilter;
   DateTime? _dateStartFilter;
   DateTime? _dateEndFilter;
   String? _keywordFilter;
@@ -126,6 +131,7 @@ class _MoneyTransactionsSectionState
   void initState() {
     super.initState();
     _keywordController = TextEditingController();
+    _merchantController = TextEditingController();
     _applyQuery(_effectiveInitialQuery, updateController: true);
     unawaited(Future<void>.microtask(_refreshTransactions));
   }
@@ -150,7 +156,9 @@ class _MoneyTransactionsSectionState
   @override
   void dispose() {
     _keywordDebounce?.cancel();
+    _merchantDebounce?.cancel();
     _keywordController.dispose();
+    _merchantController.dispose();
     super.dispose();
   }
 
@@ -212,6 +220,7 @@ class _MoneyTransactionsSectionState
               type: _typeFilter,
               budgetId: _budgetIdFilter,
               accountId: _accountIdFilter,
+              paymentMethod: _paymentMethodFilter,
               categoryId: _categoryIdFilter,
               subCategoryId: _subCategoryIdFilter,
               dateStart: _dateStartFilter,
@@ -230,14 +239,17 @@ class _MoneyTransactionsSectionState
               isCategoryLocked: _isCategoryLocked,
               isDateLocked: _isDateLocked,
               keywordController: _keywordController,
+              merchantController: _merchantController,
               onBudgetChanged: (value) => _setBudgetFilter(value, budgetRows),
               onTypeChanged: _setTypeFilter,
               onAccountChanged: _setAccountFilter,
+              onPaymentMethodChanged: _setPaymentMethodFilter,
               onCategoryChanged: _setCategoryFilter,
               onSubCategoryChanged: _setSubCategoryFilter,
               onDateRangePressed: _pickDateRange,
               onClearDateRange: _clearDateRange,
               onKeywordChanged: _setKeywordFilterDebounced,
+              onMerchantChanged: _setMerchantFilterDebounced,
               onClearContext: widget.filterContext?.onClear,
             ),
           ],
@@ -541,6 +553,7 @@ class _MoneyTransactionsSectionState
       subCategoryId: _subCategoryIdFilter,
       paymentMethod: _paymentMethodFilter,
       merchant: _merchantFilter,
+      customPaymentMethodName: _customPaymentMethodNameFilter,
       dateStart: _dateStartFilter == null
           ? null
           : _startOfDay(_dateStartFilter!),
@@ -584,6 +597,7 @@ class _MoneyTransactionsSectionState
     _subCategoryIdFilter = query.subCategoryId;
     _paymentMethodFilter = query.paymentMethod;
     _merchantFilter = query.merchant?.trim();
+    _customPaymentMethodNameFilter = query.customPaymentMethodName?.trim();
     _dateStartFilter = query.dateStart == null
         ? null
         : _startOfDay(query.dateStart!.toLocal());
@@ -593,6 +607,7 @@ class _MoneyTransactionsSectionState
     _keywordFilter = query.keyword?.trim();
     if (updateController) {
       _keywordController.text = _keywordFilter ?? '';
+      _merchantController.text = _merchantFilter ?? '';
     }
   }
 
@@ -630,6 +645,16 @@ class _MoneyTransactionsSectionState
       _budgetIdFilter = null;
       _budgetAppliedFilterSnapshot = null;
       _accountIdFilter = value;
+    });
+    _refreshFromFilterChange();
+  }
+
+  void _setPaymentMethodFilter(MoneyPaymentMethod? value) {
+    setState(() {
+      _budgetIdFilter = null;
+      _budgetAppliedFilterSnapshot = null;
+      _paymentMethodFilter = value;
+      _customPaymentMethodNameFilter = null;
     });
     _refreshFromFilterChange();
   }
@@ -672,19 +697,24 @@ class _MoneyTransactionsSectionState
           _subCategoryIdFilter = snapshot.subCategoryId;
           _paymentMethodFilter = snapshot.paymentMethod;
           _merchantFilter = snapshot.merchant;
+          _customPaymentMethodNameFilter = snapshot.customPaymentMethodName;
           _dateStartFilter = snapshot.dateStart;
           _dateEndFilter = snapshot.dateEnd;
           _keywordFilter = snapshot.keyword;
           _keywordController.text = snapshot.keyword ?? '';
+          _merchantController.text = snapshot.merchant ?? '';
         } else {
           _typeFilter = null;
           _accountIdFilter = null;
           _categoryIdFilter = null;
           _subCategoryIdFilter = null;
+          _paymentMethodFilter = null;
+          _customPaymentMethodNameFilter = null;
           _dateStartFilter = null;
           _dateEndFilter = null;
           _keywordFilter = null;
           _keywordController.clear();
+          _merchantController.clear();
         }
       });
       _refreshFromFilterChange();
@@ -712,6 +742,7 @@ class _MoneyTransactionsSectionState
         subCategoryId: _subCategoryIdFilter,
         paymentMethod: _paymentMethodFilter,
         merchant: _merchantFilter,
+        customPaymentMethodName: _customPaymentMethodNameFilter,
         dateStart: _dateStartFilter,
         dateEnd: _dateEndFilter,
         keyword: _keywordFilter,
@@ -724,11 +755,13 @@ class _MoneyTransactionsSectionState
       _categoryIdFilter = budget.categoryId;
       _subCategoryIdFilter = budget.subCategoryId;
       _paymentMethodFilter = null;
+      _customPaymentMethodNameFilter = null;
       _merchantFilter = null;
       _dateStartFilter = _startOfDay(budget.periodStart.toLocal());
       _dateEndFilter = _startOfDay(budget.periodEnd.toLocal());
       _keywordFilter = null;
       _keywordController.clear();
+      _merchantController.clear();
     });
     _refreshFromFilterChange();
   }
@@ -779,6 +812,20 @@ class _MoneyTransactionsSectionState
       setState(() {
         final keyword = value.trim();
         _keywordFilter = keyword.isEmpty ? null : keyword;
+      });
+      _refreshFromFilterChange();
+    });
+  }
+
+  void _setMerchantFilterDebounced(String value) {
+    _merchantDebounce?.cancel();
+    _merchantDebounce = Timer(const Duration(milliseconds: 320), () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        final merchant = value.trim();
+        _merchantFilter = merchant.isEmpty ? null : merchant;
       });
       _refreshFromFilterChange();
     });
@@ -1464,6 +1511,7 @@ class _TransactionFilterFields extends StatelessWidget {
     required this.type,
     required this.budgetId,
     required this.accountId,
+    required this.paymentMethod,
     required this.categoryId,
     required this.subCategoryId,
     required this.dateStart,
@@ -1478,20 +1526,24 @@ class _TransactionFilterFields extends StatelessWidget {
     required this.isCategoryLocked,
     required this.isDateLocked,
     required this.keywordController,
+    required this.merchantController,
     required this.onBudgetChanged,
     required this.onTypeChanged,
     required this.onAccountChanged,
+    required this.onPaymentMethodChanged,
     required this.onCategoryChanged,
     required this.onSubCategoryChanged,
     required this.onDateRangePressed,
     required this.onClearDateRange,
     required this.onKeywordChanged,
+    required this.onMerchantChanged,
     required this.onClearContext,
   });
 
   final MoneyTransactionType? type;
   final String? budgetId;
   final String? accountId;
+  final MoneyPaymentMethod? paymentMethod;
   final String? categoryId;
   final String? subCategoryId;
   final DateTime? dateStart;
@@ -1506,14 +1558,17 @@ class _TransactionFilterFields extends StatelessWidget {
   final bool isCategoryLocked;
   final bool isDateLocked;
   final TextEditingController keywordController;
+  final TextEditingController merchantController;
   final ValueChanged<String?> onBudgetChanged;
   final ValueChanged<MoneyTransactionType?> onTypeChanged;
   final ValueChanged<String?> onAccountChanged;
+  final ValueChanged<MoneyPaymentMethod?> onPaymentMethodChanged;
   final ValueChanged<String?> onCategoryChanged;
   final ValueChanged<String?> onSubCategoryChanged;
   final VoidCallback onDateRangePressed;
   final VoidCallback onClearDateRange;
   final ValueChanged<String> onKeywordChanged;
+  final ValueChanged<String> onMerchantChanged;
   final VoidCallback? onClearContext;
 
   @override
@@ -1526,6 +1581,11 @@ class _TransactionFilterFields extends StatelessWidget {
     final canFilterCategory =
         type == MoneyTransactionType.income ||
         type == MoneyTransactionType.expense;
+    final closeSheet = AppFilterSheetTrigger.maybeCloserOf(context);
+    void apply(VoidCallback onChange) {
+      onChange();
+      closeSheet?.call();
+    }
 
     return Wrap(
       spacing: 8,
@@ -1549,7 +1609,7 @@ class _TransactionFilterFields extends StatelessWidget {
               initialSelection: budgetId,
               label: '预算',
               leadingIcon: const Icon(Icons.flag_rounded),
-              onSelected: onBudgetChanged,
+              onSelected: (value) => apply(() => onBudgetChanged(value)),
               enableFilter: true,
               menuHeight: 280,
               entries: [
@@ -1569,7 +1629,7 @@ class _TransactionFilterFields extends StatelessWidget {
               label: '类型',
               enabled: !isTypeLocked,
               leadingIcon: const Icon(Icons.tune_rounded),
-              onSelected: onTypeChanged,
+              onSelected: (value) => apply(() => onTypeChanged(value)),
               entries: [
                 const DropdownMenuEntry<MoneyTransactionType?>(
                   value: null,
@@ -1590,7 +1650,7 @@ class _TransactionFilterFields extends StatelessWidget {
               label: '账户',
               enabled: !isAccountLocked,
               leadingIcon: const Icon(Icons.account_balance_wallet_rounded),
-              onSelected: onAccountChanged,
+              onSelected: (value) => apply(() => onAccountChanged(value)),
               enableFilter: true,
               menuHeight: 280,
               entries: [
@@ -1603,6 +1663,30 @@ class _TransactionFilterFields extends StatelessWidget {
                 ),
               ],
             ),
+            FormDropdown<MoneyPaymentMethod?>(
+              key: ValueKey(
+                'transaction-payment-${paymentMethod?.name ?? 'all'}',
+              ),
+              width: 140,
+              initialSelection: paymentMethod,
+              label: '支付渠道',
+              leadingIcon: const Icon(Icons.payment_rounded),
+              onSelected: (value) => apply(() => onPaymentMethodChanged(value)),
+              enableFilter: true,
+              menuHeight: 280,
+              entries: [
+                const DropdownMenuEntry<MoneyPaymentMethod?>(
+                  value: null,
+                  label: '全部渠道',
+                ),
+                ...MoneyPaymentMethod.values.map(
+                  (method) => DropdownMenuEntry<MoneyPaymentMethod?>(
+                    value: method,
+                    label: method.label,
+                  ),
+                ),
+              ],
+            ),
             FormDropdown<String?>(
               key: ValueKey('transaction-category-${categoryId ?? 'all'}'),
               width: 140,
@@ -1610,7 +1694,7 @@ class _TransactionFilterFields extends StatelessWidget {
               label: categoryKind == MoneyCategoryKind.income ? '收入分类' : '支出分类',
               enabled: !isCategoryLocked && canFilterCategory,
               leadingIcon: const Icon(Icons.category_rounded),
-              onSelected: onCategoryChanged,
+              onSelected: (value) => apply(() => onCategoryChanged(value)),
               enableFilter: true,
               menuHeight: 280,
               entries: [
@@ -1635,7 +1719,7 @@ class _TransactionFilterFields extends StatelessWidget {
                   canFilterCategory &&
                   selectedCategory != null,
               leadingIcon: const Icon(Icons.sell_rounded),
-              onSelected: onSubCategoryChanged,
+              onSelected: (value) => apply(() => onSubCategoryChanged(value)),
               enableFilter: true,
               menuHeight: 280,
               entries: [
@@ -1682,6 +1766,17 @@ class _TransactionFilterFields extends StatelessWidget {
                 textInputAction: TextInputAction.search,
                 hintText: '搜索备注',
                 prefixIcon: const Icon(Icons.search_rounded),
+                compact: true,
+              ),
+            ),
+            SizedBox(
+              width: 260,
+              child: AppTextField(
+                controller: merchantController,
+                onChanged: onMerchantChanged,
+                textInputAction: TextInputAction.search,
+                hintText: '搜索商家（模糊匹配）',
+                prefixIcon: const Icon(Icons.storefront_rounded),
                 compact: true,
               ),
             ),

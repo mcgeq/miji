@@ -6,7 +6,7 @@ import 'package:miji/core/presentation/components/app_legend_item.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 
-class MoneyCategoryShareChart extends StatelessWidget {
+class MoneyCategoryShareChart extends StatefulWidget {
   const MoneyCategoryShareChart({
     super.key,
     required this.slices,
@@ -25,14 +25,26 @@ class MoneyCategoryShareChart extends StatelessWidget {
   final ValueChanged<MoneyStatisticsCategorySlice>? onSliceTap;
 
   @override
+  State<MoneyCategoryShareChart> createState() =>
+      _MoneyCategoryShareChartState();
+}
+
+class _MoneyCategoryShareChartState extends State<MoneyCategoryShareChart> {
+  int? _selectedIndex;
+
+  @override
   Widget build(BuildContext context) {
-    if (slices.isEmpty) {
-      return AppEmptyState(title: emptyTitle);
+    if (widget.slices.isEmpty) {
+      return AppEmptyState(title: widget.emptyTitle);
     }
 
-    final theme = Theme.of(context);
+    final slices = widget.slices;
     final total = slices.fold<int>(0, (sum, slice) => sum + slice.amountMinor);
     final topSlices = slices.take(6).toList();
+    final selected =
+        _selectedIndex == null || _selectedIndex! >= topSlices.length
+        ? null
+        : topSlices[_selectedIndex!];
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -48,25 +60,23 @@ class MoneyCategoryShareChart extends StatelessWidget {
                   sectionsSpace: 3,
                   centerSpaceRadius: compact ? 44 : 54,
                   startDegreeOffset: -90,
-                  pieTouchData: onSliceTap == null
-                      ? PieTouchData(enabled: false)
-                      : PieTouchData(
-                          touchCallback: (event, response) {
-                            if (!event.isInterestedForInteractions ||
-                                response == null) {
-                              return;
-                            }
-                            final index =
-                                response.touchedSection?.touchedSectionIndex;
-                            if (index == null || index < 0) {
-                              return;
-                            }
-                            if (index >= topSlices.length) {
-                              return;
-                            }
-                            onSliceTap?.call(topSlices[index]);
-                          },
-                        ),
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, response) {
+                      // 仅在点击抬起时切换一次，避免按下/抬起两次 toggle 相互抵消。
+                      if (event is! FlTapUpEvent || response == null) {
+                        return;
+                      }
+                      final index =
+                          response.touchedSection?.touchedSectionIndex;
+                      if (index == null || index < 0) {
+                        return;
+                      }
+                      if (index >= topSlices.length) {
+                        return;
+                      }
+                      _handleTap(index);
+                    },
+                  ),
                   sections: [
                     for (var index = 0; index < topSlices.length; index += 1)
                       PieChartSectionData(
@@ -75,30 +85,17 @@ class MoneyCategoryShareChart extends StatelessWidget {
                         radius: compact ? 18 : 22,
                         showTitle: false,
                         cornerRadius: 4,
+                        titleStyle: const TextStyle(fontSize: 0),
                       ),
                   ],
                 ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    centerLabel,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatMoneyMinor(total, currencyCode),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ],
+              _CenterSummary(
+                selected: selected,
+                total: total,
+                currencyCode: widget.currencyCode,
+                centerLabel: widget.centerLabel,
+                showPercent: true,
               ),
             ],
           ),
@@ -109,11 +106,11 @@ class MoneyCategoryShareChart extends StatelessWidget {
             for (var index = 0; index < slices.length; index += 1)
               _CategoryRankRow(
                 slice: slices[index],
-                currencyCode: currencyCode,
+                currencyCode: widget.currencyCode,
                 color: _sliceColor(context, index),
-                onTap: onSliceTap == null
+                onTap: widget.onSliceTap == null
                     ? null
-                    : () => onSliceTap!(slices[index]),
+                    : () => widget.onSliceTap!(slices[index]),
               ),
           ],
         );
@@ -141,10 +138,16 @@ class MoneyCategoryShareChart extends StatelessWidget {
     );
   }
 
+  void _handleTap(int index) {
+    setState(() {
+      _selectedIndex = _selectedIndex == index ? null : index;
+    });
+  }
+
   Color _sliceColor(BuildContext context, int index) {
     final theme = Theme.of(context);
     final palette = <Color>[
-      baseColor,
+      widget.baseColor,
       theme.colorScheme.tertiary,
       theme.colorScheme.primary,
       Colors.orange,
@@ -154,6 +157,87 @@ class MoneyCategoryShareChart extends StatelessWidget {
       Colors.cyan,
     ];
     return palette[index % palette.length];
+  }
+}
+
+class _CenterSummary extends StatelessWidget {
+  const _CenterSummary({
+    required this.selected,
+    required this.total,
+    required this.currencyCode,
+    required this.centerLabel,
+    required this.showPercent,
+  });
+
+  final MoneyStatisticsCategorySlice? selected;
+  final int total;
+  final String currencyCode;
+  final String centerLabel;
+  final bool showPercent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (selected != null) {
+      final percentage = total == 0
+          ? '0%'
+          : '${((selected!.amountMinor / total) * 100).toStringAsFixed(1)}%';
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            selected!.categoryName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            formatMoneyMinor(selected!.amountMinor, currencyCode),
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+          if (showPercent) ...[
+            const SizedBox(height: 2),
+            Text(
+              percentage,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                letterSpacing: 0,
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          centerLabel,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          formatMoneyMinor(total, currencyCode),
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    );
   }
 }
 

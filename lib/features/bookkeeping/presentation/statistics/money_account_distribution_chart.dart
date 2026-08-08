@@ -7,7 +7,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 
-class MoneyAccountDistributionChart extends StatelessWidget {
+class MoneyAccountDistributionChart extends StatefulWidget {
   const MoneyAccountDistributionChart({
     super.key,
     required this.slices,
@@ -18,8 +18,17 @@ class MoneyAccountDistributionChart extends StatelessWidget {
   final ValueChanged<MoneyStatisticsAccountSlice>? onAccountTap;
 
   @override
+  State<MoneyAccountDistributionChart> createState() =>
+      _MoneyAccountDistributionChartState();
+}
+
+class _MoneyAccountDistributionChartState
+    extends State<MoneyAccountDistributionChart> {
+  int? _selectedIndex;
+
+  @override
   Widget build(BuildContext context) {
-    final visibleSlices = slices
+    final visibleSlices = widget.slices
         .where((slice) => slice.assetMinor != 0 || slice.liabilityMinor != 0)
         .toList();
     if (visibleSlices.isEmpty) {
@@ -36,6 +45,10 @@ class MoneyAccountDistributionChart extends StatelessWidget {
       (sum, slice) => sum + slice.liabilityMinor,
     );
     final currencyCode = visibleSlices.first.currencyCode;
+    final selected =
+        _selectedIndex == null || _selectedIndex! >= visibleSlices.length
+        ? null
+        : visibleSlices[_selectedIndex!];
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -51,19 +64,32 @@ class MoneyAccountDistributionChart extends StatelessWidget {
                   sectionsSpace: 3,
                   centerSpaceRadius: compact ? 46 : 54,
                   startDegreeOffset: -90,
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, response) {
+                      // 仅在点击抬起时切换一次，避免按下/抬起两次 toggle 相互抵消。
+                      if (event is! FlTapUpEvent || response == null) {
+                        return;
+                      }
+                      final index =
+                          response.touchedSection?.touchedSectionIndex;
+                      if (index == null || index < 0) {
+                        return;
+                      }
+                      if (index >= visibleSlices.length) {
+                        return;
+                      }
+                      _handleTap(index);
+                    },
+                  ),
                   sections: [
-                    if (assetMinor > 0)
+                    for (
+                      var index = 0;
+                      index < visibleSlices.length;
+                      index += 1
+                    )
                       PieChartSectionData(
-                        value: assetMinor.toDouble(),
-                        color: theme.colorScheme.primary,
-                        radius: compact ? 18 : 22,
-                        showTitle: false,
-                        cornerRadius: 4,
-                      ),
-                    if (liabilityMinor > 0)
-                      PieChartSectionData(
-                        value: liabilityMinor.toDouble(),
-                        color: theme.moneyColors.expense,
+                        value: visibleSlices[index].totalMinor.toDouble(),
+                        color: _sliceColor(context, index),
                         radius: compact ? 18 : 22,
                         showTitle: false,
                         cornerRadius: 4,
@@ -71,26 +97,10 @@ class MoneyAccountDistributionChart extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '净资产',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatMoneyMinor(assetMinor - liabilityMinor, currencyCode),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ],
+              _AccountCenter(
+                selected: selected,
+                netWorthMinor: assetMinor - liabilityMinor,
+                currencyCode: currencyCode,
               ),
             ],
           ),
@@ -111,11 +121,14 @@ class MoneyAccountDistributionChart extends StatelessWidget {
               color: theme.moneyColors.expense,
             ),
             const SizedBox(height: 6),
-            for (final slice in visibleSlices)
+            for (var index = 0; index < visibleSlices.length; index += 1)
               _AccountSliceRow(
-                slice: slice,
+                slice: visibleSlices[index],
+                color: _sliceColor(context, index),
                 maxMinor: _maxSliceMinor,
-                onTap: onAccountTap == null ? null : () => onAccountTap!(slice),
+                onTap: widget.onAccountTap == null
+                    ? null
+                    : () => widget.onAccountTap!(visibleSlices[index]),
               ),
           ],
         );
@@ -143,14 +156,115 @@ class MoneyAccountDistributionChart extends StatelessWidget {
     );
   }
 
+  void _handleTap(int index) {
+    setState(() {
+      _selectedIndex = _selectedIndex == index ? null : index;
+    });
+  }
+
   int get _maxSliceMinor {
     var max = 1;
-    for (final slice in slices) {
+    for (final slice in widget.slices) {
       if (slice.totalMinor > max) {
         max = slice.totalMinor;
       }
     }
     return max;
+  }
+
+  Color _sliceColor(BuildContext context, int index) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final palette = <Color>[
+      colorScheme.primary,
+      theme.moneyColors.expense,
+      colorScheme.tertiary,
+      Colors.orange,
+      Colors.teal,
+      Colors.indigo,
+      Colors.pink,
+      Colors.cyan,
+    ];
+    return palette[index % palette.length];
+  }
+}
+
+class _AccountCenter extends StatelessWidget {
+  const _AccountCenter({
+    required this.selected,
+    required this.netWorthMinor,
+    required this.currencyCode,
+  });
+
+  final MoneyStatisticsAccountSlice? selected;
+  final int netWorthMinor;
+  final String currencyCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (selected != null) {
+      final amountMinor = selected!.assetMinor > 0
+          ? selected!.assetMinor
+          : selected!.liabilityMinor;
+      final total = selected!.assetMinor + selected!.liabilityMinor;
+      final percentage = total == 0
+          ? '0%'
+          : '${((amountMinor / total) * 100).toStringAsFixed(1)}%';
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            selected!.accountName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            formatMoneyMinor(amountMinor, currencyCode),
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            percentage,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '净资产',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          formatMoneyMinor(netWorthMinor, currencyCode),
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -191,11 +305,13 @@ class _AccountTotalRow extends StatelessWidget {
 class _AccountSliceRow extends StatelessWidget {
   const _AccountSliceRow({
     required this.slice,
+    required this.color,
     required this.maxMinor,
     this.onTap,
   });
 
   final MoneyStatisticsAccountSlice slice;
+  final Color color;
   final int maxMinor;
   final VoidCallback? onTap;
 
@@ -206,8 +322,6 @@ class _AccountSliceRow extends StatelessWidget {
     final amountMinor = slice.assetMinor > 0
         ? slice.assetMinor
         : slice.liabilityMinor;
-    final isLiability = slice.liabilityMinor > 0 && slice.assetMinor == 0;
-    final color = isLiability ? theme.moneyColors.expense : colorScheme.primary;
     final ratio = (amountMinor / maxMinor).clamp(0.04, 1.0).toDouble();
 
     return Padding(

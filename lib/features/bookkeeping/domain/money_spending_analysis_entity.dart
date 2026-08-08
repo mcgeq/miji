@@ -23,6 +23,7 @@ class MoneySpendingAnalysisQuery {
     this.accountType,
     this.paymentMethod,
     this.baselineMonthCount = 3,
+    this.windowMonthCount = 1,
   });
 
   final DateTime currentMonth;
@@ -31,9 +32,13 @@ class MoneySpendingAnalysisQuery {
   final MoneyAccountType? accountType;
   final MoneyPaymentMethod? paymentMethod;
   final int baselineMonthCount;
+  final int windowMonthCount;
 
   DateTime get dateStart {
-    return DateTime(currentMonth.year, currentMonth.month - baselineMonthCount);
+    return DateTime(
+      currentMonth.year,
+      currentMonth.month - baselineMonthCount - windowMonthCount + 1,
+    );
   }
 
   DateTime get dateEndExclusive {
@@ -84,6 +89,7 @@ class MoneySpendingAnalysis {
     required this.currencyCode,
     required this.currentMonth,
     required this.baselineMonthCount,
+    required this.windowMonthCount,
     required this.minimumAmountMinor,
     required this.minimumGrowthPercent,
     required this.anomalies,
@@ -93,6 +99,7 @@ class MoneySpendingAnalysis {
     : currencyCode = 'CNY',
       currentMonth = null,
       baselineMonthCount = 0,
+      windowMonthCount = 0,
       minimumAmountMinor = 0,
       minimumGrowthPercent = 0,
       anomalies = const <MoneySpendingAnomaly>[];
@@ -100,6 +107,7 @@ class MoneySpendingAnalysis {
   final String currencyCode;
   final DateTime? currentMonth;
   final int baselineMonthCount;
+  final int windowMonthCount;
   final int minimumAmountMinor;
   final double minimumGrowthPercent;
   final List<MoneySpendingAnomaly> anomalies;
@@ -111,6 +119,7 @@ class MoneySpendingAnalysis {
     required DateTime currentMonth,
     required Iterable<MoneySpendingAnalysisSample> samples,
     int baselineMonthCount = 3,
+    int windowMonthCount = 1,
     int minimumAmountMinor = 5000,
     double minimumGrowthPercent = 20,
   }) {
@@ -141,14 +150,26 @@ class MoneySpendingAnalysis {
 
     final anomalies = <MoneySpendingAnomaly>[];
     for (final bucket in buckets.values) {
-      final currentAmountMinor =
-          bucket.amountByMonth[normalizedCurrentMonth] ?? 0;
+      var currentAmountMinor = 0;
+      var currentTransactionCount = 0;
+      for (var index = 0; index < windowMonthCount; index++) {
+        final month = DateTime(
+          normalizedCurrentMonth.year,
+          normalizedCurrentMonth.month - index,
+        );
+        currentAmountMinor += bucket.amountByMonth[month] ?? 0;
+        currentTransactionCount += bucket.transactionCountByMonth[month] ?? 0;
+      }
       if (currentAmountMinor < minimumAmountMinor) {
         continue;
       }
 
       var baselineTotalMinor = 0;
-      for (var index = 1; index <= baselineMonthCount; index++) {
+      for (
+        var index = windowMonthCount;
+        index < windowMonthCount + baselineMonthCount;
+        index++
+      ) {
         final month = DateTime(
           normalizedCurrentMonth.year,
           normalizedCurrentMonth.month - index,
@@ -179,8 +200,7 @@ class MoneySpendingAnalysis {
           currentAmountMinor: currentAmountMinor,
           baselineAverageMinor: baselineAverageMinor,
           growthPercent: growthPercent,
-          transactionCount:
-              bucket.transactionCountByMonth[normalizedCurrentMonth] ?? 0,
+          transactionCount: currentTransactionCount,
         ),
       );
     }
@@ -197,6 +217,7 @@ class MoneySpendingAnalysis {
       currencyCode: currencyCode,
       currentMonth: normalizedCurrentMonth,
       baselineMonthCount: baselineMonthCount,
+      windowMonthCount: windowMonthCount,
       minimumAmountMinor: minimumAmountMinor,
       minimumGrowthPercent: minimumGrowthPercent,
       anomalies: anomalies.take(20).toList(growable: false),

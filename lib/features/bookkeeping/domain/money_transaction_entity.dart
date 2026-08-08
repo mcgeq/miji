@@ -1,3 +1,5 @@
+import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+
 enum MoneyTransactionType {
   income,
   expense,
@@ -341,10 +343,12 @@ class MoneyTransactionQuery {
     this.pageSize = 20,
     this.type,
     this.accountId,
+    this.accountType,
     this.categoryId,
     this.subCategoryId,
     this.paymentMethod,
     this.merchant,
+    this.customPaymentMethodName,
     this.dateStart,
     this.dateEnd,
     this.keyword,
@@ -356,10 +360,12 @@ class MoneyTransactionQuery {
   final int pageSize;
   final MoneyTransactionType? type;
   final String? accountId;
+  final MoneyAccountType? accountType;
   final String? categoryId;
   final String? subCategoryId;
   final MoneyPaymentMethod? paymentMethod;
   final String? merchant;
+  final String? customPaymentMethodName;
   final DateTime? dateStart;
   final DateTime? dateEnd;
   final String? keyword;
@@ -374,10 +380,12 @@ class MoneyTransactionQuery {
             pageSize == other.pageSize &&
             type == other.type &&
             accountId == other.accountId &&
+            accountType == other.accountType &&
             categoryId == other.categoryId &&
             subCategoryId == other.subCategoryId &&
             paymentMethod == other.paymentMethod &&
             merchant == other.merchant &&
+            customPaymentMethodName == other.customPaymentMethodName &&
             dateStart == other.dateStart &&
             dateEnd == other.dateEnd &&
             keyword == other.keyword &&
@@ -392,10 +400,12 @@ class MoneyTransactionQuery {
       pageSize,
       type,
       accountId,
+      accountType,
       categoryId,
       subCategoryId,
       paymentMethod,
       merchant,
+      customPaymentMethodName,
       dateStart,
       dateEnd,
       keyword,

@@ -17,7 +17,7 @@ class MoneySpendingAnomalyCard extends StatelessWidget {
 
     return AppContentPanel(
       title: '消费变化',
-      subtitle: '当前月较前三个月均值增长超过 20%',
+      subtitle: _comparisonLabel(analysis),
       leadingIcon: Icons.query_stats_rounded,
       leadingColor: expenseColor,
       child: analysis.hasAnomalies
@@ -33,9 +33,18 @@ class MoneySpendingAnomalyCard extends StatelessWidget {
             )
           : const AppEmptyState(
               title: '暂无明显消费变化',
-              message: '当前月没有达到展示阈值的分类、子分类或商家。',
+              message: '所选周期内没有达到展示阈值的分类、子分类或商家。',
             ),
     );
+  }
+
+  String _comparisonLabel(MoneySpendingAnalysis analysis) {
+    final window = analysis.windowMonthCount;
+    final baseline = analysis.baselineMonthCount;
+    if (window <= 1) {
+      return '当前月较前三个月均值增长超过 20%';
+    }
+    return '近 $window 个月较此前 $baseline 个月均值增长超过 20%';
   }
 }
 

@@ -46,6 +46,42 @@ void main() {
 
     expect(analysis.anomalies, isEmpty);
   });
+
+  test('aggregates the window months when windowMonthCount exceeds one', () {
+    final analysis = MoneySpendingAnalysis.fromSamples(
+      currencyCode: 'CNY',
+      currentMonth: DateTime(2026, 8),
+      windowMonthCount: 3,
+      baselineMonthCount: 3,
+      samples: [
+        _sample('category', 'food', '餐饮', DateTime(2026, 3), 4000, 1),
+        _sample('category', 'food', '餐饮', DateTime(2026, 4), 5000, 1),
+        _sample('category', 'food', '餐饮', DateTime(2026, 5), 6000, 1),
+        _sample('category', 'food', '餐饮', DateTime(2026, 6), 7000, 1),
+        _sample('category', 'food', '餐饮', DateTime(2026, 7), 8000, 1),
+        _sample('category', 'food', '餐饮', DateTime(2026, 8), 9000, 1),
+      ],
+    );
+
+    expect(analysis.anomalies, hasLength(1));
+    final anomaly = analysis.anomalies.single;
+    expect(anomaly.name, '餐饮');
+    expect(anomaly.currentAmountMinor, 24000);
+    expect(anomaly.baselineAverageMinor, 5000);
+    expect(anomaly.growthPercent, closeTo(380, 0.1));
+  });
+
+  test('dateStart covers the window and baseline months', () {
+    final query = MoneySpendingAnalysisQuery(
+      currentMonth: DateTime(2026, 8),
+      ledgerId: 'ledger',
+      windowMonthCount: 3,
+      baselineMonthCount: 3,
+    );
+
+    expect(query.dateStart, DateTime(2026, 3));
+    expect(query.dateEndExclusive, DateTime(2026, 9));
+  });
 }
 
 MoneySpendingAnalysisSample _sample(

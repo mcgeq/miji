@@ -191,10 +191,12 @@ class MoneyStatisticsPaymentMethodSlice {
     required this.expenseMinor,
     required this.transactionCount,
     required this.percentage,
+    this.customPaymentMethodName,
   });
 
   final MoneyPaymentMethod paymentMethod;
   final String label;
+  final String? customPaymentMethodName;
   final int amountMinor;
   final int incomeMinor;
   final int expenseMinor;

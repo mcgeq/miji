@@ -601,7 +601,8 @@ class MoneySpendingAnalysisRequest {
             query.accountId == other.query.accountId &&
             query.accountType == other.query.accountType &&
             query.paymentMethod == other.query.paymentMethod &&
-            query.baselineMonthCount == other.query.baselineMonthCount;
+            query.baselineMonthCount == other.query.baselineMonthCount &&
+            query.windowMonthCount == other.query.windowMonthCount;
   }
 
   @override
@@ -614,6 +615,7 @@ class MoneySpendingAnalysisRequest {
       query.accountType,
       query.paymentMethod,
       query.baselineMonthCount,
+      query.windowMonthCount,
     );
   }
 }

@@ -7,7 +7,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 
-class MoneyPaymentMethodChart extends StatelessWidget {
+class MoneyPaymentMethodChart extends StatefulWidget {
   const MoneyPaymentMethodChart({
     super.key,
     required this.slices,
@@ -20,14 +20,26 @@ class MoneyPaymentMethodChart extends StatelessWidget {
   final ValueChanged<MoneyStatisticsPaymentMethodSlice>? onSliceTap;
 
   @override
+  State<MoneyPaymentMethodChart> createState() =>
+      _MoneyPaymentMethodChartState();
+}
+
+class _MoneyPaymentMethodChartState extends State<MoneyPaymentMethodChart> {
+  int? _selectedIndex;
+
+  @override
   Widget build(BuildContext context) {
-    if (slices.isEmpty) {
+    if (widget.slices.isEmpty) {
       return const AppEmptyState(title: '暂无支付渠道数据');
     }
 
-    final theme = Theme.of(context);
+    final slices = widget.slices;
     final total = slices.fold<int>(0, (sum, slice) => sum + slice.amountMinor);
     final topSlices = slices.take(7).toList();
+    final selected =
+        _selectedIndex == null || _selectedIndex! >= topSlices.length
+        ? null
+        : topSlices[_selectedIndex!];
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -43,25 +55,23 @@ class MoneyPaymentMethodChart extends StatelessWidget {
                   sectionsSpace: 3,
                   centerSpaceRadius: compact ? 44 : 54,
                   startDegreeOffset: -90,
-                  pieTouchData: onSliceTap == null
-                      ? PieTouchData(enabled: false)
-                      : PieTouchData(
-                          touchCallback: (event, response) {
-                            if (!event.isInterestedForInteractions ||
-                                response == null) {
-                              return;
-                            }
-                            final index =
-                                response.touchedSection?.touchedSectionIndex;
-                            if (index == null || index < 0) {
-                              return;
-                            }
-                            if (index >= topSlices.length) {
-                              return;
-                            }
-                            onSliceTap?.call(topSlices[index]);
-                          },
-                        ),
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, response) {
+                      // 仅在点击抬起时切换一次，避免按下/抬起两次 toggle 相互抵消。
+                      if (event is! FlTapUpEvent || response == null) {
+                        return;
+                      }
+                      final index =
+                          response.touchedSection?.touchedSectionIndex;
+                      if (index == null || index < 0) {
+                        return;
+                      }
+                      if (index >= topSlices.length) {
+                        return;
+                      }
+                      _handleTap(index);
+                    },
+                  ),
                   sections: [
                     for (var index = 0; index < topSlices.length; index += 1)
                       PieChartSectionData(
@@ -74,26 +84,10 @@ class MoneyPaymentMethodChart extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '渠道合计',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatMoneyMinor(total, currencyCode),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ],
+              _PaymentMethodCenter(
+                selected: selected,
+                total: total,
+                currencyCode: widget.currencyCode,
               ),
             ],
           ),
@@ -104,11 +98,11 @@ class MoneyPaymentMethodChart extends StatelessWidget {
             for (var index = 0; index < slices.length; index += 1)
               _PaymentMethodRankRow(
                 slice: slices[index],
-                currencyCode: currencyCode,
+                currencyCode: widget.currencyCode,
                 color: _sliceColor(context, index),
-                onTap: onSliceTap == null
+                onTap: widget.onSliceTap == null
                     ? null
-                    : () => onSliceTap!(slices[index]),
+                    : () => widget.onSliceTap!(slices[index]),
               ),
           ],
         );
@@ -136,6 +130,12 @@ class MoneyPaymentMethodChart extends StatelessWidget {
     );
   }
 
+  void _handleTap(int index) {
+    setState(() {
+      _selectedIndex = _selectedIndex == index ? null : index;
+    });
+  }
+
   Color _sliceColor(BuildContext context, int index) {
     final theme = Theme.of(context);
     final palette = <Color>[
@@ -149,6 +149,81 @@ class MoneyPaymentMethodChart extends StatelessWidget {
       Colors.cyan,
     ];
     return palette[index % palette.length];
+  }
+}
+
+class _PaymentMethodCenter extends StatelessWidget {
+  const _PaymentMethodCenter({
+    required this.selected,
+    required this.total,
+    required this.currencyCode,
+  });
+
+  final MoneyStatisticsPaymentMethodSlice? selected;
+  final int total;
+  final String currencyCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (selected != null) {
+      final percentage = total == 0
+          ? '0%'
+          : '${((selected!.amountMinor / total) * 100).toStringAsFixed(1)}%';
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            selected!.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            formatMoneyMinor(selected!.amountMinor, currencyCode),
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${selected!.transactionCount} 笔 · $percentage',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '渠道合计',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          formatMoneyMinor(total, currencyCode),
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    );
   }
 }
 

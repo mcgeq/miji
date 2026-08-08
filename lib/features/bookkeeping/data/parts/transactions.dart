@@ -792,6 +792,10 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
       final transactionIds = query.ledgerId == null
           ? null
           : await _transactionIdsForLedger(userId, query.ledgerId!);
+      final accountType = query.accountType;
+      final accountIdsForType = accountType == null
+          ? null
+          : await _accountIdsForType(userId, accountType);
       final totalExp = database.moneyTransactions.id.count();
       final countQuery = database.selectOnly(database.moneyTransactions)
         ..addColumns([totalExp])
@@ -801,6 +805,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
             userId,
             query,
             transactionIds: transactionIds,
+            accountIdsForType: accountIdsForType,
           ),
         );
       final total = (await countQuery.getSingle()).read(totalExp) ?? 0;
@@ -813,6 +818,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
                     userId,
                     query,
                     transactionIds: transactionIds,
+                    accountIdsForType: accountIdsForType,
                   ),
                 )
                 ..orderBy([
@@ -1275,6 +1281,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
     String userId,
     MoneyTransactionQuery query, {
     List<String>? transactionIds,
+    List<String>? accountIdsForType,
   }) {
     var predicate = table.userId.equals(userId) & table.isDeleted.equals(false);
 
@@ -1308,6 +1315,15 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
             _DriftMoneyRepositoryBase._transferInMarker,
           ]);
     }
+    final accountType = query.accountType;
+    if (accountType != null) {
+      final ids = accountIdsForType;
+      predicate =
+          predicate &
+          table.accountId.isIn(
+            ids == null || ids.isEmpty ? const ['__no_account_of_type__'] : ids,
+          );
+    }
     final categoryId = query.categoryId;
     if (categoryId != null) {
       predicate = predicate & table.categoryId.equals(categoryId);
@@ -1324,6 +1340,12 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
     final merchant = query.merchant?.trim();
     if (merchant != null && merchant.isNotEmpty) {
       predicate = predicate & table.merchant.like('%$merchant%');
+    }
+    final customPaymentMethodName = query.customPaymentMethodName?.trim();
+    if (customPaymentMethodName != null && customPaymentMethodName.isNotEmpty) {
+      predicate =
+          predicate &
+          table.customPaymentMethodName.like('%$customPaymentMethodName%');
     }
     final dateStart = query.dateStart;
     if (dateStart != null) {

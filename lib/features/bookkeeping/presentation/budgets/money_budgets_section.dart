@@ -405,6 +405,12 @@ class _BudgetFilterFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final closeSheet = AppFilterSheetTrigger.maybeCloserOf(context);
+    void apply(VoidCallback onChange) {
+      onChange();
+      closeSheet?.call();
+    }
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -415,7 +421,7 @@ class _BudgetFilterFields extends StatelessWidget {
           initialSelection: trackingType,
           label: '类型',
           leadingIcon: const Icon(Icons.tune_rounded),
-          onSelected: onTrackingTypeChanged,
+          onSelected: (value) => apply(() => onTrackingTypeChanged(value)),
           entries: const [
             DropdownMenuEntry<MoneyBudgetTrackingType?>(
               value: null,
@@ -437,7 +443,7 @@ class _BudgetFilterFields extends StatelessWidget {
           initialSelection: periodType,
           label: '周期',
           leadingIcon: const Icon(Icons.event_repeat_rounded),
-          onSelected: onPeriodTypeChanged,
+          onSelected: (value) => apply(() => onPeriodTypeChanged(value)),
           entries: const [
             DropdownMenuEntry<MoneyBudgetPeriodType?>(
               value: null,
@@ -473,7 +479,7 @@ class _BudgetFilterFields extends StatelessWidget {
           leadingIcon: const Icon(Icons.account_tree_rounded),
           onSelected: (value) {
             if (value != null) {
-              onScopeChanged(value);
+              apply(() => onScopeChanged(value));
             }
           },
           entries: const [
@@ -497,7 +503,7 @@ class _BudgetFilterFields extends StatelessWidget {
           leadingIcon: const Icon(Icons.flag_rounded),
           onSelected: (value) {
             if (value != null) {
-              onStatusChanged(value);
+              apply(() => onStatusChanged(value));
             }
           },
           entries: const [

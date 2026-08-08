@@ -220,9 +220,9 @@ class _BookkeepingPageState extends State<BookkeepingPage> {
     MoneyTransactionQuery query,
     String title,
     String subtitle,
-    String contextLabel,
+    String? contextLabel,
   ) {
-    if (_isAccountOnlyStatisticsQuery(query)) {
+    if (contextLabel == null || _isAccountOnlyStatisticsQuery(query)) {
       _showTransactions(query);
       return;
     }

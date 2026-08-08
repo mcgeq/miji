@@ -110,6 +110,7 @@ mixin _Statistics on _DriftMoneyRepositoryBase {
         currencyCode: currencyCode,
         currentMonth: query.currentMonth,
         baselineMonthCount: query.baselineMonthCount,
+        windowMonthCount: query.windowMonthCount,
         samples: samples,
       );
     } catch (error) {
@@ -444,11 +445,16 @@ mixin _Statistics on _DriftMoneyRepositoryBase {
     final buckets = <String, _MutableStatisticsPaymentMethod>{};
     for (final row in rows) {
       final method = MoneyPaymentMethod.fromStorageValue(row.paymentMethod);
+      final customPaymentMethodName = _blankToNull(row.customPaymentMethodName);
       final label = _statisticsPaymentMethodLabel(row, method);
       final key = '${method.storageValue}|$label';
       final bucket = buckets.putIfAbsent(
         key,
-        () => _MutableStatisticsPaymentMethod(method: method, label: label),
+        () => _MutableStatisticsPaymentMethod(
+          method: method,
+          label: label,
+          customPaymentMethodName: customPaymentMethodName,
+        ),
       );
       if (row.type == MoneyTransactionType.income.storageValue) {
         bucket.incomeMinor += _effectiveTransactionAmountMinor(row);
@@ -471,6 +477,7 @@ mixin _Statistics on _DriftMoneyRepositoryBase {
         MoneyStatisticsPaymentMethodSlice(
           paymentMethod: bucket.method,
           label: bucket.label,
+          customPaymentMethodName: bucket.customPaymentMethodName,
           amountMinor: _statisticsPaymentAmount(bucket, query.typeFocus),
           incomeMinor: bucket.incomeMinor,
           expenseMinor: bucket.expenseMinor,
@@ -796,23 +803,6 @@ mixin _Statistics on _DriftMoneyRepositoryBase {
         ),
     ]..sort((a, b) => b.totalMinor.compareTo(a.totalMinor));
     return slices;
-  }
-
-  Future<List<String>> _accountIdsForType(
-    String userId,
-    MoneyAccountType accountType,
-  ) async {
-    final rows =
-        await (database.select(database.moneyAccounts)..where(
-              (account) =>
-                  account.userId.equals(userId) &
-                  account.type.equals(accountType.storageValue) &
-                  account.isActive.equals(true) &
-                  account.isVirtual.equals(false) &
-                  account.isDeleted.equals(false),
-            ))
-            .get();
-    return [for (final row in rows) row.id];
   }
 
   @override

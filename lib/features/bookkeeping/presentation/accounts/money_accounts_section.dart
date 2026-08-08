@@ -744,6 +744,11 @@ class _AccountFilterFields extends StatelessWidget {
     final currencies =
         accounts.map((account) => account.currencyCode).toSet().toList()
           ..sort();
+    final closeSheet = AppFilterSheetTrigger.maybeCloserOf(context);
+    void apply(VoidCallback onChange) {
+      onChange();
+      closeSheet?.call();
+    }
 
     return Wrap(
       spacing: 8,
@@ -756,7 +761,7 @@ class _AccountFilterFields extends StatelessWidget {
           label: '状态',
           onSelected: (value) {
             if (value != null) {
-              onStatusChanged(value);
+              apply(() => onStatusChanged(value));
             }
           },
           entries: MoneyAccountStatusFilter.values
@@ -770,7 +775,7 @@ class _AccountFilterFields extends StatelessWidget {
           width: 120,
           initialSelection: typeFilter,
           label: '类型',
-          onSelected: onTypeChanged,
+          onSelected: (value) => apply(() => onTypeChanged(value)),
           enableFilter: true,
           menuHeight: 250,
           entries: [
@@ -791,7 +796,7 @@ class _AccountFilterFields extends StatelessWidget {
           width: 120,
           initialSelection: currencyFilter,
           label: '币种',
-          onSelected: onCurrencyChanged,
+          onSelected: (value) => apply(() => onCurrencyChanged(value)),
           enableFilter: true,
           entries: [
             const DropdownMenuEntry<String?>(value: null, label: '全部币种'),
@@ -808,7 +813,7 @@ class _AccountFilterFields extends StatelessWidget {
           label: '排序',
           onSelected: (value) {
             if (value != null) {
-              onSortFieldChanged(value);
+              apply(() => onSortFieldChanged(value));
             }
           },
           entries: MoneyAccountSortField.values

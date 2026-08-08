@@ -141,10 +141,15 @@ int _effectiveAmountMinor({
 }
 
 class _MutableStatisticsPaymentMethod {
-  _MutableStatisticsPaymentMethod({required this.method, required this.label});
+  _MutableStatisticsPaymentMethod({
+    required this.method,
+    required this.label,
+    required this.customPaymentMethodName,
+  });
 
   final MoneyPaymentMethod method;
   final String label;
+  final String? customPaymentMethodName;
   int incomeMinor = 0;
   int expenseMinor = 0;
   int transactionCount = 0;
@@ -2390,7 +2395,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     if (customName == null) {
       return method.label;
     }
-    return '${method.label} · $customName';
+    return customName;
   }
 
   int _statisticsPaymentAmount(
@@ -4466,6 +4471,23 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       );
     }
     return ledger;
+  }
+
+  Future<List<String>> _accountIdsForType(
+    String userId,
+    MoneyAccountType accountType,
+  ) async {
+    final rows =
+        await (database.select(database.moneyAccounts)..where(
+              (account) =>
+                  account.userId.equals(userId) &
+                  account.type.equals(accountType.storageValue) &
+                  account.isActive.equals(true) &
+                  account.isVirtual.equals(false) &
+                  account.isDeleted.equals(false),
+            ))
+            .get();
+    return [for (final row in rows) row.id];
   }
 
   Future<String> _resolveLedgerId(String userId, String? ledgerId) async {
