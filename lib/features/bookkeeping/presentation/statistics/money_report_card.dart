@@ -23,13 +23,36 @@ class MoneyReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final failed = latestReport?.status == 'failed';
     return AppContentPanel(
       title: '分析报表',
       subtitle: '月度收支报告',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (latestReport != null) ...[
+          if (failed) ...[
+            Row(
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '上次生成失败，请重试'
+                    '${_failureSuffix(latestReport)}。',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ] else if (latestReport != null) ...[
             _ReportSummary(report: latestReport!),
             const SizedBox(height: 14),
           ] else ...[
@@ -50,12 +73,31 @@ class MoneyReportCard extends StatelessWidget {
                       ),
                     )
                   : const Icon(Icons.auto_awesome_rounded, size: 18),
-              label: Text(isGenerating ? '生成中...' : '生成本月报表'),
+              label: Text(
+                failed
+                    ? '重新生成本月报表'
+                    : isGenerating
+                    ? '生成中...'
+                    : '生成本月报表',
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _failureSuffix(MoneyAnalysisReportEntity? report) {
+    final message = report?.errorMessage?.trim();
+    if (message == null || message.isEmpty) {
+      return '';
+    }
+    const maxLength = 60;
+    final singleLine = message.replaceAll('\n', ' ');
+    final snippet = singleLine.length > maxLength
+        ? '${singleLine.substring(0, maxLength)}…'
+        : singleLine;
+    return '（$snippet）';
   }
 }
 

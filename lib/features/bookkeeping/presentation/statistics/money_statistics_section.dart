@@ -247,6 +247,8 @@ class _StatisticsAsyncBody extends ConsumerWidget {
       paymentMethod: filter.paymentMethod,
       windowMonthCount: windowMonths,
       baselineMonthCount: math.max(windowMonths, 3),
+      minimumAmountMinor: filter.anomalyMinAmountMinor,
+      minimumGrowthPercent: filter.anomalyMinGrowthPercent,
     );
   }
 
@@ -363,6 +365,11 @@ class _StatisticsAsyncBody extends ConsumerWidget {
           data: (value) => value,
           orElse: () => const <MoneyBillReminderEntity>[],
         ),
+        accountsById: {
+          for (final account
+              in contextValue?.accounts ?? const <MoneyAccountEntity>[])
+            account.id: account,
+        },
         upcomingCashFlow: upcomingCashFlow.maybeWhen(
           data: (value) => value,
           orElse: () => const MoneyUpcomingCashFlowSummary.empty(),
@@ -392,12 +399,20 @@ class _StatisticsAsyncBody extends ConsumerWidget {
                 periodEnd: DateTime(now.year, now.month + 1, 1),
               ),
             );
-            ref.invalidate(currentUserLatestReportProvider((id, 'monthly')));
+          } catch (_) {
+            // 失败状态已写入数据库，invalidate 后报表卡会展示失败态与重试入口。
           } finally {
+            ref.invalidate(currentUserLatestReportProvider((id, 'monthly')));
             ref.read(_reportGeneratingProvider.notifier).done();
           }
         },
         onOpenTransactions: onOpenTransactions,
+        onAnomalyThresholdChanged: (amountMinor, growthPercent) => ref
+            .read(moneyStatisticsFilterProvider.notifier)
+            .setAnomalyThresholds(
+              minimumAmountMinor: amountMinor,
+              minimumGrowthPercent: growthPercent,
+            ),
       ),
     );
   }
@@ -622,12 +637,14 @@ class _StatisticsBody extends StatelessWidget {
     required this.insights,
     required this.budgetHistoryTrend,
     required this.billReminders,
+    required this.accountsById,
     required this.upcomingCashFlow,
     required this.latestReport,
     required this.isGenerating,
     required this.netWorthTrend,
     required this.onGenerateReport,
     required this.onOpenTransactions,
+    required this.onAnomalyThresholdChanged,
   });
 
   final MoneyStatisticsSummary summary;
@@ -639,6 +656,7 @@ class _StatisticsBody extends StatelessWidget {
   final MoneyStatisticsInsights insights;
   final List<MoneyBudgetHistoryTrendPoint> budgetHistoryTrend;
   final List<MoneyBillReminderEntity> billReminders;
+  final Map<String, MoneyAccountEntity> accountsById;
   final MoneyUpcomingCashFlowSummary upcomingCashFlow;
   final MoneyAnalysisReportEntity? latestReport;
   final bool isGenerating;
@@ -651,6 +669,8 @@ class _StatisticsBody extends StatelessWidget {
     String? contextLabel,
   )?
   onOpenTransactions;
+  final void Function(int amountMinor, double growthPercent)
+  onAnomalyThresholdChanged;
 
   static List<MoneyStatisticsRankSlice> _toRankSlices(
     List<MoneyStatisticsTagSlice> tagSlices,
@@ -705,7 +725,12 @@ class _StatisticsBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        MoneySpendingAnomalyCard(analysis: spendingAnalysis),
+        MoneySpendingAnomalyCard(
+          analysis: spendingAnalysis,
+          minimumAmountMinor: filter.anomalyMinAmountMinor,
+          minimumGrowthPercent: filter.anomalyMinGrowthPercent,
+          onThresholdChanged: onAnomalyThresholdChanged,
+        ),
         const SizedBox(height: 12),
       ],
     );
@@ -922,7 +947,10 @@ class _StatisticsBody extends StatelessWidget {
         const SizedBox(height: 12),
         MoneyNetWorthTrendCard(points: netWorthTrend),
         const SizedBox(height: 12),
-        MoneyUpcomingBillsCard(bills: billReminders),
+        MoneyUpcomingBillsCard(
+          bills: billReminders,
+          accountsById: accountsById,
+        ),
         const SizedBox(height: 12),
         MoneyUpcomingCashFlowCard(summary: upcomingCashFlow),
         if (summary.familyMembers.isNotEmpty) ...[

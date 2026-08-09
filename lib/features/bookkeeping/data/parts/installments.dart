@@ -511,6 +511,73 @@ mixin _Installments on _DriftMoneyRepositoryBase {
     }
   }
 
+  @override
+  Future<MoneyInstallmentExecutionSummary> executeDueInstallmentPostings(
+    String userId, {
+    DateTime? now,
+  }) async {
+    try {
+      await ensureReadyForUser(userId);
+      final effectiveNow = (now ?? _utcNow()).toUtc();
+      final todayKey = _dateKey(effectiveNow);
+
+      final dueDetails =
+          await (database.select(database.moneyInstallmentDetails)..where(
+                (detail) =>
+                    detail.userId.equals(userId) &
+                    detail.status.equals(
+                      MoneyInstallmentDetailStatus.pending.storageValue,
+                    ) &
+                    detail.dueDate.isSmallerOrEqualValue(todayKey) &
+                    detail.isDeleted.equals(false),
+              ))
+              .get();
+
+      var summary = MoneyInstallmentExecutionSummary.empty;
+      final impactedTransactions = <MoneyTransactionEntity>[];
+      final impactedAccounts = <String>{};
+
+      for (final detail in dueDetails) {
+        final plan = await _getInstallmentPlanForUser(userId, detail.planId);
+        if (MoneyInstallmentPlanStatus.fromStorageValue(plan.status) !=
+            MoneyInstallmentPlanStatus.active) {
+          continue;
+        }
+        try {
+          final transaction = await postInstallmentDetail(userId, detail.id);
+          summary = summary.add(posted: 1);
+          impactedTransactions.add(transaction);
+          impactedAccounts.add(transaction.accountId);
+        } catch (error) {
+          if (error is MoneyRepositoryException &&
+              error.code == MoneyRepositoryErrorCode.invalidInstallmentStatus) {
+            continue;
+          }
+          summary = summary.add(failed: 1);
+        }
+      }
+
+      if (impactedTransactions.isNotEmpty) {
+        // postInstallmentDetail 内部已刷新预算快照；这里补信用卡还款提醒与用量统计。
+        await _syncCreditAccountRepaymentRemindersForAccounts(
+          userId,
+          impactedAccounts.toList(growable: false),
+        );
+        await _tryRebuildUsageStatsForUser(userId);
+      }
+
+      return summary;
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
   Future<void> _recordInstallmentPlanChange({
     required String userId,
     required String recordId,

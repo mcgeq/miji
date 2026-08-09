@@ -13,6 +13,7 @@ import 'package:miji/shared/widgets/form_dropdown.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
@@ -100,7 +101,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
           AppAmountField(
             controller: _amountController,
             labelText: '金额',
-            currencyCode: 'CNY',
+            currencyCode: defaultMoneyCurrencyCode,
             prominent: true,
             onChanged: (_) => setState(() {}),
           ),
@@ -269,7 +270,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
             ? MoneyTransferDraft(
                 transactionAt: _transactionAt,
                 amountMinor: amountMinor,
-                currencyCode: 'CNY',
+                currencyCode: fromAccount.currencyCode,
                 description: MoneyTransactionType.transfer.label,
                 notes: notes,
                 fromAccountId: _fromAccountId!,
@@ -444,6 +445,9 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
     required MoneyAccountEntity toAccount,
     required int amountMinor,
   }) {
+    if (fromAccount.currencyCode != toAccount.currencyCode) {
+      return '暂不支持跨币种转账（${fromAccount.currencyCode} → ${toAccount.currencyCode}）';
+    }
     if (!fromAccount.isVirtual && fromAccount.balanceMinor < amountMinor) {
       return '转出账户余额不足，可用 ${formatMoneyMinor(fromAccount.balanceMinor, fromAccount.currencyCode)}';
     }

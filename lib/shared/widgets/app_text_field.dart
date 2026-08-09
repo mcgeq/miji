@@ -7,6 +7,7 @@ class AppTextField extends StatelessWidget {
   const AppTextField({
     super.key,
     this.controller,
+    this.focusNode,
     this.labelText,
     this.hintText,
     this.helperText,
@@ -31,6 +32,7 @@ class AppTextField extends StatelessWidget {
   });
 
   final TextEditingController? controller;
+  final FocusNode? focusNode;
   final String? labelText;
   final String? hintText;
   final String? helperText;
@@ -67,6 +69,7 @@ class AppTextField extends StatelessWidget {
       ),
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         enabled: enabled,
         autofocus: autofocus,
         keyboardType: keyboardType,

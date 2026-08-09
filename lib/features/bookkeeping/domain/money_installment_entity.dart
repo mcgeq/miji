@@ -165,3 +165,25 @@ class MoneyInstallmentPlanDraft {
   final String currencyCode;
   final String? notes;
 }
+
+class MoneyInstallmentExecutionSummary {
+  const MoneyInstallmentExecutionSummary({
+    required this.postedCount,
+    required this.failedCount,
+  });
+
+  final int postedCount;
+  final int failedCount;
+
+  static const empty = MoneyInstallmentExecutionSummary(
+    postedCount: 0,
+    failedCount: 0,
+  );
+
+  MoneyInstallmentExecutionSummary add({int posted = 0, int failed = 0}) {
+    return MoneyInstallmentExecutionSummary(
+      postedCount: postedCount + posted,
+      failedCount: failedCount + failed,
+    );
+  }
+}

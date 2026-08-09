@@ -3,6 +3,8 @@ import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 
 enum MoneyStatisticsPeriodPreset {
   thisMonth,
+  thisWeek,
+  lastWeek,
   recentThreeMonths,
   thisYear,
   custom;
@@ -10,6 +12,8 @@ enum MoneyStatisticsPeriodPreset {
   String get label {
     return switch (this) {
       MoneyStatisticsPeriodPreset.thisMonth => '本月',
+      MoneyStatisticsPeriodPreset.thisWeek => '本周',
+      MoneyStatisticsPeriodPreset.lastWeek => '上周',
       MoneyStatisticsPeriodPreset.recentThreeMonths => '近3个月',
       MoneyStatisticsPeriodPreset.thisYear => '今年',
       MoneyStatisticsPeriodPreset.custom => '自定义',
@@ -51,10 +55,21 @@ class MoneyStatisticsDateRange {
     DateTime? customEnd,
   }) {
     final local = DateTime(anchor.year, anchor.month, anchor.day);
+    final monday = local.subtract(Duration(days: local.weekday - 1));
     return switch (preset) {
       MoneyStatisticsPeriodPreset.thisMonth => MoneyStatisticsDateRange(
         start: DateTime(local.year, local.month),
         endExclusive: DateTime(local.year, local.month + 1),
+        groupBy: MoneyStatisticsGroupBy.day,
+      ),
+      MoneyStatisticsPeriodPreset.thisWeek => MoneyStatisticsDateRange(
+        start: monday,
+        endExclusive: monday.add(const Duration(days: 7)),
+        groupBy: MoneyStatisticsGroupBy.day,
+      ),
+      MoneyStatisticsPeriodPreset.lastWeek => MoneyStatisticsDateRange(
+        start: monday.subtract(const Duration(days: 7)),
+        endExclusive: monday,
         groupBy: MoneyStatisticsGroupBy.day,
       ),
       MoneyStatisticsPeriodPreset.recentThreeMonths => MoneyStatisticsDateRange(

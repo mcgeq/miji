@@ -6,6 +6,7 @@ import 'package:miji/core/presentation/components/app_content_panel.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 
 class MoneySourceBreakdownCard extends StatelessWidget {
@@ -411,7 +412,7 @@ class _RefundSummaryRow extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          formatMoneyMinor(refund.refundAmountMinor, 'CNY'),
+          formatMoneyMinor(refund.refundAmountMinor, defaultMoneyCurrencyCode),
           style: theme.textTheme.labelMedium?.copyWith(
             color: theme.moneyColors.warning,
             fontWeight: FontWeight.w800,

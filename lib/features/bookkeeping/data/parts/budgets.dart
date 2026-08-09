@@ -162,6 +162,7 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
               endDate: _dateKey(period.end),
               alertEnabled: Value(draft.alertEnabled),
               alertThresholdPercent: Value<int?>(draft.alertThresholdPercent),
+              autoRollover: Value(draft.autoRollover),
               color: Value<String?>(draft.color),
               currentPeriodStartDate: _dateKey(period.start),
               lastResetAt: now,
@@ -322,6 +323,7 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
               isActive: Value(update.isActive),
               alertEnabled: Value(update.alertEnabled),
               alertThresholdPercent: Value<int?>(update.alertThresholdPercent),
+              autoRollover: Value(update.autoRollover),
               color: Value<String?>(update.color),
               trackingType: Value(update.trackingType.storageValue),
               scopeType: Value(
@@ -810,6 +812,7 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
       'is_active': true,
       'alert_enabled': draft.alertEnabled,
       'alert_threshold_percent': draft.alertThresholdPercent,
+      'auto_rollover': draft.autoRollover,
       'color': draft.color,
       'current_period_start_date': _dateKey(period.start),
       'budget_type': _DriftMoneyRepositoryBase._budgetTypeStandard,
@@ -902,6 +905,12 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
       update.alertThresholdPercent,
     );
     _putIfChanged(fields, 'color', existing.color, update.color);
+    _putIfChanged(
+      fields,
+      'auto_rollover',
+      existing.autoRollover,
+      update.autoRollover,
+    );
     _putIfChanged(
       fields,
       'tracking_type',

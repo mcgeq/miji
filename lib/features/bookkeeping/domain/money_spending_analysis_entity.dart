@@ -24,6 +24,8 @@ class MoneySpendingAnalysisQuery {
     this.paymentMethod,
     this.baselineMonthCount = 3,
     this.windowMonthCount = 1,
+    this.minimumAmountMinor = 5000,
+    this.minimumGrowthPercent = 20,
   });
 
   final DateTime currentMonth;
@@ -33,6 +35,8 @@ class MoneySpendingAnalysisQuery {
   final MoneyPaymentMethod? paymentMethod;
   final int baselineMonthCount;
   final int windowMonthCount;
+  final int minimumAmountMinor;
+  final double minimumGrowthPercent;
 
   DateTime get dateStart {
     return DateTime(

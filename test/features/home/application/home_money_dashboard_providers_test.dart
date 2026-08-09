@@ -64,6 +64,8 @@ void main() {
       expect(repository.listTransactionsCalls, 1);
 
       container.read(moneyDataRefreshCoordinatorProvider).refreshHome();
+      // refreshHome 的 bump 在 microtask 中合并执行，先让出事件循环再读取。
+      await Future<void>.delayed(Duration.zero);
       await container.read(homeMonthTransactionsProvider.future);
 
       expect(repository.listTransactionsCalls, 2);
@@ -137,6 +139,7 @@ MoneyBudgetEntity _budget({
     isActive: true,
     alertEnabled: true,
     alertThresholdPercent: 80,
+    autoRollover: false,
     createdAt: periodStart,
     updatedAt: periodStart,
   );

@@ -17,7 +17,9 @@ import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
@@ -26,6 +28,7 @@ import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/suggestion_autocomplete_field.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_split_dialog.dart';
 
 class TransactionCreateFormResult {
@@ -170,6 +173,12 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           data: (value) => value,
           orElse: () => const <MoneyPaymentMethod, int>{},
         );
+    final entrySuggestions = ref
+        .watch(currentUserEntrySuggestionsProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const MoneyEntrySuggestions.empty(),
+        );
     final sortedPaymentMethods = _sortPaymentMethodsByUsage(
       availablePaymentMethods,
       paymentMethodUsageRanks,
@@ -249,7 +258,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           AppAmountField(
             controller: _amountController,
             labelText: '金额',
-            currencyCode: 'CNY',
+            currencyCode: defaultMoneyCurrencyCode,
             autofocus: !_isEditing,
             prominent: true,
             onChanged: _isEditing
@@ -351,18 +360,18 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                 .toList(),
           ),
           if (effectivePaymentMethod == MoneyPaymentMethod.other)
-            TextFormField(
+            SuggestionAutocompleteField(
               controller: _customPaymentNameCtrl,
-              decoration: const InputDecoration(
-                labelText: '支付方式名称',
-                hintText: '如：美团月付、抖音月付、京东支付',
-                isDense: true,
-              ),
+              suggestions: entrySuggestions.customPaymentMethods,
+              labelText: '支付方式名称',
+              hintText: '如：美团月付、抖音月付、京东支付',
+              prefixIcon: const Icon(Icons.payment_rounded),
               textInputAction: TextInputAction.done,
             ),
           _AdvancedTransactionFields(
             initiallyExpanded: _advancedExpanded,
             merchantController: _merchantController,
+            merchantSuggestions: entrySuggestions.merchants,
             locationController: _locationController,
             notesController: _notesController,
             onExpansionChanged: (value) {
@@ -617,7 +626,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                   type: widget.type,
                   transactionAt: _transactionAt,
                   amountMinor: amountMinor,
-                  currencyCode: 'CNY',
+                  currencyCode: selectedAccount.currencyCode,
                   description: widget.type.label,
                   notes: notes,
                   merchant: merchant,
@@ -844,7 +853,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           ledgerId: ledger.id,
           initialMembers: ledgerMembers,
           amountMinor: amountMinor,
-          currencyCode: 'CNY',
+          currencyCode: defaultMoneyCurrencyCode,
           title: '设置支出分摊',
           confirmLabel: '使用此分摊',
         ),
@@ -894,6 +903,7 @@ class _AdvancedTransactionFields extends StatelessWidget {
   const _AdvancedTransactionFields({
     required this.initiallyExpanded,
     required this.merchantController,
+    this.merchantSuggestions = const <String>[],
     required this.locationController,
     required this.notesController,
     required this.onExpansionChanged,
@@ -901,6 +911,7 @@ class _AdvancedTransactionFields extends StatelessWidget {
 
   final bool initiallyExpanded;
   final TextEditingController merchantController;
+  final List<String> merchantSuggestions;
   final TextEditingController locationController;
   final TextEditingController notesController;
   final ValueChanged<bool> onExpansionChanged;
@@ -926,8 +937,9 @@ class _AdvancedTransactionFields extends StatelessWidget {
           ),
           onExpansionChanged: onExpansionChanged,
           children: [
-            AppTextField(
+            SuggestionAutocompleteField(
               controller: merchantController,
+              suggestions: merchantSuggestions,
               labelText: '商家',
               hintText: '例如 京东、盒马、星巴克',
               prefixIcon: const Icon(Icons.storefront_rounded),

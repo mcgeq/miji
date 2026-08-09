@@ -38,6 +38,8 @@ mixin _RemoteApply on _DriftMoneyRepositoryBase {
           await _applyRemoteLedgerAccountChange(change, local);
         case SyncChangeLogger.moneyBillRemindersTableName:
           await _applyRemoteBillReminderChange(change, local);
+        case SyncChangeLogger.moneyReminderCenterProcessingTableName:
+          await _applyRemoteReminderCenterProcessingChange(change, local);
         case SyncChangeLogger.moneyAutoPostingTemplatesTableName:
           await _applyRemoteAutoPostingTemplateChange(change, local);
         case SyncChangeLogger.moneyAutoPostingRunsTableName:
@@ -2465,6 +2467,90 @@ mixin _RemoteApply on _DriftMoneyRepositoryBase {
     await (database.delete(
       database.moneyAutoPostingRuns,
     )..where((row) => row.id.equals(runId) & row.userId.equals(userId))).go();
+  }
+
+  Future<void> _applyRemoteReminderCenterProcessingChange(
+    DeltaChangeRecord change,
+    DeltaLocalRecord? local,
+  ) async {
+    final fields = <String, Object?>{
+      ...change.recordSnapshot,
+      ...change.changedFields,
+    };
+    final userId = _remoteUserId(fields, local);
+    await ensureReadyForUser(userId);
+
+    switch (change.operation) {
+      case 'insert' || 'update':
+        await _upsertRemoteReminderCenterProcessing(
+          userId: userId,
+          recordId: change.recordId,
+          fields: fields,
+        );
+      case 'delete':
+        await _deleteRemoteReminderCenterProcessing(
+          userId: userId,
+          recordId: change.recordId,
+        );
+    }
+  }
+
+  Future<void> _upsertRemoteReminderCenterProcessing({
+    required String userId,
+    required String recordId,
+    required Map<String, Object?> fields,
+  }) async {
+    final now = DateTime.now().toUtc();
+    await database
+        .into(database.moneyReminderCenterProcessing)
+        .insertOnConflictUpdate(
+          MoneyReminderCenterProcessingCompanion.insert(
+            id: recordId,
+            userId: userId,
+            itemKey: _remoteString(fields, 'item_key'),
+            sourceType: _remoteString(fields, 'source_type'),
+            sourceId: _remoteString(fields, 'source_id'),
+            title: _remoteString(fields, 'title'),
+            dueDate: _remoteIntOr(fields, 'due_date', 0),
+            amountMinor: _remoteIntOr(fields, 'amount_minor', 0),
+            currencyCode: _remoteString(fields, 'currency_code'),
+            actionType: _remoteString(fields, 'action_type'),
+            ledgerId: Value<String?>(
+              _remoteNullableString(fields, 'ledger_id'),
+            ),
+            accountId: Value<String?>(
+              _remoteNullableString(fields, 'account_id'),
+            ),
+            isBudgetExceeded: Value(
+              _remoteBool(fields, 'is_budget_exceeded', fallback: false),
+            ),
+            state: _remoteString(fields, 'state'),
+            snoozedUntil: Value<int?>(
+              _remoteNullableInt(fields, 'snoozed_until'),
+            ),
+            processedAt: Value<DateTime?>(
+              _remoteNullableDateTime(fields, 'processed_at'),
+            ),
+            version: Value(_remoteIntOr(fields, 'version', 1)),
+            isDeleted: Value(
+              _remoteBool(fields, 'is_deleted', fallback: false),
+            ),
+            deletedAt: Value<DateTime?>(
+              _remoteNullableDateTime(fields, 'deleted_at'),
+            ),
+            createdAt: _remoteDateTime(fields, 'created_at', fallback: now),
+            updatedAt: _remoteDateTime(fields, 'updated_at', fallback: now),
+          ),
+        );
+  }
+
+  Future<void> _deleteRemoteReminderCenterProcessing({
+    required String userId,
+    required String recordId,
+  }) async {
+    await (database.delete(database.moneyReminderCenterProcessing)
+          ..where((row) => row.id.equals(recordId) & row.userId.equals(userId)))
+        .go();
   }
 
   Future<void> _applyRemoteLedgerChange(

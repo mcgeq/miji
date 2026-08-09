@@ -98,7 +98,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration {
@@ -229,6 +229,14 @@ class AppDatabase extends _$AppDatabase {
           await migrator.addColumn(
             userPreferences,
             userPreferences.showHomeTodayAction,
+          );
+        }
+        if (from < 20) {
+          // 同步日志按 (datasetId, syncedAt) 索引：避免每次同步
+          // 拉取未同步日志时全表扫描（日志表会持续增长）。
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS sync_change_logs_dataset_synced '
+            "ON sync_change_logs(dataset_id, synced_at)",
           );
         }
       },

@@ -891,6 +891,86 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
     });
   }
 
+  @override
+  Future<MoneyEntrySuggestions> getEntrySuggestionsForUser(
+    String userId, {
+    int merchantLimit = 8,
+    int paymentMethodLimit = 6,
+  }) async {
+    await ensureReadyForUser(userId);
+    final merchants = <String>[];
+    final customPaymentMethods = <String>[];
+
+    final merchantRows =
+        await (database.selectOnly(database.moneyTransactions)
+              ..addColumns([
+                database.moneyTransactions.merchant,
+                database.moneyTransactions.transactionAt.max(),
+              ])
+              ..where(
+                database.moneyTransactions.userId.equals(userId) &
+                    database.moneyTransactions.merchant.isNotNull() &
+                    database.moneyTransactions.merchant.isNotValue('') &
+                    database.moneyTransactions.isDeleted.equals(false) &
+                    database.moneyTransactions.status.equals(
+                      MoneyTransactionStatus.completed.storageValue,
+                    ),
+              )
+              ..groupBy([database.moneyTransactions.merchant])
+              ..orderBy([
+                OrderingTerm.desc(
+                  database.moneyTransactions.transactionAt.max(),
+                ),
+              ])
+              ..limit(merchantLimit))
+            .get();
+    for (final row in merchantRows) {
+      final name = row.read(database.moneyTransactions.merchant)?.trim();
+      if (name != null && name.isNotEmpty) {
+        merchants.add(name);
+      }
+    }
+
+    final methodRows =
+        await (database.selectOnly(database.moneyTransactions)
+              ..addColumns([
+                database.moneyTransactions.customPaymentMethodName,
+                database.moneyTransactions.transactionAt.max(),
+              ])
+              ..where(
+                database.moneyTransactions.userId.equals(userId) &
+                    database.moneyTransactions.customPaymentMethodName
+                        .isNotNull() &
+                    database.moneyTransactions.customPaymentMethodName
+                        .isNotValue('') &
+                    database.moneyTransactions.isDeleted.equals(false) &
+                    database.moneyTransactions.status.equals(
+                      MoneyTransactionStatus.completed.storageValue,
+                    ),
+              )
+              ..groupBy([database.moneyTransactions.customPaymentMethodName])
+              ..orderBy([
+                OrderingTerm.desc(
+                  database.moneyTransactions.transactionAt.max(),
+                ),
+              ])
+              ..limit(paymentMethodLimit))
+            .get();
+    for (final row in methodRows) {
+      final name = row
+          .read(database.moneyTransactions.customPaymentMethodName)
+          ?.trim();
+      if (name != null && name.isNotEmpty) {
+        customPaymentMethods.add(name);
+      }
+    }
+
+    return MoneyEntrySuggestions(
+      merchants: merchants,
+      customPaymentMethods: customPaymentMethods,
+    );
+  }
+
   Future<void> _markAutoPostingRunUserDeleted({
     required String userId,
     required String runId,

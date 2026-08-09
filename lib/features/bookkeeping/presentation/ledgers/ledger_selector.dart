@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
@@ -203,8 +205,52 @@ class _CurrentLedgerSelectorState extends ConsumerState<CurrentLedgerSelector> {
                 Navigator.of(sheetContext).pop();
                 unawaited(_showLedgerAccountsDialog(context, selected!));
               },
+        onDeleteLedger: selected?.isFamily != true
+            ? null
+            : () {
+                Navigator.of(sheetContext).pop();
+                unawaited(_confirmDeleteLedger(context, selected!));
+              },
       ),
     );
+  }
+
+  Future<void> _confirmDeleteLedger(
+    BuildContext context,
+    MoneyLedgerEntity ledger,
+  ) async {
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: '删除账本',
+      message:
+          '确定删除“${ledger.name}”？删除后该家庭账本及其成员、分摊配置将被移除，'
+          '账本内已记的流水仍保留在你的个人账本中。此操作会同步到你的其他设备。',
+      confirmLabel: '删除',
+      destructive: true,
+      icon: Icons.delete_outline_rounded,
+    );
+
+    if (!confirmed || !context.mounted) {
+      return;
+    }
+
+    final toast = FToast()..init(context);
+    try {
+      await ref
+          .read(currentUserMoneyLedgerActionsProvider)
+          .deleteLedger(ledger.id);
+      final currentLedgerId = ref.read(currentMoneyLedgerIdProvider);
+      if (currentLedgerId == ledger.id) {
+        ref.read(currentMoneyLedgerIdProvider.notifier).clear();
+      }
+      if (context.mounted) {
+        AppToast.success(toast, context, '账本已删除');
+      }
+    } catch (_) {
+      if (context.mounted) {
+        AppToast.error(toast, context, '删除账本失败');
+      }
+    }
   }
 
   Future<void> _showCreateLedgerDialog(BuildContext context) async {
@@ -268,6 +314,7 @@ class _CompactLedgerSwitcherSheet extends StatelessWidget {
     required this.onCreateLedger,
     required this.onManageMembers,
     required this.onManageAccounts,
+    required this.onDeleteLedger,
   });
 
   final List<MoneyLedgerEntity> ledgers;
@@ -276,6 +323,7 @@ class _CompactLedgerSwitcherSheet extends StatelessWidget {
   final VoidCallback onCreateLedger;
   final VoidCallback? onManageMembers;
   final VoidCallback? onManageAccounts;
+  final VoidCallback? onDeleteLedger;
 
   @override
   Widget build(BuildContext context) {
@@ -354,6 +402,14 @@ class _CompactLedgerSwitcherSheet extends StatelessWidget {
                       label: '新增',
                       onPressed: onCreateLedger,
                     ),
+                    if (selected?.isFamily == true && onDeleteLedger != null)
+                      _LedgerSheetActionButton(
+                        tooltip: '删除该家庭账本',
+                        icon: Icons.delete_outline_rounded,
+                        label: '删除',
+                        onPressed: onDeleteLedger,
+                        destructive: true,
+                      ),
                   ],
                 ),
               ],
@@ -512,12 +568,14 @@ class _LedgerSheetActionButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onPressed,
+    this.destructive = false,
   });
 
   final String tooltip;
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
@@ -530,8 +588,12 @@ class _LedgerSheetActionButton extends StatelessWidget {
         label: Text(label),
         style: FilledButton.styleFrom(
           visualDensity: VisualDensity.compact,
-          backgroundColor: colorScheme.surfaceContainerHighest,
-          foregroundColor: colorScheme.onSurfaceVariant,
+          backgroundColor: destructive
+              ? colorScheme.errorContainer
+              : colorScheme.surfaceContainerHighest,
+          foregroundColor: destructive
+              ? colorScheme.onErrorContainer
+              : colorScheme.onSurfaceVariant,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),

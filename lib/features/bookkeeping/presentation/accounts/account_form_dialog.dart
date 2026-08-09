@@ -133,19 +133,6 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
                   )
                   .toList(),
             ),
-            FormDropdown<String>(
-              initialSelection: _currencyCode,
-              label: '币种',
-              width: double.infinity,
-              leadingIcon: const Icon(Icons.payments_rounded),
-              onSelected: (value) {
-                if (value == null) return;
-                setState(() => _currencyCode = value);
-              },
-              entries: _currencyCodes
-                  .map((code) => DropdownMenuEntry(value: code, label: code))
-                  .toList(),
-            ),
             AppAmountField(
               controller: _initialBalanceController,
               labelText: _balanceFieldLabel,
@@ -407,15 +394,7 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
     if (value != null && supportedMoneyCurrencyCodes.contains(value)) {
       return value;
     }
-    return 'CNY';
-  }
-
-  List<String> get _currencyCodes {
-    if (supportedMoneyCurrencyCodes.contains(_currencyCode)) {
-      return supportedMoneyCurrencyCodes;
-    }
-
-    return [_currencyCode, ...supportedMoneyCurrencyCodes];
+    return defaultMoneyCurrencyCode;
   }
 
   List<DropdownMenuEntry<int>> get _billingDayEntries {

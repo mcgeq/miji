@@ -540,11 +540,84 @@ mixin _Accounts on _DriftMoneyRepositoryBase {
         beforeVersion: existing.version,
         afterVersion: existing.version + 1,
       );
+      // 账户已软删，用删除后的状态清理自动还款提醒（此时不应再查
+      // _getAccountForUser，它过滤 isDeleted=false 会抛 accountNotFound）。
+      await _syncCreditAccountRepaymentReminder(
+        userId,
+        existing.copyWith(isDeleted: true, isActive: false),
+      );
+    } catch (error) {
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  @override
+  Future<List<MoneyAccountEntity>> getDeletedAccountsForUser(
+    String userId,
+  ) async {
+    await ensureReadyForUser(userId);
+    final query = database.select(database.moneyAccounts)
+      ..where(
+        (account) =>
+            account.userId.equals(userId) & account.isDeleted.equals(true),
+      )
+      ..orderBy([(account) => OrderingTerm.desc(account.deletedAt)]);
+    final rows = await query.get();
+    return rows.map(_mapAccount).toList(growable: false);
+  }
+
+  @override
+  Future<void> restoreAccount(String userId, String accountId) async {
+    try {
+      await ensureReadyForUser(userId);
+      final existing =
+          await (database.select(database.moneyAccounts)..where(
+                (account) =>
+                    account.id.equals(accountId) &
+                    account.userId.equals(userId),
+              ))
+              .getSingleOrNull();
+      if (existing == null) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.accountNotFound,
+        );
+      }
+      if (!existing.isDeleted) {
+        return;
+      }
+      final now = DateTime.now().toUtc();
+      await (database.update(database.moneyAccounts)..where(
+            (account) =>
+                account.id.equals(accountId) & account.userId.equals(userId),
+          ))
+          .write(
+            MoneyAccountsCompanion(
+              isDeleted: const Value(false),
+              deletedAt: const Value<DateTime?>(null),
+              isActive: const Value(true),
+              version: Value(existing.version + 1),
+              updatedAt: Value(now),
+            ),
+          );
+      await _recordAccountChange(
+        userId: userId,
+        recordId: accountId,
+        operation: SyncChangeOperation.update,
+        changedFields: _restoreSyncFields(),
+        beforeVersion: existing.version,
+        afterVersion: existing.version + 1,
+      );
       await _syncCreditAccountRepaymentReminder(
         userId,
         await _getAccountForUser(userId, accountId),
       );
     } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
       throw MoneyRepositoryException(
         MoneyRepositoryErrorCode.databaseWriteFailed,
         error,

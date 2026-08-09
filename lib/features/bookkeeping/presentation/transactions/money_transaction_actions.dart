@@ -389,12 +389,16 @@ String moneyTransactionActionErrorText(Object error) {
       MoneyRepositoryErrorCode.invalidSplitAmount => '请检查分摊金额或比例',
       MoneyRepositoryErrorCode.invalidSplitTransaction => '当前流水不能重复或不支持分摊',
       MoneyRepositoryErrorCode.cannotUnlinkPersonalLedger => '个人账本不能移出',
+      MoneyRepositoryErrorCode.cannotDeletePersonalLedger => '个人账本不能删除',
       MoneyRepositoryErrorCode.cannotUnlinkLedgerWithActiveSplit =>
         '请先取消分摊，再移出家庭账本',
       MoneyRepositoryErrorCode.splitRecordNotFound => '分摊记录不存在',
       MoneyRepositoryErrorCode.invalidAccountBalance => '账户余额不满足规则',
       MoneyRepositoryErrorCode.databaseReadFailed => '读取失败',
       MoneyRepositoryErrorCode.databaseWriteFailed => '保存失败',
+      MoneyRepositoryErrorCode.reminderNotFound => '提醒不存在',
+      MoneyRepositoryErrorCode.autoPostingTemplateNotFound => '自动记账模板不可用',
+      MoneyRepositoryErrorCode.invalidCategoryName => '分类名称无效',
     };
   }
   return '操作失败';

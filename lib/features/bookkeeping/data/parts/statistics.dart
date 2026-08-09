@@ -111,6 +111,8 @@ mixin _Statistics on _DriftMoneyRepositoryBase {
         currentMonth: query.currentMonth,
         baselineMonthCount: query.baselineMonthCount,
         windowMonthCount: query.windowMonthCount,
+        minimumAmountMinor: query.minimumAmountMinor,
+        minimumGrowthPercent: query.minimumGrowthPercent,
         samples: samples,
       );
     } catch (error) {
@@ -1062,6 +1064,9 @@ mixin _Statistics on _DriftMoneyRepositoryBase {
     var transactionCount = 0;
     var transactionAmountMinor = 0;
     for (final row in transactions) {
+      if (row.type != MoneyTransactionType.expense.storageValue) {
+        continue;
+      }
       final amount = _effectiveTransactionAmountMinor(row);
       transactionAmountMinor += amount;
       transactionCount += 1;
@@ -1128,13 +1133,19 @@ mixin _Statistics on _DriftMoneyRepositoryBase {
     required String currencyCode,
     required MoneyStatisticsQuery query,
   }) async {
-    // Always show the last 12 months, regardless of the current filter range
-    final end = DateTime.now();
-    final start = DateTime(end.year, end.month - 11, 1);
+    // 跟随当前筛选周期，按整月对齐；不再固定最近 12 个月
+    final start = DateTime(query.dateStart.year, query.dateStart.month);
+    final rawEndMonth = DateTime(
+      query.dateEndExclusive.year,
+      query.dateEndExclusive.month,
+    );
+    final end = rawEndMonth.isBefore(query.dateEndExclusive)
+        ? DateTime(rawEndMonth.year, rawEndMonth.month + 1)
+        : rawEndMonth;
 
     final wideQuery = MoneyStatisticsQuery(
       dateStart: start,
-      dateEndExclusive: DateTime(end.year, end.month + 1, 1),
+      dateEndExclusive: end,
       groupBy: MoneyStatisticsGroupBy.month,
       ledgerId: query.ledgerId,
       accountId: query.accountId,

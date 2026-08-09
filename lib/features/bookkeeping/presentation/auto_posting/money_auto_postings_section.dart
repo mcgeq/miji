@@ -116,6 +116,7 @@ class _MoneyAutoPostingsSectionState
                     ),
                     onEdit: () => _openTemplateDialog(template),
                     onDelete: () => _confirmDelete(template),
+                    onRunNow: () => _runTemplateNow(template),
                   );
                 },
               );
@@ -161,6 +162,33 @@ class _MoneyAutoPostingsSectionState
     }
   }
 
+  Future<void> _runTemplateNow(MoneyAutoPostingTemplateEntity template) async {
+    try {
+      final summary = await ref
+          .read(currentUserMoneyAutoPostingActionsProvider)
+          .runTemplateNow(template.id);
+      if (!mounted) return;
+      final parts = <String>[
+        if (summary.postedCount > 0) '入账 ${summary.postedCount} 笔',
+        if (summary.skippedCount > 0) '跳过 ${summary.skippedCount} 个未到期',
+        if (summary.blockedCount > 0) '拦截 ${summary.blockedCount} 笔',
+        if (summary.failedCount > 0) '失败 ${summary.failedCount} 笔',
+      ];
+      if (parts.isEmpty) {
+        AppToast.success(_ensureToast(), context, '${template.name}：当前没有待执行条目');
+      } else {
+        AppToast.success(
+          _ensureToast(),
+          context,
+          '${template.name}：${parts.join('，')}',
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, _errorText(error));
+    }
+  }
+
   Future<void> _confirmDelete(MoneyAutoPostingTemplateEntity template) async {
     final confirmed = await showAppConfirmDialog(
       context: context,
@@ -197,6 +225,7 @@ class _MoneyAutoPostingsSectionState
         MoneyRepositoryErrorCode.accountNotFound => '账户不可用',
         MoneyRepositoryErrorCode.categoryNotFound => '分类不可用',
         MoneyRepositoryErrorCode.ledgerNotFound => '账本不可用',
+        MoneyRepositoryErrorCode.autoPostingTemplateNotFound => '模板不可用',
         MoneyRepositoryErrorCode.invalidTransferAccounts => '自动记账仅支持收入或支出',
         MoneyRepositoryErrorCode.databaseReadFailed => '读取失败',
         MoneyRepositoryErrorCode.databaseWriteFailed => '保存失败',
@@ -207,13 +236,14 @@ class _MoneyAutoPostingsSectionState
   }
 }
 
-class _AutoPostingTemplateCard extends StatelessWidget {
+class _AutoPostingTemplateCard extends ConsumerWidget {
   const _AutoPostingTemplateCard({
     required this.template,
     required this.account,
     required this.categoryText,
     required this.onEdit,
     required this.onDelete,
+    required this.onRunNow,
   });
 
   final MoneyAutoPostingTemplateEntity template;
@@ -221,13 +251,22 @@ class _AutoPostingTemplateCard extends StatelessWidget {
   final String categoryText;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onRunNow;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final runs = ref.watch(currentUserAutoPostingRunsProvider(template.id));
 
     return AppSwipeActionTile(
       actions: [
+        AppSwipeAction(
+          tooltip: '立即执行',
+          icon: Icons.play_arrow_rounded,
+          foreground: colorScheme.onTertiaryContainer,
+          background: colorScheme.tertiaryContainer,
+          onPressed: onRunNow,
+        ),
         AppSwipeAction(
           tooltip: '编辑',
           icon: Icons.edit_rounded,
@@ -252,6 +291,10 @@ class _AutoPostingTemplateCard extends StatelessWidget {
           template: template,
           account: account,
           categoryText: categoryText,
+          runs: runs.maybeWhen(
+            data: (items) => items,
+            orElse: () => const <MoneyAutoPostingRunEntity>[],
+          ),
         ),
       ),
     );
@@ -263,11 +306,13 @@ class _AutoPostingTemplateCardContent extends StatelessWidget {
     required this.template,
     required this.account,
     required this.categoryText,
+    this.runs = const <MoneyAutoPostingRunEntity>[],
   });
 
   final MoneyAutoPostingTemplateEntity template;
   final MoneyAccountEntity? account;
   final String categoryText;
+  final List<MoneyAutoPostingRunEntity> runs;
 
   @override
   Widget build(BuildContext context) {
@@ -367,10 +412,109 @@ class _AutoPostingTemplateCardContent extends StatelessWidget {
                   ),
                 ),
               ],
+              if (runs.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Divider(height: 1, color: colorScheme.outlineVariant),
+                const SizedBox(height: 6),
+                for (final run in runs.take(2)) _AutoPostingRunRow(run: run),
+              ],
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AutoPostingRunRow extends StatelessWidget {
+  const _AutoPostingRunRow({required this.run});
+
+  final MoneyAutoPostingRunEntity run;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final (label, icon, color) = switch (run.status) {
+      MoneyAutoPostingRunStatus.posted => (
+        '已入账',
+        Icons.check_circle_outline_rounded,
+        colorScheme.primary,
+      ),
+      MoneyAutoPostingRunStatus.pending => (
+        '待执行',
+        Icons.schedule_rounded,
+        colorScheme.tertiary,
+      ),
+      MoneyAutoPostingRunStatus.duplicateIgnored => (
+        '重复已跳过',
+        Icons.help_outline_rounded,
+        colorScheme.onSurfaceVariant,
+      ),
+      MoneyAutoPostingRunStatus.blocked => (
+        '已拦截',
+        Icons.block_rounded,
+        colorScheme.error,
+      ),
+      MoneyAutoPostingRunStatus.retryableFailed => (
+        '执行失败',
+        Icons.error_outline_rounded,
+        colorScheme.error,
+      ),
+      MoneyAutoPostingRunStatus.userDeleted => (
+        '已删除',
+        Icons.delete_outline_rounded,
+        colorScheme.onSurfaceVariant,
+      ),
+    };
+    final detail = switch (run.status) {
+      MoneyAutoPostingRunStatus.retryableFailed ||
+      MoneyAutoPostingRunStatus.blocked => [
+        if (run.errorMessage != null && run.errorMessage!.trim().isNotEmpty)
+          run.errorMessage!,
+      ],
+      _ => const <String>[],
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  [
+                    label,
+                    ' ${_runDateTimeText(run.scheduledFor)}'
+                        '${run.postedAt == null ? '' : ' · ${_runDateTimeText(run.postedAt!)}'}',
+                  ].join(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+                if (detail.isNotEmpty)
+                  Text(
+                    detail.join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.error,
+                      letterSpacing: 0,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -803,12 +947,26 @@ class _AutoPostingFormDialogState
       return;
     }
 
+    final currentLedger = ref.read(currentUserCurrentLedgerValueProvider);
+    final accounts = currentLedger == null
+        ? const <MoneyAccountEntity>[]
+        : ref
+              .read(currentUserMoneyLedgerAccountsProvider(currentLedger.id))
+              .maybeWhen(
+                data: (value) => value,
+                orElse: () => const <MoneyAccountEntity>[],
+              );
+    final selectedAccount = _accountById(accounts, _accountId);
+    final currencyCode =
+        selectedAccount?.currencyCode ??
+        (widget.template?.currencyCode ?? 'CNY');
+
     Navigator.of(context).pop(
       _AutoPostingFormResult(
         name: _nameController.text.trim(),
         type: _type,
         amountMinor: parseMoneyAmountToMinor(_amountController.text),
-        currencyCode: 'CNY',
+        currencyCode: currencyCode,
         description: _descriptionController.text.trim(),
         notes: _blankToNull(_notesController.text),
         merchant: _blankToNull(_merchantController.text),
@@ -1190,6 +1348,15 @@ String _timeText(int minutes) {
   final hour = (clampedMinutes ~/ 60).toString().padLeft(2, '0');
   final minute = (clampedMinutes % 60).toString().padLeft(2, '0');
   return '$hour:$minute';
+}
+
+String _runDateTimeText(DateTime date) {
+  final local = date.toLocal();
+  final month = local.month.toString().padLeft(2, '0');
+  final day = local.day.toString().padLeft(2, '0');
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return '${local.year}-$month-$day $hour:$minute';
 }
 
 DateTime _dateOnly(DateTime date) {

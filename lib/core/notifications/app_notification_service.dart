@@ -338,6 +338,63 @@ class AppNotificationService {
     );
   }
 
+  /// 调度每日记账提醒汇总（兜底）：当有待处理提醒时，每天固定时间
+  /// 推一条通知提醒用户打开 App 查看；pendingCount 为 0 时取消。
+  /// 解决"用户当天完全不打开 App 就收不到任何提醒"的缺口。
+  Future<void> scheduleDailyMoneyReminderDigest({
+    required int pendingCount,
+    int hour = 20,
+    int minute = 0,
+  }) async {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    await _ensureInitialized();
+
+    const digestId = 88001;
+    await _plugin.cancel(id: digestId);
+
+    if (pendingCount <= 0) {
+      return;
+    }
+    final allowed = await ensureCanNotify();
+    if (!allowed) {
+      return;
+    }
+
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+    if (!scheduled.isAfter(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+
+    await _plugin.zonedSchedule(
+      id: digestId,
+      title: '📌 今日提醒',
+      body: '你有 $pendingCount 条账单/预算提醒待查看，打开米记处理。',
+      scheduledDate: scheduled,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          billRemindersChannelId,
+          billRemindersChannelName,
+          channelDescription: billRemindersChannelDescription,
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
+      payload: 'money_daily_digest',
+    );
+  }
+
   Future<void> _ensureInitialized() {
     return _initializeFuture ??= _initialize();
   }

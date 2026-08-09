@@ -83,6 +83,7 @@ class MoneyBudgetEntity {
     required this.alertThresholdPercent,
     required this.createdAt,
     required this.updatedAt,
+    this.autoRollover = false,
     this.description,
     this.accountId,
     this.color,
@@ -108,6 +109,7 @@ class MoneyBudgetEntity {
   final bool isActive;
   final bool alertEnabled;
   final int? alertThresholdPercent;
+  final bool autoRollover;
   final String? color;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -160,6 +162,7 @@ class MoneyBudgetDraft {
     this.currencyCode = 'CNY',
     this.alertEnabled = false,
     this.alertThresholdPercent,
+    this.autoRollover = false,
     this.color,
   });
 
@@ -175,6 +178,7 @@ class MoneyBudgetDraft {
   final String? categoryId;
   final String? subCategoryId;
   final String? accountId;
+  final bool autoRollover;
   final bool alertEnabled;
   final int? alertThresholdPercent;
   final String? color;
@@ -198,6 +202,7 @@ class MoneyBudgetUpdate {
     this.isActive = true,
     this.alertEnabled = false,
     this.alertThresholdPercent,
+    this.autoRollover = false,
     this.color,
   });
 
@@ -217,6 +222,7 @@ class MoneyBudgetUpdate {
   final bool isActive;
   final bool alertEnabled;
   final int? alertThresholdPercent;
+  final bool autoRollover;
   final String? color;
 }
 

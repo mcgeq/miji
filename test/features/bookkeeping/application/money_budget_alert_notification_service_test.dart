@@ -203,6 +203,7 @@ MoneyBudgetEntity _budget({
     isActive: true,
     alertEnabled: alertEnabled,
     alertThresholdPercent: alertThresholdPercent,
+    autoRollover: false,
     createdAt: DateTime(2026, 7),
     updatedAt: DateTime(2026, 7),
   );

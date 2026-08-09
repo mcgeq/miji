@@ -14,6 +14,10 @@ class SyncMetadata extends Table {
   Set<Column<Object>> get primaryKey => {key};
 }
 
+@TableIndex(
+  name: 'sync_change_logs_dataset_synced',
+  columns: {#datasetId, #syncedAt},
+)
 class SyncChangeLogs extends Table {
   TextColumn get id => text()();
 

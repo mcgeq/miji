@@ -6,6 +6,7 @@ import 'package:miji/core/presentation/components/app_content_panel.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 
 class MoneyNetWorthTrendCard extends StatelessWidget {
@@ -66,9 +67,9 @@ class MoneyNetWorthTrendCard extends StatelessWidget {
                       if (idx < 0 || idx >= display.length) return null;
                       final point = display[idx];
                       return LineTooltipItem(
-                        '净资产 ${formatMoneyMinor(point.netMinor, 'CNY')}\n'
-                        '资产 ${formatMoneyMinor(point.assetMinor, 'CNY')}\n'
-                        '负债 ${formatMoneyMinor(point.liabilityMinor, 'CNY')}',
+                        '净资产 ${formatMoneyMinor(point.netMinor, defaultMoneyCurrencyCode)}\n'
+                        '资产 ${formatMoneyMinor(point.assetMinor, defaultMoneyCurrencyCode)}\n'
+                        '负债 ${formatMoneyMinor(point.liabilityMinor, defaultMoneyCurrencyCode)}',
                         theme.textTheme.labelSmall!.copyWith(
                           color: Colors.white,
                           letterSpacing: 0,
@@ -276,7 +277,7 @@ class _NetWorthMetric extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              formatMoneyMinor(amountMinor, 'CNY'),
+              formatMoneyMinor(amountMinor, defaultMoneyCurrencyCode),
               style: theme.textTheme.labelMedium?.copyWith(
                 color: color,
                 fontWeight: FontWeight.w800,

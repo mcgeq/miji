@@ -8,6 +8,7 @@ import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dar
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_bill_view.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
@@ -72,6 +73,12 @@ abstract class MoneyRepository {
   Future<Map<MoneyPaymentMethod, int>> getPaymentMethodUsageRanksForUser(
     String userId,
   );
+
+  Future<MoneyEntrySuggestions> getEntrySuggestionsForUser(
+    String userId, {
+    int merchantLimit = 8,
+    int paymentMethodLimit = 6,
+  });
 
   Future<void> refreshUsageStatsForUser(String userId);
 
@@ -215,6 +222,10 @@ abstract class MoneyRepository {
 
   Future<void> deleteAccount(String userId, String accountId);
 
+  Future<void> restoreAccount(String userId, String accountId);
+
+  Future<List<MoneyAccountEntity>> getDeletedAccountsForUser(String userId);
+
   Future<MoneyTransactionEntity> createTransaction(
     String userId,
     MoneyTransactionDraft draft,
@@ -284,6 +295,8 @@ abstract class MoneyRepository {
     String userId,
     MoneyLedgerUpdate update,
   );
+
+  Future<void> deleteLedger(String userId, String ledgerId);
 
   Future<MoneyMemberEntity> createMember(
     String userId,
@@ -372,6 +385,17 @@ abstract class MoneyRepository {
   Future<void> deleteAutoPostingTemplate(String userId, String templateId);
 
   Future<MoneyAutoPostingExecutionSummary> executeDueAutoPostings(
+    String userId, {
+    DateTime? now,
+  });
+
+  Future<MoneyAutoPostingExecutionSummary> executeAutoPostingTemplateNow(
+    String userId,
+    String templateId, {
+    DateTime? now,
+  });
+
+  Future<MoneyInstallmentExecutionSummary> executeDueInstallmentPostings(
     String userId, {
     DateTime? now,
   });
@@ -467,6 +491,9 @@ enum MoneyRepositoryErrorCode {
   accountNotFound,
   categoryNotFound,
   budgetNotFound,
+  reminderNotFound,
+  autoPostingTemplateNotFound,
+  invalidCategoryName,
   invalidBudgetAmount,
   invalidBudgetScope,
   unsupportedBudgetPeriod,
@@ -481,6 +508,7 @@ enum MoneyRepositoryErrorCode {
   invalidSplitAmount,
   invalidSplitTransaction,
   cannotUnlinkPersonalLedger,
+  cannotDeletePersonalLedger,
   cannotUnlinkLedgerWithActiveSplit,
   splitRecordNotFound,
   insufficientFunds,

@@ -18,6 +18,7 @@ import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dar
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_bill_view.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.dart';
@@ -1028,9 +1029,13 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     MoneyAutoPostingTemplateEntity template,
     DateTime occurrenceDate,
   ) {
-    return _dateOnlyUtc(
-      occurrenceDate,
+    final local = occurrenceDate.toLocal();
+    final scheduledLocal = DateTime(
+      local.year,
+      local.month,
+      local.day,
     ).add(Duration(minutes: template.timeOfDayMinutes));
+    return scheduledLocal.toUtc();
   }
 
   DateTime _monthlyAutoPostingDate(int year, int month, int dayOfMonth) {
@@ -1538,10 +1543,9 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     );
     final period = await _budgetPeriodForBudget(budget, periodType);
     final usedAmountMinor = await _budgetUsedAmountMinor(budget);
-    final remainingAmountMinor = budget.amountMinor - usedAmountMinor;
-    final now = _utcNow();
     final periodStartDate = _dateKey(period.start);
     final periodEndDate = _dateKey(period.end);
+    final now = _utcNow();
     final currentSnapshot =
         await (database.select(database.moneyBudgetSnapshots)
               ..where(
@@ -1561,6 +1565,13 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       activePeriodStartDate: periodStartDate,
       activePeriodEndDate: periodEndDate,
     );
+
+    final carriedOverAmountMinor = budget.autoRollover
+        ? await _lastRolledOverRemainingMinor(budget.id, periodStartDate)
+        : 0;
+    final effectiveBudgetAmountMinor =
+        budget.amountMinor + carriedOverAmountMinor;
+    final remainingAmountMinor = effectiveBudgetAmountMinor - usedAmountMinor;
 
     if (currentSnapshot == null) {
       final snapshotId = _budgetSnapshotId(
@@ -1582,7 +1593,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
               repeatInterval: budget.repeatInterval,
               periodStartDate: periodStartDate,
               periodEndDate: periodEndDate,
-              budgetAmountMinor: budget.amountMinor,
+              budgetAmountMinor: effectiveBudgetAmountMinor,
               usedAmountMinor: usedAmountMinor,
               remainingAmountMinor: remainingAmountMinor,
               currencyCode: budget.currencyCode,
@@ -1619,7 +1630,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
         currentSnapshot.repeatInterval != budget.repeatInterval ||
         currentSnapshot.periodStartDate != periodStartDate ||
         currentSnapshot.periodEndDate != periodEndDate ||
-        currentSnapshot.budgetAmountMinor != budget.amountMinor ||
+        currentSnapshot.budgetAmountMinor != effectiveBudgetAmountMinor ||
         currentSnapshot.usedAmountMinor != usedAmountMinor ||
         currentSnapshot.remainingAmountMinor != remainingAmountMinor ||
         currentSnapshot.currencyCode != budget.currencyCode ||
@@ -1645,7 +1656,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
         repeatInterval: Value(budget.repeatInterval),
         periodStartDate: Value(periodStartDate),
         periodEndDate: Value(periodEndDate),
-        budgetAmountMinor: Value(budget.amountMinor),
+        budgetAmountMinor: Value(effectiveBudgetAmountMinor),
         usedAmountMinor: Value(usedAmountMinor),
         remainingAmountMinor: Value(remainingAmountMinor),
         currencyCode: Value(budget.currencyCode),
@@ -1784,6 +1795,34 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       beforeVersion: existing.sourceAllocationVersion,
       afterVersion: sourceAllocationVersion,
     );
+  }
+
+  Future<int> _lastRolledOverRemainingMinor(
+    String budgetId,
+    int currentPeriodStartDate,
+  ) async {
+    final rows =
+        await (database.select(database.moneyBudgetSnapshots)
+              ..where(
+                (snapshot) =>
+                    snapshot.budgetId.equals(budgetId) &
+                    snapshot.status.equals(
+                      MoneyBudgetHistoryStatus.rolledOver.storageValue,
+                    ) &
+                    snapshot.periodStartDate.isSmallerThanValue(
+                      currentPeriodStartDate,
+                    ),
+              )
+              ..orderBy([
+                (snapshot) => OrderingTerm.desc(snapshot.periodStartDate),
+              ])
+              ..limit(1))
+            .get();
+    if (rows.isEmpty) {
+      return 0;
+    }
+    final remaining = rows.first.remainingAmountMinor;
+    return remaining > 0 ? remaining : 0;
   }
 
   Future<void> _closeOpenBudgetSnapshotsForBudget(
@@ -3079,6 +3118,53 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     );
   }
 
+  Future<void> _recordReminderCenterProcessingChange({
+    required String userId,
+    required String recordId,
+    required SyncChangeOperation operation,
+    required Map<String, Object?> changedFields,
+    int? beforeVersion,
+    int? afterVersion,
+  }) async {
+    final logger = syncChangeLogger;
+    if (logger == null) {
+      return;
+    }
+
+    await logger.recordReminderCenterProcessingChange(
+      userId: userId,
+      recordId: recordId,
+      operation: operation,
+      changedFields: changedFields,
+      beforeVersion: beforeVersion,
+      afterVersion: afterVersion,
+    );
+  }
+
+  Map<String, Object?> _reminderCenterSyncFields({
+    required MoneyReminderCenterItem item,
+    required MoneyReminderCenterState state,
+    required DateTime? snoozedUntil,
+    required DateTime? processedAt,
+  }) {
+    return {
+      'item_key': item.itemKey,
+      'source_type': item.sourceType.storageValue,
+      'source_id': item.sourceId,
+      'title': item.title,
+      'due_date': _dateKey(item.dueDate),
+      'amount_minor': item.amountMinor,
+      'currency_code': item.currencyCode,
+      'action_type': item.actionType.storageValue,
+      'ledger_id': item.ledgerId,
+      'account_id': item.accountId,
+      'is_budget_exceeded': item.isBudgetExceeded,
+      'state': state.storageValue,
+      'snoozed_until': snoozedUntil == null ? null : _dateKey(snoozedUntil),
+      'processed_at': processedAt?.toUtc().toIso8601String(),
+    };
+  }
+
   Map<String, Object?> _restoreSyncFields() {
     return {'is_deleted': false, 'deleted_at': null};
   }
@@ -3639,6 +3725,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       isActive: budget.isActive,
       alertEnabled: budget.alertEnabled,
       alertThresholdPercent: budget.alertThresholdPercent,
+      autoRollover: budget.autoRollover,
       color: budget.color,
       createdAt: budget.createdAt,
       updatedAt: budget.updatedAt,

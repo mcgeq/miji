@@ -5,6 +5,7 @@ import 'package:miji/core/database/app_database.dart';
 import 'package:miji/core/database/seed/database_seed_runner.dart';
 import 'package:miji/features/bookkeeping/data/drift_money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
 
 void main() {
   late AppDatabase database;
@@ -138,4 +139,63 @@ void main() {
       );
     },
   );
+
+  test('rolls over remaining amount into the next period snapshot', () async {
+    var localNow = DateTime(2026, 7, 15);
+    final pinned = DriftMoneyRepository(
+      database: database,
+      seedRunner: DatabaseSeedRunner(database: database),
+      now: () => localNow,
+    );
+
+    final budget = await pinned.createBudget(
+      'user_1',
+      const MoneyBudgetDraft(
+        name: '结转预算',
+        amountMinor: 100000,
+        autoRollover: true,
+      ),
+    );
+    expect(budget.autoRollover, isTrue);
+
+    // 推进到下个月，触发周期滚动。
+    localNow = DateTime(2026, 8, 15);
+    await pinned.refreshBudgetSnapshotsForUser('user_1');
+
+    final snapshots = await pinned
+        .watchBudgetSnapshotsForUser('user_1', budgetId: budget.id)
+        .first;
+    final july = snapshots.singleWhere((s) => s.periodStart.month == 7);
+    final august = snapshots.singleWhere((s) => s.periodStart.month == 8);
+
+    expect(july.status, MoneyBudgetHistoryStatus.rolledOver);
+    expect(july.remainingAmountMinor, 100000);
+    expect(august.status, MoneyBudgetHistoryStatus.open);
+    expect(august.budgetAmountMinor, 200000);
+    expect(august.remainingAmountMinor, 200000);
+  });
+
+  test('does not roll over when autoRollover is disabled', () async {
+    var localNow = DateTime(2026, 7, 15);
+    final pinned = DriftMoneyRepository(
+      database: database,
+      seedRunner: DatabaseSeedRunner(database: database),
+      now: () => localNow,
+    );
+
+    final budget = await pinned.createBudget(
+      'user_1',
+      const MoneyBudgetDraft(name: '不结转', amountMinor: 100000),
+    );
+    expect(budget.autoRollover, isFalse);
+
+    localNow = DateTime(2026, 8, 15);
+    await pinned.refreshBudgetSnapshotsForUser('user_1');
+
+    final snapshots = await pinned
+        .watchBudgetSnapshotsForUser('user_1', budgetId: budget.id)
+        .first;
+    final august = snapshots.singleWhere((s) => s.periodStart.month == 8);
+    expect(august.budgetAmountMinor, 100000);
+  });
 }

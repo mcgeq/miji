@@ -22,6 +22,7 @@ import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dar
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_bill_view.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_ledger_scope.dart';
 import 'package:miji/features/bookkeeping/domain/money_overview_entity.dart';
@@ -84,7 +85,18 @@ final currentUserAutoPostingExecutionProvider =
       final repository = ref.watch(moneyRepositoryProvider);
       final userId = session.userId!;
       await repository.ensureReadyForUser(userId);
-      return repository.executeDueAutoPostings(userId);
+      final summary = await repository.executeDueAutoPostings(userId);
+      // 分期到期自动入账与自动记账同入口执行。
+      final installmentSummary = await repository.executeDueInstallmentPostings(
+        userId,
+      );
+      // 自动记账/分期补录产生新流水后必须整体刷新记账与首页数据，
+      // 否则在补录完成前构建的概览/预算/首页会停留在旧数据上。
+      // 再次构建时执行逻辑幂等返回空结果，不会循环执行。
+      if (summary.postedCount > 0 || installmentSummary.postedCount > 0) {
+        ref.read(moneyDataRefreshCoordinatorProvider).refreshAllMoneyData();
+      }
+      return summary;
     });
 
 final moneyDeltaConflictApplyServiceProvider =
@@ -108,6 +120,20 @@ final currentUserVisibleAccountsProvider =
       final userId = session.userId!;
       await repository.ensureReadyForUser(userId);
       yield* repository.watchVisibleAccountsForUser(userId);
+    });
+
+final currentUserDeletedAccountsProvider =
+    FutureProvider<List<MoneyAccountEntity>>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyAccountEntity>[];
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      return repository.getDeletedAccountsForUser(userId);
     });
 
 final currentUserMoneyLedgerAccountsProvider = StreamProvider.autoDispose
@@ -230,7 +256,13 @@ class CurrentMoneyLedgerIdController extends Notifier<String?> {
   }
 
   void set(String ledgerId) {
-    state = ledgerId;
+    final previous = state;
+    if (previous != ledgerId) {
+      state = ledgerId;
+      // 账户/类型/支付方式筛选是账本局部的，切账本后重置，
+      // 避免统计仍按旧账本账户过滤（跨账本账户无效）。
+      ref.read(moneyStatisticsFilterProvider.notifier).resetForLedgerChange();
+    }
   }
 
   void clear() {
@@ -474,6 +506,8 @@ class MoneyStatisticsFilterState {
     this.anchorDate,
     this.customStart,
     this.customEnd,
+    this.anomalyMinAmountMinor = 5000,
+    this.anomalyMinGrowthPercent = 20,
   });
 
   final MoneyStatisticsPeriodPreset periodPreset;
@@ -484,6 +518,8 @@ class MoneyStatisticsFilterState {
   final DateTime? anchorDate;
   final DateTime? customStart;
   final DateTime? customEnd;
+  final int anomalyMinAmountMinor;
+  final double anomalyMinGrowthPercent;
 
   MoneyStatisticsFilterState copyWith({
     MoneyStatisticsPeriodPreset? periodPreset,
@@ -500,6 +536,8 @@ class MoneyStatisticsFilterState {
     bool clearCustomStart = false,
     DateTime? customEnd,
     bool clearCustomEnd = false,
+    int? anomalyMinAmountMinor,
+    double? anomalyMinGrowthPercent,
   }) {
     return MoneyStatisticsFilterState(
       periodPreset: periodPreset ?? this.periodPreset,
@@ -512,6 +550,10 @@ class MoneyStatisticsFilterState {
       anchorDate: clearAnchorDate ? null : anchorDate ?? this.anchorDate,
       customStart: clearCustomStart ? null : customStart ?? this.customStart,
       customEnd: clearCustomEnd ? null : customEnd ?? this.customEnd,
+      anomalyMinAmountMinor:
+          anomalyMinAmountMinor ?? this.anomalyMinAmountMinor,
+      anomalyMinGrowthPercent:
+          anomalyMinGrowthPercent ?? this.anomalyMinGrowthPercent,
     );
   }
 }
@@ -524,6 +566,20 @@ class MoneyStatisticsFilterController
       authSessionControllerProvider.select((session) => session.userId),
     );
     return const MoneyStatisticsFilterState();
+  }
+
+  /// 切换账本后重置账本局部筛选（账户/类型/支付方式）。
+  void resetForLedgerChange() {
+    final current = state;
+    if (current.accountId != null ||
+        current.accountType != null ||
+        current.paymentMethod != null) {
+      state = current.copyWith(
+        clearAccountId: true,
+        clearAccountType: true,
+        clearPaymentMethod: true,
+      );
+    }
   }
 
   void setPeriod(MoneyStatisticsPeriodPreset value) {
@@ -566,6 +622,16 @@ class MoneyStatisticsFilterController
     );
   }
 
+  void setAnomalyThresholds({
+    required int minimumAmountMinor,
+    required double minimumGrowthPercent,
+  }) {
+    state = state.copyWith(
+      anomalyMinAmountMinor: minimumAmountMinor,
+      anomalyMinGrowthPercent: minimumGrowthPercent,
+    );
+  }
+
   void setAccountType(MoneyAccountType? value) {
     state = state.copyWith(accountType: value, clearAccountType: value == null);
   }
@@ -602,7 +668,9 @@ class MoneySpendingAnalysisRequest {
             query.accountType == other.query.accountType &&
             query.paymentMethod == other.query.paymentMethod &&
             query.baselineMonthCount == other.query.baselineMonthCount &&
-            query.windowMonthCount == other.query.windowMonthCount;
+            query.windowMonthCount == other.query.windowMonthCount &&
+            query.minimumAmountMinor == other.query.minimumAmountMinor &&
+            query.minimumGrowthPercent == other.query.minimumGrowthPercent;
   }
 
   @override
@@ -616,6 +684,8 @@ class MoneySpendingAnalysisRequest {
       query.paymentMethod,
       query.baselineMonthCount,
       query.windowMonthCount,
+      query.minimumAmountMinor,
+      query.minimumGrowthPercent,
     );
   }
 }
@@ -794,6 +864,19 @@ final currentUserPaymentMethodUsageRanksProvider =
           .getPaymentMethodUsageRanksForUser(session.userId!);
     });
 
+final currentUserEntrySuggestionsProvider =
+    FutureProvider<MoneyEntrySuggestions>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const MoneyEntrySuggestions.empty();
+      }
+
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getEntrySuggestionsForUser(session.userId!);
+    });
+
 final currentUserBudgetsProvider = StreamProvider<List<MoneyBudgetEntity>>((
   ref,
 ) async* {
@@ -912,6 +995,20 @@ final currentUserAutoPostingTemplatesProvider =
         userId,
         ledgerId: ledger.id,
       );
+    });
+
+final currentUserAutoPostingRunsProvider = StreamProvider.autoDispose
+    .family<List<MoneyAutoPostingRunEntity>, String>((ref, templateId) async* {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyAutoPostingRunEntity>[];
+        return;
+      }
+
+      yield* ref
+          .watch(moneyRepositoryProvider)
+          .watchAutoPostingRunsForTemplate(session.userId!, templateId);
     });
 
 final moneyBudgetHistoryTrendProvider = FutureProvider.autoDispose
@@ -1176,8 +1273,22 @@ class CurrentUserBudgetAlertNotificationActions {
       await _ref
           .read(moneyBudgetAlertNotificationServiceProvider)
           .scanAndNotify(userId: userId, budgets: budgets);
+      await _syncDailyDigestSchedule();
     } catch (error, stackTrace) {
       debugPrint('[budget-alert] 扫描失败: $error\n$stackTrace');
+    }
+  }
+
+  Future<void> _syncDailyDigestSchedule() async {
+    try {
+      final pending = await _ref.read(
+        currentUserPendingReminderCenterItemsProvider.future,
+      );
+      await _ref
+          .read(appNotificationServiceProvider)
+          .scheduleDailyMoneyReminderDigest(pendingCount: pending.length);
+    } catch (_) {
+      // 汇总调度失败不影响数据流。
     }
   }
 }
@@ -1211,6 +1322,12 @@ class CurrentUserBillReminderNotificationActions {
             reminders: reminders,
             accountsById: accountsById,
           );
+      final pending = await _ref.read(
+        currentUserPendingReminderCenterItemsProvider.future,
+      );
+      await _ref
+          .read(appNotificationServiceProvider)
+          .scheduleDailyMoneyReminderDigest(pendingCount: pending.length);
     } catch (_) {
       // Notification scan must not break foreground data flows.
     }
@@ -1223,9 +1340,10 @@ final moneyDataRefreshCoordinatorProvider =
     });
 
 class MoneyDataRefreshCoordinator {
-  const MoneyDataRefreshCoordinator(this._ref);
+  MoneyDataRefreshCoordinator(this._ref);
 
   final Ref _ref;
+  bool _bumpScheduled = false;
 
   void refreshAfterLedgerChanged({String? ledgerId}) {
     _bumpTransactions();
@@ -1264,6 +1382,9 @@ class MoneyDataRefreshCoordinator {
   void refreshAfterTransactionChanged({String? transactionId}) {
     _bumpTransactions();
     _scheduleBudgetAlertScan();
+    // 信用卡/账单债务金额随交易变化，债务类提醒也必须重扫，
+    // 否则旧 token 会阻止新一轮提醒。
+    _scheduleBillReminderScan();
   }
 
   void refreshAllMoneyData({bool clearLedgerSelection = false}) {
@@ -1280,7 +1401,16 @@ class MoneyDataRefreshCoordinator {
   }
 
   void _bumpTransactions() {
-    _ref.read(moneyDataRefreshVersionProvider.notifier).bump();
+    // 同一事件循环内的连续 bump（如批量导入、预算+分配操作链）
+    // 合并为一次，避免整轮全量重建风暴。
+    if (_bumpScheduled) {
+      return;
+    }
+    _bumpScheduled = true;
+    scheduleMicrotask(() {
+      _bumpScheduled = false;
+      _ref.read(moneyDataRefreshVersionProvider.notifier).bump();
+    });
   }
 
   void _scheduleBudgetAlertScan() {
@@ -1374,6 +1504,12 @@ class CurrentUserMoneyLedgerActions {
     _refresh(ledgerId: ledgerId);
   }
 
+  Future<void> deleteLedger(String ledgerId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).deleteLedger(userId, ledgerId);
+    _refresh();
+  }
+
   String _requireUnlockedUserId() {
     final session = _ref.read(authSessionControllerProvider);
     final userId = session.userId;
@@ -1421,6 +1557,12 @@ class CurrentUserMoneyAccountActions {
   Future<void> deleteAccount(String accountId) async {
     final userId = _requireUnlockedUserId();
     await _ref.read(moneyRepositoryProvider).deleteAccount(userId, accountId);
+    _refresh();
+  }
+
+  Future<void> restoreAccount(String accountId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).restoreAccount(userId, accountId);
     _refresh();
   }
 
@@ -1729,6 +1871,17 @@ class CurrentUserMoneyAutoPostingActions {
         .read(moneyRepositoryProvider)
         .deleteAutoPostingTemplate(userId, templateId);
     _refresh();
+  }
+
+  Future<MoneyAutoPostingExecutionSummary> runTemplateNow(
+    String templateId,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final summary = await _ref
+        .read(moneyRepositoryProvider)
+        .executeAutoPostingTemplateNow(userId, templateId);
+    _refresh();
+    return summary;
   }
 
   String _requireUnlockedUserId() {

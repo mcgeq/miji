@@ -180,7 +180,8 @@ void main() {
     expect(insights.weekdaySlices, isEmpty);
     expect(insights.refund.refundCount, 0);
     expect(insights.sourceSlices, isEmpty);
-    expect(insights.sourceTrend, hasLength(12));
+    expect(insights.sourceTrend, hasLength(1));
+    expect(insights.sourceTrend.single.bucketStart, DateTime(2026, 7));
     expect(insights.tagSlices, isEmpty);
   });
 
@@ -287,7 +288,7 @@ void main() {
     expect(byType['manual']!.percentage, closeTo(0.25, 0.001));
   });
 
-  test('builds monthly source trend with all buckets', () async {
+  test('builds monthly source trend aligned to the filter window', () async {
     await addExpense(DateTime(2026, 7, 10), 1000);
     await addExpense(
       DateTime(2026, 7, 11),
@@ -299,17 +300,17 @@ void main() {
     final insights = await repository.getStatisticsInsightsForUser(
       'user_1',
       MoneyStatisticsQuery(
-        dateStart: DateTime(2026, 7),
+        dateStart: DateTime(2026, 6),
         dateEndExclusive: DateTime(2026, 8),
         groupBy: MoneyStatisticsGroupBy.month,
         ledgerId: 'default_ledger_user_1',
       ),
     );
 
-    expect(insights.sourceTrend, hasLength(12));
-    final point = insights.sourceTrend.firstWhere(
-      (p) => p.bucketStart.year == 2026 && p.bucketStart.month == 7,
-    );
+    expect(insights.sourceTrend, hasLength(2));
+    expect(insights.sourceTrend.first.bucketStart, DateTime(2026, 6));
+    expect(insights.sourceTrend.last.bucketStart, DateTime(2026, 7));
+    final point = insights.sourceTrend.last;
     expect(point.otherMinor, 1000);
     expect(point.installmentMinor, 2000);
     expect(point.autoPostingMinor, 3000);

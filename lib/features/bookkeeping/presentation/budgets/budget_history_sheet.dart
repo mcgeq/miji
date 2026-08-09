@@ -83,6 +83,7 @@ class BudgetHistorySheet extends ConsumerWidget {
                   final snapshot = snapshots[index];
                   return _BudgetSnapshotTile(
                     snapshot: snapshot,
+                    budget: budget,
                     allocations:
                         allocationsBySnapshotId[snapshot.id] ??
                         const <MoneyBudgetAllocationHistorySnapshotEntity>[],
@@ -217,6 +218,7 @@ class _SummaryItem extends StatelessWidget {
 class _BudgetSnapshotTile extends StatelessWidget {
   const _BudgetSnapshotTile({
     required this.snapshot,
+    required this.budget,
     required this.allocations,
     required this.catalog,
     required this.members,
@@ -225,6 +227,7 @@ class _BudgetSnapshotTile extends StatelessWidget {
   });
 
   final MoneyBudgetHistorySnapshotEntity snapshot;
+  final MoneyBudgetEntity budget;
   final List<MoneyBudgetAllocationHistorySnapshotEntity> allocations;
   final MoneyCategoryCatalog catalog;
   final List<MoneyMemberEntity> members;
@@ -245,6 +248,11 @@ class _BudgetSnapshotTile extends StatelessWidget {
       MoneyBudgetHistoryStatus.closed => colorScheme.outline,
       MoneyBudgetHistoryStatus.rolledOver => colorScheme.secondary,
     };
+    final isCurrentPeriod = _sameDay(snapshot.periodStart, budget.periodStart);
+    final carriedIntoCurrent =
+        isCurrentPeriod && snapshot.budgetAmountMinor > budget.amountMinor
+        ? snapshot.budgetAmountMinor - budget.amountMinor
+        : 0;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -268,7 +276,7 @@ class _BudgetSnapshotTile extends StatelessWidget {
                 ),
               ),
               _StatusChip(
-                label: snapshot.status.storageValue,
+                label: _statusLabel(snapshot.status),
                 color: statusColor,
               ),
             ],
@@ -280,6 +288,16 @@ class _BudgetSnapshotTile extends StatelessWidget {
             currencyCode: snapshot.currencyCode,
             color: colorScheme.onSurfaceVariant,
           ),
+          if (carriedIntoCurrent > 0) ...[
+            const SizedBox(height: 4),
+            _SnapshotAmountRow(
+              label: '含结转',
+              amountMinor: carriedIntoCurrent,
+              currencyCode: snapshot.currencyCode,
+              color: colorScheme.secondary,
+              emphasized: true,
+            ),
+          ],
           const SizedBox(height: 4),
           _SnapshotAmountRow(
             label: '已用',
@@ -295,6 +313,17 @@ class _BudgetSnapshotTile extends StatelessWidget {
             color: isOverspent ? remainingColor : colorScheme.onSurfaceVariant,
             emphasized: isOverspent,
           ),
+          if (snapshot.status == MoneyBudgetHistoryStatus.rolledOver &&
+              snapshot.remainingAmountMinor > 0) ...[
+            const SizedBox(height: 4),
+            _SnapshotAmountRow(
+              label: '结转下期',
+              amountMinor: snapshot.remainingAmountMinor,
+              currencyCode: snapshot.currencyCode,
+              color: colorScheme.secondary,
+              emphasized: true,
+            ),
+          ],
           const SizedBox(height: 4),
           Text(
             '捕获于 ${_dateTimeText(snapshot.capturedAt)}',
@@ -319,6 +348,18 @@ class _BudgetSnapshotTile extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _statusLabel(MoneyBudgetHistoryStatus status) {
+    return switch (status) {
+      MoneyBudgetHistoryStatus.open => '进行中',
+      MoneyBudgetHistoryStatus.closed => '已结束',
+      MoneyBudgetHistoryStatus.rolledOver => '已结转',
+    };
+  }
+
+  bool _sameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   String _shortDate(DateTime date) {

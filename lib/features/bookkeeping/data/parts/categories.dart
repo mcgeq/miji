@@ -68,7 +68,7 @@ mixin _Categories on _DriftMoneyRepositoryBase {
       final name = draft.name.trim();
       if (name.isEmpty) {
         throw const MoneyRepositoryException(
-          MoneyRepositoryErrorCode.databaseWriteFailed,
+          MoneyRepositoryErrorCode.invalidCategoryName,
         );
       }
 

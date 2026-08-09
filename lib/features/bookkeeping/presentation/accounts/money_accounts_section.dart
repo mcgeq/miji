@@ -246,6 +246,13 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
           _EmptyAccountsPanel(onCreate: () => _openCreateDialog(context, ref))
         else ...[
           const SizedBox(height: 4),
+          _DeletedAccountsBanner(
+            deletedCount: ref
+                .watch(currentUserDeletedAccountsProvider)
+                .maybeWhen(data: (items) => items.length, orElse: () => 0),
+            onOpen: () => _openDeletedAccountsDialog(context, ref),
+          ),
+          const SizedBox(height: 4),
           if (filteredAccounts.isEmpty || selectedGroup == null)
             _NoMatchedAccountsPanel(
               onReset: () => _updateFilters(_resetFilters),
@@ -584,12 +591,175 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
     }
   }
 
+  Future<void> _openDeletedAccountsDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final deleted = await ref.read(currentUserDeletedAccountsProvider.future);
+    if (!context.mounted) return;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  '账户回收站',
+                  style: Theme.of(dialogContext).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: 0),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '已删除账户的历史流水不会丢失，恢复后账户重新可用。',
+                  style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (deleted.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: Text('回收站是空的')),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: deleted.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 6),
+                      itemBuilder: (context, index) {
+                        final account = deleted[index];
+                        return ListTile(
+                          dense: true,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
+                            ),
+                          ),
+                          leading: const Icon(
+                            Icons.account_balance_wallet_outlined,
+                          ),
+                          title: Text(
+                            account.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(account.type.label),
+                          trailing: TextButton.icon(
+                            onPressed: () async {
+                              final toast = FToast()..init(dialogContext);
+                              try {
+                                await ref
+                                    .read(
+                                      currentUserMoneyAccountActionsProvider,
+                                    )
+                                    .restoreAccount(account.id);
+                                if (dialogContext.mounted) {
+                                  AppToast.success(
+                                    toast,
+                                    dialogContext,
+                                    '账户已恢复',
+                                  );
+                                  Navigator.of(dialogContext).pop();
+                                }
+                              } catch (_) {
+                                if (dialogContext.mounted) {
+                                  AppToast.error(
+                                    toast,
+                                    dialogContext,
+                                    '恢复账户失败',
+                                  );
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.restore_rounded, size: 16),
+                            label: const Text('恢复'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   String _accountWriteErrorMessage(Object error, String fallback) {
     if (error is MoneyRepositoryException &&
         error.code == MoneyRepositoryErrorCode.invalidAccountBalance) {
       return '账户余额规则不满足';
     }
     return fallback;
+  }
+}
+
+class _DeletedAccountsBanner extends StatelessWidget {
+  const _DeletedAccountsBanner({
+    required this.deletedCount,
+    required this.onOpen,
+  });
+
+  final int deletedCount;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    if (deletedCount <= 0) {
+      return const SizedBox.shrink();
+    }
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Material(
+      color: colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Icon(
+                Icons.delete_outline_rounded,
+                size: 17,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '回收站中有 $deletedCount 个已删除账户',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

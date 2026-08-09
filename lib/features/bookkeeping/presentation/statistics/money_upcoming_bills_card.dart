@@ -3,19 +3,28 @@ import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/components/app_content_panel.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 
 class MoneyUpcomingBillsCard extends StatelessWidget {
-  const MoneyUpcomingBillsCard({super.key, required this.bills});
+  const MoneyUpcomingBillsCard({
+    super.key,
+    required this.bills,
+    this.accountsById = const {},
+  });
 
   final List<MoneyBillReminderEntity> bills;
+  final Map<String, MoneyAccountEntity> accountsById;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final pending = bills.where((b) => b.isActive).toList();
+    final pending = bills
+        .where((b) => b.isActive && _effectiveAmountMinor(b) > 0)
+        .toList();
     if (pending.isEmpty) {
       return AppContentPanel(
         title: '待付账单',
@@ -64,14 +73,15 @@ class MoneyUpcomingBillsCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            for (final bill in top) _BillRow(bill: bill),
+            for (final bill in top)
+              _BillRow(bill: bill, amountMinor: _effectiveAmountMinor(bill)),
           ],
         ],
       ),
     );
   }
 
-  static int _sumInWindow(
+  int _sumInWindow(
     List<MoneyBillReminderEntity> bills,
     DateTime from,
     int days,
@@ -79,7 +89,16 @@ class MoneyUpcomingBillsCard extends StatelessWidget {
     final end = from.add(Duration(days: days));
     return bills
         .where((b) => b.dueDate.isAfter(from) && b.dueDate.isBefore(end))
-        .fold<int>(0, (sum, b) => sum + b.amountMinor);
+        .fold<int>(0, (sum, b) => sum + _effectiveAmountMinor(b));
+  }
+
+  int _effectiveAmountMinor(MoneyBillReminderEntity reminder) {
+    if (reminder.amountSource ==
+        MoneyBillReminderAmountSource.creditAccountDebt) {
+      final account = accountsById[reminder.accountId];
+      return account?.effectivePostedDebtMinor ?? 0;
+    }
+    return reminder.amountMinor;
   }
 }
 
@@ -103,7 +122,7 @@ class _Bucket extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              formatMoneyMinor(amountMinor, 'CNY'),
+              formatMoneyMinor(amountMinor, defaultMoneyCurrencyCode),
               style: theme.textTheme.titleSmall?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w900,
@@ -126,9 +145,10 @@ class _Bucket extends StatelessWidget {
 }
 
 class _BillRow extends StatelessWidget {
-  const _BillRow({required this.bill});
+  const _BillRow({required this.bill, required this.amountMinor});
 
   final MoneyBillReminderEntity bill;
+  final int amountMinor;
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +193,7 @@ class _BillRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            formatMoneyMinor(bill.amountMinor, bill.currencyCode),
+            formatMoneyMinor(amountMinor, bill.currencyCode),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w800,

@@ -277,53 +277,28 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
               .get();
 
       var summary = MoneyAutoPostingExecutionSummary.empty;
-      final impactedAccounts = <String>{};
       final impactedTransactions = <MoneyTransactionEntity>[];
+      final impactedAccounts = <String>{};
       final impactedLedgerIds = <String, List<String>>{};
 
       for (final row in rows) {
-        final template = _mapAutoPostingTemplate(row);
-        for (final occurrence in _dueAutoPostingOccurrences(
-          template,
-          effectiveNow,
-        )) {
-          final outcome = await _executeAutoPostingOccurrence(
-            userId: userId,
-            template: template,
-            occurrence: occurrence,
-          );
-          summary = summary.add(
-            posted: outcome.posted ? 1 : 0,
-            skipped: outcome.skipped ? 1 : 0,
-            blocked: outcome.blocked ? 1 : 0,
-            failed: outcome.failed ? 1 : 0,
-          );
-          final transaction = outcome.transaction;
-          if (transaction != null) {
-            impactedTransactions.add(transaction);
-            impactedAccounts.add(transaction.accountId);
-            impactedLedgerIds[transaction.id] = outcome.ledgerIds;
-          }
-        }
+        summary = await _executeAutoPostingTemplateOccurrences(
+          userId: userId,
+          template: _mapAutoPostingTemplate(row),
+          effectiveNow: effectiveNow,
+          summary: summary,
+          impactedTransactions: impactedTransactions,
+          impactedAccounts: impactedAccounts,
+          impactedLedgerIds: impactedLedgerIds,
+        );
       }
 
-      if (impactedTransactions.isNotEmpty) {
-        await _refreshBudgetSnapshotsForTransactionImpacts(userId, [
-          for (final transaction in impactedTransactions)
-            _BudgetTransactionImpact(
-              type: transaction.type,
-              accountId: transaction.accountId,
-              categoryId: transaction.categoryId,
-              subCategoryId: transaction.subCategoryId,
-              ledgerIds: impactedLedgerIds[transaction.id] ?? const [],
-            ),
-        ]);
-        await _syncCreditAccountRepaymentRemindersForAccounts(
-          userId,
-          impactedAccounts.toList(growable: false),
-        );
-        await _tryRebuildUsageStatsForUser(userId);
-      }
+      await _applyAutoPostingImpacts(
+        userId,
+        impactedTransactions,
+        impactedAccounts,
+        impactedLedgerIds,
+      );
 
       return summary;
     } catch (error) {
@@ -335,6 +310,124 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
         error,
       );
     }
+  }
+
+  @override
+  Future<MoneyAutoPostingExecutionSummary> executeAutoPostingTemplateNow(
+    String userId,
+    String templateId, {
+    DateTime? now,
+  }) async {
+    try {
+      await ensureReadyForUser(userId);
+      final effectiveNow = (now ?? _utcNow()).toUtc();
+      final row =
+          await (database.select(database.moneyAutoPostingTemplates)..where(
+                (queryRow) =>
+                    queryRow.userId.equals(userId) &
+                    queryRow.id.equals(templateId),
+              ))
+              .getSingleOrNull();
+      if (row == null) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.databaseReadFailed,
+        );
+      }
+      final template = _mapAutoPostingTemplate(row);
+
+      var summary = MoneyAutoPostingExecutionSummary.empty;
+      final impactedTransactions = <MoneyTransactionEntity>[];
+      final impactedAccounts = <String>{};
+      final impactedLedgerIds = <String, List<String>>{};
+
+      if (template.isActive) {
+        summary = await _executeAutoPostingTemplateOccurrences(
+          userId: userId,
+          template: template,
+          effectiveNow: effectiveNow,
+          summary: summary,
+          impactedTransactions: impactedTransactions,
+          impactedAccounts: impactedAccounts,
+          impactedLedgerIds: impactedLedgerIds,
+        );
+      }
+
+      await _applyAutoPostingImpacts(
+        userId,
+        impactedTransactions,
+        impactedAccounts,
+        impactedLedgerIds,
+      );
+
+      return summary;
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  Future<MoneyAutoPostingExecutionSummary>
+  _executeAutoPostingTemplateOccurrences({
+    required String userId,
+    required MoneyAutoPostingTemplateEntity template,
+    required DateTime effectiveNow,
+    required MoneyAutoPostingExecutionSummary summary,
+    required List<MoneyTransactionEntity> impactedTransactions,
+    required Set<String> impactedAccounts,
+    required Map<String, List<String>> impactedLedgerIds,
+  }) async {
+    for (final occurrence in _dueAutoPostingOccurrences(
+      template,
+      effectiveNow,
+    )) {
+      final outcome = await _executeAutoPostingOccurrence(
+        userId: userId,
+        template: template,
+        occurrence: occurrence,
+      );
+      summary = summary.add(
+        posted: outcome.posted ? 1 : 0,
+        skipped: outcome.skipped ? 1 : 0,
+        blocked: outcome.blocked ? 1 : 0,
+        failed: outcome.failed ? 1 : 0,
+      );
+      final transaction = outcome.transaction;
+      if (transaction != null) {
+        impactedTransactions.add(transaction);
+        impactedAccounts.add(transaction.accountId);
+        impactedLedgerIds[transaction.id] = outcome.ledgerIds;
+      }
+    }
+    return summary;
+  }
+
+  Future<void> _applyAutoPostingImpacts(
+    String userId,
+    List<MoneyTransactionEntity> impactedTransactions,
+    Set<String> impactedAccounts,
+    Map<String, List<String>> impactedLedgerIds,
+  ) async {
+    if (impactedTransactions.isEmpty) return;
+    await _refreshBudgetSnapshotsForTransactionImpacts(userId, [
+      for (final transaction in impactedTransactions)
+        _BudgetTransactionImpact(
+          type: transaction.type,
+          accountId: transaction.accountId,
+          categoryId: transaction.categoryId,
+          subCategoryId: transaction.subCategoryId,
+          ledgerIds: impactedLedgerIds[transaction.id] ?? const [],
+        ),
+    ]);
+    await _syncCreditAccountRepaymentRemindersForAccounts(
+      userId,
+      impactedAccounts.toList(growable: false),
+    );
+    await _tryRebuildUsageStatsForUser(userId);
   }
 
   @override
@@ -650,6 +743,16 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
             occurrence: occurrence,
           )
         : _mapAutoPostingRun(runRow);
+    if (run == null) {
+      // 并发执行者已先插入同一 occurrence 的 run：由对方负责入账，
+      // 本轮直接跳过，避免重复建账。
+      return const _AutoPostingExecutionOutcome(
+        posted: false,
+        skipped: true,
+        blocked: false,
+        failed: false,
+      );
+    }
 
     try {
       final account = await _getWritableAccountForUser(
@@ -764,7 +867,7 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
             .getSingleOrNull();
     if (template == null) {
       throw const MoneyRepositoryException(
-        MoneyRepositoryErrorCode.databaseReadFailed,
+        MoneyRepositoryErrorCode.autoPostingTemplateNotFound,
       );
     }
     return template;
@@ -801,7 +904,9 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
         .getSingleOrNull();
   }
 
-  Future<MoneyAutoPostingRunEntity> _insertAutoPostingRun({
+  /// 插入自动记账执行记录；同一 (user_id, template_id, occurrence_key)
+  /// 已存在时返回 null（并发执行者已占有该 occurrence，由它入账）。
+  Future<MoneyAutoPostingRunEntity?> _insertAutoPostingRun({
     required String userId,
     required MoneyAutoPostingTemplateEntity template,
     required _AutoPostingOccurrence occurrence,
@@ -822,9 +927,15 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
             createdAt: now,
             updatedAt: now,
           ),
+          mode: InsertMode.insertOrIgnore,
         );
+    // insertOrIgnore 被唯一索引忽略时不返回 0（last_insert_rowid 语义），
+    // 因此以 runId 是否存在判断是否真正插入。
     final row = await _getAutoPostingRunById(userId, runId);
-    final entity = _mapAutoPostingRun(row!);
+    if (row == null) {
+      return null;
+    }
+    final entity = _mapAutoPostingRun(row);
     await _recordAutoPostingRunChange(
       userId: userId,
       recordId: runId,

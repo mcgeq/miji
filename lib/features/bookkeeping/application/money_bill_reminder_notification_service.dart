@@ -42,7 +42,7 @@ class MoneyBillReminderNotificationService {
         continue;
       }
 
-      final token = _alertToken(reminder, alert.dueDate);
+      final token = _alertToken(reminder, alert);
       if (prefs.getString(storageKey) == token) {
         continue;
       }
@@ -84,6 +84,7 @@ class MoneyBillReminderNotificationService {
           '${reminder.name} $dueText，金额 '
           '${formatMoneyMinor(amountMinor, reminder.currencyCode)}。',
       dueDate: dueDate,
+      overdueDays: dayDelta < 0 ? -dayDelta : 0,
     );
   }
 
@@ -99,8 +100,16 @@ class MoneyBillReminderNotificationService {
     return reminder.amountMinor;
   }
 
-  String _alertToken(MoneyBillReminderEntity reminder, DateTime dueDate) {
-    return '${dueDate.millisecondsSinceEpoch}:${reminder.status.storageValue}';
+  String _alertToken(
+    MoneyBillReminderEntity reminder,
+    _BillReminderAlert alert,
+  ) {
+    final overdue = alert.overdueDays;
+    // 逾期阶段纳入 token：随逾期天数增长变化，实现"逾期逐日复推"，
+    // 直到用户处理（status）或到期日（dueDate）变化。
+    return '${alert.dueDate.millisecondsSinceEpoch}'
+        ':${reminder.status.storageValue}'
+        '${overdue > 0 ? ':od$overdue' : ''}';
   }
 
   String _storageKey(String userId, String reminderId) {
@@ -187,9 +196,11 @@ class _BillReminderAlert {
     required this.title,
     required this.body,
     required this.dueDate,
+    this.overdueDays = 0,
   });
 
   final String title;
   final String body;
   final DateTime dueDate;
+  final int overdueDays;
 }

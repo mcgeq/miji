@@ -5,6 +5,7 @@ import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/components/app_content_panel.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 
 class MoneyBudgetHistoryTrendCard extends StatelessWidget {
@@ -58,7 +59,7 @@ class MoneyBudgetHistoryTrendCard extends StatelessWidget {
                       final pct =
                           '${(point.usageRate * 100).toStringAsFixed(0)}%';
                       return LineTooltipItem(
-                        '$pct\n${formatMoneyMinor(point.usedAmountMinor, 'CNY')} / ${formatMoneyMinor(point.budgetAmountMinor, 'CNY')}',
+                        '$pct\n${formatMoneyMinor(point.usedAmountMinor, defaultMoneyCurrencyCode)} / ${formatMoneyMinor(point.budgetAmountMinor, defaultMoneyCurrencyCode)}',
                         theme.textTheme.labelSmall!.copyWith(
                           color: Colors.white,
                           letterSpacing: 0,

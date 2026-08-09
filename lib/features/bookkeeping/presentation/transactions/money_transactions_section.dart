@@ -313,41 +313,66 @@ class _MoneyTransactionsSectionState
                 data: (items) => items,
                 orElse: () => const <MoneyLedgerEntity>[],
               );
-          return TransactionCard(
-            key: ValueKey(transaction.id),
-            transaction: transaction,
-            accounts: accounts,
-            expenseCatalog: expenseCatalog,
-            incomeCatalog: incomeCatalog,
-            installmentPlans: installmentPlans,
-            ledgerMemberships: ledgerMemberships,
-            currentLedger: currentLedger,
-            isSelected: isWide && transaction.id == _selectedTransactionId,
-            swipeCloseSignal: _selectedTransactionId,
-            onTap: () => _openTransactionDetail(
-              transaction: transaction,
-              isWide: isWide,
-              accounts: accounts,
-              expenseCatalog: expenseCatalog,
-              incomeCatalog: incomeCatalog,
-            ),
-            onEdit: detailPanelOpen || transaction.isInstallmentPosting
-                ? null
-                : () => _openEditDialog(transaction),
-            onDelete: detailPanelOpen || transaction.isInstallmentPosting
-                ? null
-                : () => _confirmDelete(transaction),
-            onRefund:
-                detailPanelOpen ||
-                    transaction.isInstallmentPosting ||
-                    transaction.type != MoneyTransactionType.expense ||
-                    transaction.status != MoneyTransactionStatus.completed ||
-                    transaction.amountMinor <= transaction.refundAmountMinor
-                ? null
-                : () => _openRefundDialog(transaction),
+          final previous = index > 0 ? _transactions[index - 1] : null;
+          final showDayHeader =
+              previous == null ||
+              !sameDayKey(previous.transactionAt, transaction.transactionAt);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (showDayHeader)
+                _DayGroupHeader(
+                  date: transaction.transactionAt,
+                  expenseMinor: _dayExpenseMinorFor(transaction.transactionAt),
+                  incomeMinor: _dayIncomeMinorFor(transaction.transactionAt),
+                ),
+              TransactionCard(
+                key: ValueKey(transaction.id),
+                transaction: transaction,
+                accounts: accounts,
+                expenseCatalog: expenseCatalog,
+                incomeCatalog: incomeCatalog,
+                installmentPlans: installmentPlans,
+                ledgerMemberships: ledgerMemberships,
+                currentLedger: currentLedger,
+                isSelected: isWide && transaction.id == _selectedTransactionId,
+                swipeCloseSignal: _selectedTransactionId,
+                onTap: () => _openTransactionDetail(
+                  transaction: transaction,
+                  isWide: isWide,
+                  accounts: accounts,
+                  expenseCatalog: expenseCatalog,
+                  incomeCatalog: incomeCatalog,
+                ),
+                onEdit: detailPanelOpen || transaction.isInstallmentPosting
+                    ? null
+                    : () => _openEditDialog(transaction),
+                onDelete: detailPanelOpen || transaction.isInstallmentPosting
+                    ? null
+                    : () => _confirmDelete(transaction),
+                onRefund:
+                    detailPanelOpen ||
+                        transaction.isInstallmentPosting ||
+                        transaction.type != MoneyTransactionType.expense ||
+                        transaction.status !=
+                            MoneyTransactionStatus.completed ||
+                        transaction.amountMinor <= transaction.refundAmountMinor
+                    ? null
+                    : () => _openRefundDialog(transaction),
+              ),
+            ],
           );
         },
-        separatorBuilder: (context, index) => const SizedBox(height: 10),
+        separatorBuilder: (context, index) {
+          final current = _transactions.elementAtOrNull(index);
+          final next = _transactions.elementAtOrNull(index + 1);
+          if (current != null &&
+              next != null &&
+              !sameDayKey(current.transactionAt, next.transactionAt)) {
+            return const SizedBox(height: 8);
+          }
+          return const SizedBox(height: 10);
+        },
         padding: const EdgeInsets.only(bottom: 12),
       ),
     );
@@ -494,6 +519,30 @@ class _MoneyTransactionsSectionState
     setState(() {
       _selectedTransactionId = null;
     });
+  }
+
+  int _dayExpenseMinorFor(DateTime date) {
+    var total = 0;
+    for (final t in _transactions) {
+      if (!sameDayKey(t.transactionAt, date)) continue;
+      if (t.type == MoneyTransactionType.expense &&
+          t.status == MoneyTransactionStatus.completed) {
+        total += t.amountMinor - t.refundAmountMinor;
+      }
+    }
+    return total;
+  }
+
+  int _dayIncomeMinorFor(DateTime date) {
+    var total = 0;
+    for (final t in _transactions) {
+      if (!sameDayKey(t.transactionAt, date)) continue;
+      if (t.type == MoneyTransactionType.income &&
+          t.status == MoneyTransactionStatus.completed) {
+        total += t.amountMinor - t.refundAmountMinor;
+      }
+    }
+    return total;
   }
 
   Future<void> _refreshTransactions() async {
@@ -1850,6 +1899,94 @@ class _FilterContextBanner extends StatelessWidget {
       ],
     );
   }
+}
+
+class _DayGroupHeader extends StatelessWidget {
+  const _DayGroupHeader({
+    required this.date,
+    required this.expenseMinor,
+    required this.incomeMinor,
+  });
+
+  final DateTime date;
+  final int expenseMinor;
+  final int incomeMinor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final local = date.toLocal();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 2, 4, 10),
+      child: Row(
+        children: [
+          Text(
+            _dayTitle(local),
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (expenseMinor > 0)
+            Text(
+              '支出 ${formatMoneyMinor(expenseMinor, 'CNY')}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.moneyColors.expense,
+                letterSpacing: 0,
+              ),
+            ),
+          if (expenseMinor > 0 && incomeMinor > 0) const SizedBox(width: 10),
+          if (incomeMinor > 0)
+            Text(
+              '收入 ${formatMoneyMinor(incomeMinor, 'CNY')}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.moneyColors.income,
+                letterSpacing: 0,
+              ),
+            ),
+          const Spacer(),
+          Text(
+            _weekdayLabel(local),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _dayTitle(DateTime local) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(local.year, local.month, local.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return '今天';
+    if (diff == 1) return '昨天';
+    return '${local.month}月${local.day}日';
+  }
+
+  String _weekdayLabel(DateTime local) {
+    const labels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    final today = DateTime.now();
+    if (today.year == local.year &&
+        today.month == local.month &&
+        today.day == local.day) {
+      return labels[local.weekday - 1];
+    }
+    return '${local.year}年 ${labels[local.weekday - 1]}';
+  }
+}
+
+bool sameDayKey(DateTime a, DateTime b) {
+  final la = a.toLocal();
+  final lb = b.toLocal();
+  return la.year == lb.year && la.month == lb.month && la.day == lb.day;
 }
 
 class _EmptyTransactionsPanel extends StatelessWidget {

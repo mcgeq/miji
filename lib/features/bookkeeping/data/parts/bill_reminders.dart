@@ -159,11 +159,12 @@ mixin _BillReminders on _DriftMoneyRepositoryBase {
               .getSingleOrNull();
 
       if (existing == null) {
+        final recordId = _uuid.v4();
         await database
             .into(database.moneyReminderCenterProcessing)
             .insert(
               MoneyReminderCenterProcessingCompanion.insert(
-                id: _uuid.v4(),
+                id: recordId,
                 userId: userId,
                 itemKey: item.itemKey,
                 sourceType: item.sourceType.storageValue,
@@ -185,6 +186,18 @@ mixin _BillReminders on _DriftMoneyRepositoryBase {
                 updatedAt: now,
               ),
             );
+        await _recordReminderCenterProcessingChange(
+          userId: userId,
+          recordId: recordId,
+          operation: SyncChangeOperation.insert,
+          changedFields: _reminderCenterSyncFields(
+            item: item,
+            state: state,
+            snoozedUntil: snoozedUntil,
+            processedAt: processedAt,
+          ),
+          afterVersion: 1,
+        );
         return;
       }
 
@@ -211,6 +224,19 @@ mixin _BillReminders on _DriftMoneyRepositoryBase {
               updatedAt: Value(now),
             ),
           );
+      await _recordReminderCenterProcessingChange(
+        userId: userId,
+        recordId: existing.id,
+        operation: SyncChangeOperation.update,
+        changedFields: _reminderCenterSyncFields(
+          item: item,
+          state: state,
+          snoozedUntil: snoozedUntil,
+          processedAt: processedAt,
+        ),
+        beforeVersion: existing.version,
+        afterVersion: existing.version + 1,
+      );
     } catch (error) {
       if (error is MoneyRepositoryException) {
         rethrow;
@@ -612,7 +638,7 @@ mixin _BillReminders on _DriftMoneyRepositoryBase {
 
     if (reminder == null) {
       throw const MoneyRepositoryException(
-        MoneyRepositoryErrorCode.budgetNotFound,
+        MoneyRepositoryErrorCode.reminderNotFound,
       );
     }
 

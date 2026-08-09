@@ -46,6 +46,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
   String? _categoryErrorText;
   String? _scopeErrorText;
   bool _alertEnabled = false;
+  bool _autoRollover = false;
   String _selectedColor = '#F97316';
 
   bool get _isEditing => widget.budget != null;
@@ -83,6 +84,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
       _subCategoryId = null;
     }
     _alertEnabled = budget?.alertEnabled ?? false;
+    _autoRollover = budget?.autoRollover ?? false;
     _selectedColor = budget?.color ?? '#F97316';
   }
 
@@ -375,6 +377,16 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                 setState(() => _alertEnabled = value);
               },
             ),
+            if (_trackingType == MoneyBudgetTrackingType.expenseLimit)
+              AppSwitchField(
+                title: '自动结转剩余额度',
+                subtitle: '周期结束时未用完的预算自动滚入下一周期',
+                icon: Icons.sync_alt_rounded,
+                value: _autoRollover,
+                onChanged: (value) {
+                  setState(() => _autoRollover = value);
+                },
+              ),
             if (_alertEnabled)
               AppTextFormField(
                 controller: _alertThresholdController,
@@ -478,6 +490,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               accountId: effectiveAccountId,
               alertEnabled: _alertEnabled,
               alertThresholdPercent: alertThreshold,
+              autoRollover: _autoRollover,
               color: _selectedColor,
             )
           : MoneyBudgetUpdate(
@@ -497,6 +510,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               isActive: budget.isActive,
               alertEnabled: _alertEnabled,
               alertThresholdPercent: alertThreshold,
+              autoRollover: _autoRollover,
               color: _selectedColor,
             ),
     );

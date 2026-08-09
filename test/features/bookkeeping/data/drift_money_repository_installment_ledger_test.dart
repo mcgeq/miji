@@ -122,4 +122,62 @@ void main() {
       expect(ledgers.map((ledger) => ledger.id), contains(familyLedger.id));
     },
   );
+
+  test('auto-posts due installment details and skips future periods', () async {
+    await repository.ensureReadyForUser('user_1');
+    final account = await repository.createAccount(
+      'user_1',
+      const MoneyAccountDraft(
+        name: '信用卡',
+        type: MoneyAccountType.creditCard,
+        initialBalanceMinor: 100000,
+      ),
+    );
+    final catalog = await repository
+        .watchCategoryCatalogForUser('user_1', MoneyCategoryKind.expense)
+        .first;
+    final category = catalog.categories.first;
+    final plan = await repository.createInstallmentPlan(
+      'user_1',
+      MoneyInstallmentPlanDraft(
+        accountId: account.id,
+        name: '手机分期',
+        categoryId: category.id,
+        totalPrincipalMinor: 30000,
+        totalInterestMinor: 0,
+        totalPeriods: 3,
+        firstDueDate: DateTime(2026, 2, 10),
+      ),
+    );
+
+    final summary = await repository.executeDueInstallmentPostings(
+      'user_1',
+      now: DateTime.utc(2026, 2, 11),
+    );
+
+    expect(summary.postedCount, 1);
+    expect(summary.failedCount, 0);
+
+    final details = await repository
+        .watchInstallmentDetailsForPlan('user_1', plan.id)
+        .first;
+    final statuses = details.map((detail) => detail.status).toList();
+    expect(statuses[0], MoneyInstallmentDetailStatus.posted);
+    expect(statuses[1], MoneyInstallmentDetailStatus.pending);
+    expect(statuses[2], MoneyInstallmentDetailStatus.pending);
+
+    // 幂等：再次执行不会重复入账。
+    final again = await repository.executeDueInstallmentPostings(
+      'user_1',
+      now: DateTime.utc(2026, 2, 11),
+    );
+    expect(again.postedCount, 0);
+
+    // 到期日当天及更晚的期数一起补录。
+    final catchUp = await repository.executeDueInstallmentPostings(
+      'user_1',
+      now: DateTime.utc(2026, 4, 11),
+    );
+    expect(catchUp.postedCount, 2);
+  });
 }

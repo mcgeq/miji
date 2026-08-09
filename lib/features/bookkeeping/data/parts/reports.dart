@@ -10,6 +10,17 @@ mixin _Reports on _DriftMoneyRepositoryBase {
       await ensureReadyForUser(userId);
       final resolvedLedgerId = await _resolveLedgerId(userId, request.ledgerId);
 
+      // 清理历史遗留的 generation_started 残行（如生成过程中 App 被杀），
+      // 避免无限期卡在"生成中"。
+      await (database.delete(database.moneyAnalysisReports)..where(
+            (r) =>
+                r.userId.equals(userId) &
+                (r.ledgerId.equals(resolvedLedgerId) | r.ledgerId.isNull()) &
+                r.reportPeriod.equals(request.reportPeriod) &
+                r.status.equals('generation_started'),
+          ))
+          .go();
+
       final reportId = _uuid.v4();
       final now = _utcNow();
 
@@ -33,104 +44,130 @@ mixin _Reports on _DriftMoneyRepositoryBase {
             ),
           );
 
-      // Aggregate data using existing statistics methods
-
-      final statsQuery = MoneyStatisticsQuery(
-        dateStart: request.periodStart,
-        dateEndExclusive: request.periodEnd,
-        groupBy: MoneyStatisticsGroupBy.month,
-        ledgerId: resolvedLedgerId,
-      );
-      final summary = await getStatisticsForUser(userId, statsQuery);
-
-      final insightsQuery = MoneyStatisticsQuery(
-        dateStart: request.periodStart,
-        dateEndExclusive: request.periodEnd,
-        groupBy: MoneyStatisticsGroupBy.month,
-        ledgerId: resolvedLedgerId,
-      );
-      final insights = await getStatisticsInsightsForUser(
-        userId,
-        insightsQuery,
-      );
-
-      final trend = await getBudgetHistoryTrendForUser(
-        userId,
-        resolvedLedgerId,
-        months: 1,
-      );
-      final budgetUsageRate = trend.isNotEmpty ? trend.last.usageRate : 0.0;
-      final overspentBudgetCount = trend.isNotEmpty
-          ? trend.last.overspentBudgetCount
-          : 0;
-
-      final snapshot = MoneyAnalysisReportSnapshot(
-        incomeMinor: summary.totalIncomeMinor,
-        expenseMinor: summary.totalExpenseMinor,
-        netMinor: summary.totalIncomeMinor - summary.totalExpenseMinor,
-        expenseByCategory: summary.expenseCategories
-            .map(
-              (s) => MoneyCategoryAmount(
-                categoryName: s.categoryName,
-                amountMinor: s.amountMinor,
-              ),
-            )
-            .toList(),
-        topMerchants: summary.merchants
-            .take(5)
-            .map(
-              (s) => MoneyCategoryAmount(
-                categoryName: s.name,
-                amountMinor: s.amountMinor,
-              ),
-            )
-            .toList(),
-        installmentMinor: insights.sourceSlices
-            .where((s) => s.sourceType == 'installment')
-            .fold<int>(0, (sum, s) => sum + s.amountMinor),
-        autoPostingMinor: insights.sourceSlices
-            .where((s) => s.sourceType == 'auto_posting')
-            .fold<int>(0, (sum, s) => sum + s.amountMinor),
-        budgetUsageRate: budgetUsageRate,
-        overspentBudgetCount: overspentBudgetCount,
-        currencyCode: summary.currencyCode,
-      );
-
-      final jsonStr = _jsonEncode(snapshot.toJson());
-      final completedAt = _utcNow();
-
-      await (database.update(
-        database.moneyAnalysisReports,
-      )..where((r) => r.id.equals(reportId))).write(
-        MoneyAnalysisReportsCompanion(
-          status: const Value('completed'),
-          reportDataJson: Value(jsonStr),
-          generationCompletedAt: Value(completedAt),
-          updatedAt: Value(completedAt),
-        ),
-      );
-
-      return MoneyAnalysisReportEntity(
-        id: reportId,
-        userId: userId,
-        scopeType: 'ledger',
-        ledgerId: resolvedLedgerId,
-        reportPeriod: request.reportPeriod,
-        periodStart: request.periodStart,
-        periodEnd: request.periodEnd,
-        status: 'completed',
-        reportDataJson: jsonStr,
-        generationStartedAt: now,
-        generationCompletedAt: completedAt,
-        createdAt: now,
-        updatedAt: completedAt,
-      );
+      try {
+        return await _generateReportBody(
+          userId: userId,
+          request: request,
+          reportId: reportId,
+          resolvedLedgerId: resolvedLedgerId,
+          startedAt: now,
+        );
+      } catch (error) {
+        final failedAt = _utcNow();
+        await (database.update(
+          database.moneyAnalysisReports,
+        )..where((r) => r.id.equals(reportId))).write(
+          MoneyAnalysisReportsCompanion(
+            status: const Value('failed'),
+            generationCompletedAt: Value(failedAt),
+            errorMessage: Value(error.toString()),
+            updatedAt: Value(failedAt),
+          ),
+        );
+        throw MoneyRepositoryException(
+          MoneyRepositoryErrorCode.databaseWriteFailed,
+          error,
+        );
+      }
     } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
       throw MoneyRepositoryException(
         MoneyRepositoryErrorCode.databaseWriteFailed,
         error,
       );
     }
+  }
+
+  Future<MoneyAnalysisReportEntity> _generateReportBody({
+    required String userId,
+    required MoneyAnalysisReportRequest request,
+    required String reportId,
+    required String resolvedLedgerId,
+    required DateTime startedAt,
+  }) async {
+    final statsQuery = MoneyStatisticsQuery(
+      dateStart: request.periodStart,
+      dateEndExclusive: request.periodEnd,
+      groupBy: MoneyStatisticsGroupBy.month,
+      ledgerId: resolvedLedgerId,
+    );
+    final summary = await getStatisticsForUser(userId, statsQuery);
+
+    final insights = await getStatisticsInsightsForUser(userId, statsQuery);
+
+    final trend = await getBudgetHistoryTrendForUser(
+      userId,
+      resolvedLedgerId,
+      months: 1,
+    );
+    final budgetUsageRate = trend.isNotEmpty ? trend.last.usageRate : 0.0;
+    final overspentBudgetCount = trend.isNotEmpty
+        ? trend.last.overspentBudgetCount
+        : 0;
+
+    final snapshot = MoneyAnalysisReportSnapshot(
+      incomeMinor: summary.totalIncomeMinor,
+      expenseMinor: summary.totalExpenseMinor,
+      netMinor: summary.totalIncomeMinor - summary.totalExpenseMinor,
+      expenseByCategory: summary.expenseCategories
+          .map(
+            (s) => MoneyCategoryAmount(
+              categoryName: s.categoryName,
+              amountMinor: s.amountMinor,
+            ),
+          )
+          .toList(),
+      topMerchants: summary.merchants
+          .take(5)
+          .map(
+            (s) => MoneyCategoryAmount(
+              categoryName: s.name,
+              amountMinor: s.amountMinor,
+            ),
+          )
+          .toList(),
+      installmentMinor: insights.sourceSlices
+          .where((s) => s.sourceType == 'installment')
+          .fold<int>(0, (sum, s) => sum + s.amountMinor),
+      autoPostingMinor: insights.sourceSlices
+          .where((s) => s.sourceType == 'auto_posting')
+          .fold<int>(0, (sum, s) => sum + s.amountMinor),
+      budgetUsageRate: budgetUsageRate,
+      overspentBudgetCount: overspentBudgetCount,
+      currencyCode: summary.currencyCode,
+    );
+
+    final jsonStr = jsonEncode(snapshot.toJson());
+    final completedAt = _utcNow();
+
+    await (database.update(
+      database.moneyAnalysisReports,
+    )..where((r) => r.id.equals(reportId))).write(
+      MoneyAnalysisReportsCompanion(
+        status: const Value('completed'),
+        reportDataJson: Value(jsonStr),
+        generationCompletedAt: Value(completedAt),
+        updatedAt: Value(completedAt),
+      ),
+    );
+
+    return MoneyAnalysisReportEntity(
+      id: reportId,
+      userId: userId,
+      scopeType: 'ledger',
+      ledgerId: resolvedLedgerId,
+      reportPeriod: request.reportPeriod,
+      periodStart: request.periodStart,
+      periodEnd: request.periodEnd,
+      status: 'completed',
+      reportDataJson: jsonStr,
+      generationStartedAt: startedAt,
+      generationCompletedAt: completedAt,
+      createdAt: startedAt,
+      updatedAt: completedAt,
+    );
   }
 
   @override
@@ -143,23 +180,31 @@ mixin _Reports on _DriftMoneyRepositoryBase {
       await ensureReadyForUser(userId);
       final resolvedLedgerId = await _resolveLedgerId(userId, ledgerId);
 
-      final row =
+      final rows =
           await (database.select(database.moneyAnalysisReports)
                 ..where(
                   (r) =>
                       r.userId.equals(userId) &
                       (r.ledgerId.equals(resolvedLedgerId) |
                           r.ledgerId.isNull()) &
-                      r.reportPeriod.equals(reportPeriod) &
-                      r.status.equals('completed'),
+                      r.reportPeriod.equals(reportPeriod),
                 )
-                ..orderBy([(r) => OrderingTerm.desc(r.periodEndDate)])
-                ..limit(1))
-              .getSingleOrNull();
+                ..orderBy([
+                  (r) => OrderingTerm.desc(r.periodEndDate),
+                  (r) => OrderingTerm.desc(r.updatedAt),
+                ]))
+              .get();
 
-      if (row == null) return null;
-
-      return _mapReport(row);
+      MoneyAnalysisReportEntity? latestFailed;
+      for (final row in rows) {
+        if (row.status == 'completed') {
+          return _mapReport(row);
+        }
+        if (row.status == 'failed' && latestFailed == null) {
+          latestFailed = _mapReport(row);
+        }
+      }
+      return latestFailed;
     } catch (error) {
       throw MoneyRepositoryException(
         MoneyRepositoryErrorCode.databaseReadFailed,
@@ -259,48 +304,5 @@ mixin _Reports on _DriftMoneyRepositoryBase {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );
-  }
-
-  String _jsonEncode(Map<String, dynamic> data) {
-    final sb = StringBuffer();
-    sb.write('{');
-    var first = true;
-    for (final entry in data.entries) {
-      if (!first) sb.write(',');
-      first = false;
-      sb.write('"${entry.key}":');
-      _writeJsonValue(sb, entry.value);
-    }
-    sb.write('}');
-    return sb.toString();
-  }
-
-  void _writeJsonValue(StringBuffer sb, dynamic value) {
-    if (value == null) {
-      sb.write('null');
-    } else if (value is String) {
-      sb.write('"${value.replaceAll('"', '\\"')}"');
-    } else if (value is bool) {
-      sb.write(value.toString());
-    } else if (value is num) {
-      sb.write(value.toString());
-    } else if (value is List) {
-      sb.write('[');
-      for (var i = 0; i < value.length; i++) {
-        if (i > 0) sb.write(',');
-        _writeJsonValue(sb, value[i]);
-      }
-      sb.write(']');
-    } else if (value is Map) {
-      sb.write('{');
-      var first = true;
-      for (final entry in value.entries) {
-        if (!first) sb.write(',');
-        first = false;
-        sb.write('"${entry.key}":');
-        _writeJsonValue(sb, entry.value);
-      }
-      sb.write('}');
-    }
   }
 }

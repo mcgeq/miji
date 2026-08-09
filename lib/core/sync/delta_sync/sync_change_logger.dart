@@ -45,6 +45,8 @@ class SyncChangeLogger {
   static const moneySplitRulesTableName = 'money_split_rules';
   static const moneyLedgerAccountsTableName = 'money_ledger_accounts';
   static const moneyBillRemindersTableName = 'money_bill_reminders';
+  static const moneyReminderCenterProcessingTableName =
+      'money_reminder_center_processing';
   static const moneyAutoPostingTemplatesTableName =
       'money_auto_posting_templates';
   static const moneyAutoPostingRunsTableName = 'money_auto_posting_runs';
@@ -341,6 +343,25 @@ class SyncChangeLogger {
     await recordChange(
       userId: userId,
       tableName: moneyBillRemindersTableName,
+      recordId: recordId,
+      operation: operation,
+      changedFields: changedFields,
+      beforeVersion: beforeVersion,
+      afterVersion: afterVersion,
+    );
+  }
+
+  Future<void> recordReminderCenterProcessingChange({
+    required String userId,
+    required String recordId,
+    required SyncChangeOperation operation,
+    required Map<String, Object?> changedFields,
+    int? beforeVersion,
+    int? afterVersion,
+  }) async {
+    await recordChange(
+      userId: userId,
+      tableName: moneyReminderCenterProcessingTableName,
       recordId: recordId,
       operation: operation,
       changedFields: changedFields,

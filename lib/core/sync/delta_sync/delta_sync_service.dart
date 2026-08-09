@@ -257,6 +257,8 @@ class DeltaSyncService {
         return _readLocalLedgerAccountRecord(change);
       case SyncChangeLogger.moneyBillRemindersTableName:
         return _readLocalBillReminderRecord(change);
+      case SyncChangeLogger.moneyReminderCenterProcessingTableName:
+        return _readLocalReminderCenterProcessingRecord(change);
       // V1.1: Todo tables
       case SyncChangeLogger.todoTasksTableName:
         return _readLocalTodoTaskRecord(change);
@@ -811,6 +813,45 @@ class DeltaSyncService {
     );
   }
 
+  Future<DeltaLocalRecord?> _readLocalReminderCenterProcessingRecord(
+    DeltaChangeRecord change,
+  ) async {
+    final record = await (database.select(
+      database.moneyReminderCenterProcessing,
+    )..where((row) => row.id.equals(change.recordId))).getSingleOrNull();
+    if (record == null) {
+      return null;
+    }
+    return DeltaLocalRecord(
+      table: change.table,
+      recordId: change.recordId,
+      version: record.version,
+      snapshot: {
+        'id': record.id,
+        'user_id': record.userId,
+        'item_key': record.itemKey,
+        'source_type': record.sourceType,
+        'source_id': record.sourceId,
+        'title': record.title,
+        'due_date': record.dueDate,
+        'amount_minor': record.amountMinor,
+        'currency_code': record.currencyCode,
+        'action_type': record.actionType,
+        'ledger_id': record.ledgerId,
+        'account_id': record.accountId,
+        'is_budget_exceeded': record.isBudgetExceeded,
+        'state': record.state,
+        'snoozed_until': record.snoozedUntil,
+        'processed_at': record.processedAt?.toUtc().toIso8601String(),
+        'version': record.version,
+        'is_deleted': record.isDeleted,
+        'deleted_at': record.deletedAt?.toUtc().toIso8601String(),
+        'created_at': record.createdAt.toUtc().toIso8601String(),
+        'updated_at': record.updatedAt.toUtc().toIso8601String(),
+      },
+    );
+  }
+
   Future<DeltaLocalRecord?> _readLocalCategoryRecord(
     DeltaChangeRecord change,
   ) async {
@@ -1046,6 +1087,7 @@ class DeltaSyncService {
       SyncChangeLogger.moneySplitRulesTableName ||
       SyncChangeLogger.moneyLedgerAccountsTableName ||
       SyncChangeLogger.moneyBillRemindersTableName ||
+      SyncChangeLogger.moneyReminderCenterProcessingTableName ||
       SyncChangeLogger.todoTasksTableName ||
       SyncChangeLogger.todoTagsTableName ||
       SyncChangeLogger.todoRecurrenceRulesTableName => true,

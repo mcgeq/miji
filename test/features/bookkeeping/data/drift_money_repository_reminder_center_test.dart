@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/core/database/app_database.dart';
@@ -357,6 +360,84 @@ void main() {
       );
       expect(pending.single.amountMinor, 100000);
       expect(pending.single.dueDate, DateTime(2026, 8, 4));
+    },
+  );
+
+  test(
+    'records reminder center state transitions in sync change log',
+    () async {
+      await repository.createBillReminder(
+        'user_1',
+        MoneyBillReminderDraft(
+          name: '信用卡还款',
+          amountMinor: 120000,
+          dueDate: DateTime.utc(2026, 7, 22),
+          ledgerId: 'default_ledger_user_1',
+          sourceType: MoneyBillReminderSourceType.creditRepayment,
+          remindBeforeDays: 3,
+        ),
+      );
+      final pending = await repository.getPendingReminderCenterItems(
+        'user_1',
+        ledgerId: 'default_ledger_user_1',
+        today: DateTime.utc(2026, 7, 19),
+      );
+
+      await repository.setReminderCenterState(
+        'user_1',
+        pending.single,
+        MoneyReminderCenterState.snoozed,
+        snoozedUntil: DateTime.utc(2026, 7, 26),
+      );
+
+      var logs =
+          await (database.select(database.syncChangeLogs)
+                ..where(
+                  (row) => row.targetTable.equals(
+                    SyncChangeLogger.moneyReminderCenterProcessingTableName,
+                  ),
+                )
+                ..orderBy([(row) => OrderingTerm.asc(row.changedAt)]))
+              .get();
+      expect(logs, hasLength(1));
+      expect(logs.single.operation, SyncChangeOperation.insert.storageValue);
+      expect(logs.single.afterVersion, 1);
+      final insertFields = Map<String, Object?>.from(
+        jsonDecode(logs.single.changedFieldsJson) as Map,
+      );
+      expect(
+        insertFields['state'],
+        MoneyReminderCenterState.snoozed.storageValue,
+      );
+      expect(insertFields['item_key'], pending.single.itemKey);
+      expect(insertFields['snoozed_until'], 20260726);
+
+      await repository.setReminderCenterState(
+        'user_1',
+        pending.single,
+        MoneyReminderCenterState.completed,
+      );
+
+      logs =
+          await (database.select(database.syncChangeLogs)
+                ..where(
+                  (row) => row.targetTable.equals(
+                    SyncChangeLogger.moneyReminderCenterProcessingTableName,
+                  ),
+                )
+                ..orderBy([(row) => OrderingTerm.asc(row.changedAt)]))
+              .get();
+      expect(logs, hasLength(2));
+      expect(logs.last.operation, SyncChangeOperation.update.storageValue);
+      expect(logs.last.beforeVersion, 1);
+      expect(logs.last.afterVersion, 2);
+      final updateFields = Map<String, Object?>.from(
+        jsonDecode(logs.last.changedFieldsJson) as Map,
+      );
+      expect(
+        updateFields['state'],
+        MoneyReminderCenterState.completed.storageValue,
+      );
     },
   );
 }

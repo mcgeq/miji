@@ -151,10 +151,15 @@ mixin _Ledgers on _DriftMoneyRepositoryBase {
     try {
       await ensureReadyForUser(userId);
       final ledger = await _getLedgerForUser(userId, ledgerId);
-      await _getTransactionForUser(userId, transactionId);
+      final transaction = await _getTransactionForUser(userId, transactionId);
       await _linkTransactionToLedgerUnchecked(
         ledgerId: ledger.id,
         transactionId: transactionId,
+      );
+      await _recordTransactionLedgerLinksChange(
+        userId: userId,
+        transactionId: transactionId,
+        version: transaction.version,
       );
     } catch (error) {
       if (error is MoneyRepositoryException) {
@@ -175,8 +180,10 @@ mixin _Ledgers on _DriftMoneyRepositoryBase {
   ) async {
     try {
       await ensureReadyForUser(userId);
+      late final int transactionVersion;
       await database.transaction(() async {
-        await _getTransactionForUser(userId, transactionId);
+        final transaction = await _getTransactionForUser(userId, transactionId);
+        transactionVersion = transaction.version;
         final ledger = await _getLedgerForUser(userId, ledgerId);
         if (ledger.ledgerType == 'personal') {
           throw const MoneyRepositoryException(
@@ -211,6 +218,11 @@ mixin _Ledgers on _DriftMoneyRepositoryBase {
             ))
             .go();
       });
+      await _recordTransactionLedgerLinksChange(
+        userId: userId,
+        transactionId: transactionId,
+        version: transactionVersion,
+      );
     } catch (error) {
       if (error is MoneyRepositoryException) {
         rethrow;
@@ -337,6 +349,54 @@ mixin _Ledgers on _DriftMoneyRepositoryBase {
         afterVersion: existing.version + 1,
       );
       return _mapLedger(await _getLedgerForUser(userId, update.id));
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  @override
+  Future<void> deleteLedger(String userId, String ledgerId) async {
+    try {
+      await ensureReadyForUser(userId);
+      final ledger = await _getLedgerForUser(userId, ledgerId);
+      if (ledger.ledgerType == 'personal') {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.cannotDeletePersonalLedger,
+        );
+      }
+      final now = DateTime.now().toUtc();
+      await database.transaction(() async {
+        await (database.update(database.moneyLedgers)..where(
+              (row) =>
+                  row.id.equals(ledger.id) &
+                  row.userId.equals(userId) &
+                  row.status.equals('active') &
+                  row.isDeleted.equals(false),
+            ))
+            .write(
+              MoneyLedgersCompanion(
+                status: const Value('archived'),
+                isDeleted: const Value(true),
+                deletedAt: Value<DateTime?>(now),
+                version: Value(ledger.version + 1),
+                updatedAt: Value(now),
+              ),
+            );
+        await _recordLedgerChange(
+          userId: userId,
+          recordId: ledger.id,
+          operation: SyncChangeOperation.delete,
+          changedFields: {'deleted_at': now.toIso8601String()},
+          beforeVersion: ledger.version,
+          afterVersion: ledger.version + 1,
+        );
+      });
     } catch (error) {
       if (error is MoneyRepositoryException) {
         rethrow;
@@ -666,6 +726,25 @@ mixin _Ledgers on _DriftMoneyRepositoryBase {
     );
     _putIfChanged(fields, 'color', existing.color, _blankToNull(update.color));
     return fields;
+  }
+
+  Future<void> _recordTransactionLedgerLinksChange({
+    required String userId,
+    required String transactionId,
+    required int version,
+  }) async {
+    final links = await (database.select(
+      database.moneyLedgerTransactions,
+    )..where((row) => row.transactionId.equals(transactionId))).get();
+    final ledgerIds = links.map((link) => link.ledgerId).toSet().toList();
+    await _recordTransactionChange(
+      userId: userId,
+      recordId: transactionId,
+      operation: SyncChangeOperation.update,
+      changedFields: {'ledger_ids': ledgerIds},
+      beforeVersion: version,
+      afterVersion: version,
+    );
   }
 
   Future<void> _recordLedgerChange({
