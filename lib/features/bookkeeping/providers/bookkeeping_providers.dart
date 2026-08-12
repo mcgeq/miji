@@ -164,6 +164,22 @@ final currentUserMoneyTransferAccountsProvider = StreamProvider.autoDispose
           .watchTransferAccountsForLedger(session.userId!, ledgerId);
     });
 
+/// 系统默认创建的唯一内部虚拟账户（他人代付），仅供记账弹窗选择，
+/// 不出现在总资产/统计/账户列表与预算账户范围。
+final currentUserMoneyInternalAccountsProvider =
+    StreamProvider.autoDispose<List<MoneyAccountEntity>>((ref) async* {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyAccountEntity>[];
+        return;
+      }
+
+      yield* ref
+          .watch(moneyRepositoryProvider)
+          .watchSystemInternalAccountsForUser(session.userId!);
+    });
+
 final currentUserAccountMonthlySummariesProvider =
     FutureProvider<Map<String, MoneyAccountMonthlySummary>>((ref) async {
       _watchMoneyDataRefresh(ref);
@@ -897,6 +913,20 @@ final currentUserBudgetsProvider = StreamProvider<List<MoneyBudgetEntity>>((
 
   await repository.refreshBudgetSnapshotsForUser(userId);
   yield* repository.watchBudgetsForUser(userId, ledgerId: ledger.id);
+});
+
+final currentUserTagCandidatesProvider = StreamProvider<List<String>>((
+  ref,
+) async* {
+  _watchMoneyDataRefresh(ref);
+  final session = ref.watch(authSessionControllerProvider);
+  if (!session.isUnlocked || session.userId == null) {
+    yield const <String>[];
+    return;
+  }
+
+  final repository = ref.watch(moneyRepositoryProvider);
+  yield* repository.watchTagCandidatesForUser(session.userId!);
 });
 
 final currentUserBudgetAllocationsProvider = StreamProvider.autoDispose
@@ -1682,7 +1712,9 @@ class CurrentUserMoneyBudgetActions {
       currencyCode: draft.currencyCode,
       alertEnabled: draft.alertEnabled,
       alertThresholdPercent: draft.alertThresholdPercent,
+      autoRollover: draft.autoRollover,
       color: draft.color,
+      tag: draft.tag,
     );
   }
 }

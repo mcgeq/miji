@@ -31,6 +31,89 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
   }
 
   @override
+  Stream<List<String>> watchTagCandidatesForUser(String userId) async* {
+    final transactionTagsQuery =
+        database.selectOnly(database.moneyTransactionTags)
+          ..addColumns([database.moneyTransactionTags.tag])
+          ..join([
+            innerJoin(
+              database.moneyTransactions,
+              database.moneyTransactions.id.equalsExp(
+                database.moneyTransactionTags.transactionId,
+              ),
+            ),
+          ])
+          ..where(
+            database.moneyTransactions.userId.equals(userId) &
+                database.moneyTransactions.isDeleted.equals(false),
+          )
+          ..orderBy([OrderingTerm.asc(database.moneyTransactionTags.tag)]);
+
+    final budgetTagsQuery = database.select(database.moneyBudgets)
+      ..where(
+        (budget) =>
+            budget.userId.equals(userId) & budget.isDeleted.equals(false),
+      );
+
+    final controller = StreamController<void>.broadcast();
+    final transactionTagsSubscription = transactionTagsQuery.watch().listen(
+      (_) => controller.add(null),
+    );
+    final budgetTagsSubscription = budgetTagsQuery.watch().listen(
+      (_) => controller.add(null),
+    );
+    controller.onCancel = () async {
+      await transactionTagsSubscription.cancel();
+      await budgetTagsSubscription.cancel();
+    };
+
+    yield* controller.stream.asyncMap((_) => _readTagCandidates(userId));
+  }
+
+  Future<List<String>> _readTagCandidates(String userId) async {
+    final candidates = <String>{};
+
+    final transactionTagRows =
+        await (database.selectOnly(database.moneyTransactionTags)
+              ..addColumns([database.moneyTransactionTags.tag])
+              ..join([
+                innerJoin(
+                  database.moneyTransactions,
+                  database.moneyTransactions.id.equalsExp(
+                    database.moneyTransactionTags.transactionId,
+                  ),
+                ),
+              ])
+              ..where(
+                database.moneyTransactions.userId.equals(userId) &
+                    database.moneyTransactions.isDeleted.equals(false),
+              ))
+            .get();
+    candidates.addAll(
+      transactionTagRows
+          .map((row) => row.read(database.moneyTransactionTags.tag))
+          .whereType<String>()
+          .map((tag) => tag.trim())
+          .where((tag) => tag.isNotEmpty),
+    );
+
+    final budgetRows =
+        await (database.select(database.moneyBudgets)..where(
+              (budget) =>
+                  budget.userId.equals(userId) & budget.isDeleted.equals(false),
+            ))
+            .get();
+    for (final budget in budgetRows) {
+      final tag = _readBudgetTag(budget.tagsJson);
+      if (tag != null) {
+        candidates.add(tag);
+      }
+    }
+
+    return candidates.toList(growable: false)..sort();
+  }
+
+  @override
   Stream<List<MoneyBudgetAllocationEntity>> watchBudgetAllocationsForUser(
     String userId,
     String budgetId,
@@ -141,6 +224,8 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
         userId: userId,
         periodType: draft.periodType,
         accountId: draft.accountId,
+        startDate: draft.startDate,
+        endDate: draft.endDate,
       );
       final budgetId = _uuid.v4();
 
@@ -179,6 +264,7 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
                   subCategoryId: draft.subCategoryId,
                 ),
               ),
+              tagsJson: Value<String?>(_budgetTagJson(draft.tag)),
               createdAt: now,
               updatedAt: now,
             ),
@@ -289,6 +375,8 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
         userId: userId,
         periodType: update.periodType,
         accountId: update.accountId,
+        startDate: update.startDate,
+        endDate: update.endDate,
       );
       final changedFields = _budgetUpdateSyncFields(
         existing,
@@ -339,6 +427,7 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
                   subCategoryId: update.subCategoryId,
                 ),
               ),
+              tagsJson: Value<String?>(_budgetTagJson(update.tag)),
               version: Value(existing.version + 1),
               updatedAt: Value(now),
             ),
@@ -548,6 +637,9 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
       categoryId: draft.categoryId,
       subCategoryId: draft.subCategoryId,
       accountId: draft.accountId,
+      tag: draft.tag,
+      startDate: draft.startDate,
+      endDate: draft.endDate,
     );
   }
 
@@ -569,6 +661,9 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
       categoryId: update.categoryId,
       subCategoryId: update.subCategoryId,
       accountId: update.accountId,
+      tag: update.tag,
+      startDate: update.startDate,
+      endDate: update.endDate,
     );
   }
 
@@ -581,17 +676,37 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
     required String? categoryId,
     required String? subCategoryId,
     required String? accountId,
+    required String? tag,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     if (repeatInterval <= 0) {
       throw const MoneyRepositoryException(
         MoneyRepositoryErrorCode.unsupportedBudgetPeriod,
       );
     }
+    if (periodType == MoneyBudgetPeriodType.oneTime) {
+      final start = startDate;
+      final end = endDate;
+      if (start == null || end == null) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.unsupportedBudgetPeriod,
+        );
+      }
+      final startDay = DateTime(start.year, start.month, start.day);
+      final endDay = DateTime(end.year, end.month, end.day);
+      if (endDay.isBefore(startDay)) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.unsupportedBudgetPeriod,
+        );
+      }
+    }
     final effectiveScopeType =
         scopeType ??
         _inferBudgetScopeType(categoryId: categoryId, accountId: accountId);
     final hasCategory = categoryId != null;
     final hasAccount = accountId != null;
+    final hasTag = tag != null && tag.trim().isNotEmpty;
     final isValidShape = switch (effectiveScopeType) {
       MoneyBudgetScopeType.all =>
         !hasCategory && subCategoryId == null && !hasAccount,
@@ -599,6 +714,8 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
       MoneyBudgetScopeType.account =>
         !hasCategory && subCategoryId == null && hasAccount,
       MoneyBudgetScopeType.categoryAccount => hasCategory && hasAccount,
+      MoneyBudgetScopeType.tag =>
+        hasTag && !hasCategory && subCategoryId == null && !hasAccount,
     };
     if (!isValidShape) {
       throw const MoneyRepositoryException(
@@ -826,6 +943,7 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
         categoryId: draft.categoryId,
         subCategoryId: draft.subCategoryId,
       ),
+      'tags_json': _budgetTagJson(draft.tag),
     };
   }
 
@@ -923,6 +1041,12 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
       'category_scope_json',
       existing.categoryScopeJson,
       categoryScopeJson,
+    );
+    _putIfChanged(
+      fields,
+      'tags_json',
+      existing.tagsJson,
+      _budgetTagJson(update.tag),
     );
     return fields;
   }

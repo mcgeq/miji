@@ -27,6 +27,11 @@ abstract class MoneyRepository {
 
   Stream<List<MoneyAccountEntity>> watchVisibleAccountsForUser(String userId);
 
+  /// 系统默认创建的唯一内部虚拟账户（他人代付用途，如 `internal_account_$userId`）。
+  Stream<List<MoneyAccountEntity>> watchSystemInternalAccountsForUser(
+    String userId,
+  );
+
   Stream<List<MoneyAccountEntity>> watchAccountsForLedger(
     String userId,
     String ledgerId,
@@ -116,6 +121,9 @@ abstract class MoneyRepository {
     String userId, {
     String? ledgerId,
   });
+
+  /// 标签候选：历史交易标签 + 已有预算标签（去重、排序）。
+  Stream<List<String>> watchTagCandidatesForUser(String userId);
 
   Stream<List<MoneyBudgetAllocationEntity>> watchBudgetAllocationsForUser(
     String userId,

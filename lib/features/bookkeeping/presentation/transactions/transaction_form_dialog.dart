@@ -67,6 +67,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
   final _customPaymentNameCtrl = TextEditingController();
+  final _tagController = TextEditingController();
   DateTime _transactionAt = DateTime.now();
   String? _accountId;
   String? _categoryId;
@@ -127,6 +128,9 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     _subCategoryId = transaction.subCategoryId;
     _paymentMethod = transaction.paymentMethod;
     _customPaymentNameCtrl.text = transaction.customPaymentMethodName ?? '';
+    _tagController.text = transaction.tags.isEmpty
+        ? ''
+        : transaction.tags.first;
   }
 
   @override
@@ -136,6 +140,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     _locationController.dispose();
     _notesController.dispose();
     _customPaymentNameCtrl.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -156,9 +161,20 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     final accounts = _isEditing || selectedLedger == null
         ? ref.watch(currentUserVisibleAccountsProvider)
         : ref.watch(currentUserMoneyLedgerAccountsProvider(selectedLedger.id));
+    final internalAccounts = ref
+        .watch(currentUserMoneyInternalAccountsProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const <MoneyAccountEntity>[],
+        );
     final accountRows = accounts.maybeWhen(
-      data: (value) => value.where((account) => account.isActive).toList(),
-      orElse: () => const <MoneyAccountEntity>[],
+      data: (value) => [
+        ...value.where((account) => account.isActive),
+        ...internalAccounts.where((account) => account.isActive),
+      ],
+      orElse: () => internalAccounts
+          .where((account) => account.isActive)
+          .toList(growable: false),
     );
     final selectableAccounts = _selectableAccountsForType(accountRows);
     final selectedAccount = _selectedAccountFrom(selectableAccounts);
@@ -208,6 +224,11 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         ? MoneyCategoryKind.income
         : MoneyCategoryKind.expense;
     final catalog = ref.watch(currentUserCategoryCatalogProvider(kind));
+    final tagCandidates = ref
+        .watch(currentUserTagCandidatesProvider)
+        .maybeWhen(data: (value) => value, orElse: () => const <String>[]);
+    final hasMultipleLegacyTags =
+        _isEditing && (widget.transaction?.tags.length ?? 0) > 1;
     final installmentAmountMinor = _installmentEntryAmountMinor;
     final showInstallmentEntry =
         installmentAmountMinor != null &&
@@ -367,6 +388,19 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               hintText: '如：美团月付、抖音月付、京东支付',
               prefixIcon: const Icon(Icons.payment_rounded),
               textInputAction: TextInputAction.done,
+            ),
+          SuggestionAutocompleteField(
+            controller: _tagController,
+            suggestions: tagCandidates,
+            labelText: '标签',
+            hintText: '可选，如：南京旅游（建预算后自动计入对应标签预算）',
+            prefixIcon: const Icon(Icons.local_offer_rounded),
+            textInputAction: TextInputAction.done,
+          ),
+          if (hasMultipleLegacyTags)
+            const AppFormHint(
+              text: '该笔历史交易含多个标签，保存后将仅保留一个',
+              icon: Icons.info_outline_rounded,
             ),
           _AdvancedTransactionFields(
             initiallyExpanded: _advancedExpanded,
@@ -575,14 +609,21 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       final accounts = transaction != null || ledger == null
           ? ref.read(currentUserVisibleAccountsProvider)
           : ref.read(currentUserMoneyLedgerAccountsProvider(ledger.id));
+      final internalAccounts = ref
+          .read(currentUserMoneyInternalAccountsProvider)
+          .maybeWhen(
+            data: (value) => value,
+            orElse: () => const <MoneyAccountEntity>[],
+          );
       final selectedAccount = _selectedAccountFrom(
-        _selectableAccountsForType(
-          accounts.maybeWhen(
+        _selectableAccountsForType([
+          ...accounts.maybeWhen(
             data: (value) =>
                 value.where((account) => account.isActive).toList(),
             orElse: () => const <MoneyAccountEntity>[],
           ),
-        ),
+          ...internalAccounts.where((account) => account.isActive),
+        ]),
       );
       if (selectedAccount == null) {
         setState(
@@ -609,6 +650,8 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       final notes = _notesController.text.trim();
       final merchant = _merchantController.text.trim();
       final location = _locationController.text.trim();
+      final tagText = _tagController.text.trim();
+      final tags = tagText.isEmpty ? const <String>[] : <String>[tagText];
       final effectivePaymentMethod = _effectivePaymentMethodForAccount(
         selectedAccount,
       );
@@ -639,6 +682,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                       _customPaymentNameCtrl.text.trim().isEmpty
                       ? null
                       : _customPaymentNameCtrl.text.trim(),
+                  tags: tags,
                   ledgerId: ledger?.id,
                 ),
                 splitConfig: widget.type == MoneyTransactionType.expense
@@ -662,6 +706,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                     _customPaymentNameCtrl.text.trim().isEmpty
                     ? null
                     : _customPaymentNameCtrl.text.trim(),
+                tags: tags,
               ),
       );
     } on MoneyAmountParseException {

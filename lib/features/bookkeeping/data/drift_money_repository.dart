@@ -491,11 +491,17 @@ class _MutableAccountLedger {
 }
 
 class _BudgetScope {
-  const _BudgetScope({this.categoryId, this.subCategoryId, this.accountId});
+  const _BudgetScope({
+    this.categoryId,
+    this.subCategoryId,
+    this.accountId,
+    this.tag,
+  });
 
   final String? categoryId;
   final String? subCategoryId;
   final String? accountId;
+  final String? tag;
 }
 
 class _BudgetTransactionImpact {
@@ -505,6 +511,7 @@ class _BudgetTransactionImpact {
     required this.categoryId,
     required this.subCategoryId,
     required this.ledgerIds,
+    this.tags = const <String>[],
   });
 
   final MoneyTransactionType type;
@@ -512,6 +519,7 @@ class _BudgetTransactionImpact {
   final String categoryId;
   final String? subCategoryId;
   final List<String> ledgerIds;
+  final List<String> tags;
 }
 
 class _MutableAccountMonthlySummary {
@@ -1532,6 +1540,9 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
         scope.subCategoryId != impact.subCategoryId) {
       return false;
     }
+    if (scope.tag != null && !impact.tags.contains(scope.tag)) {
+      return false;
+    }
     return true;
   }
 
@@ -1954,7 +1965,37 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       categoryId: categoryId,
       subCategoryId: categoryId == null ? null : subCategoryId,
       accountId: budget.accountId,
+      tag: _readBudgetTag(budget.tagsJson),
     );
+  }
+
+  String? _readBudgetTag(String? tagsJson) {
+    if (tagsJson == null || tagsJson.trim().isEmpty) {
+      return null;
+    }
+    try {
+      final decoded = jsonDecode(tagsJson);
+      if (decoded is List && decoded.isNotEmpty) {
+        final first = decoded.first;
+        if (first is String && first.trim().isNotEmpty) {
+          return first.trim();
+        }
+      }
+      if (decoded is String && decoded.trim().isNotEmpty) {
+        return decoded.trim();
+      }
+    } catch (_) {
+      // 非 JSON 视为无标签
+    }
+    return null;
+  }
+
+  String _budgetTagJson(String? tag) {
+    final normalized = tag?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return jsonEncode(<String>[]);
+    }
+    return jsonEncode(<String>[normalized]);
   }
 
   String _budgetScopeType({
@@ -2035,6 +2076,14 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
         final start = DateTime(now.year);
         return (start: start, end: DateTime(start.year + 1));
       }(),
+      MoneyBudgetPeriodType.oneTime => () {
+        // 一次性周期必须携带固定起止日期，由
+        // [_budgetPeriodForAccount] / [_budgetPeriodForBudget] 处理，
+        // 走到这里说明调用方漏处理，防御性报错。
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.unsupportedBudgetPeriod,
+        );
+      }(),
     };
   }
 
@@ -2042,7 +2091,30 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     required String userId,
     required MoneyBudgetPeriodType periodType,
     required String? accountId,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
+    if (periodType == MoneyBudgetPeriodType.oneTime) {
+      final start = startDate;
+      final end = endDate;
+      if (start == null || end == null) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.unsupportedBudgetPeriod,
+        );
+      }
+      final startDay = DateTime(start.year, start.month, start.day);
+      final endDay = DateTime(end.year, end.month, end.day);
+      if (endDay.isBefore(startDay)) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.unsupportedBudgetPeriod,
+        );
+      }
+      // 用日历日加法而非 Duration(days: 1)，避免 DST 切换日偏移。
+      return (
+        start: startDay,
+        end: DateTime(endDay.year, endDay.month, endDay.day + 1),
+      );
+    }
     if (periodType != MoneyBudgetPeriodType.billingCycle) {
       return _currentBudgetPeriod(periodType);
     }
@@ -2059,6 +2131,14 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     MoneyBudget budget,
     MoneyBudgetPeriodType periodType,
   ) async {
+    if (periodType == MoneyBudgetPeriodType.oneTime) {
+      // startDate/endDate 列为非空 int；endDate 存 exclusive 次日，
+      // 与周期函数 end 语义一致。
+      return (
+        start: _dateFromKey(budget.startDate),
+        end: _dateFromKey(budget.endDate),
+      );
+    }
     if (periodType != MoneyBudgetPeriodType.billingCycle) {
       return _currentBudgetPeriod(periodType);
     }
@@ -2536,7 +2616,20 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     final rows = await (database.select(
       database.moneyTransactions,
     )..where((_) => predicate)).get();
-    return rows.fold<int>(
+    var matchingRows = rows;
+    final tag = scope.tag;
+    if (tag != null) {
+      final tagsByTransactionId = await _getTagsForTransactions(
+        rows.map((row) => row.id),
+      );
+      matchingRows = rows
+          .where(
+            (row) =>
+                (tagsByTransactionId[row.id] ?? const <String>[]).contains(tag),
+          )
+          .toList(growable: false);
+    }
+    return matchingRows.fold<int>(
       0,
       (total, transaction) =>
           total + _effectiveTransactionAmountMinor(transaction),
@@ -3679,6 +3772,31 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     return rows.map((row) => row.tag).toList();
   }
 
+  Future<Map<String, List<String>>> _getTagsForTransactions(
+    Iterable<String> transactionIds,
+  ) async {
+    final ids = transactionIds.toSet().toList();
+    if (ids.isEmpty) {
+      return const <String, List<String>>{};
+    }
+
+    final rows =
+        await (database.select(database.moneyTransactionTags)
+              ..where((row) => row.transactionId.isIn(ids))
+              ..orderBy([
+                (row) => OrderingTerm.asc(row.transactionId),
+                (row) => OrderingTerm.asc(row.tag),
+              ]))
+            .get();
+    final tagsByTransactionId = <String, List<String>>{};
+    for (final row in rows) {
+      tagsByTransactionId
+          .putIfAbsent(row.transactionId, () => <String>[])
+          .add(row.tag);
+    }
+    return tagsByTransactionId;
+  }
+
   Future<void> _updateAccountLedger(
     String userId,
     String accountId,
@@ -3721,6 +3839,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       categoryId: scope.categoryId,
       subCategoryId: scope.subCategoryId,
       accountId: scope.accountId,
+      tag: scope.tag,
       usedAmountMinor: await _budgetUsedAmountMinor(budget),
       isActive: budget.isActive,
       alertEnabled: budget.alertEnabled,

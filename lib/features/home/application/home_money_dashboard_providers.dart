@@ -535,6 +535,7 @@ int _budgetScopeRank(MoneyBudgetScopeType type) {
     MoneyBudgetScopeType.category => 1,
     MoneyBudgetScopeType.account => 2,
     MoneyBudgetScopeType.categoryAccount => 3,
+    MoneyBudgetScopeType.tag => 4,
   };
 }
 

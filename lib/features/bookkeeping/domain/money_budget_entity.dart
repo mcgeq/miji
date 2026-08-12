@@ -19,7 +19,8 @@ enum MoneyBudgetPeriodType {
   weekly('weekly'),
   monthly('monthly'),
   billingCycle('billing_cycle'),
-  yearly('yearly');
+  yearly('yearly'),
+  oneTime('one_time');
 
   const MoneyBudgetPeriodType(this.storageValue);
 
@@ -39,15 +40,20 @@ enum MoneyBudgetPeriodType {
       MoneyBudgetPeriodType.monthly => '每月',
       MoneyBudgetPeriodType.billingCycle => '账单周期',
       MoneyBudgetPeriodType.yearly => '每年',
+      MoneyBudgetPeriodType.oneTime => '一次性',
     };
   }
+
+  /// 是否允许自动结转剩余额度（只有循环周期才有"下一周期"）。
+  bool get supportsAutoRollover => this != MoneyBudgetPeriodType.oneTime;
 }
 
 enum MoneyBudgetScopeType {
   all('all'),
   category('category'),
   account('account'),
-  categoryAccount('category_account');
+  categoryAccount('category_account'),
+  tag('tag');
 
   const MoneyBudgetScopeType(this.storageValue);
 
@@ -87,6 +93,7 @@ class MoneyBudgetEntity {
     this.description,
     this.accountId,
     this.color,
+    this.tag,
   });
 
   final String id;
@@ -105,6 +112,7 @@ class MoneyBudgetEntity {
   final String? categoryId;
   final String? subCategoryId;
   final String? accountId;
+  final String? tag;
   final int usedAmountMinor;
   final bool isActive;
   final bool alertEnabled;
@@ -164,6 +172,9 @@ class MoneyBudgetDraft {
     this.alertThresholdPercent,
     this.autoRollover = false,
     this.color,
+    this.tag,
+    this.startDate,
+    this.endDate,
   });
 
   final String name;
@@ -178,10 +189,15 @@ class MoneyBudgetDraft {
   final String? categoryId;
   final String? subCategoryId;
   final String? accountId;
+  final String? tag;
   final bool autoRollover;
   final bool alertEnabled;
   final int? alertThresholdPercent;
   final String? color;
+
+  /// 一次性周期（[MoneyBudgetPeriodType.oneTime]）的起止日期（含首尾当天）。
+  final DateTime? startDate;
+  final DateTime? endDate;
 }
 
 class MoneyBudgetUpdate {
@@ -204,6 +220,9 @@ class MoneyBudgetUpdate {
     this.alertThresholdPercent,
     this.autoRollover = false,
     this.color,
+    this.tag,
+    this.startDate,
+    this.endDate,
   });
 
   final String id;
@@ -219,11 +238,16 @@ class MoneyBudgetUpdate {
   final String? categoryId;
   final String? subCategoryId;
   final String? accountId;
+  final String? tag;
   final bool isActive;
   final bool alertEnabled;
   final int? alertThresholdPercent;
   final bool autoRollover;
   final String? color;
+
+  /// 一次性周期（[MoneyBudgetPeriodType.oneTime]）的起止日期（含首尾当天）。
+  final DateTime? startDate;
+  final DateTime? endDate;
 }
 
 enum MoneyBudgetAllocationStatus {

@@ -497,6 +497,7 @@ mixin _Installments on _DriftMoneyRepositoryBase {
           categoryId: transaction.categoryId,
           subCategoryId: transaction.subCategoryId,
           ledgerIds: ledgerIds,
+          tags: transaction.tags,
         ),
       ]);
       return transaction;

@@ -224,6 +224,9 @@ class BudgetCard extends StatelessWidget {
     if (budget.isAllScope) {
       return '全部范围';
     }
+    if (budget.tag != null) {
+      return '标签：${budget.tag}';
+    }
     final labels = <String>[];
     final category = catalog.categoryById(budget.categoryId);
     final subCategory = catalog.subCategoryById(budget.subCategoryId);

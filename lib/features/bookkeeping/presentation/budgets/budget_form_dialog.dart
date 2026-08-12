@@ -10,6 +10,7 @@ import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_switch_field.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
+import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
@@ -20,6 +21,7 @@ import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/suggestion_autocomplete_field.dart';
 
 class BudgetFormDialog extends ConsumerStatefulWidget {
   const BudgetFormDialog({super.key, this.budget});
@@ -36,6 +38,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
   late final TextEditingController _descriptionController;
   late final TextEditingController _amountController;
   late final TextEditingController _alertThresholdController;
+  late final TextEditingController _tagController;
   MoneyBudgetTrackingType _trackingType = MoneyBudgetTrackingType.expenseLimit;
   MoneyBudgetPeriodType _periodType = MoneyBudgetPeriodType.monthly;
   MoneyBudgetScopeType _scopeType = MoneyBudgetScopeType.all;
@@ -45,9 +48,12 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
   String? _accountId;
   String? _categoryErrorText;
   String? _scopeErrorText;
+  String? _periodErrorText;
   bool _alertEnabled = false;
   bool _autoRollover = false;
   String _selectedColor = '#F97316';
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   bool get _isEditing => widget.budget != null;
 
@@ -73,6 +79,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
         budget?.trackingType ?? MoneyBudgetTrackingType.expenseLimit;
     _periodType = budget?.periodType ?? MoneyBudgetPeriodType.monthly;
     _scopeType = budget?.scopeType ?? MoneyBudgetScopeType.all;
+    _tagController = TextEditingController(text: budget?.tag ?? '');
     if (_scopeType == MoneyBudgetScopeType.all) {
       _categoryId = null;
       _subCategoryId = null;
@@ -82,10 +89,22 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     } else if (_scopeType == MoneyBudgetScopeType.account) {
       _categoryId = null;
       _subCategoryId = null;
+    } else if (_scopeType == MoneyBudgetScopeType.tag) {
+      _categoryId = null;
+      _subCategoryId = null;
+      _accountId = null;
     }
     _alertEnabled = budget?.alertEnabled ?? false;
     _autoRollover = budget?.autoRollover ?? false;
     _selectedColor = budget?.color ?? '#F97316';
+    if (budget?.periodType == MoneyBudgetPeriodType.oneTime) {
+      // periodEnd 是 exclusive 次日 - 1ms（含最后一天），取 y/m/d 得含当天；
+      // 依赖 entity 层 periodEnd 的 inclusive 契约，改动需同步此处。
+      final start = budget!.periodStart;
+      final end = budget.periodEnd;
+      _startDate = DateTime(start.year, start.month, start.day);
+      _endDate = DateTime(end.year, end.month, end.day);
+    }
   }
 
   @override
@@ -94,6 +113,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     _descriptionController.dispose();
     _amountController.dispose();
     _alertThresholdController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -125,6 +145,23 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     final usesAccountScope =
         _scopeType == MoneyBudgetScopeType.account ||
         _scopeType == MoneyBudgetScopeType.categoryAccount;
+    final usesTagScope = _scopeType == MoneyBudgetScopeType.tag;
+    final usesOneTimePeriod = _periodType == MoneyBudgetPeriodType.oneTime;
+    final startDate = _startDate;
+    final endDate = _endDate;
+    final periodMissingRange =
+        usesOneTimePeriod && (startDate == null || endDate == null);
+    final periodInvalidRange =
+        usesOneTimePeriod &&
+        startDate != null &&
+        endDate != null &&
+        endDate.isBefore(startDate);
+    final tagCandidates = ref
+        .watch(currentUserTagCandidatesProvider)
+        .maybeWhen(data: (value) => value, orElse: () => const <String>[]);
+    final tagText = _tagController.text.trim();
+    final tagMissingMatch =
+        usesTagScope && tagText.isNotEmpty && !tagCandidates.contains(tagText);
     final billingCycleAvailable =
         usesAccountScope &&
         (selectedAccount?.hasBillingCycle == true ||
@@ -216,7 +253,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               },
             ),
             AppSlidingSegmentedControl<MoneyBudgetScopeType>(
-              minSegmentWidth: 80,
+              minSegmentWidth: 72,
               value: _scopeType,
               segments: const [
                 AppSlidingSegment(value: MoneyBudgetScopeType.all, label: '全部'),
@@ -232,6 +269,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                   value: MoneyBudgetScopeType.categoryAccount,
                   label: '分类+账户',
                 ),
+                AppSlidingSegment(value: MoneyBudgetScopeType.tag, label: '标签'),
               ],
               onChanged: (value) {
                 setState(() {
@@ -242,9 +280,17 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                     _accountId = null;
                   } else if (value == MoneyBudgetScopeType.category) {
                     _accountId = null;
+                    _tagController.clear();
                   } else if (value == MoneyBudgetScopeType.account) {
                     _categoryId = null;
                     _subCategoryId = null;
+                    _tagController.clear();
+                  } else if (value == MoneyBudgetScopeType.categoryAccount) {
+                    _tagController.clear();
+                  } else if (value == MoneyBudgetScopeType.tag) {
+                    _categoryId = null;
+                    _subCategoryId = null;
+                    _accountId = null;
                   }
                   _categoryErrorText = null;
                   _scopeErrorText = null;
@@ -303,6 +349,20 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                 loading: () => const LinearProgressIndicator(),
                 error: (error, stackTrace) => const Text('账户读取失败'),
               ),
+            if (usesTagScope) ...[
+              SuggestionAutocompleteField(
+                controller: _tagController,
+                suggestions: tagCandidates,
+                labelText: '标签',
+                hintText: '如：南京旅游、云南旅游',
+                prefixIcon: const Icon(Icons.local_offer_rounded),
+              ),
+              if (tagMissingMatch)
+                AppFormHint(
+                  text: '该标签暂无匹配交易，请检查拼写（可从候选中选择已有标签）',
+                  icon: Icons.warning_amber_rounded,
+                ),
+            ],
             FormDropdown<MoneyBudgetPeriodType>(
               initialSelection: _periodType,
               label: '预算周期',
@@ -310,7 +370,20 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               width: double.infinity,
               onSelected: (value) {
                 if (value == null) return;
-                setState(() => _periodType = value);
+                setState(() {
+                  _periodType = value;
+                  _periodErrorText = null;
+                  if (value == MoneyBudgetPeriodType.oneTime) {
+                    if (_startDate == null || _endDate == null) {
+                      final now = DateTime.now();
+                      _startDate = DateTime(now.year, now.month);
+                      _endDate = DateTime(now.year, now.month + 1, 0);
+                    }
+                  } else {
+                    _startDate = null;
+                    _endDate = null;
+                  }
+                });
               },
               entries:
                   const [
@@ -334,12 +407,69 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                       value: MoneyBudgetPeriodType.yearly,
                       label: '每年',
                     ),
+                    DropdownMenuEntry(
+                      value: MoneyBudgetPeriodType.oneTime,
+                      label: '一次性',
+                    ),
                   ].where((entry) {
                     return entry.value != MoneyBudgetPeriodType.billingCycle ||
                         billingCycleAvailable ||
                         _periodType == MoneyBudgetPeriodType.billingCycle;
                   }).toList(),
             ),
+            if (usesOneTimePeriod) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: DateTimePicker(
+                      selectedDate: _startDate ?? DateTime.now(),
+                      onChanged: (date) {
+                        setState(() {
+                          _startDate = date;
+                          _periodErrorText = null;
+                        });
+                      },
+                      showTime: false,
+                      label: '开始日期',
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DateTimePicker(
+                      selectedDate: _endDate ?? _startDate ?? DateTime.now(),
+                      onChanged: (date) {
+                        setState(() {
+                          _endDate = date;
+                          _periodErrorText = null;
+                        });
+                      },
+                      showTime: false,
+                      label: '结束日期',
+                      firstDate: _startDate ?? DateTime(2000),
+                      lastDate: DateTime(2100),
+                    ),
+                  ),
+                ],
+              ),
+              if (periodMissingRange)
+                AppFormHint(
+                  text: '请选择一次性预算的起止日期',
+                  icon: Icons.warning_amber_rounded,
+                ),
+              if (periodInvalidRange)
+                AppFormHint(
+                  text: '结束日期不能早于开始日期',
+                  icon: Icons.warning_amber_rounded,
+                ),
+              if (_periodErrorText != null)
+                AppFormHint(
+                  text: _periodErrorText!,
+                  icon: Icons.warning_amber_rounded,
+                ),
+            ],
             AppAmountField(
               controller: _amountController,
               labelText: amountLabel,
@@ -377,7 +507,8 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                 setState(() => _alertEnabled = value);
               },
             ),
-            if (_trackingType == MoneyBudgetTrackingType.expenseLimit)
+            if (_trackingType == MoneyBudgetTrackingType.expenseLimit &&
+                _periodType.supportsAutoRollover)
               AppSwitchField(
                 title: '自动结转剩余额度',
                 subtitle: '周期结束时未用完的预算自动滚入下一周期',
@@ -417,10 +548,28 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
       MoneyBudgetScopeType.account => _accountId == null ? '请选择账户' : null,
       MoneyBudgetScopeType.categoryAccount =>
         _categoryId == null || _accountId == null ? '请选择分类和账户' : null,
+      MoneyBudgetScopeType.tag =>
+        _tagController.text.trim().isEmpty ? '请输入或选择标签' : null,
     };
     if (scopeErrorText != null) {
       setState(() => _scopeErrorText = scopeErrorText);
       return;
+    }
+    if (_periodType == MoneyBudgetPeriodType.oneTime) {
+      final start = _startDate;
+      final end = _endDate;
+      if (start == null || end == null) {
+        setState(() => _periodErrorText = '请选择一次性预算的起止日期');
+        return;
+      }
+      if (DateTime(
+        end.year,
+        end.month,
+        end.day,
+      ).isBefore(DateTime(start.year, start.month, start.day))) {
+        setState(() => _periodErrorText = '结束日期不能早于开始日期');
+        return;
+      }
     }
     if (_periodType == MoneyBudgetPeriodType.billingCycle) {
       final ledgerRows = ref
@@ -458,6 +607,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
       MoneyBudgetScopeType.account => null,
       MoneyBudgetScopeType.category => _categoryId,
       MoneyBudgetScopeType.categoryAccount => _categoryId,
+      MoneyBudgetScopeType.tag => null,
     };
     final effectiveSubCategoryId = switch (_scopeType) {
       MoneyBudgetScopeType.all => null,
@@ -466,13 +616,25 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
         _categoryId == null ? null : _subCategoryId,
       MoneyBudgetScopeType.categoryAccount =>
         _categoryId == null ? null : _subCategoryId,
+      MoneyBudgetScopeType.tag => null,
     };
     final effectiveAccountId = switch (_scopeType) {
       MoneyBudgetScopeType.all => null,
       MoneyBudgetScopeType.category => null,
       MoneyBudgetScopeType.account => _accountId,
       MoneyBudgetScopeType.categoryAccount => _accountId,
+      MoneyBudgetScopeType.tag => null,
     };
+    final effectiveTag = switch (_scopeType) {
+      MoneyBudgetScopeType.tag => _tagController.text.trim(),
+      _ => null,
+    };
+    final effectiveStartDate = _periodType == MoneyBudgetPeriodType.oneTime
+        ? _startDate
+        : null;
+    final effectiveEndDate = _periodType == MoneyBudgetPeriodType.oneTime
+        ? _endDate
+        : null;
 
     Navigator.of(context).pop(
       budget == null
@@ -488,6 +650,9 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               categoryId: effectiveCategoryId,
               subCategoryId: effectiveSubCategoryId,
               accountId: effectiveAccountId,
+              tag: effectiveTag,
+              startDate: effectiveStartDate,
+              endDate: effectiveEndDate,
               alertEnabled: _alertEnabled,
               alertThresholdPercent: alertThreshold,
               autoRollover: _autoRollover,
@@ -507,6 +672,9 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               categoryId: effectiveCategoryId,
               subCategoryId: effectiveSubCategoryId,
               accountId: effectiveAccountId,
+              tag: effectiveTag,
+              startDate: effectiveStartDate,
+              endDate: effectiveEndDate,
               isActive: budget.isActive,
               alertEnabled: _alertEnabled,
               alertThresholdPercent: alertThreshold,

@@ -24,6 +24,31 @@ mixin _Accounts on _DriftMoneyRepositoryBase {
   }
 
   @override
+  Stream<List<MoneyAccountEntity>> watchSystemInternalAccountsForUser(
+    String userId,
+  ) {
+    final query = database.select(database.moneyAccounts)
+      ..where(
+        (account) =>
+            account.userId.equals(userId) &
+            account.isVirtual.equals(true) &
+            account.type.equals(MoneyAccountType.internal.storageValue) &
+            account.isDeleted.equals(false),
+      )
+      ..orderBy([
+        (account) => OrderingTerm.desc(account.updatedAt),
+        (account) => OrderingTerm.desc(account.createdAt),
+      ]);
+
+    return query.watch().asyncMap((rows) async {
+      final usageRanks = await _accountUsageRanks(userId);
+      final accounts = rows.map(_mapAccount).toList();
+      _sortAccountsByUsage(accounts, usageRanks);
+      return accounts;
+    });
+  }
+
+  @override
   Stream<List<MoneyAccountEntity>> watchAccountsForLedger(
     String userId,
     String ledgerId,

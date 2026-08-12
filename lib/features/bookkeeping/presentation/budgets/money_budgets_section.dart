@@ -21,7 +21,7 @@ import 'package:miji/features/bookkeeping/presentation/budgets/budget_card.dart'
 import 'package:miji/features/bookkeeping/presentation/budgets/budget_history_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/budgets/budget_form_dialog.dart';
 
-enum _BudgetScopeFilter { all, category, account, categoryAccount }
+enum _BudgetScopeFilter { all, category, account, categoryAccount, tag }
 
 enum _BudgetStatusFilter { all, normal, alerting, overspent, completed }
 
@@ -224,6 +224,7 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
         budget.scopeType == MoneyBudgetScopeType.account,
       _BudgetScopeFilter.categoryAccount =>
         budget.scopeType == MoneyBudgetScopeType.categoryAccount,
+      _BudgetScopeFilter.tag => budget.scopeType == MoneyBudgetScopeType.tag,
     };
   }
 
@@ -473,6 +474,10 @@ class _BudgetFilterFields extends StatelessWidget {
               value: MoneyBudgetPeriodType.yearly,
               label: '每年',
             ),
+            DropdownMenuEntry<MoneyBudgetPeriodType?>(
+              value: MoneyBudgetPeriodType.oneTime,
+              label: '一次性',
+            ),
           ],
         ),
         FormDropdown<_BudgetScopeFilter>(
@@ -497,6 +502,7 @@ class _BudgetFilterFields extends StatelessWidget {
               value: _BudgetScopeFilter.categoryAccount,
               label: '分类+账户',
             ),
+            DropdownMenuEntry(value: _BudgetScopeFilter.tag, label: '标签预算'),
           ],
         ),
         FormDropdown<_BudgetStatusFilter>(

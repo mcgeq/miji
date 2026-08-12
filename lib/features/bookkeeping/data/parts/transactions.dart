@@ -32,6 +32,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           categoryId: transaction.categoryId,
           subCategoryId: transaction.subCategoryId,
           ledgerIds: ledgerIds,
+          tags: transaction.tags,
         ),
       ]);
       await _syncCreditAccountRepaymentRemindersForAccounts(userId, [
@@ -84,6 +85,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           categoryId: transaction.categoryId,
           subCategoryId: transaction.subCategoryId,
           ledgerIds: ledgerIds,
+          tags: transaction.tags,
         ),
       ]);
       await _syncCreditAccountRepaymentRemindersForAccounts(userId, [
@@ -361,6 +363,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
       }
 
       final ledgerIds = await _ledgerIdsForTransaction(userId, existing.id);
+      final existingTags = await _getTagsForTransaction(existing.id);
 
       final now = _utcNow();
       await database.transaction(() async {
@@ -421,6 +424,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           categoryId: existing.categoryId,
           subCategoryId: existing.subCategoryId,
           ledgerIds: ledgerIds,
+          tags: existingTags,
         ),
         _BudgetTransactionImpact(
           type: updated.type,
@@ -428,6 +432,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           categoryId: updated.categoryId,
           subCategoryId: updated.subCategoryId,
           ledgerIds: ledgerIds,
+          tags: updated.tags,
         ),
       ]);
       await _syncCreditAccountRepaymentRemindersForAccounts(userId, [
@@ -540,6 +545,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           categoryId: existing.categoryId,
           subCategoryId: existing.subCategoryId,
           ledgerIds: ledgerIds,
+          tags: tags,
         ),
       ]);
       await _syncCreditAccountRepaymentRemindersForAccounts(userId, [
@@ -740,6 +746,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
         )
         ..validate();
       final ledgerIds = await _ledgerIdsForTransaction(userId, transaction.id);
+      final transactionTags = await _getTagsForTransaction(transaction.id);
       final now = _utcNow();
       await database.transaction(() async {
         await _updateAccountLedger(userId, account.id, ledger, now);
@@ -764,6 +771,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           categoryId: transaction.categoryId,
           subCategoryId: transaction.subCategoryId,
           ledgerIds: ledgerIds,
+          tags: transactionTags,
         ),
       ]);
       await _syncCreditAccountRepaymentRemindersForAccounts(userId, [
@@ -1151,31 +1159,6 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
       );
     }
     return category.id;
-  }
-
-  Future<Map<String, List<String>>> _getTagsForTransactions(
-    Iterable<String> transactionIds,
-  ) async {
-    final ids = transactionIds.toSet().toList();
-    if (ids.isEmpty) {
-      return const <String, List<String>>{};
-    }
-
-    final rows =
-        await (database.select(database.moneyTransactionTags)
-              ..where((row) => row.transactionId.isIn(ids))
-              ..orderBy([
-                (row) => OrderingTerm.asc(row.transactionId),
-                (row) => OrderingTerm.asc(row.tag),
-              ]))
-            .get();
-    final tagsByTransactionId = <String, List<String>>{};
-    for (final row in rows) {
-      tagsByTransactionId
-          .putIfAbsent(row.transactionId, () => <String>[])
-          .add(row.tag);
-    }
-    return tagsByTransactionId;
   }
 
   Future<void> _deleteTransferPair(

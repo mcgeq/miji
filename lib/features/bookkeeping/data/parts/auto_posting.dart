@@ -421,6 +421,7 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
           categoryId: transaction.categoryId,
           subCategoryId: transaction.subCategoryId,
           ledgerIds: impactedLedgerIds[transaction.id] ?? const [],
+          tags: transaction.tags,
         ),
     ]);
     await _syncCreditAccountRepaymentRemindersForAccounts(
