@@ -70,6 +70,8 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
   final _tagController = TextEditingController();
   DateTime _transactionAt = DateTime.now();
   String? _accountId;
+  bool _paidByOthers = false;
+  bool _paidByOthersTouched = false;
   String? _categoryId;
   String? _subCategoryId;
   String? _ledgerId;
@@ -146,6 +148,8 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final ledgers = ref.watch(currentUserMoneyLedgersProvider);
     final selectedLedger = _isEditing
         ? null
@@ -167,6 +171,16 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           data: (value) => value,
           orElse: () => const <MoneyAccountEntity>[],
         );
+    // 编辑他人代付（内部账户）交易时默认保持勾选，用户手动切换后不再跟随。
+    if (!_paidByOthersTouched && _isEditing) {
+      final editingTransaction = widget.transaction;
+      if (editingTransaction != null &&
+          internalAccounts.any(
+            (account) => account.id == editingTransaction.accountId,
+          )) {
+        _paidByOthers = true;
+      }
+    }
     final accountRows = accounts.maybeWhen(
       data: (value) => [
         ...value.where((account) => account.isActive),
@@ -177,7 +191,9 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           .toList(growable: false),
     );
     final selectableAccounts = _selectableAccountsForType(accountRows);
-    final selectedAccount = _selectedAccountFrom(selectableAccounts);
+    final selectedAccount = _paidByOthers
+        ? null
+        : _selectedAccountFrom(selectableAccounts);
     final accountRuleHint = _accountRuleHint(selectedAccount);
     final lockedPaymentMethod = _lockedPaymentMethodForAccount(selectedAccount);
     final availablePaymentMethods = _availablePaymentMethodsForAccount(
@@ -288,35 +304,75 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                     setState(() {});
                   },
           ),
-          accounts.when(
-            data: (value) => AccountSelector(
-              accounts: _selectableAccountsForType(
-                value.where((account) => account.isActive).toList(),
+          if (widget.type == MoneyTransactionType.expense)
+            AppSurface(
+              tone: AppSurfaceTone.subtle,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              child: CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  '他人代付',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0,
+                  ),
+                ),
+                subtitle: Text(
+                  '由他人垫付，无需选择支付账户',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+                value: _paidByOthers,
+                onChanged: (checked) {
+                  setState(() {
+                    _paidByOthersTouched = true;
+                    _paidByOthers = checked ?? false;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.trailing,
               ),
-              selectedAccountId: _accountId,
-              emptyText: widget.type == MoneyTransactionType.income
-                  ? '暂无可用于收入的账户'
-                  : '暂无可选账户',
-              showQuickSelect: true,
-              quickSelectCount: 2,
-              onChanged: (account) {
-                setState(() {
-                  _accountId = account?.id;
-                  final lockedMethod = _lockedPaymentMethodForAccount(account);
-                  if (lockedMethod != null) {
-                    _paymentMethod = lockedMethod;
-                  } else {
-                    final methods = _availablePaymentMethodsForAccount(account);
-                    if (!methods.contains(_paymentMethod)) {
-                      _paymentMethod = methods.first;
-                    }
-                  }
-                });
-              },
             ),
-            loading: () => const LinearProgressIndicator(),
-            error: (error, stackTrace) => const Text('账户读取失败'),
-          ),
+          if (_paidByOthers)
+            const AppFormHint(
+              text: '他人代付：保存后将自动记入系统内部账户',
+              icon: Icons.info_outline_rounded,
+            )
+          else
+            accounts.when(
+              data: (value) => AccountSelector(
+                accounts: _selectableAccountsForType(
+                  value.where((account) => account.isActive).toList(),
+                ),
+                selectedAccountId: _accountId,
+                emptyText: widget.type == MoneyTransactionType.income
+                    ? '暂无可用于收入的账户'
+                    : '暂无可选账户',
+                showQuickSelect: true,
+                quickSelectCount: 2,
+                onChanged: (account) {
+                  setState(() {
+                    _accountId = account?.id;
+                    final lockedMethod = _lockedPaymentMethodForAccount(
+                      account,
+                    );
+                    if (lockedMethod != null) {
+                      _paymentMethod = lockedMethod;
+                    } else {
+                      final methods = _availablePaymentMethodsForAccount(
+                        account,
+                      );
+                      if (!methods.contains(_paymentMethod)) {
+                        _paymentMethod = methods.first;
+                      }
+                    }
+                  });
+                },
+              ),
+              loading: () => const LinearProgressIndicator(),
+              error: (error, stackTrace) => const Text('账户读取失败'),
+            ),
           if (accountRuleHint != null) AppFormHint(text: accountRuleHint),
           if (showInstallmentEntry)
             _InstallmentPaymentEntry(
@@ -552,7 +608,9 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         return;
       }
       setState(() {
-        _accountId ??= defaults.accountId;
+        if (!_paidByOthers) {
+          _accountId ??= defaults.accountId;
+        }
         if (widget.showCategorySelector) {
           _categoryId ??= defaults.categoryId;
           _subCategoryId ??= defaults.subCategoryId;
@@ -600,10 +658,6 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         setState(() => _errorText = '请输入大于 0 的金额');
         return;
       }
-      if (_accountId == null) {
-        setState(() => _errorText = '请选择账户');
-        return;
-      }
       final transaction = widget.transaction;
       final ledger = transaction == null ? _selectedLedgerForSubmit() : null;
       final accounts = transaction != null || ledger == null
@@ -615,6 +669,15 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
             data: (value) => value,
             orElse: () => const <MoneyAccountEntity>[],
           );
+      final effectiveAccountId = _paidByOthers
+          ? (internalAccounts.where((account) => account.isActive).isEmpty
+                ? null
+                : internalAccounts.firstWhere((account) => account.isActive).id)
+          : _accountId;
+      if (effectiveAccountId == null) {
+        setState(() => _errorText = _paidByOthers ? '内部账户不可用，请稍后重试' : '请选择账户');
+        return;
+      }
       final selectedAccount = _selectedAccountFrom(
         _selectableAccountsForType([
           ...accounts.maybeWhen(
@@ -624,6 +687,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           ),
           ...internalAccounts.where((account) => account.isActive),
         ]),
+        accountId: effectiveAccountId,
       );
       if (selectedAccount == null) {
         setState(
@@ -674,7 +738,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                   notes: notes,
                   merchant: merchant,
                   location: location,
-                  accountId: _accountId!,
+                  accountId: effectiveAccountId,
                   categoryId: categoryId,
                   subCategoryId: _subCategoryId,
                   paymentMethod: effectivePaymentMethod,
@@ -698,7 +762,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                 notes: notes,
                 merchant: merchant,
                 location: location,
-                accountId: _accountId!,
+                accountId: effectiveAccountId,
                 categoryId: categoryId,
                 subCategoryId: _subCategoryId,
                 paymentMethod: effectivePaymentMethod,
@@ -714,13 +778,16 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     }
   }
 
-  MoneyAccountEntity? _selectedAccountFrom(List<MoneyAccountEntity> accounts) {
-    final accountId = _accountId;
-    if (accountId == null) {
+  MoneyAccountEntity? _selectedAccountFrom(
+    List<MoneyAccountEntity> accounts, {
+    String? accountId,
+  }) {
+    final targetId = accountId ?? _accountId;
+    if (targetId == null) {
       return null;
     }
     for (final account in accounts) {
-      if (account.id == accountId) {
+      if (account.id == targetId) {
         return account;
       }
     }
