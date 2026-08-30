@@ -403,6 +403,10 @@ abstract class MoneyRepository {
     DateTime? now,
   });
 
+  /// 重置自动记账执行记录：将“已拦截”的记录恢复为待执行，
+  /// 下次执行时重新校验（账户/分类/余额等），成功则转为已入账。
+  Future<void> resetAutoPostingRun(String userId, String runId);
+
   Future<MoneyInstallmentExecutionSummary> executeDueInstallmentPostings(
     String userId, {
     DateTime? now,

@@ -112,6 +112,9 @@ class _FakeMoneyRepository extends Fake implements MoneyRepository {
       total: 0,
     );
   }
+
+  @override
+  Future<void> resetAutoPostingRun(String userId, String runId) async {}
 }
 
 MoneyBudgetEntity _budget({

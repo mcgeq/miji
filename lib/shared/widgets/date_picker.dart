@@ -13,6 +13,7 @@ class DateTimePicker extends StatelessWidget {
     this.lastDate,
     this.showTime = true,
     this.label,
+    this.labelText,
     this.clearable = false,
     this.onClear,
     this.showQuickOptions = false,
@@ -24,6 +25,7 @@ class DateTimePicker extends StatelessWidget {
   final DateTime? lastDate;
   final bool showTime;
   final String? label;
+  final String? labelText;
   final bool clearable;
   final VoidCallback? onClear;
   final bool showQuickOptions;
@@ -47,6 +49,19 @@ class DateTimePicker extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (labelText != null) ...[
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: 6),
+            child: Text(
+              labelText!,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
         if (showQuickOptions) ...[
           Wrap(
             alignment: WrapAlignment.center,

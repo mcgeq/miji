@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/core/database/app_database.dart';
@@ -113,14 +113,16 @@ void main() {
     int? dayOfMonth,
     int? weekday,
     int timeOfDayMinutes = 9 * 60,
+    String? accountId,
+    int? amountMinor,
   }) {
     return MoneyAutoPostingTemplateDraft(
       name: '测试模板',
       type: MoneyTransactionType.expense,
-      amountMinor: 12345,
+      amountMinor: amountMinor ?? 12345,
       currencyCode: 'CNY',
       description: '自动记账测试',
-      accountId: account.id,
+      accountId: accountId ?? account.id,
       categoryId: expenseCategory.id,
       paymentMethod: MoneyPaymentMethod.alipay,
       ledgerId: 'default_ledger_user_1',
@@ -241,6 +243,99 @@ void main() {
         expect(transaction.transactionAt.toLocal().hour, 0);
         expect(transaction.transactionAt.toLocal().minute, 0);
       }
+    },
+  );
+
+  test(
+    'blocked run can be reset to pending and re-posted after funds restored',
+    () async {
+      // 余额很低的账户：模板金额必然触发 insufficientFunds → blocked。
+      final lowAccount = await repository.createAccount(
+        'user_1',
+        const MoneyAccountDraft(
+          name: '零钱账户',
+          type: MoneyAccountType.cash,
+          initialBalanceMinor: 100,
+        ),
+      );
+      final incomeCategory = await repository.createCategory(
+        'user_1',
+        const MoneyCategoryDraft(name: '收入', kind: MoneyCategoryKind.income),
+      );
+      final template = await repository.createAutoPostingTemplate(
+        'user_1',
+        templateDraft(
+          frequency: MoneyAutoPostingFrequency.monthly,
+          dayOfMonth: 1,
+          accountId: lowAccount.id,
+        ),
+      );
+
+      // 首次执行：余额不足 → 已拦截，且不产生流水。
+      final first = await repository.executeAutoPostingTemplateNow(
+        'user_1',
+        template.id,
+        now: DateTime(2029, 12, 1, 10, 0),
+      );
+      expect(first.blockedCount, 1);
+      expect(first.postedCount, 0);
+      expect(
+        await (database.select(
+          database.moneyTransactions,
+        )..where((r) => r.userId.equals('user_1'))).get(),
+        isEmpty,
+      );
+
+      var runs = await (database.select(
+        database.moneyAutoPostingRuns,
+      )..where((r) => r.userId.equals('user_1'))).get();
+      expect(runs, hasLength(1));
+      expect(
+        runs.single.status,
+        MoneyAutoPostingRunStatus.blocked.storageValue,
+      );
+      expect(runs.single.errorCode, isNotNull);
+
+      // 重置为待执行：清空错误信息。
+      await repository.resetAutoPostingRun('user_1', runs.single.id);
+      runs = await (database.select(
+        database.moneyAutoPostingRuns,
+      )..where((r) => r.userId.equals('user_1'))).get();
+      expect(
+        runs.single.status,
+        MoneyAutoPostingRunStatus.pending.storageValue,
+      );
+      expect(runs.single.errorCode, isNull);
+      expect(runs.single.errorMessage, isNull);
+
+      // 补足余额后再次执行 → 成功入账。
+      await repository.createTransaction(
+        'user_1',
+        MoneyTransactionDraft(
+          type: MoneyTransactionType.income,
+          transactionAt: DateTime(2029, 12, 1, 8, 0),
+          amountMinor: 50000,
+          currencyCode: 'CNY',
+          description: '充值',
+          accountId: lowAccount.id,
+          categoryId: incomeCategory.id,
+          paymentMethod: MoneyPaymentMethod.cash,
+          ledgerId: 'default_ledger_user_1',
+        ),
+      );
+      final second = await repository.executeAutoPostingTemplateNow(
+        'user_1',
+        template.id,
+        now: DateTime(2029, 12, 1, 10, 0),
+      );
+      expect(second.postedCount, 1);
+      expect(second.blockedCount, 0);
+
+      runs = await (database.select(
+        database.moneyAutoPostingRuns,
+      )..where((r) => r.userId.equals('user_1'))).get();
+      expect(runs.single.status, MoneyAutoPostingRunStatus.posted.storageValue);
+      expect(runs.single.transactionId, isNotNull);
     },
   );
 }

@@ -2898,7 +2898,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       participantById[participant.memberId] = participant;
     }
     final uniqueParticipants = participantById.values.toList();
-    if (uniqueParticipants.length < 2 || totalAmountMinor <= 0) {
+    if (uniqueParticipants.isEmpty || totalAmountMinor <= 0) {
       throw const MoneyRepositoryException(
         MoneyRepositoryErrorCode.invalidSplitAmount,
       );
@@ -4884,7 +4884,8 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       splitType: draft.splitType,
       participants: draft.participants,
     );
-    if (!splitAmounts.any((entry) => entry.memberId == draft.payerMemberId)) {
+    // 付款人（垫款人）不要求参与分摊，但必须是该账本的成员。
+    if (!memberById.containsKey(draft.payerMemberId)) {
       throw const MoneyRepositoryException(
         MoneyRepositoryErrorCode.memberNotFound,
       );

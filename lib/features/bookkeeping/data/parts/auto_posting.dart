@@ -371,6 +371,42 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
     }
   }
 
+  @override
+  Future<void> resetAutoPostingRun(String userId, String runId) async {
+    try {
+      await ensureReadyForUser(userId);
+      final row = await _getAutoPostingRunById(userId, runId);
+      if (row == null) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.databaseReadFailed,
+        );
+      }
+      final run = _mapAutoPostingRun(row);
+      if (run.status != MoneyAutoPostingRunStatus.blocked) {
+        // 只有“已拦截”的记录需要手动恢复；其余状态（已入账/待执行等）
+        // 由正常执行流程负责，直接忽略。
+        return;
+      }
+      await _writeAutoPostingRunState(
+        existing: run,
+        status: MoneyAutoPostingRunStatus.pending,
+        transactionId: run.transactionId,
+        postedAt: run.postedAt,
+        errorCode: null,
+        errorMessage: null,
+        updatedAt: _utcNow(),
+      );
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
   Future<MoneyAutoPostingExecutionSummary>
   _executeAutoPostingTemplateOccurrences({
     required String userId,

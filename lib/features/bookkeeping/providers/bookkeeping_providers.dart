@@ -1916,6 +1916,12 @@ class CurrentUserMoneyAutoPostingActions {
     return summary;
   }
 
+  Future<void> resetRun(String runId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).resetAutoPostingRun(userId, runId);
+    _refresh();
+  }
+
   String _requireUnlockedUserId() {
     final session = _ref.read(authSessionControllerProvider);
     final userId = session.userId;

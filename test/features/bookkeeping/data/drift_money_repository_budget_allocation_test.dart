@@ -445,4 +445,72 @@ void main() {
       ),
     );
   });
+
+  test(
+    'allows a single participant with the payer outside the split details',
+    () async {
+      final account = await repository.createAccount(
+        'user_1',
+        const MoneyAccountDraft(
+          name: '家庭卡',
+          type: MoneyAccountType.bank,
+          initialBalanceMinor: 100000,
+        ),
+      );
+      final category = await repository.createCategory(
+        'user_1',
+        const MoneyCategoryDraft(name: '家庭餐饮', kind: MoneyCategoryKind.expense),
+      );
+      final family = await repository.createLedger(
+        'user_1',
+        const MoneyLedgerDraft(name: '家庭账本'),
+      );
+      final me = await repository.createMember(
+        'user_1',
+        const MoneyMemberDraft(name: '我', role: 'owner'),
+        ledgerId: family.id,
+      );
+      final partner = await repository.createMember(
+        'user_1',
+        const MoneyMemberDraft(name: '家人', role: 'participant'),
+        ledgerId: family.id,
+      );
+      final transaction = await repository.createTransaction(
+        'user_1',
+        MoneyTransactionDraft(
+          type: MoneyTransactionType.expense,
+          ledgerId: family.id,
+          transactionAt: DateTime.now().toUtc(),
+          amountMinor: 20000,
+          currencyCode: 'CNY',
+          description: '代购',
+          accountId: account.id,
+          categoryId: category.id,
+          paymentMethod: MoneyPaymentMethod.bankCard,
+        ),
+      );
+
+      // 付款人（我）只垫付不参与分摊，参与成员仅家人一人。
+      final split = await repository.createSplitForTransaction(
+        'user_1',
+        MoneySplitDraft(
+          ledgerId: family.id,
+          transactionId: transaction.id,
+          splitType: MoneySplitType.fixedAmount,
+          payerMemberId: me.id,
+          participants: [
+            MoneySplitParticipantDraft(
+              memberId: partner.id,
+              amountMinor: 20000,
+            ),
+          ],
+        ),
+      );
+
+      expect(split.payerMemberId, me.id);
+      expect(split.details, hasLength(1));
+      expect(split.details.single.memberId, partner.id);
+      expect(split.details.single.amountMinor, 20000);
+    },
+  );
 }

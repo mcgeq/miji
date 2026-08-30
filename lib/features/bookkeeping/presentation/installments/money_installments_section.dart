@@ -1308,7 +1308,7 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
                 DateTimePicker(
                   selectedDate: _firstDueDate,
                   showTime: false,
-                  label: '入账日',
+                  labelText: '入账日',
                   firstDate: DateTime.now().subtract(const Duration(days: 1)),
                   lastDate: DateTime.now().add(const Duration(days: 3650)),
                   onChanged: (value) => setState(() => _firstDueDate = value),

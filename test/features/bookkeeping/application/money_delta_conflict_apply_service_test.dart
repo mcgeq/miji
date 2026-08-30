@@ -209,6 +209,9 @@ class _FakeMoneyRepository implements MoneyRepository {
   @override
   Future<void> refreshUsageStatsForAllUsers() async {}
 
+  @override
+  Future<void> resetAutoPostingRun(String userId, String runId) async {}
+
   MoneyTransactionEntity _transactionFromUpdate(
     String userId,
     MoneyTransactionUpdate update,

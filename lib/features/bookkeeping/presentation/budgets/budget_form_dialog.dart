@@ -431,7 +431,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                         });
                       },
                       showTime: false,
-                      label: '开始日期',
+                      labelText: '开始日期',
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2100),
                     ),
@@ -447,7 +447,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                         });
                       },
                       showTime: false,
-                      label: '结束日期',
+                      labelText: '结束日期',
                       firstDate: _startDate ?? DateTime(2000),
                       lastDate: DateTime(2100),
                     ),

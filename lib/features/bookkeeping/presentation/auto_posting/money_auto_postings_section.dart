@@ -426,13 +426,27 @@ class _AutoPostingTemplateCardContent extends StatelessWidget {
   }
 }
 
-class _AutoPostingRunRow extends StatelessWidget {
+class _AutoPostingRunRow extends ConsumerWidget {
   const _AutoPostingRunRow({required this.run});
 
   final MoneyAutoPostingRunEntity run;
 
+  Future<void> _retry(BuildContext context, WidgetRef ref) async {
+    final toast = FToast()..init(context);
+    try {
+      await ref
+          .read(currentUserMoneyAutoPostingActionsProvider)
+          .resetRun(run.id);
+      if (!context.mounted) return;
+      AppToast.success(toast, context, '已恢复为待执行，可再次执行');
+    } catch (error) {
+      if (!context.mounted) return;
+      AppToast.error(toast, context, '恢复失败，请稍后重试');
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final (label, icon, color) = switch (run.status) {
@@ -513,6 +527,16 @@ class _AutoPostingRunRow extends StatelessWidget {
               ],
             ),
           ),
+          if (run.status == MoneyAutoPostingRunStatus.blocked)
+            IconButton(
+              onPressed: () => _retry(context, ref),
+              tooltip: '重新尝试',
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              color: colorScheme.error,
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            ),
         ],
       ),
     );

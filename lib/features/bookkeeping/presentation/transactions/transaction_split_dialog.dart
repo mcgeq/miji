@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
@@ -332,7 +333,12 @@ class _TransactionSplitDialogState
       _notesController.text = initialRecord.notes ?? '';
       return;
     }
-    _payerMemberId = members.first.id;
+    _payerMemberId =
+        resolveSelfMemberId(
+          members: members,
+          currentUserId: ref.read(authSessionControllerProvider).userId,
+        ) ??
+        members.first.id;
     _selectedMemberIds.addAll(members.map((member) => member.id));
   }
 
@@ -389,7 +395,7 @@ class _TransactionSplitDialogState
       final ruleConfig = Map<Object?, Object?>.from(decoded);
       final participantMaps = _ruleParticipantMaps(ruleConfig);
       final memberIds = _memberIdsFromRule(participantMaps);
-      if (memberIds.length < 2) {
+      if (memberIds.isEmpty) {
         throw const FormatException();
       }
       final splitType = _splitTypeFromRule(rule.ruleType, participantMaps);
@@ -625,12 +631,12 @@ class _TransactionSplitDialogState
     try {
       final payerMemberId = _payerMemberId;
       final selectedIds = _selectedMemberIds.toList();
-      if (selectedIds.length < 2) {
-        setState(() => _errorText = '请选择至少两个参与成员');
+      if (selectedIds.isEmpty) {
+        setState(() => _errorText = '请选择至少一个参与成员');
         return;
       }
-      if (payerMemberId == null || !selectedIds.contains(payerMemberId)) {
-        setState(() => _errorText = '付款人必须在参与成员中');
+      if (payerMemberId == null) {
+        setState(() => _errorText = '请选择付款人');
         return;
       }
 
@@ -778,4 +784,31 @@ class _AddMemberDialogState extends State<_AddMemberDialog> {
     }
     Navigator.of(context).pop(MoneyMemberDraft(name: name, role: _role));
   }
+}
+
+/// 从账本成员中解析当前登录用户本人对应的成员（付款人/垫款人默认取本人）。
+///
+/// 注意：家庭账本的成员均由当前用户创建，`member.userId` 全部相同，
+/// 不能用来区分“我”；本人成员由系统创建，id 固定为
+/// `default_member_$userId` 且 role 为 `owner`（兼容旧数据/导入场景）。
+String? resolveSelfMemberId({
+  required List<MoneyMemberEntity> members,
+  required String? currentUserId,
+}) {
+  if (currentUserId == null || currentUserId.isEmpty) {
+    return null;
+  }
+  final defaultMemberId = 'default_member_$currentUserId';
+  for (final member in members) {
+    if (member.id == defaultMemberId) {
+      return member.id;
+    }
+  }
+  // 兼容旧数据/导入场景：owner 即账本创建者本人。
+  for (final member in members) {
+    if (member.role == 'owner') {
+      return member.id;
+    }
+  }
+  return null;
 }
