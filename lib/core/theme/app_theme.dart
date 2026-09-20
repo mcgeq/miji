@@ -49,14 +49,8 @@ class AppTheme {
         focus: AppThemeTokens.lightFocus,
         focusContainer: AppThemeTokens.lightFocusContainer,
       ),
-      moneyColors: const AppMoneyColors(
-        income: Color(0xFF168A5B),
-        expense: Color(0xFFD44D6E),
-        transfer: Color(0xFF4F7DD9),
-        credit: Color(0xFFB36A18),
-        warning: Color(0xFFE08A1E),
-        success: Color(0xFF168A5B),
-      ),
+      moneyColors: AppThemeFallbacks.moneyColors,
+      heroGradients: AppThemeFallbacks.heroGradients,
     );
   }
 
@@ -106,6 +100,26 @@ class AppTheme {
         warning: Color(0xFFFFC66B),
         success: Color(0xFF7ED8A6),
       ),
+      heroGradients: const AppHeroGradients(
+        // 深色下把右端压暗，否则白字只有 2.37:1、琥珀「负债」只有 1.76:1。
+        netWorth: AppHeroGradient(
+          colors: [Color(0xFF74608B), Color(0xFF4A7D85)],
+        ),
+        brand: AppHeroGradient(
+          colors: [
+            Color(0xFF8A5349),
+            Color(0xFF8B5A62),
+            Color(0xFF8C5F73),
+          ],
+        ),
+        danger: AppHeroGradient(
+          colors: [
+            Color(0xFF703741),
+            Color(0xFF8E4250),
+            Color(0xFFAA5463),
+          ],
+        ),
+      ),
     );
   }
 
@@ -115,6 +129,7 @@ class AppTheme {
     required Color scaffoldBackgroundColor,
     required AppSemanticColors semanticColors,
     required AppMoneyColors moneyColors,
+    required AppHeroGradients heroGradients,
   }) {
     return theme.copyWith(
       colorScheme: colorScheme,
@@ -124,6 +139,7 @@ class AppTheme {
       extensions: <ThemeExtension<dynamic>>[
         semanticColors,
         moneyColors,
+        heroGradients,
         AppThemeFallbacks.spacingTokens,
         AppThemeFallbacks.radiusTokens,
         AppThemeFallbacks.controlTokens,

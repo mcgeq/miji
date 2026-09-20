@@ -738,28 +738,15 @@ class _NetWorthHero extends ConsumerWidget {
         );
     final hidden = allAmountsHidden;
 
+    final gradient = theme.heroGradients.netWorth;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(theme.radiusTokens.lg),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.lerp(
-              theme.colorScheme.primary,
-              const Color(0xFF3E4A8C),
-              0.72,
-            )!,
-            Color.lerp(
-              theme.colorScheme.secondary,
-              const Color(0xFF4F5FB0),
-              0.35,
-            )!,
-          ],
-        ),
+        gradient: gradient.linear,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3E4A8C).withValues(alpha: 0.26),
+            color: gradient.shadow.withValues(alpha: 0.30),
             blurRadius: 26,
             offset: const Offset(0, 12),
             spreadRadius: -16,

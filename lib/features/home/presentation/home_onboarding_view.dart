@@ -41,17 +41,10 @@ class HomeOnboardingView extends StatelessWidget {
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(theme.radiusTokens.lg),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                colorScheme.primary,
-                Color.lerp(colorScheme.primary, colorScheme.tertiary, 0.75)!,
-              ],
-            ),
+            gradient: theme.heroGradients.brand.linear,
             boxShadow: [
               BoxShadow(
-                color: colorScheme.primary.withValues(alpha: 0.3),
+                color: theme.heroGradients.brand.shadow.withValues(alpha: 0.3),
                 blurRadius: 28,
                 offset: const Offset(0, 14),
                 spreadRadius: -16,

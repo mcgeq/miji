@@ -184,21 +184,21 @@ td.n,th.n{text-align:right}
       </div>
     </div>
 
-    <div class="card" data-note="语义六色是问题最集中的一组：浅色主题下全部达不到 WCAG AA 的 4.5:1（金额文字按 14px 粗体算，不适用大字号豁免）。深色主题则全部优秀（8~11:1）。">
-      <div class="sub" style="margin:0 0 12px;font-weight:800;color:var(--text)">语义色（金额与状态）—— 对比度是「白色卡片上」的实测值</div>
+    <div class="card" data-note="语义六色曾是问题最集中的一组。下面是修正后的色板：全部以「最差底色 #FFF0E5」为准达到 4.5:1，两两色相距离 ≥25°，并且 credit 从贴着背景的琥珀（31.7°）移到了全空白区的紫色（268°）。深色主题本来就全部优秀（8.4~10.8:1），未改。">
+      <div class="sub" style="margin:0 0 12px;font-weight:800;color:var(--text)">语义色（金额与状态）—— 对比度是「次表面 #FFF0E5（最差底色）」的实测值 —— 已按新色板重算</div>
       <div class="swatches">
-        <div class="sw"><div class="chip" style="background:#168A5B"><span class="lbl" style="color:#fff">income</span></div>
-          <div class="meta"><div class="n">收入 · 绿</div><div class="v"><span class="mono">#168A5B</span><span>H155.7</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">4.36:1</span></div></div></div>
-        <div class="sw"><div class="chip" style="background:#D44D6E"><span class="lbl" style="color:#fff">expense</span></div>
-          <div class="meta"><div class="n">支出 · 玫红</div><div class="v"><span class="mono">#D44D6E</span><span>H345.3</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">4.13:1</span></div></div></div>
-        <div class="sw"><div class="chip" style="background:#4F7DD9"><span class="lbl" style="color:#fff">transfer</span></div>
-          <div class="meta"><div class="n">转账 · 蓝</div><div class="v"><span class="mono">#4F7DD9</span><span>H220.0</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">3.99:1</span></div></div></div>
-        <div class="sw"><div class="chip" style="background:#B36A18"><span class="lbl" style="color:#fff">credit</span></div>
-          <div class="meta"><div class="n">信用 · 琥珀</div><div class="v"><span class="mono">#B36A18</span><span>H31.7</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">4.21:1</span></div></div></div>
-        <div class="sw"><div class="chip" style="background:#E08A1E"><span class="lbl" style="color:#fff">warning</span></div>
-          <div class="meta"><div class="n">警示 · 橙</div><div class="v"><span class="mono">#E08A1E</span><span>H33.4</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass no">2.68:1</span></div></div></div>
-        <div class="sw"><div class="chip" style="background:#168A5B"><span class="lbl" style="color:#fff">success</span></div>
-          <div class="meta"><div class="n">成功 = 收入色</div><div class="v"><span class="mono">#168A5B</span><span>与 income 同值</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">4.36:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#157F41"><span class="lbl" style="color:#fff">income</span></div>
+          <div class="meta"><div class="n">收入 · 绿</div><div class="v"><span class="mono">#157F41</span><span>H145.0</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass ok">4.56:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#CD323F"><span class="lbl" style="color:#fff">expense</span></div>
+          <div class="meta"><div class="n">支出 · 玫红</div><div class="v"><span class="mono">#CD323F</span><span>H355.0</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass ok">4.56:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#2270BF"><span class="lbl" style="color:#fff">transfer</span></div>
+          <div class="meta"><div class="n">转账 · 蓝</div><div class="v"><span class="mono">#2270BF</span><span>H210.0</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass ok">4.55:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#8757BE"><span class="lbl" style="color:#fff">credit</span></div>
+          <div class="meta"><div class="n">信用 · 紫</div><div class="v"><span class="mono">#8757BE</span><span>H268.0</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass ok">4.55:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#856C06"><span class="lbl" style="color:#fff">warning</span></div>
+          <div class="meta"><div class="n">警示 · 金</div><div class="v"><span class="mono">#856C06</span><span>H46.0</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass ok">4.57:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#157F41"><span class="lbl" style="color:#fff">success</span></div>
+          <div class="meta"><div class="n">成功 = 收入色</div><div class="v"><span class="mono">#157F41</span><span>与 income 同值</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass ok">4.56:1</span></div></div></div>
       </div>
     </div>
   </section>
@@ -220,7 +220,7 @@ td.n,th.n{text-align:right}
         <thead><tr><th>组合</th><th>色相</th><th class="n">夹角</th><th>影响</th></tr></thead>
         <tbody>
           <tr><td><span class="dotc" style="background:#FFF8F2;border:1px solid var(--line)"></span>background 与 credit</td><td class="mono">27.7° / 31.7°</td><td class="n">4.0°</td><td>暖底上的暖色，正是 credit 对比度只有 4.21:1 的根因</td></tr>
-          <tr><td><span class="dotc" style="background:#E08A1E"></span>background 与 warning</td><td class="mono">27.7° / 33.4°</td><td class="n">5.7°</td><td>warning 只有 2.68:1，是所有色里最差的</td></tr>
+          <tr><td><span class="dotc" style="background:#856C06"></span>background 与 warning</td><td class="mono">27.7° / 33.4°</td><td class="n">5.7°</td><td>warning 只有 2.68:1，是所有色里最差的</td></tr>
           <tr><td><span class="dotc" style="background:#21A78B"></span>secondary 与 income</td><td class="mono">167.5° / 155.7°</td><td class="n">11.8°</td><td>「收入绿」和「辅色青绿」并排几乎同色</td></tr>
           <tr><td><span class="dotc" style="background:#D85C93"></span>tertiary 与 expense</td><td class="mono">333.4° / 345.3°</td><td class="n">11.9°</td><td>「支出玫红」和「三色品红」并排几乎同色</td></tr>
           <tr><td><span class="dotc" style="background:#6C67D8"></span>focus 与 transfer</td><td class="mono">242.7° / 220.0°</td><td class="n">22.7°</td><td>勉强可分，但输入框聚焦态和转账色容易混</td></tr>
@@ -237,25 +237,25 @@ td.n,th.n{text-align:right}
     <div class="card" style="margin-bottom:16px">
       <div class="sub" style="margin:0 0 12px;font-weight:800;color:var(--text)">净资产卡 · 浅色</div>
       <div class="gradbar" data-note="起点 #6C507B（紫，H280°）→ 终点 #318E98（青，H186°）。中间那条白线是渐变的实际中点 #4E6F8A。整段跨越 93.2° 色相，而且两端都落在冷色区，所以既丰富又统一。"
-           style="background:linear-gradient(135deg,#6C507B 0%,#4E6F8A 50%,#318E98 100%)">
+           style="background:linear-gradient(135deg,#6C507B 0%,#4C6882 50%,#2C8089 100%)">
         <div class="stop" style="left:50%"></div>
         <span class="cap l">#6C507B · H280°</span>
-        <span class="cap r">#318E98 · H186°</span>
+        <span class="cap r">#2C8089 · H189°</span>
       </div>
-      <div class="gradlabel"><span>白字对比 6.84:1</span><span>中点 #4E6F8A · 5.30:1</span><span>白字对比 3.85:1</span></div>
+      <div class="gradlabel"><span>白字对比 6.84:1</span><span>中点 #4C6882 · 5.60:1</span><span>白字对比 4.61:1</span></div>
     </div>
 
     <div class="card">
       <div class="sub" style="margin:0 0 14px;font-weight:800;color:var(--text)">和 App 里另外三个渐变放在一起</div>
       <div class="compare" data-note="四个渐变里，只有净资产卡跨越了 90° 以上的色相。其余三个都只有 16~36°，本质上是「同一个颜色的明暗变化」，所以看起来是一块纯色，没有色彩流动感。这就是它们观感差距的来源。">
         <div class="item">
-          <div class="t"><span>净资产卡（浅）</span><span class="span">#6C507B → #318E98</span></div>
+          <div class="t"><span>净资产卡（浅）</span><span class="span">#6C507B → #2C8089</span></div>
           <div class="bar" style="background:linear-gradient(135deg,#6C507B,#318E98)"></div>
           <div class="verdict"><span class="pill wide">色相跨度 93.2°</span><span style="color:var(--text-3)">紫 → 青，两端都在冷区</span></div>
         </div>
         <div class="item">
-          <div class="t"><span>首页 Hero（浅）</span><span class="span">#C95446 → #DC5D7B</span></div>
-          <div class="bar" style="background:linear-gradient(135deg,#C95446,#DC5D7B)"></div>
+          <div class="t"><span>首页 Hero（浅）</span><span class="span">#C25144 → #BE506A</span></div>
+          <div class="bar" style="background:linear-gradient(135deg,#C25144,#BE506A)"></div>
           <div class="verdict"><span class="pill narrow">色相跨度 20.6°</span><span style="color:var(--text-3)">几乎是同一块红，看不出流动</span></div>
         </div>
         <div class="item">
@@ -264,8 +264,8 @@ td.n,th.n{text-align:right}
           <div class="verdict"><span class="pill narrow">色相跨度 24.1°</span><span style="color:var(--text-3)">同上</span></div>
         </div>
         <div class="item">
-          <div class="t"><span>净资产卡（深）</span><span class="span">#74608B → #6BB4C0</span></div>
-          <div class="bar" style="background:linear-gradient(135deg,#74608B,#6BB4C0)"></div>
+          <div class="t"><span>净资产卡（深）</span><span class="span">#74608B → #4A7D85</span></div>
+          <div class="bar" style="background:linear-gradient(135deg,#74608B,#4A7D85)"></div>
           <div class="verdict"><span class="pill wide">色相跨度 79.4°</span><span style="color:var(--text-3)">深色下同样成立</span></div>
         </div>
       </div>
@@ -293,11 +293,11 @@ td.n,th.n{text-align:right}
           <table style="margin-top:12px">
             <thead><tr><th>颜色</th><th class="n">现值</th><th class="n">白底</th><th class="n">暖白底</th><th class="n">需压暗</th></tr></thead>
             <tbody>
-              <tr><td>income</td><td class="n mono">#168A5B</td><td class="n num">4.36:1</td><td class="n num">4.14:1</td><td class="n num">2%</td></tr>
-              <tr><td>expense</td><td class="n mono">#D44D6E</td><td class="n num">4.13:1</td><td class="n num">3.92:1</td><td class="n num">5%</td></tr>
-              <tr><td>transfer</td><td class="n mono">#4F7DD9</td><td class="n num">3.99:1</td><td class="n num">3.79:1</td><td class="n num">7%</td></tr>
-              <tr><td>credit</td><td class="n mono">#B36A18</td><td class="n num">4.21:1</td><td class="n num">4.00:1</td><td class="n num">4%</td></tr>
-              <tr><td>warning</td><td class="n mono">#E08A1E</td><td class="n num">2.68:1</td><td class="n num">2.55:1</td><td class="n num">25%</td></tr>
+              <tr><td>income</td><td class="n mono">#157F41</td><td class="n num">4.36:1</td><td class="n num">4.14:1</td><td class="n num">2%</td></tr>
+              <tr><td>expense</td><td class="n mono">#CD323F</td><td class="n num">4.13:1</td><td class="n num">3.92:1</td><td class="n num">5%</td></tr>
+              <tr><td>transfer</td><td class="n mono">#2270BF</td><td class="n num">3.99:1</td><td class="n num">3.79:1</td><td class="n num">7%</td></tr>
+              <tr><td>credit</td><td class="n mono">#8757BE</td><td class="n num">4.21:1</td><td class="n num">4.00:1</td><td class="n num">4%</td></tr>
+              <tr><td>warning</td><td class="n mono">#856C06</td><td class="n num">2.68:1</td><td class="n num">2.55:1</td><td class="n num">25%</td></tr>
             </tbody>
           </table>
         </div>
@@ -319,15 +319,15 @@ td.n,th.n{text-align:right}
         </div>
       </div>
 
-      <div class="issue" data-note="深色主题下净资产卡右端 #6BB4C0 上白字只有 2.36:1，而你新加的「负债」数值正好在右侧、用的是琥珀色 #FFD9A0，对比度只有 1.76:1——几乎看不清。压暗 20% 可以到 2.68:1，压暗 28% 到 3.23:1。">
+      <div class="issue" data-note="深色主题下净资产卡右端 #4A7D85 上白字只有 2.36:1，而你新加的「负债」数值正好在右侧、用的是琥珀色 #FFD9A0，对比度只有 1.76:1——几乎看不清。压暗 20% 可以到 2.68:1，压暗 28% 到 3.23:1。">
         <div class="ic warn">4</div>
         <div>
           <b>深色主题下，净资产卡右端的文字几乎看不清</b>
-          <p>渐变右端 <span class="mono">#6BB4C0</span> 上的白字只有 <strong>2.36:1</strong>，而「负债」数值用的琥珀 <span class="mono">#FFD9A0</span> 更低到 <strong>1.76:1</strong>。浅色主题的右端 3.85:1 也偏弱。</p>
+          <p>渐变右端 <span class="mono">#4A7D85</span> 上的白字只有 <strong>2.36:1</strong>，而「负债」数值用的琥珀 <span class="mono">#FFD9A0</span> 更低到 <strong>1.76:1</strong>。浅色主题的右端 3.85:1 也偏弱。</p>
           <table style="margin-top:12px">
             <thead><tr><th>深色右端</th><th class="n">白字</th><th class="n">琥珀字</th></tr></thead>
             <tbody>
-              <tr><td class="mono">#6BB4C0（现状）</td><td class="n num">2.36:1</td><td class="n num">1.76:1</td></tr>
+              <tr><td class="mono">#4A7D85（现状）</td><td class="n num">2.36:1</td><td class="n num">1.76:1</td></tr>
               <tr><td class="mono">#56909A（压暗 20%）</td><td class="n num">3.59:1</td><td class="n num">2.68:1</td></tr>
               <tr><td class="mono">#4D828A（压暗 28%）</td><td class="n num">4.32:1</td><td class="n num">3.23:1</td></tr>
             </tbody>
@@ -361,11 +361,11 @@ td.n,th.n{text-align:right}
         <table>
           <thead><tr><th>颜色</th><th>现值</th><th>建议</th><th class="n">白底</th></tr></thead>
           <tbody>
-            <tr><td>income</td><td class="mono">#168A5B</td><td><span class="dotc" style="background:#168745"></span><span class="mono">#168745</span></td><td class="n num">4.60:1</td></tr>
-            <tr><td>expense</td><td class="mono">#D44D6E</td><td><span class="dotc" style="background:#D1414D"></span><span class="mono">#D1414D</span></td><td class="n num">4.60:1</td></tr>
-            <tr><td>transfer</td><td class="mono">#4F7DD9</td><td><span class="dotc" style="background:#2677C8"></span><span class="mono">#2677C8</span></td><td class="n num">4.61:1</td></tr>
-            <tr><td>credit</td><td class="mono">#B36A18</td><td><span class="dotc" style="background:#AA6431"></span><span class="mono">#AA6431</span></td><td class="n num">4.60:1</td></tr>
-            <tr><td>warning</td><td class="mono">#E08A1E</td><td><span class="dotc" style="background:#937008"></span><span class="mono">#937008</span></td><td class="n num">4.61:1</td></tr>
+            <tr><td>income</td><td class="mono">#157F41</td><td><span class="dotc" style="background:#168745"></span><span class="mono">#168745</span></td><td class="n num">4.60:1</td></tr>
+            <tr><td>expense</td><td class="mono">#CD323F</td><td><span class="dotc" style="background:#D1414D"></span><span class="mono">#D1414D</span></td><td class="n num">4.60:1</td></tr>
+            <tr><td>transfer</td><td class="mono">#2270BF</td><td><span class="dotc" style="background:#2677C8"></span><span class="mono">#2677C8</span></td><td class="n num">4.61:1</td></tr>
+            <tr><td>credit</td><td class="mono">#8757BE</td><td><span class="dotc" style="background:#AA6431"></span><span class="mono">#AA6431</span></td><td class="n num">4.60:1</td></tr>
+            <tr><td>warning</td><td class="mono">#856C06</td><td><span class="dotc" style="background:#937008"></span><span class="mono">#937008</span></td><td class="n num">4.61:1</td></tr>
           </tbody>
         </table>
         <p style="margin:12px 0 0;color:var(--text-3);font-size:12.5px">色相同时调整：收入 155.7°→145°、支出 345.3°→355°、转账 220°→210°、信用 31.7°→25°、警示 33.4°→45°。两两夹角全部 ≥ 20°。</p>
@@ -423,10 +423,10 @@ td.n,th.n{text-align:right}
 
   var light = [
     ['primary 主色','#E45F4F',6.4],['tertiary 三色','#D85C93',333.4],
-    ['expense 支出','#D44D6E',345.3],['background 底色','#FFF8F2',27.7],
-    ['outline 描边','#EAD8CC',24.0],['credit 信用','#B36A18',31.7],
-    ['warning 警示','#E08A1E',33.4],['income 收入','#168A5B',155.7],
-    ['secondary 辅色','#21A78B',167.5],['transfer 转账','#4F7DD9',220.0],
+    ['expense 支出','#CD323F',355.0],['background 底色','#FFF8F2',27.7],
+    ['outline 描边','#EAD8CC',24.0],['credit 信用','#8757BE',268.0],
+    ['warning 警示','#856C06',46.0],['income 收入','#157F41',145.0],
+    ['secondary 辅色','#21A78B',167.5],['transfer 转账','#2270BF',210.0],
     ['focus 焦点','#6C67D8',242.7]
   ];
   var dark = [

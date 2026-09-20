@@ -33,7 +33,7 @@ class HomeBalanceHeroCard extends StatelessWidget {
     final spending = today ?? const HomeTodaySpendingSummary.empty();
     final hasBudget = summary?.hasBudget ?? false;
     final exceeded = hasBudget && (summary!.progress >= 1);
-    final colors = _heroGradient(theme, exceeded: exceeded);
+    final gradient = _heroGradient(theme, exceeded: exceeded);
     final onHero = Colors.white;
 
     return Semantics(
@@ -42,14 +42,10 @@ class HomeBalanceHeroCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(theme.radiusTokens.lg),
-          gradient: LinearGradient(
-            colors: colors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: gradient.linear,
           boxShadow: [
             BoxShadow(
-              color: colors.first.withValues(alpha: 0.32),
+              color: gradient.shadow.withValues(alpha: 0.32),
               blurRadius: 28,
               offset: const Offset(0, 14),
               spreadRadius: -16,
@@ -143,23 +139,15 @@ class HomeBalanceHeroCard extends StatelessWidget {
     );
   }
 
-  static List<Color> _heroGradient(ThemeData theme, {required bool exceeded}) {
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final start = exceeded ? colorScheme.error : colorScheme.primary;
-    final end = colorScheme.tertiary;
-
-    // 深色主题下的种子色很亮，白字会不可读，需要压暗。
-    final base = isDark ? Color.lerp(start, Colors.black, 0.52)! : start;
-    final accent = isDark
-        ? Color.lerp(end, Colors.black, 0.45)!
-        : Color.lerp(end, start, 0.35)!;
-
-    return [
-      Color.lerp(base, Colors.black, 0.12)!,
-      Color.lerp(base, accent, 0.6)!,
-      accent,
-    ];
+  /// 渐变改由主题提供（`AppHeroGradients`），超支时切到 danger。
+  /// 原来这里每次 build 都用 colorScheme 现算三档停靠点，颜色无法复用，
+  /// 也没法在主题层统一校准对比度。
+  static AppHeroGradient _heroGradient(
+    ThemeData theme, {
+    required bool exceeded,
+  }) {
+    final gradients = theme.heroGradients;
+    return exceeded ? gradients.danger : gradients.brand;
   }
 }
 
