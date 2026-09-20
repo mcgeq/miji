@@ -111,6 +111,11 @@ final moneyDeltaConflictApplyServiceProvider =
 
 final currentUserVisibleAccountsProvider =
     StreamProvider.autoDispose<List<MoneyAccountEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -140,6 +145,11 @@ final currentUserDeletedAccountsProvider =
 
 final currentUserMoneyLedgerAccountsProvider = StreamProvider.autoDispose
     .family<List<MoneyAccountEntity>, String>((ref, ledgerId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -154,6 +164,11 @@ final currentUserMoneyLedgerAccountsProvider = StreamProvider.autoDispose
 
 final currentUserMoneyTransferAccountsProvider = StreamProvider.autoDispose
     .family<List<MoneyAccountEntity>, String>((ref, ledgerId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -170,6 +185,11 @@ final currentUserMoneyTransferAccountsProvider = StreamProvider.autoDispose
 /// 不出现在总资产/统计/账户列表与预算账户范围。
 final currentUserMoneyInternalAccountsProvider =
     StreamProvider.autoDispose<List<MoneyAccountEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -338,6 +358,11 @@ class CurrentMoneyLedgerIdController extends Notifier<String?> {
 
 final currentUserMoneyLedgersProvider =
     StreamProvider.autoDispose<List<MoneyLedgerEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -353,6 +378,11 @@ final currentUserMoneyLedgersProvider =
 
 final currentUserTransactionLedgersProvider = StreamProvider.autoDispose
     .family<List<MoneyLedgerEntity>, String>((ref, transactionId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -811,6 +841,11 @@ final moneyStatisticsInsightsProvider = FutureProvider.autoDispose
 
 final currentUserMoneyLedgerMembersProvider = StreamProvider.autoDispose
     .family<List<MoneyMemberEntity>, String>((ref, ledgerId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -946,6 +981,11 @@ final currentUserEntrySuggestionsProvider =
 final currentUserBudgetsProvider = StreamProvider<List<MoneyBudgetEntity>>((
   ref,
 ) async* {
+  // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+  // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+  if (!ref.mounted) {
+    return;
+  }
   _watchMoneyDataRefresh(ref);
   final session = ref.watch(authSessionControllerProvider);
   if (!session.isUnlocked || session.userId == null) {
@@ -968,6 +1008,11 @@ final currentUserBudgetsProvider = StreamProvider<List<MoneyBudgetEntity>>((
 final currentUserTagCandidatesProvider = StreamProvider<List<String>>((
   ref,
 ) async* {
+  // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+  // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+  if (!ref.mounted) {
+    return;
+  }
   _watchMoneyDataRefresh(ref);
   final session = ref.watch(authSessionControllerProvider);
   if (!session.isUnlocked || session.userId == null) {
@@ -981,6 +1026,11 @@ final currentUserTagCandidatesProvider = StreamProvider<List<String>>((
 
 final currentUserBudgetAllocationsProvider = StreamProvider.autoDispose
     .family<List<MoneyBudgetAllocationEntity>, String>((ref, budgetId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -1034,6 +1084,11 @@ final currentUserBudgetAllocationSnapshotsProvider = StreamProvider.autoDispose
 
 final currentUserBillRemindersProvider =
     StreamProvider.autoDispose<List<MoneyBillReminderEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -1056,6 +1111,11 @@ final currentUserAutoPostingTemplatesProvider =
     StreamProvider.autoDispose<List<MoneyAutoPostingTemplateEntity>>((
       ref,
     ) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -1079,6 +1139,11 @@ final currentUserAutoPostingTemplatesProvider =
 
 final currentUserAutoPostingRunsProvider = StreamProvider.autoDispose
     .family<List<MoneyAutoPostingRunEntity>, String>((ref, templateId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -1183,6 +1248,17 @@ final currentUserReminderCenterHistoryProvider =
     });
 final currentUserInstallmentPlansProvider =
     StreamProvider.autoDispose<List<MoneyInstallmentPlanEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      // async* generator 是惰性的：provider 可能在生成器真正开始执行之前
+      // 就被 dispose，这时 ref 已经失效，任何 ref.watch 都会抛出
+      // 「Cannot use the Ref ... after it has been disposed」。
+      if (!ref.mounted) {
+        return;
+      }
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
         yield const <MoneyInstallmentPlanEntity>[];
@@ -1208,6 +1284,11 @@ final currentUserInstallmentPlansProvider =
 
 final currentUserInstallmentDetailsProvider = StreamProvider.autoDispose
     .family<List<MoneyInstallmentDetailEntity>, String>((ref, planId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -1238,6 +1319,11 @@ final currentUserTransactionProvider = FutureProvider.autoDispose
 
 final currentUserSplitRulesProvider = StreamProvider.autoDispose
     .family<List<MoneySplitRuleEntity>, String>((ref, ledgerId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -1252,6 +1338,11 @@ final currentUserSplitRulesProvider = StreamProvider.autoDispose
 
 final currentUserMoneyMembersProvider =
     StreamProvider.autoDispose<List<MoneyMemberEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
@@ -1267,6 +1358,11 @@ final currentUserMoneyMembersProvider =
 
 final currentUserSplitRecordsForTransactionProvider = StreamProvider.autoDispose
     .family<List<MoneySplitRecordEntity>, String>((ref, transactionId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
       _watchMoneyDataRefresh(ref);
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
