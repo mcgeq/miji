@@ -31,7 +31,9 @@ import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.da
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_spending_analysis_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_net_worth_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_summary_entity.dart';
 
 final moneyRepositoryProvider = Provider<MoneyRepository>((ref) {
   return DriftMoneyRepository(
@@ -205,6 +207,54 @@ final currentUserCreditCardStatementProvider = FutureProvider.autoDispose
       final userId = session.userId!;
       await repository.ensureReadyForUser(userId);
       return repository.getCreditCardStatementForAccount(userId, accountId);
+    });
+
+/// 净资产 = 资产账户余额 − 信用/负债账户已用额度。
+///
+/// 只统计启用中的账户，并统一用账本基准币种；`internal` 类型账户
+/// 不在 `currentUserVisibleAccountsProvider` 里，天然被排除。
+final currentUserNetWorthSummaryProvider =
+    FutureProvider<MoneyNetWorthSummary>((ref) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      final currencyCode = ledger?.baseCurrencyCode ?? 'CNY';
+      final accounts = await ref.watch(
+        currentUserVisibleAccountsProvider.future,
+      );
+
+      var assetMinor = 0;
+      var liabilityMinor = 0;
+      for (final account in accounts) {
+        if (!account.isActive) {
+          continue;
+        }
+        if (account.type.isCreditLike) {
+          liabilityMinor += account.usedCreditMinor;
+        } else {
+          assetMinor += account.balanceMinor;
+        }
+      }
+
+      return MoneyNetWorthSummary(
+        currencyCode: currencyCode,
+        assetMinor: assetMinor,
+        liabilityMinor: liabilityMinor,
+      );
+    });
+
+/// 当前筛选条件下的全量汇总（不受列表分页影响）。
+///
+/// 列表是滚动分页的，用户看到的只是已加载的部分；「这段时间一共花了多少」
+/// 需要单独一次聚合查询，否则数字会随着滚动一直变。
+final currentUserTransactionSummaryProvider = FutureProvider.autoDispose
+    .family<MoneyTransactionSummary, MoneyTransactionQuery>((ref, query) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const MoneyTransactionSummary.empty();
+      }
+      final repository = ref.watch(moneyRepositoryProvider);
+      return repository.summarizeTransactions(session.userId!, query);
     });
 
 final currentUserCreditCardBillViewProvider = FutureProvider.autoDispose

@@ -12,6 +12,7 @@ import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_summary_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_spending_analysis_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.dart';
@@ -422,6 +423,12 @@ abstract class MoneyRepository {
   Future<void> deleteBudgetAllocation(String userId, String allocationId);
 
   Future<MoneyTransactionPage> listTransactions(
+    String userId,
+    MoneyTransactionQuery query,
+  );
+
+  /// 同一筛选条件下的全量汇总（不受分页影响）。
+  Future<MoneyTransactionSummary> summarizeTransactions(
     String userId,
     MoneyTransactionQuery query,
   );

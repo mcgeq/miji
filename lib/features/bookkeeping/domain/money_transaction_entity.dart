@@ -337,6 +337,19 @@ class MoneyTransferResult {
   final MoneyTransactionEntity incoming;
 }
 
+/// 流水列表的排序字段。
+enum MoneyTransactionSortField {
+  transactionAt,
+  amount;
+
+  String get label {
+    return switch (this) {
+      MoneyTransactionSortField.transactionAt => '时间',
+      MoneyTransactionSortField.amount => '金额',
+    };
+  }
+}
+
 class MoneyTransactionQuery {
   const MoneyTransactionQuery({
     this.page = 1,
@@ -354,6 +367,8 @@ class MoneyTransactionQuery {
     this.keyword,
     this.ledgerId,
     this.budgetId,
+    this.sortField = MoneyTransactionSortField.transactionAt,
+    this.sortAscending = false,
   });
 
   final int page;
@@ -371,6 +386,35 @@ class MoneyTransactionQuery {
   final String? keyword;
   final String? ledgerId;
   final String? budgetId;
+  final MoneyTransactionSortField sortField;
+  final bool sortAscending;
+
+  /// 排序条件，用于判断「只有排序变了」时不需要重新拉第一页之后的逻辑。
+  MoneyTransactionQuery copyWith({
+    int? page,
+    MoneyTransactionSortField? sortField,
+    bool? sortAscending,
+  }) {
+    return MoneyTransactionQuery(
+      page: page ?? this.page,
+      pageSize: pageSize,
+      type: type,
+      accountId: accountId,
+      accountType: accountType,
+      categoryId: categoryId,
+      subCategoryId: subCategoryId,
+      paymentMethod: paymentMethod,
+      merchant: merchant,
+      customPaymentMethodName: customPaymentMethodName,
+      dateStart: dateStart,
+      dateEnd: dateEnd,
+      keyword: keyword,
+      ledgerId: ledgerId,
+      budgetId: budgetId,
+      sortField: sortField ?? this.sortField,
+      sortAscending: sortAscending ?? this.sortAscending,
+    );
+  }
 
   @override
   bool operator ==(Object other) {
@@ -390,7 +434,9 @@ class MoneyTransactionQuery {
             dateEnd == other.dateEnd &&
             keyword == other.keyword &&
             ledgerId == other.ledgerId &&
-            budgetId == other.budgetId;
+            budgetId == other.budgetId &&
+            sortField == other.sortField &&
+            sortAscending == other.sortAscending;
   }
 
   @override
@@ -411,6 +457,8 @@ class MoneyTransactionQuery {
       keyword,
       ledgerId,
       budgetId,
+      sortField,
+      sortAscending,
     );
   }
 }

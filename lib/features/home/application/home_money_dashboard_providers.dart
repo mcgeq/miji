@@ -767,35 +767,15 @@ final homeCategorySpendingProvider =
 // 净资产
 // ============================================================================
 
-/// 由可见账户直接汇总的净资产，只输出账本基准币种。
-///
-/// 不走 `currentUserBookkeepingOverviewProvider`（那个查询更重，而且会把
-/// 预算、最近交易一起读出来，首页已经各自有更合适的数据源）。
+/// 首页的净资产卡片，复用记账域的聚合结果，避免两处各算一遍。
 final homeNetAssetSummaryProvider = FutureProvider<HomeNetAssetSummary>((
   ref,
 ) async {
-  ref.watch(moneyDataRefreshVersionProvider);
-  final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
-  final currencyCode = ledger?.baseCurrencyCode ?? 'CNY';
-  final accounts = await ref.watch(currentUserVisibleAccountsProvider.future);
-
-  var assetMinor = 0;
-  var liabilityMinor = 0;
-  for (final account in accounts) {
-    if (!account.isActive) {
-      continue;
-    }
-    if (account.type.isCreditLike) {
-      liabilityMinor += account.usedCreditMinor;
-    } else {
-      assetMinor += account.balanceMinor;
-    }
-  }
-
+  final worth = await ref.watch(currentUserNetWorthSummaryProvider.future);
   return HomeNetAssetSummary(
-    currencyCode: currencyCode,
-    assetMinor: assetMinor,
-    liabilityMinor: liabilityMinor,
+    currencyCode: worth.currencyCode,
+    assetMinor: worth.assetMinor,
+    liabilityMinor: worth.liabilityMinor,
   );
 });
 

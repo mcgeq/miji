@@ -829,10 +829,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
                     accountIdsForType: accountIdsForType,
                   ),
                 )
-                ..orderBy([
-                  (row) => OrderingTerm.desc(row.transactionAt),
-                  (row) => OrderingTerm.desc(row.createdAt),
-                ])
+                ..orderBy(_transactionOrderTerms(query))
                 ..limit(pageSize, offset: (page - 1) * pageSize))
               .get();
 
@@ -852,6 +849,95 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
         total: total,
       );
     } catch (error) {
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseReadFailed,
+        error,
+      );
+    }
+  }
+
+  /// 流水排序：主字段可切换（时间 / 金额），次字段固定为创建时间，
+  /// 保证同一批数据的顺序稳定。
+  List<OrderingTerm Function($MoneyTransactionsTable)> _transactionOrderTerms(
+    MoneyTransactionQuery query,
+  ) {
+    final mode = query.sortAscending ? OrderingMode.asc : OrderingMode.desc;
+    return [
+      if (query.sortField == MoneyTransactionSortField.amount)
+        (row) => OrderingTerm(
+          expression: row.amountMinor - row.refundAmountMinor,
+          mode: mode,
+        )
+      else
+        (row) => OrderingTerm(expression: row.transactionAt, mode: mode),
+      (row) => OrderingTerm.desc(row.createdAt),
+    ];
+  }
+
+  @override
+  Future<MoneyTransactionSummary> summarizeTransactions(
+    String userId,
+    MoneyTransactionQuery query,
+  ) async {
+    try {
+      final transactionIds = query.ledgerId == null
+          ? null
+          : await _transactionIdsForLedger(userId, query.ledgerId!);
+      final accountType = query.accountType;
+      final accountIdsForType = accountType == null
+          ? null
+          : await _accountIdsForType(userId, accountType);
+
+      final table = database.moneyTransactions;
+      final basePredicate = _transactionPredicate(
+        table,
+        userId,
+        query,
+        transactionIds: transactionIds,
+        accountIdsForType: accountIdsForType,
+      );
+
+      Future<int> countOf(Expression<bool> predicate) async {
+        final countExp = table.id.count();
+        final statement = database.selectOnly(table)
+          ..addColumns([countExp])
+          ..where(predicate);
+        return (await statement.getSingle()).read(countExp) ?? 0;
+      }
+
+      /// 与列表里的有效金额保持一致：金额扣除退款。
+      Future<int> netSumOf(Expression<bool> predicate) async {
+        final amountExp = table.amountMinor.sum();
+        final refundExp = table.refundAmountMinor.sum();
+        final statement = database.selectOnly(table)
+          ..addColumns([amountExp, refundExp])
+          ..where(predicate);
+        final row = await statement.getSingle();
+        return (row.read(amountExp) ?? 0) - (row.read(refundExp) ?? 0);
+      }
+
+      final expensePredicate =
+          basePredicate &
+          table.type.equals(MoneyTransactionType.expense.storageValue);
+      final incomePredicate =
+          basePredicate &
+          table.type.equals(MoneyTransactionType.income.storageValue);
+
+      final results = await Future.wait([
+        countOf(basePredicate),
+        netSumOf(expensePredicate),
+        netSumOf(incomePredicate),
+      ]);
+
+      return MoneyTransactionSummary(
+        count: results[0],
+        expenseMinor: results[1],
+        incomeMinor: results[2],
+      );
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
       throw MoneyRepositoryException(
         MoneyRepositoryErrorCode.databaseReadFailed,
         error,

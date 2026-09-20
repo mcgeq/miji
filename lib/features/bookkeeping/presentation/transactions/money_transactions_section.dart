@@ -8,9 +8,11 @@ import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_filter_sheet.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/paged_load_more_list.dart';
+import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
@@ -23,6 +25,7 @@ import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_summary_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_card.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_panel.dart';
@@ -98,6 +101,8 @@ class _MoneyTransactionsSectionState
   String? _merchantFilter;
   String? _customPaymentMethodNameFilter;
   DateTime? _dateStartFilter;
+  MoneyTransactionSortField _sortField = MoneyTransactionSortField.transactionAt;
+  bool _sortAscending = false;
   DateTime? _dateEndFilter;
   String? _keywordFilter;
 
@@ -212,10 +217,66 @@ class _MoneyTransactionsSectionState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 6),
-        AppFilterSheetTrigger(
-          title: '筛选流水',
-          hasActiveFilters: _hasActiveFilters,
+        // 常驻搜索：原来关键词搜索在筛选抽屉第 8 位，要四步才能开始打字。
+        AppTextField(
+          controller: _keywordController,
+          hintText: '搜索分类、商户、备注…',
+          prefixIcon: const Icon(Icons.search_rounded, size: 19),
+          onChanged: _setKeywordFilterDebounced,
+          suffixIcon: (_keywordFilter ?? '').isEmpty
+              ? null
+              : IconButton(
+                  tooltip: '清除搜索',
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: () {
+                    _keywordController.clear();
+                    _setKeywordFilterDebounced('');
+                  },
+                ),
+        ),
+        const SizedBox(height: 10),
+        Row(
           children: [
+            Expanded(
+              child: AppSlidingSegmentedControl<MoneyTransactionType?>(
+                height: 38,
+                minSegmentWidth: 56,
+                value: _typeFilter,
+                onChanged: _setTypeFilter,
+                segments: const [
+                  AppSlidingSegment(value: null, label: '全部'),
+                  AppSlidingSegment(
+                    value: MoneyTransactionType.expense,
+                    label: '支出',
+                  ),
+                  AppSlidingSegment(
+                    value: MoneyTransactionType.income,
+                    label: '收入',
+                  ),
+                  AppSlidingSegment(
+                    value: MoneyTransactionType.transfer,
+                    label: '转账',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            _TransactionsSortButton(
+              sortField: _sortField,
+              sortAscending: _sortAscending,
+              onChanged: (field, ascending) {
+                setState(() {
+                  _sortField = field;
+                  _sortAscending = ascending;
+                });
+                unawaited(_refreshTransactions());
+              },
+            ),
+            const SizedBox(width: 8),
+            AppFilterSheetTrigger(
+              title: '高级筛选',
+              hasActiveFilters: _hasActiveFilters,
+              children: [
             _TransactionFilterFields(
               type: _typeFilter,
               budgetId: _budgetIdFilter,
@@ -251,10 +312,20 @@ class _MoneyTransactionsSectionState
               onKeywordChanged: _setKeywordFilterDebounced,
               onMerchantChanged: _setMerchantFilterDebounced,
               onClearContext: widget.filterContext?.onClear,
+                ),
+              ],
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+        _TransactionDateChips(
+          dateStart: _dateStartFilter,
+          dateEnd: _dateEndFilter,
+          onPickRange: _pickDateRange,
+          onSelectPreset: _applyDatePreset,
+        ),
+        const SizedBox(height: 10),
+        _TransactionSummaryBar(query: _summaryQuery),
         if (widget.filterContext?.account != null) ...[
           _AccountTransactionSummaryPanel(
             account: widget.filterContext!.account!,
@@ -610,7 +681,22 @@ class _MoneyTransactionsSectionState
       keyword: _keywordFilter,
       ledgerId: _activeLedgerId ?? _effectiveInitialQuery.ledgerId,
       budgetId: _budgetIdFilter,
+      sortField: _sortField,
+      sortAscending: _sortAscending,
     );
+  }
+
+  /// 汇总用的 query：与列表同一套筛选条件，但去掉分页。
+  MoneyTransactionQuery get _summaryQuery =>
+      _currentQuery(page: 1).copyWith(page: 1);
+
+  /// 日期快捷区间。
+  void _applyDatePreset(DateTime? start, DateTime? end) {
+    setState(() {
+      _dateStartFilter = start;
+      _dateEndFilter = end;
+    });
+    _refreshFromFilterChange();
   }
 
   void _syncActiveLedger(String? ledgerId) {
@@ -1858,6 +1944,396 @@ class _TransactionFilterFields extends StatelessWidget {
     final month = local.month.toString().padLeft(2, '0');
     final day = local.day.toString().padLeft(2, '0');
     return '$month-$day';
+  }
+}
+
+/// 排序按钮：时间 / 金额，点一次切换方向。
+class _TransactionsSortButton extends StatelessWidget {
+  const _TransactionsSortButton({
+    required this.sortField,
+    required this.sortAscending,
+    required this.onChanged,
+  });
+
+  final MoneyTransactionSortField sortField;
+  final bool sortAscending;
+  final void Function(MoneyTransactionSortField field, bool ascending) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return PopupMenuButton<MoneyTransactionSortField>(
+      tooltip: '排序',
+      position: PopupMenuPosition.under,
+      onSelected: (field) {
+        final ascending = field == sortField ? !sortAscending : false;
+        onChanged(field, ascending);
+      },
+      itemBuilder: (context) => [
+        for (final field in MoneyTransactionSortField.values)
+          PopupMenuItem(
+            value: field,
+            child: Row(
+              children: [
+                Icon(
+                  field == sortField
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  size: 18,
+                  color: field == sortField
+                      ? colorScheme.primary
+                      : colorScheme.outline,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  field == sortField
+                      ? '${field.label} ${sortAscending ? '↑' : '↓'}'
+                      : field.label,
+                ),
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        width: 44,
+        height: 38,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+          ),
+        ),
+        child: Icon(
+          Icons.swap_vert_rounded,
+          size: 19,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+/// 日期快捷区间。覆盖绝大多数看账场景，不用每次开日期选择器。
+class _TransactionDateChips extends StatelessWidget {
+  const _TransactionDateChips({
+    required this.dateStart,
+    required this.dateEnd,
+    required this.onPickRange,
+    required this.onSelectPreset,
+  });
+
+  final DateTime? dateStart;
+  final DateTime? dateEnd;
+  final VoidCallback onPickRange;
+  final void Function(DateTime? start, DateTime? end) onSelectPreset;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return SizedBox(
+      height: 32,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _chip(
+            context,
+            label: '本周',
+            selected: _isSameRange(_weekRange()),
+            onTap: () {
+              final range = _weekRange();
+              onSelectPreset(range.$1, range.$2);
+            },
+          ),
+          _chip(
+            context,
+            label: '本月',
+            selected: _isSameRange(_monthRange(0)),
+            onTap: () {
+              final range = _monthRange(0);
+              onSelectPreset(range.$1, range.$2);
+            },
+          ),
+          _chip(
+            context,
+            label: '上月',
+            selected: _isSameRange(_monthRange(-1)),
+            onTap: () {
+              final range = _monthRange(-1);
+              onSelectPreset(range.$1, range.$2);
+            },
+          ),
+          _chip(
+            context,
+            label: '近 90 天',
+            selected: false,
+            onTap: () {
+              final now = DateTime.now();
+              onSelectPreset(
+                DateTime(now.year, now.month, now.day - 89),
+                DateTime(now.year, now.month, now.day),
+              );
+            },
+          ),
+          _chip(
+            context,
+            label: dateStart == null && dateEnd == null
+                ? '自定义…'
+                : '${_short(dateStart)} - ${_short(dateEnd)}',
+            selected: dateStart != null || dateEnd != null,
+            onTap: onPickRange,
+            trailing: dateStart == null && dateEnd == null ? null : '✕',
+            onTrailingTap: dateStart == null && dateEnd == null
+                ? null
+                : () => onSelectPreset(null, null),
+            accent: colorScheme.primary,
+          ),
+        ].map((widget) => Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: widget,
+        )).toList(),
+      ),
+    );
+  }
+
+  static String _short(DateTime? value) {
+    if (value == null) {
+      return '—';
+    }
+    return '${value.month}/${value.day}';
+  }
+
+  bool _isSameRange((DateTime, DateTime) range) {
+    if (dateStart == null || dateEnd == null) {
+      return false;
+    }
+    return _sameDay(dateStart!, range.$1) && _sameDay(dateEnd!, range.$2);
+  }
+
+  bool _sameDay(DateTime a, DateTime b) {
+    final la = a.toLocal();
+    final lb = b.toLocal();
+    return la.year == lb.year && la.month == lb.month && la.day == lb.day;
+  }
+
+  (DateTime, DateTime) _weekRange() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    return (monday, monday.add(const Duration(days: 6)));
+  }
+
+  (DateTime, DateTime) _monthRange(int monthOffset) {
+    final now = DateTime.now();
+    final first = DateTime(now.year, now.month + monthOffset);
+    final last = DateTime(first.year, first.month + 1, 0);
+    return (first, last);
+  }
+
+  Widget _chip(
+    BuildContext context, {
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    String? trailing,
+    VoidCallback? onTrailingTap,
+    Color? accent,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final highlight = accent ?? colorScheme.primary;
+
+    return Material(
+      color: selected
+          ? colorScheme.primaryContainer.withValues(alpha: 0.45)
+          : colorScheme.surfaceContainerLowest,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected
+                  ? highlight.withValues(alpha: 0.4)
+                  : colorScheme.outlineVariant.withValues(alpha: 0.7),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: selected ? highlight : colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: onTrailingTap,
+                  child: Text(
+                    trailing,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: highlight,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 筛选结果汇总条。
+///
+/// 原实现只在「从账户点进来」时才显示汇总面板；按分类或日期筛选后，
+/// 「这段时间一共花了多少」这个最核心的问题没有答案。这里走一次全量聚合，
+/// 不受列表分页影响。
+class _TransactionSummaryBar extends ConsumerWidget {
+  const _TransactionSummaryBar({required this.query});
+
+  final MoneyTransactionQuery query;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final summary = ref
+        .watch(currentUserTransactionSummaryProvider(query))
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const MoneyTransactionSummary.empty(),
+        );
+    final currencyCode = ref
+        .watch(currentUserPreferencesProvider)
+        .maybeWhen(
+          data: (preferences) => preferences?.currencyCode,
+          orElse: () => null,
+        ) ??
+        'CNY';
+
+    final hasFilter = _hasAnyFilter(query);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+        border: Border.all(
+          color: hasFilter
+              ? colorScheme.primary.withValues(alpha: 0.24)
+              : colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+        color: hasFilter
+            ? colorScheme.primaryContainer.withValues(alpha: 0.22)
+            : colorScheme.surfaceContainerLowest,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _metric(
+              theme,
+              '共 ${summary.count} 笔',
+              '支出 ${formatMoneyMinor(summary.expenseMinor, currencyCode)}',
+              theme.moneyColors.expense,
+            ),
+          ),
+          Expanded(
+            child: _metric(
+              theme,
+              '收入',
+              formatMoneyMinor(summary.incomeMinor, currencyCode),
+              theme.moneyColors.income,
+            ),
+          ),
+          Expanded(
+            child: _metric(
+              theme,
+              '净',
+              '${summary.netMinor >= 0 ? '+' : '-'}'
+                  '${formatMoneyMinor(summary.netMinor.abs(), currencyCode)}',
+              summary.netMinor >= 0
+                  ? theme.moneyColors.income
+                  : theme.moneyColors.expense,
+            ),
+          ),
+          if (hasFilter)
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+              ),
+              child: const Text('筛选'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metric(
+    ThemeData theme,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0,
+          ),
+        ),
+        const SizedBox(height: 1),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static bool _hasAnyFilter(MoneyTransactionQuery query) {
+    return query.type != null ||
+        query.accountId != null ||
+        query.categoryId != null ||
+        query.subCategoryId != null ||
+        query.paymentMethod != null ||
+        query.dateStart != null ||
+        query.dateEnd != null ||
+        (query.keyword?.trim().isNotEmpty ?? false) ||
+        (query.merchant?.trim().isNotEmpty ?? false) ||
+        query.budgetId != null;
   }
 }
 

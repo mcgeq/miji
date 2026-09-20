@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>米记 · 主题配色分析</title>
+<style>
+:root{
+  --bg:#F6EFE9; --canvas:#FFF8F2; --surface:#FFFFFF; --surface-2:#FFF0E5;
+  --line:#EAD8CC; --line-soft:rgba(234,216,204,.55);
+  --text:#2B1F1A; --text-2:#7C6A61; --text-3:#A9988F;
+  --primary:#E45F4F; --primary-soft:rgba(228,95,79,.10);
+  --secondary:#21A78B;
+  --ok:#168A5B; --bad:#D44D6E; --warn:#E08A1E;
+  --shadow-sm:0 1px 2px rgba(74,45,32,.04);
+  --shadow:0 1px 2px rgba(74,45,32,.05), 0 10px 26px -18px rgba(74,45,32,.35);
+  --radius:20px;
+}
+html[data-theme="dark"]{
+  --bg:#120E0C; --canvas:#1B1412; --surface:#241C19; --surface-2:#30231E;
+  --line:#4A3730; --line-soft:rgba(74,55,48,.6);
+  --text:#F6EBE5; --text-2:#B7A49B; --text-3:#8B7870;
+  --primary:#FF9A88; --primary-soft:rgba(255,154,136,.14);
+  --secondary:#7AE1C8;
+  --ok:#7ED8A6; --bad:#FF9AAF; --warn:#FFC66B;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 28px -20px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1100px 520px at 10% -6%, var(--primary-soft), transparent 60%),
+    var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  -webkit-font-smoothing:antialiased;font-size:15px;line-height:1.6;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+.page{max-width:1240px;margin:0 auto;padding:44px 28px 100px}
+.head{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;margin-bottom:34px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary)}
+.eyebrow::before{content:"";width:22px;height:2px;border-radius:2px;background:var(--primary)}
+h1{margin:10px 0 8px;font-size:33px;line-height:1.2;letter-spacing:-.02em;font-weight:800}
+.lede{margin:0;max-width:62ch;color:var(--text-2);font-size:15px}
+.seg{display:inline-flex;padding:4px;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow-sm)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--text-2);font:inherit;font-size:13px;font-weight:600;padding:7px 15px;border-radius:999px;cursor:pointer;transition:.18s}
+.seg button[aria-pressed="true"]{background:var(--primary);color:#fff}
+html[data-theme="dark"] .seg button[aria-pressed="true"]{color:#2B1F1A}
+
+section{margin-bottom:38px}
+h2{font-size:20px;font-weight:800;letter-spacing:-.01em;margin:0 0 6px}
+h2 .idx{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:9px;background:var(--primary-soft);color:var(--primary);font-size:13px;font-weight:900;margin-right:10px;vertical-align:2px}
+.sub{margin:0 0 18px;color:var(--text-3);font-size:13.5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow-sm)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+
+/* 色板 */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+.sw{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.sw .chip{height:74px;display:flex;align-items:flex-end;justify-content:space-between;padding:9px 11px}
+.sw .chip .lbl{font-size:11px;font-weight:800;letter-spacing:.02em}
+.sw .meta{padding:9px 11px}
+.sw .meta .n{font-size:12.5px;font-weight:700}
+.sw .meta .v{font-size:11.5px;color:var(--text-3);font-weight:600;display:flex;justify-content:space-between;gap:8px;margin-top:2px}
+.pass{font-weight:800}
+.pass.ok{color:var(--ok)} .pass.mid{color:var(--warn)} .pass.no{color:var(--bad)}
+
+/* 色相环 */
+.ring-wrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.ring{position:relative;width:240px;height:240px;border-radius:50%;flex:0 0 auto;
+  background:conic-gradient(from -90deg,
+    hsl(0,74%,60%) 0deg, hsl(30,74%,60%) 30deg, hsl(60,74%,60%) 60deg,
+    hsl(90,74%,60%) 90deg, hsl(120,74%,60%) 120deg, hsl(150,74%,60%) 150deg,
+    hsl(180,74%,60%) 180deg, hsl(210,74%,60%) 210deg, hsl(240,74%,60%) 240deg,
+    hsl(270,74%,60%) 270deg, hsl(300,74%,60%) 300deg, hsl(330,74%,60%) 330deg,
+    hsl(360,74%,60%) 360deg);
+  mask:radial-gradient(farthest-side, transparent 52%, #000 53%);
+  -webkit-mask:radial-gradient(farthest-side, transparent 52%, #000 53%);}
+.ring::after{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid var(--line-soft)}
+.ring .dot{position:absolute;left:50%;top:50%;width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25);margin:-5.5px 0 0 -5.5px;transform-origin:0 0}
+.ring-legend{display:flex;flex-direction:column;gap:7px;font-size:12.5px;min-width:220px}
+.ring-legend .row{display:flex;align-items:center;gap:9px}
+.ring-legend .d{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.ring-legend .nm{font-weight:700;min-width:96px}
+.ring-legend .h{color:var(--text-3);font-weight:600}
+.ring-legend .warn{color:var(--bad);font-weight:800;font-size:11.5px}
+
+/* 渐变演示 */
+.gradbar{height:96px;border-radius:16px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.gradbar .stop{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.55)}
+.gradbar .cap{position:absolute;bottom:9px;font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+.gradbar .cap.l{left:12px} .gradbar .cap.r{right:12px}
+.gradlabel{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-3);font-weight:700;margin-top:8px}
+.compare{display:flex;flex-direction:column;gap:14px}
+.compare .item .t{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:6px}
+.compare .item .t .span{color:var(--text-3);font-weight:600}
+.compare .bar{height:46px;border-radius:12px;box-shadow:var(--shadow-sm)}
+.verdict{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:700;margin-top:5px}
+.verdict .pill{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px}
+.pill.wide{background:rgba(33,167,139,.16);color:var(--secondary)}
+.pill.narrow{background:rgba(224,138,30,.16);color:var(--warn)}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);font-weight:800;padding:0 10px 10px;border-bottom:1px solid var(--line)}
+td{padding:11px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right}
+.badge{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px}
+.badge.ok{background:rgba(22,138,91,.14);color:var(--ok)}
+.badge.mid{background:rgba(224,138,30,.16);color:var(--warn)}
+.badge.no{background:rgba(212,77,110,.14);color:var(--bad)}
+.dotc{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+
+/* 问题卡 */
+.issue{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:start;padding:15px 0;border-bottom:1px solid var(--line-soft)}
+.issue:last-child{border-bottom:0}
+.issue .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:14px;font-weight:900}
+.issue .ic.bad{background:rgba(212,77,110,.14);color:var(--bad)}
+.issue .ic.warn{background:rgba(224,138,30,.16);color:var(--warn)}
+.issue .ic.info{background:rgba(79,125,217,.14);color:#4F7DD9}
+.issue b{display:block;font-size:14px;font-weight:800;margin-bottom:3px}
+.issue p{margin:0;color:var(--text-2);font-size:13px}
+.issue code{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:1px 6px;font-size:11.5px}
+
+.note{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(14px);background:var(--text);color:var(--canvas);border-radius:16px;padding:14px 18px;max-width:680px;width:calc(100% - 40px);box-shadow:0 20px 50px -24px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:.24s cubic-bezier(.2,.8,.2,1);z-index:99}
+.note.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.note .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+.note .b{font-size:13.5px;margin-top:6px;line-height:1.6}
+[data-note]{cursor:pointer}
+[data-note]:hover{outline:2px solid var(--primary-soft);outline-offset:3px;border-radius:14px}
+
+@media (max-width:960px){ .grid2,.grid3{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="head">
+    <div>
+      <span class="eyebrow">Miji · Color System</span>
+      <h1>主题配色分析</h1>
+      <p class="lede">把现有主题的每个颜色取出来，算出色相、明度和真实对比度，找出净资产卡好看的原因，也找出几个别人不容易发现的问题。所有数字都是从代码里的色值算出来的，不是估的。</p>
+    </div>
+    <div class="seg" role="group">
+      <button data-theme-btn="light" aria-pressed="true">浅色</button>
+      <button data-theme-btn="dark" aria-pressed="false">深色</button>
+    </div>
+  </div>
+
+  <!-- ============ 1. 色板总览 ============ -->
+  <section>
+    <h2><span class="idx">1</span>色板总览</h2>
+    <p class="sub">来源：<span class="mono">app_theme_tokens.dart</span> + <span class="mono">app_design_tokens.dart</span>。对比度是「该色作为文字、压在自己的常用背景上」的实测值。</p>
+
+    <div class="card" style="margin-bottom:16px" data-note="品牌三色：珊瑚红 6.4°、青绿 167.5°、品红 333.4°。三者互成 161° 和 33° 的夹角，是典型的「暖—冷—暖」结构，辨识度很高。">
+      <div class="sub" style="margin:0 0 12px;font-weight:800;color:var(--text)">品牌三色（决定 App 的调性）</div>
+      <div class="swatches">
+        <div class="sw"><div class="chip" style="background:#E45F4F"><span class="lbl" style="color:#fff">primary</span></div>
+          <div class="meta"><div class="n">主色 · 珊瑚红</div><div class="v"><span class="mono">#E45F4F</span><span>H6.4 S73 L60</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#21A78B"><span class="lbl" style="color:#fff">secondary</span></div>
+          <div class="meta"><div class="n">辅色 · 青绿</div><div class="v"><span class="mono">#21A78B</span><span>H167.5 S67 L39</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#D85C93"><span class="lbl" style="color:#fff">tertiary</span></div>
+          <div class="meta"><div class="n">三色 · 品红</div><div class="v"><span class="mono">#D85C93</span><span>H333.4 S61 L60</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#6C67D8"><span class="lbl" style="color:#fff">focus</span></div>
+          <div class="meta"><div class="n">焦点 · 靛蓝</div><div class="v"><span class="mono">#6C67D8</span><span>H242.7 S59 L63</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px" data-note="暖中性三色：背景 27.7°、次表面 25.4°、描边 24.0°——三个色相挤在 4° 之内，只靠明度拉开层次（97.5% → 94.9% → 85.9%）。这是整套配色「暖」的来源，也是它最连贯的部分。">
+      <div class="sub" style="margin:0 0 12px;font-weight:800;color:var(--text)">暖中性（App 的底色，也是最连贯的一组）</div>
+      <div class="swatches">
+        <div class="sw"><div class="chip" style="background:#FFF8F2;border-bottom:1px solid var(--line)"><span class="lbl" style="color:#2B1F1A">background</span></div>
+          <div class="meta"><div class="n">页面底色</div><div class="v"><span class="mono">#FFF8F2</span><span>H27.7 S100 L97.5</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#FFF0E5;border-bottom:1px solid var(--line)"><span class="lbl" style="color:#2B1F1A">surfaceAlt</span></div>
+          <div class="meta"><div class="n">次表面</div><div class="v"><span class="mono">#FFF0E5</span><span>H25.4 S100 L94.9</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#EAD8CC"><span class="lbl" style="color:#2B1F1A">outline</span></div>
+          <div class="meta"><div class="n">描边</div><div class="v"><span class="mono">#EAD8CC</span><span>H24.0 S42 L85.9</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#FFFFFF;border-bottom:1px solid var(--line)"><span class="lbl" style="color:#2B1F1A">surface</span></div>
+          <div class="meta"><div class="n">卡片</div><div class="v"><span class="mono">#FFFFFF</span><span>纯白</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="card" data-note="语义六色是问题最集中的一组：浅色主题下全部达不到 WCAG AA 的 4.5:1（金额文字按 14px 粗体算，不适用大字号豁免）。深色主题则全部优秀（8~11:1）。">
+      <div class="sub" style="margin:0 0 12px;font-weight:800;color:var(--text)">语义色（金额与状态）—— 对比度是「白色卡片上」的实测值</div>
+      <div class="swatches">
+        <div class="sw"><div class="chip" style="background:#168A5B"><span class="lbl" style="color:#fff">income</span></div>
+          <div class="meta"><div class="n">收入 · 绿</div><div class="v"><span class="mono">#168A5B</span><span>H155.7</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">4.36:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#D44D6E"><span class="lbl" style="color:#fff">expense</span></div>
+          <div class="meta"><div class="n">支出 · 玫红</div><div class="v"><span class="mono">#D44D6E</span><span>H345.3</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">4.13:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#4F7DD9"><span class="lbl" style="color:#fff">transfer</span></div>
+          <div class="meta"><div class="n">转账 · 蓝</div><div class="v"><span class="mono">#4F7DD9</span><span>H220.0</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">3.99:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#B36A18"><span class="lbl" style="color:#fff">credit</span></div>
+          <div class="meta"><div class="n">信用 · 琥珀</div><div class="v"><span class="mono">#B36A18</span><span>H31.7</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">4.21:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#E08A1E"><span class="lbl" style="color:#fff">warning</span></div>
+          <div class="meta"><div class="n">警示 · 橙</div><div class="v"><span class="mono">#E08A1E</span><span>H33.4</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass no">2.68:1</span></div></div></div>
+        <div class="sw"><div class="chip" style="background:#168A5B"><span class="lbl" style="color:#fff">success</span></div>
+          <div class="meta"><div class="n">成功 = 收入色</div><div class="v"><span class="mono">#168A5B</span><span>与 income 同值</span></div><div class="v" style="margin-top:5px"><span>白底对比</span><span class="pass mid">4.36:1</span></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. 色相环 ============ -->
+  <section>
+    <h2><span class="idx">2</span>色相分布：撞色在哪里</h2>
+    <p class="sub">把每个颜色放到色相环上，夹角小于 20° 的两个色在实际界面里会被看成同一个颜色。</p>
+    <div class="card">
+      <div class="ring-wrap" data-note="注意三个红色系颜色挤在一起：primary 6.4°、expense 345.3°、tertiary 333.4°——expense 和 tertiary 只差 11.9°。绿色系也一样：secondary 167.5° 与 income 155.7° 只差 11.8°。而暖中性（24~28°）又和 credit（31.7°）、warning（33.4°）几乎重合。">
+        <div class="ring" id="ring"></div>
+        <div class="ring-legend" id="ringLegend"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="sub" style="margin:0 0 6px;font-weight:800;color:var(--text)">夹角 &lt; 20° 的组合</div>
+      <table>
+        <thead><tr><th>组合</th><th>色相</th><th class="n">夹角</th><th>影响</th></tr></thead>
+        <tbody>
+          <tr><td><span class="dotc" style="background:#FFF8F2;border:1px solid var(--line)"></span>background 与 credit</td><td class="mono">27.7° / 31.7°</td><td class="n">4.0°</td><td>暖底上的暖色，正是 credit 对比度只有 4.21:1 的根因</td></tr>
+          <tr><td><span class="dotc" style="background:#E08A1E"></span>background 与 warning</td><td class="mono">27.7° / 33.4°</td><td class="n">5.7°</td><td>warning 只有 2.68:1，是所有色里最差的</td></tr>
+          <tr><td><span class="dotc" style="background:#21A78B"></span>secondary 与 income</td><td class="mono">167.5° / 155.7°</td><td class="n">11.8°</td><td>「收入绿」和「辅色青绿」并排几乎同色</td></tr>
+          <tr><td><span class="dotc" style="background:#D85C93"></span>tertiary 与 expense</td><td class="mono">333.4° / 345.3°</td><td class="n">11.9°</td><td>「支出玫红」和「三色品红」并排几乎同色</td></tr>
+          <tr><td><span class="dotc" style="background:#6C67D8"></span>focus 与 transfer</td><td class="mono">242.7° / 220.0°</td><td class="n">22.7°</td><td>勉强可分，但输入框聚焦态和转账色容易混</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 3. 净资产渐变为什么好看 ============ -->
+  <section>
+    <h2><span class="idx">3</span>净资产卡为什么好看</h2>
+    <p class="sub">这是全篇最有价值的一条：好看的原因不是「用了紫色」，而是它的<strong>色相跨度足够大</strong>——而 App 里其它三个渐变都做不到。</p>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="sub" style="margin:0 0 12px;font-weight:800;color:var(--text)">净资产卡 · 浅色</div>
+      <div class="gradbar" data-note="起点 #6C507B（紫，H280°）→ 终点 #318E98（青，H186°）。中间那条白线是渐变的实际中点 #4E6F8A。整段跨越 93.2° 色相，而且两端都落在冷色区，所以既丰富又统一。"
+           style="background:linear-gradient(135deg,#6C507B 0%,#4E6F8A 50%,#318E98 100%)">
+        <div class="stop" style="left:50%"></div>
+        <span class="cap l">#6C507B · H280°</span>
+        <span class="cap r">#318E98 · H186°</span>
+      </div>
+      <div class="gradlabel"><span>白字对比 6.84:1</span><span>中点 #4E6F8A · 5.30:1</span><span>白字对比 3.85:1</span></div>
+    </div>
+
+    <div class="card">
+      <div class="sub" style="margin:0 0 14px;font-weight:800;color:var(--text)">和 App 里另外三个渐变放在一起</div>
+      <div class="compare" data-note="四个渐变里，只有净资产卡跨越了 90° 以上的色相。其余三个都只有 16~36°，本质上是「同一个颜色的明暗变化」，所以看起来是一块纯色，没有色彩流动感。这就是它们观感差距的来源。">
+        <div class="item">
+          <div class="t"><span>净资产卡（浅）</span><span class="span">#6C507B → #318E98</span></div>
+          <div class="bar" style="background:linear-gradient(135deg,#6C507B,#318E98)"></div>
+          <div class="verdict"><span class="pill wide">色相跨度 93.2°</span><span style="color:var(--text-3)">紫 → 青，两端都在冷区</span></div>
+        </div>
+        <div class="item">
+          <div class="t"><span>首页 Hero（浅）</span><span class="span">#C95446 → #DC5D7B</span></div>
+          <div class="bar" style="background:linear-gradient(135deg,#C95446,#DC5D7B)"></div>
+          <div class="verdict"><span class="pill narrow">色相跨度 20.6°</span><span style="color:var(--text-3)">几乎是同一块红，看不出流动</span></div>
+        </div>
+        <div class="item">
+          <div class="t"><span>首次使用引导（浅）</span><span class="span">#E45F4F → #DB5D82</span></div>
+          <div class="bar" style="background:linear-gradient(135deg,#E45F4F,#DB5D82)"></div>
+          <div class="verdict"><span class="pill narrow">色相跨度 24.1°</span><span style="color:var(--text-3)">同上</span></div>
+        </div>
+        <div class="item">
+          <div class="t"><span>净资产卡（深）</span><span class="span">#74608B → #6BB4C0</span></div>
+          <div class="bar" style="background:linear-gradient(135deg,#74608B,#6BB4C0)"></div>
+          <div class="verdict"><span class="pill wide">色相跨度 79.4°</span><span style="color:var(--text-3)">深色下同样成立</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px" data-note="还有一个次要原因：紫色（280°）在整套色板里完全不存在——品牌三色是 6°/167°/333°，暖中性是 24~28°，语义色是 155°/345°/220°/32°。净资产卡是全局唯一出现紫色的地方，所以它天然成为视觉焦点。">
+      <div class="sub" style="margin:0 0 8px;font-weight:800;color:var(--text)">第二个原因：它是全局唯一的紫色</div>
+      <p style="margin:0;color:var(--text-2);font-size:13.5px">
+        整套色板用到的色相只有 6°（珊瑚）、24~33°（暖中性 / 信用 / 警示）、155~167°（收入 / 辅色）、220°（转账）、242°（焦点）、333~345°（三色 / 支出）。
+        <strong>紫色的 270~280° 区间是空白</strong>，净资产卡一出现就自然抢走注意力。
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 4. 问题 ============ -->
+  <section>
+    <h2><span class="idx">4</span>四个需要处理的问题</h2>
+    <p class="sub">按影响程度排序</p>
+    <div class="card">
+      <div class="issue" data-note="金额文字在浅色主题下普遍偏亮。注意 income / expense / transfer / credit 只差 2~7% 的压暗就能过线，属于「顺手调一下」，风险极低；warning 是真正的异类，需要压暗 25%。">
+        <div class="ic bad">1</div>
+        <div>
+          <b>浅色主题的金额色全部达不到 WCAG AA</b>
+          <p>金额是 14px 粗体，不适用「大字号 3:1」豁免，需要 4.5:1。实测：收入 4.36、支出 4.13、转账 3.99、信用 4.21、警示 <strong>2.68</strong>。深色主题则全部优秀（8.4~10.8:1）。</p>
+          <table style="margin-top:12px">
+            <thead><tr><th>颜色</th><th class="n">现值</th><th class="n">白底</th><th class="n">暖白底</th><th class="n">需压暗</th></tr></thead>
+            <tbody>
+              <tr><td>income</td><td class="n mono">#168A5B</td><td class="n num">4.36:1</td><td class="n num">4.14:1</td><td class="n num">2%</td></tr>
+              <tr><td>expense</td><td class="n mono">#D44D6E</td><td class="n num">4.13:1</td><td class="n num">3.92:1</td><td class="n num">5%</td></tr>
+              <tr><td>transfer</td><td class="n mono">#4F7DD9</td><td class="n num">3.99:1</td><td class="n num">3.79:1</td><td class="n num">7%</td></tr>
+              <tr><td>credit</td><td class="n mono">#B36A18</td><td class="n num">4.21:1</td><td class="n num">4.00:1</td><td class="n num">4%</td></tr>
+              <tr><td>warning</td><td class="n mono">#E08A1E</td><td class="n num">2.68:1</td><td class="n num">2.55:1</td><td class="n num">25%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="issue" data-note="这是最根因的一条：六个语义色被同时当作「填充色」和「文字色」用，但这两个角色的对比度门槛完全不同——非文字的 UI 组件只要 3:1，文字要 4.5:1。一个值没法同时满足两端，warning 就是被牺牲掉的那个。建议拆成 warning（填充，保持鲜亮）与 warningText（文字，压暗）。">
+        <div class="ic warn">2</div>
+        <div>
+          <b>六个语义色被要求同时干两件事</b>
+          <p>同一个 <code>warning</code> 既当警示条的背景填充，又当「已超支」的文字颜色。填充色只需要 3:1（非文字组件标准），文字色需要 4.5:1 —— 一个值不可能同时满足。现在是填充够鲜亮、文字就不够暗。</p>
+        </div>
+      </div>
+
+      <div class="issue" data-note="你喜欢的那个渐变，颜色是硬编码在 money_accounts_section.dart 里的两个字面量，不在主题系统内。这意味着：它没法复用到首页 Hero 或引导页；deep/dark 要各写一份；将来加主题切换或换肤也管不到它。">
+        <div class="ic info">3</div>
+        <div>
+          <b>净资产卡的颜色是硬编码的，不在主题系统里</b>
+          <p><span class="mono">money_accounts_section.dart:750</span> 直接写了 <code>Color(0xFF3E4A8C)</code> 和 <code>Color(0xFF4F5FB0)</code>，再用 <code>Color.lerp</code> 和 primary / secondary 混合。<strong>这套你认可的配色目前无法复用到别处，也不受主题管理</strong>。</p>
+        </div>
+      </div>
+
+      <div class="issue" data-note="深色主题下净资产卡右端 #6BB4C0 上白字只有 2.36:1，而你新加的「负债」数值正好在右侧、用的是琥珀色 #FFD9A0，对比度只有 1.76:1——几乎看不清。压暗 20% 可以到 2.68:1，压暗 28% 到 3.23:1。">
+        <div class="ic warn">4</div>
+        <div>
+          <b>深色主题下，净资产卡右端的文字几乎看不清</b>
+          <p>渐变右端 <span class="mono">#6BB4C0</span> 上的白字只有 <strong>2.36:1</strong>，而「负债」数值用的琥珀 <span class="mono">#FFD9A0</span> 更低到 <strong>1.76:1</strong>。浅色主题的右端 3.85:1 也偏弱。</p>
+          <table style="margin-top:12px">
+            <thead><tr><th>深色右端</th><th class="n">白字</th><th class="n">琥珀字</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">#6BB4C0（现状）</td><td class="n num">2.36:1</td><td class="n num">1.76:1</td></tr>
+              <tr><td class="mono">#56909A（压暗 20%）</td><td class="n num">3.59:1</td><td class="n num">2.68:1</td></tr>
+              <tr><td class="mono">#4D828A（压暗 28%）</td><td class="n num">4.32:1</td><td class="n num">3.23:1</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. 建议 ============ -->
+  <section>
+    <h2><span class="idx">5</span>建议</h2>
+    <p class="sub">按「改动大小 / 收益」排序，前两条几乎无风险</p>
+
+    <div class="card" style="margin-bottom:16px" data-note="把渐变提成主题 token。定义 AppHeroGradients 扩展，包含三档停靠点而不是两个端点——因为现在的实现本来就是三档（base / mix / accent），而且三档才能保证中间不会发灰。">
+      <div class="sub" style="margin:0 0 10px;font-weight:800;color:var(--text)">A. 把渐变提成主题 token（推荐先做）</div>
+      <p style="margin:0 0 12px;color:var(--text-2);font-size:13.5px">新增一个 <code>AppHeroGradients</code> 主题扩展，和 <code>AppMoneyColors</code> 并列。每个渐变定义 <strong>三档停靠点</strong>（现状就是三档）：</p>
+      <table>
+        <thead><tr><th>语义</th><th>用途</th><th>起点</th><th>终点</th><th class="n">色相跨度</th></tr></thead>
+        <tbody>
+          <tr><td>净资产</td><td>账户页 / 首页资产卡</td><td class="mono">#6C507B</td><td class="mono">#318E98</td><td class="n num">93°</td></tr>
+          <tr><td>品牌</td><td>首页 Hero / 预算卡</td><td class="mono">#C95446</td><td class="mono">#DC5D7B</td><td class="n num">21° <span style="color:var(--text-3)">→ 建议拉到 45°</span></td></tr>
+          <tr><td>警示</td><td>超支 Hero</td><td class="mono">#B03A3A</td><td class="mono">#8E3A6E</td><td class="n num">约 50°</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="card" data-note="按「保持色相、同时拉开与品牌色的距离」重算的一套。注意 credit 和 warning 现在是同色相不同明度的关系，本身就容易混——建议把 credit 移到 25°（棕琥珀）、warning 移到 45°（黄橙），两者饱和度也拉开（55% vs 90%）。">
+        <div class="sub" style="margin:0 0 12px;font-weight:800;color:var(--text)">B. 浅色金额色：一次同时解决对比度和撞色</div>
+        <table>
+          <thead><tr><th>颜色</th><th>现值</th><th>建议</th><th class="n">白底</th></tr></thead>
+          <tbody>
+            <tr><td>income</td><td class="mono">#168A5B</td><td><span class="dotc" style="background:#168745"></span><span class="mono">#168745</span></td><td class="n num">4.60:1</td></tr>
+            <tr><td>expense</td><td class="mono">#D44D6E</td><td><span class="dotc" style="background:#D1414D"></span><span class="mono">#D1414D</span></td><td class="n num">4.60:1</td></tr>
+            <tr><td>transfer</td><td class="mono">#4F7DD9</td><td><span class="dotc" style="background:#2677C8"></span><span class="mono">#2677C8</span></td><td class="n num">4.61:1</td></tr>
+            <tr><td>credit</td><td class="mono">#B36A18</td><td><span class="dotc" style="background:#AA6431"></span><span class="mono">#AA6431</span></td><td class="n num">4.60:1</td></tr>
+            <tr><td>warning</td><td class="mono">#E08A1E</td><td><span class="dotc" style="background:#937008"></span><span class="mono">#937008</span></td><td class="n num">4.61:1</td></tr>
+          </tbody>
+        </table>
+        <p style="margin:12px 0 0;color:var(--text-3);font-size:12.5px">色相同时调整：收入 155.7°→145°、支出 345.3°→355°、转账 220°→210°、信用 31.7°→25°、警示 33.4°→45°。两两夹角全部 ≥ 20°。</p>
+      </div>
+
+      <div class="card" data-note="更彻底的做法：把每个语义色拆成「填充色 / 文字色」两个 token。填充保持现在的鲜亮（够 3:1 即可），文字用压暗版本（4.5:1）。这样既不用牺牲警示色的醒目度，文字也达标。">
+        <div class="sub" style="margin:0 0 12px;font-weight:800;color:var(--text)">C. 更彻底：拆成 fill / text 两个 token</div>
+        <p style="margin:0 0 12px;color:var(--text-2);font-size:13.5px">
+          <code>AppMoneyColors</code> 从 6 个字段扩到 12 个：
+        </p>
+        <div class="mono" style="background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px;padding:14px;font-size:12px;line-height:1.9;overflow-x:auto">
+          <div><span style="color:var(--text-3)">// 填充：保持鲜亮，门槛 3:1</span></div>
+          <div>warningFill <span style="color:var(--text-3)">=</span> #E08A1E</div>
+          <div><span style="color:var(--text-3)">// 文字：压暗，门槛 4.5:1</span></div>
+          <div>warningText <span style="color:var(--text-3)">=</span> #937008</div>
+          <div style="margin-top:8px"><span style="color:var(--text-3)">// 其余五个同理</span></div>
+        </div>
+        <p style="margin:12px 0 0;color:var(--text-3);font-size:12.5px">
+          代价是调用点要选对 token；好处是警示条保持醒目，文字也不会糊。
+        </p>
+      </div>
+    </div>
+
+    <div class="card" data-note="themeSeedColor 在 user_preferences 表里有列、有读写方法、注册时写入默认值，但 app_theme.dart 里完全没有读它——主题用的是写死的 AppThemeTokens。这是个死配置：要么接回主题（支持换主题色），要么删掉。">
+      <div class="sub" style="margin:0 0 8px;font-weight:800;color:var(--text)">D. 顺手处理一个死配置</div>
+      <p style="margin:0;color:var(--text-2);font-size:13.5px">
+        <code>themeSeedColor</code> 在 <code>user_preferences</code> 表里有列、有读写方法、注册时还写了默认值，但 <code>app_theme.dart</code> 里<strong>一次都没有读它</strong>——主题用的是写死的 <code>AppThemeTokens</code>。
+        要么把它接回主题（真的支持换主题色），要么删列。留着是最糟的选择：下一个人会以为它能用。
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 6. 小结 ============ -->
+  <section>
+    <h2><span class="idx">6</span>一句话小结</h2>
+    <div class="card">
+      <p style="margin:0 0 14px;font-size:14.5px;color:var(--text)">
+        整套配色的<strong>暖中性部分做得很好</strong>——三个色相挤在 4° 内、只靠明度分层，这是它「暖」且耐看的根基；<strong>深色主题的语义色也全部达标</strong>（8.4~10.8:1），比大多数 App 都干净。
+      </p>
+      <p style="margin:0 0 14px;font-size:14.5px;color:var(--text)">
+        问题集中在两处：<strong>浅色主题的语义色全部差一点点</strong>（2~7% 的压暗就能过线，只有 warning 差 25%），以及<strong>语义色与品牌色、暖中性之间有 5 组撞色</strong>（夹角 4°~12°）。
+      </p>
+      <p style="margin:0;font-size:14.5px;color:var(--text)">
+        而你喜欢的净资产卡，本质上是这套色板里<strong>唯一一个跨越了 90° 色相的渐变</strong>，也是唯一用了紫色的地方。把这个「大跨度 + 冷色区」的做法提成 token 复用到首页 Hero，是最省力的一步升级。
+      </p>
+    </div>
+  </section>
+</div>
+
+<div class="note" id="note"><div class="k">说明</div><div class="b"></div></div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+
+  var light = [
+    ['primary 主色','#E45F4F',6.4],['tertiary 三色','#D85C93',333.4],
+    ['expense 支出','#D44D6E',345.3],['background 底色','#FFF8F2',27.7],
+    ['outline 描边','#EAD8CC',24.0],['credit 信用','#B36A18',31.7],
+    ['warning 警示','#E08A1E',33.4],['income 收入','#168A5B',155.7],
+    ['secondary 辅色','#21A78B',167.5],['transfer 转账','#4F7DD9',220.0],
+    ['focus 焦点','#6C67D8',242.7]
+  ];
+  var dark = [
+    ['primary 主色','#FF9A88',9.1],['tertiary 三色','#FFADD1',333.7],
+    ['expense 支出','#FF9AAF',347.5],['background 底色','#1B1412',13.3],
+    ['surface 卡片','#241C19',16.4],['outline 描边','#57433A',18.6],
+    ['credit 信用','#FFC27A',32.5],['warning 警示','#FFC66B',36.9],
+    ['income 收入','#7ED8A6',146.7],['secondary 辅色','#7AE1C8',165.4],
+    ['transfer 转账','#A8BFFF',224.1],['focus 焦点','#C1BCFF',244.5]
+  ];
+
+  function paint(){
+    var isDark = root.getAttribute('data-theme') === 'dark';
+    var list = isDark ? dark : light;
+    var ring = document.getElementById('ring');
+    var legend = document.getElementById('ringLegend');
+    ring.querySelectorAll('.dot').forEach(function(d){ d.remove(); });
+    legend.innerHTML = '';
+    list.forEach(function(item){
+      var name = item[0], color = item[1], hue = item[2];
+      // 色相环从 -90° 起画，CSS 里 0° = 12 点方向
+      var angle = hue;
+      var dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.style.background = color;
+      dot.style.transform = 'rotate(' + angle + 'deg) translate(0, -103px)';
+      ring.appendChild(dot);
+
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = '<span class="d" style="background:' + color + '"></span>' +
+        '<span class="nm">' + name + '</span>' +
+        '<span class="h">H ' + hue.toFixed(1) + '°</span>';
+      legend.appendChild(row);
+    });
+  }
+
+  document.querySelectorAll('[data-theme-btn]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      root.setAttribute('data-theme', btn.getAttribute('data-theme-btn'));
+      document.querySelectorAll('[data-theme-btn]').forEach(function(b){
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      paint();
+    });
+  });
+  paint();
+
+  var note = document.getElementById('note');
+  var body = note.querySelector('.b');
+  var cur = null;
+  document.querySelectorAll('[data-note]').forEach(function(el){
+    el.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      if (cur === el) { hide(); return; }
+      cur = el; body.textContent = el.getAttribute('data-note');
+      note.classList.add('on');
+    });
+  });
+  function hide(){ cur = null; note.classList.remove('on'); }
+  document.addEventListener('click', hide);
+  note.addEventListener('click', function(e){ e.stopPropagation(); });
+})();
+</script>
+</body>
+</html>
