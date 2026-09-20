@@ -189,6 +189,7 @@ class HomeRecentTransactionItem {
     required this.currencyCode,
     required this.transactionAt,
     required this.type,
+    this.isUnusual = false,
   });
 
   final String id;
@@ -199,6 +200,9 @@ class HomeRecentTransactionItem {
   final String currencyCode;
   final DateTime transactionAt;
   final HomeRecentTransactionType type;
+
+  /// 金额明显高于同分类当月均值时为 true，用于列表内的小标记。
+  final bool isUnusual;
 }
 
 enum HomeRecentTransactionType {
@@ -213,4 +217,163 @@ enum HomeRecentTransactionType {
       HomeRecentTransactionType.transfer => '转账',
     };
   }
+}
+
+/// 净资产概览：只展示账本基准币种的资产 / 负债。
+class HomeNetAssetSummary {
+  const HomeNetAssetSummary({
+    required this.currencyCode,
+    required this.assetMinor,
+    required this.liabilityMinor,
+  });
+
+  const HomeNetAssetSummary.empty({this.currencyCode = 'CNY'})
+    : assetMinor = 0,
+      liabilityMinor = 0;
+
+  final String currencyCode;
+  final int assetMinor;
+  final int liabilityMinor;
+
+  int get netAssetMinor => assetMinor - liabilityMinor;
+
+  bool get hasAccounts => assetMinor != 0 || liabilityMinor != 0;
+}
+
+/// 单条分类预算的当月进度。
+class HomeCategoryBudgetProgress {
+  const HomeCategoryBudgetProgress({
+    required this.budgetId,
+    required this.name,
+    required this.amountMinor,
+    required this.usedMinor,
+    required this.currencyCode,
+  });
+
+  final String budgetId;
+  final String name;
+  final int amountMinor;
+  final int usedMinor;
+  final String currencyCode;
+
+  double get progress {
+    if (amountMinor <= 0) {
+      return usedMinor > 0 ? 1 : 0;
+    }
+    return usedMinor / amountMinor;
+  }
+
+  int get remainingMinor => amountMinor - usedMinor;
+
+  bool get isExceeded => amountMinor > 0 && usedMinor >= amountMinor;
+
+  bool get isNearLimit => isExceeded || (amountMinor > 0 && progress >= 0.8);
+}
+
+/// 首页 Hero 内嵌的分类预算摘要。
+class HomeCategoryBudgetSummary {
+  const HomeCategoryBudgetSummary({
+    required this.items,
+    required this.nearLimitCount,
+    required this.totalCount,
+  });
+
+  const HomeCategoryBudgetSummary.empty()
+    : items = const <HomeCategoryBudgetProgress>[],
+      nearLimitCount = 0,
+      totalCount = 0;
+
+  /// 展示用的前几条（按预算金额降序）。
+  final List<HomeCategoryBudgetProgress> items;
+
+  /// 全部本月分类预算中接近或超过上限的条数。
+  final int nearLimitCount;
+
+  final int totalCount;
+
+  bool get isEmpty => items.isEmpty;
+}
+
+/// 洞察文案的一段，[emphasis] 为 true 时用该条洞察的强调色高亮。
+class HomeInsightSegment {
+  const HomeInsightSegment(this.text, {this.emphasis = false});
+
+  final String text;
+  final bool emphasis;
+}
+
+/// 洞察的语义类别，决定图标。
+enum HomeInsightKind {
+  spendingVsAverage,
+  noSpendingToday,
+  topCategory,
+  budgetPace,
+  budgetExceeded,
+}
+
+/// 洞察的语气，决定颜色与排序权重。
+enum HomeInsightTone { positive, neutral, warning, danger }
+
+/// 点击洞察后跳转的去处。
+enum HomeInsightTarget { transactions, categories, budgets }
+
+/// 一条洞察。
+///
+/// 每条只讲一件事：把三件不相关的事挤进一句话，用户既读不完也记不住。
+class HomeInsightItem {
+  const HomeInsightItem({
+    required this.kind,
+    required this.tone,
+    required this.segments,
+    this.target,
+    this.actionLabel,
+  });
+
+  final HomeInsightKind kind;
+  final HomeInsightTone tone;
+  final List<HomeInsightSegment> segments;
+
+  /// 可跳转的去处；为空表示这条只是提示，不可点击。
+  final HomeInsightTarget? target;
+  final String? actionLabel;
+
+  String get plainText => segments.map((segment) => segment.text).join();
+
+  /// 排序权重，越大越靠前。
+  int get severity {
+    return switch (tone) {
+      HomeInsightTone.danger => 3,
+      HomeInsightTone.warning => 2,
+      HomeInsightTone.positive => 1,
+      HomeInsightTone.neutral => 0,
+    };
+  }
+}
+
+/// 首页洞察列表：已按严重程度排序、并截断到展示上限。
+class HomeInsight {
+  const HomeInsight({required this.items});
+
+  final List<HomeInsightItem> items;
+
+  bool get isEmpty => items.isEmpty;
+}
+
+/// 连续记账天数。
+class HomeStreak {
+  const HomeStreak({
+    required this.days,
+    required this.hasRecordedToday,
+    required this.cappedAt,
+  });
+
+  const HomeStreak.empty() : days = 0, hasRecordedToday = false, cappedAt = 0;
+
+  final int days;
+  final bool hasRecordedToday;
+
+  /// 统计窗口上限；[days] 达到该值说明实际天数可能更多。
+  final int cappedAt;
+
+  bool get isCapped => cappedAt > 0 && days >= cappedAt;
 }

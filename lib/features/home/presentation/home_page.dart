@@ -4,30 +4,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:miji/core/presentation/app_page_layout.dart';
-import 'package:miji/core/presentation/app_toast.dart';
-import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_section_entrance.dart';
-import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/core/user/providers/user_providers.dart';
-import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
-import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
-import 'package:miji/features/bookkeeping/presentation/budgets/budget_form_dialog.dart';
+import 'package:miji/features/bookkeeping/presentation/quick_actions/money_quick_action_launcher.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/money_transaction_actions.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/features/home/application/home_health_hint_providers.dart';
+import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 import 'package:miji/features/home/application/home_money_dashboard_providers.dart';
+import 'package:miji/features/home/application/home_preference_providers.dart';
+import 'package:miji/features/home/presentation/home_alerts_strip.dart';
+import 'package:miji/features/home/presentation/home_balance_hero_card.dart';
 import 'package:miji/features/home/presentation/home_category_structure_panel.dart';
-import 'package:miji/features/home/presentation/home_dashboard_greeting.dart';
-import 'package:miji/features/home/presentation/home_month_budget_card.dart';
+import 'package:miji/features/home/presentation/home_greeting_header.dart';
+import 'package:miji/features/home/presentation/home_health_strip.dart';
+import 'package:miji/features/home/presentation/home_insight_strip.dart';
+import 'package:miji/features/home/presentation/home_onboarding_view.dart';
+import 'package:miji/features/home/presentation/home_quick_actions_row.dart';
 import 'package:miji/features/home/presentation/home_recent_transactions_panel.dart';
-import 'package:miji/features/home/presentation/home_today_spending_card.dart';
-import 'package:miji/features/home/presentation/home_urgent_reminders_panel.dart';
+import 'package:miji/features/home/presentation/home_stat_tiles.dart';
+import 'package:miji/features/home/presentation/home_weekly_trend_card.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
-import 'package:miji/features/todo/domain/todo_models.dart';
+
+/// 首页快捷动作（按使用频率排序）。
+const _homeQuickActions = [
+  MoneyQuickAction.expense,
+  MoneyQuickAction.income,
+  MoneyQuickAction.transfer,
+  MoneyQuickAction.budget,
+];
+
+/// 双栏布局断点，与 [AppResponsive] 的 rail 断点解耦，
+/// 保证内容区在平板上也不会挤成单列。
+const _twoColumnBreakpoint = 840.0;
+
+/// Riverpod 3 的 `AsyncValue` 只暴露 `value`，这里补一个显式的可空读取，
+/// 避免每处都写 `asData?.value`。
+extension HomeAsyncValueX<T> on AsyncValue<T> {
+  T? get valueOrNull => asData?.value;
+}
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -35,18 +56,12 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
-    final showTodayAction = ref
-        .watch(currentUserPreferencesProvider)
-        .maybeWhen(
-          data: (value) => value?.showHomeTodayAction ?? true,
-          orElse: () => true,
-        );
 
     return currentUser.when(
-      data: (_) => Stack(
+      data: (_) => const Stack(
         children: [
-          AppPageFrame(child: _HomeDashboard(showTodayAction: showTodayAction)),
-          const _HomeMoneyDataPreloader(),
+          AppPageFrame(child: _HomeDashboard()),
+          _HomeDataPreloader(),
         ],
       ),
       loading: () =>
@@ -61,16 +76,15 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-class _HomeMoneyDataPreloader extends ConsumerStatefulWidget {
-  const _HomeMoneyDataPreloader();
+/// 分阶段预加载首页数据，避免一次性并发太多查询。
+class _HomeDataPreloader extends ConsumerStatefulWidget {
+  const _HomeDataPreloader();
 
   @override
-  ConsumerState<_HomeMoneyDataPreloader> createState() =>
-      _HomeMoneyDataPreloaderState();
+  ConsumerState<_HomeDataPreloader> createState() => _HomeDataPreloaderState();
 }
 
-class _HomeMoneyDataPreloaderState
-    extends ConsumerState<_HomeMoneyDataPreloader> {
+class _HomeDataPreloaderState extends ConsumerState<_HomeDataPreloader> {
   @override
   void initState() {
     super.initState();
@@ -110,15 +124,27 @@ class _HomeMoneyDataPreloaderState
         ref.read(homeMonthBudgetSummaryProvider.future),
         ref.read(homeCategoryStructureProvider.future),
         ref.read(homeRecentTransactionsProvider.future),
+        ref.read(homeNetAssetSummaryProvider.future),
+        ref.read(homeCategoryBudgetSummaryProvider.future),
+        ref.read(homeStreakProvider.future),
+        ref.read(homeInsightProvider.future),
       ]),
     );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (ref.read(homeShowHealthStripProvider)) {
+      await _ignoreErrors(ref.read(homeHealthHintProvider.future));
+    }
   }
 
   Future<void> _ignoreErrors(Future<dynamic> future) async {
     try {
       await future;
     } catch (_) {
-      // Home should stay responsive even if background preloading fails.
+      // 首页应在后台预加载失败时保持可用。
     }
   }
 
@@ -129,390 +155,299 @@ class _HomeMoneyDataPreloaderState
 }
 
 class _HomeDashboard extends ConsumerWidget {
-  const _HomeDashboard({required this.showTodayAction});
-
-  final bool showTodayAction;
+  const _HomeDashboard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final launcher = MoneyQuickActionLauncher(
+      context: context,
+      ref: ref,
+      ensureToast: () => FToast()..init(context),
+    );
+
     final selectedMonth = ref.watch(homeMoneySelectedMonthProvider);
     final monthTransactions = ref.watch(homeMonthTransactionsProvider);
     final todaySummary = ref.watch(homeTodaySpendingSummaryProvider);
     final weeklyPoints = ref.watch(homeWeeklySpendingProvider);
-    final weekOffset = ref.watch(homeWeekOffsetProvider);
-    final weekCount = ref.watch(homeWeeklyWeekCountProvider);
+    final trendWindow = ref.watch(homeTrendWindowProvider);
     final budgetSummary = ref.watch(homeMonthBudgetSummaryProvider);
+    final categoryBudgets = ref.watch(homeCategoryBudgetSummaryProvider);
     final categoryType = ref.watch(homeCategoryStructureTypeProvider);
     final categoryItems = ref.watch(homeCategoryStructureProvider);
     final recentItems = ref.watch(homeRecentTransactionsProvider);
-    final reminderItems = ref.watch(
-      currentUserPendingReminderCenterItemsProvider,
-    );
-    final currentUser = ref.watch(currentUserProvider);
-    final userDisplayName = currentUser.asData?.value?.displayName;
-    final hasLoading =
-        monthTransactions.maybeWhen(loading: () => true, orElse: () => false) ||
-        todaySummary.maybeWhen(loading: () => true, orElse: () => false) ||
-        weeklyPoints.maybeWhen(loading: () => true, orElse: () => false) ||
-        budgetSummary.maybeWhen(loading: () => true, orElse: () => false) ||
-        categoryItems.maybeWhen(loading: () => true, orElse: () => false) ||
-        recentItems.maybeWhen(loading: () => true, orElse: () => false) ||
-        reminderItems.maybeWhen(loading: () => true, orElse: () => false);
+    final insight = ref.watch(homeInsightProvider);
+    final netAsset = ref.watch(homeNetAssetSummaryProvider);
+    final streak = ref.watch(homeStreakProvider);
+    final reminders = ref.watch(currentUserPendingReminderCenterItemsProvider);
+    final todayActions = ref.watch(todayActionItemsProvider);
+    final accounts = ref.watch(currentUserVisibleAccountsProvider);
+    final budgets = ref.watch(currentUserBudgetsProvider);
+    final showHealthStrip = ref.watch(homeShowHealthStripProvider);
+    final healthHint = showHealthStrip
+        ? ref.watch(homeHealthHintProvider)
+        : const AsyncValue<HomeHealthHint?>.data(null);
+    final masked = ref.watch(homeMaskMoneyAmountsProvider);
+    final showTodayAction = ref.watch(homeShowTodayActionProvider);
+    final userDisplayName = ref
+        .watch(currentUserProvider)
+        .asData
+        ?.value
+        ?.displayName;
 
-    if (monthTransactions.hasError ||
-        todaySummary.hasError ||
+    if (todaySummary.hasError ||
         budgetSummary.hasError ||
         categoryItems.hasError ||
-        recentItems.hasError) {
+        recentItems.hasError ||
+        monthTransactions.hasError) {
       return AppErrorState(
         title: '读取首页数据失败',
-        onRetry: () {
-          ref.read(moneyDataRefreshCoordinatorProvider).refreshHome();
-        },
+        onRetry: () =>
+            ref.read(moneyDataRefreshCoordinatorProvider).refreshHome(),
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 840;
-        final todayCard = HomeTodaySpendingCard(
-          selectedMonth: selectedMonth,
-          weeklyPoints: weeklyPoints.maybeWhen(
-            data: (value) => value,
-            orElse: () => null,
-          ),
-          summary: todaySummary.maybeWhen(
-            data: (value) => value,
-            orElse: () => null,
-          ),
-          isLoading:
-              todaySummary.maybeWhen(
-                loading: () => true,
-                orElse: () => false,
-              ) ||
-              weeklyPoints.maybeWhen(loading: () => true, orElse: () => false),
-          weekOffset: weekOffset,
-          totalWeeks: weekCount,
-          onWeekChanged: (offset) {
-            final now = DateTime.now();
-            final today = DateTime(now.year, now.month, now.day);
-            final isCurrentMonth =
-                selectedMonth.year == now.year &&
-                selectedMonth.month == now.month;
+    // 首次使用：账户与账单都为空时，用引导页替代整个 dashboard。
+    final accountsValue = accounts.valueOrNull;
+    final transactionsValue = monthTransactions.valueOrNull;
+    final isFirstRun =
+        accountsValue != null &&
+        accountsValue.isEmpty &&
+        transactionsValue != null &&
+        transactionsValue.isEmpty &&
+        !monthTransactions.isLoading;
 
-            DateTime centerDay;
-            if (isCurrentMonth) {
-              centerDay = today
-                  .subtract(const Duration(days: 3))
-                  .add(Duration(days: offset * 7));
-            } else {
-              final monthStartMonday = selectedMonth.subtract(
-                Duration(days: selectedMonth.weekday - 1),
-              );
-              centerDay = monthStartMonday
-                  .add(const Duration(days: 3))
-                  .add(Duration(days: offset * 7));
-            }
+    if (isFirstRun) {
+      return SingleChildScrollView(
+        child: AppSectionEntrance(
+          child: HomeOnboardingView(
+            hasAccount: false,
+            hasBudget: (budgets.valueOrNull ?? const []).isNotEmpty,
+            hasTransaction: false,
+            onCreateAccount: () => launcher.run(MoneyQuickAction.account),
+            onSetBudget: () => launcher.run(MoneyQuickAction.budget),
+            onRecordTransaction: () => launcher.run(MoneyQuickAction.expense),
+          ),
+        ),
+      );
+    }
 
-            if (centerDay.month != selectedMonth.month ||
-                centerDay.year != selectedMonth.year) {
-              ref
-                  .read(homeMoneySelectedMonthProvider.notifier)
-                  .set(DateTime(centerDay.year, centerDay.month));
-              return;
-            }
+    final isLoading =
+        todaySummary.isLoading ||
+        budgetSummary.isLoading ||
+        weeklyPoints.isLoading ||
+        categoryItems.isLoading ||
+        recentItems.isLoading;
+    final isInitialLoading =
+        isLoading &&
+        !todaySummary.hasValue &&
+        !budgetSummary.hasValue &&
+        !monthTransactions.hasValue;
 
-            ref.read(homeWeekOffsetProvider.notifier).set(offset);
-          },
-        );
-        final budgetCard = HomeMonthBudgetCard(
-          summary: budgetSummary.maybeWhen(
-            data: (value) => value,
-            orElse: () => null,
-          ),
-          isLoading: budgetSummary.maybeWhen(
-            loading: () => true,
-            orElse: () => false,
-          ),
-          onCreateBudget: () {
-            unawaited(_openBudgetDialog(context, ref));
-          },
-        );
-        final greeting = HomeDashboardGreeting(
-          userDisplayName: userDisplayName,
-        );
-        final categoryPanel = HomeCategoryStructurePanel(
-          type: categoryType,
-          onTypeChanged: (value) {
-            ref.read(homeCategoryStructureTypeProvider.notifier).set(value);
-          },
-          items: categoryItems.maybeWhen(
-            data: (items) => items,
-            orElse: () => const [],
-          ),
-          isLoading: categoryItems.maybeWhen(
-            loading: () => true,
-            orElse: () => false,
-          ),
-        );
-        final urgentRemindersPanel = HomeUrgentRemindersPanel(
-          items: reminderItems.maybeWhen(
-            data: (items) => items.take(3).toList(growable: false),
-            orElse: () => const [],
-          ),
-          isLoading: reminderItems.maybeWhen(
-            loading: () => true,
-            orElse: () => false,
-          ),
-          onOpenAll: () => _openRemindersPage(context),
-        );
-        final todayActionCard = _buildTodayActionCard(context, ref);
-        final recentPanel = HomeRecentTransactionsPanel(
-          items: recentItems.maybeWhen(
-            data: (items) => items,
-            orElse: () => const [],
-          ),
-          isLoading: recentItems.maybeWhen(
-            loading: () => true,
-            orElse: () => false,
-          ),
-          onOpenAll: () => _openTransactionsPage(context),
-          onOpenItem: (id) {
-            final transaction = _transactionById(
-              monthTransactions.maybeWhen(
-                data: (items) => items,
-                orElse: () => const <MoneyTransactionEntity>[],
-              ),
-              id,
+    if (isInitialLoading) {
+      return const _HomeSkeleton();
+    }
+
+    final hero = HomeBalanceHeroCard(
+      budget: budgetSummary.valueOrNull,
+      today: todaySummary.valueOrNull,
+      categoryBudgets: categoryBudgets.valueOrNull,
+      isLoading: budgetSummary.isLoading || todaySummary.isLoading,
+      masked: masked,
+      onTapBudget: () => launcher.run(MoneyQuickAction.budget),
+    );
+
+    final quickActions = HomeQuickActionsRow(
+      actions: _homeQuickActions,
+      onAction: launcher.run,
+    );
+
+    final insightStrip = HomeInsightStrip(
+      insight: insight.valueOrNull,
+      onSelectTarget: (target) => _openInsightTarget(context, target),
+    );
+
+    final alerts = HomeAlertsStrip(
+      items: reminders.valueOrNull ?? const [],
+      isLoading: reminders.isLoading,
+      onOpenAll: () => _openRemindersPage(context),
+      maxItems: 2,
+    );
+
+    final weeklyTrend = HomeWeeklyTrendCard(
+      points: weeklyPoints.valueOrNull ?? const [],
+      window: trendWindow,
+      selectedMonth: selectedMonth,
+      dailyAverageMinor:
+          todaySummary.valueOrNull?.dailyAverageExpenseMinor ?? 0,
+      currencyCode: todaySummary.valueOrNull?.currencyCode ?? 'CNY',
+      isLoading: weeklyPoints.isLoading,
+      masked: masked,
+      onWeekChanged: (offset) => _onWeekChanged(ref, offset),
+    );
+
+    final categoryPanel = HomeCategoryStructurePanel(
+      type: categoryType,
+      onTypeChanged: (value) =>
+          ref.read(homeCategoryStructureTypeProvider.notifier).set(value),
+      items: categoryItems.valueOrNull ?? const [],
+      isLoading: categoryItems.isLoading,
+    );
+
+    final recentPanel = HomeRecentTransactionsPanel(
+      items: recentItems.valueOrNull ?? const [],
+      isLoading: recentItems.isLoading,
+      onOpenAll: () => _openTransactionsPage(context),
+      onOpenItem: (id) => _openTransactionDetail(context, ref, id),
+      onRecordTransaction: () => launcher.run(MoneyQuickAction.expense),
+    );
+
+    final healthHintValue = healthHint.valueOrNull;
+    final healthStrip = healthHintValue == null
+        ? null
+        : HomeHealthStrip(
+            hint: healthHintValue,
+            onTap: () => context.go(AppRoutes.health),
+          );
+
+    final todayActionTile = showTodayAction
+        ? HomeTodayActionTile(
+            view: todayActions.valueOrNull,
+            isLoading: todayActions.isLoading,
+            onTap: () => context.push(AppRoutes.gtd),
+          )
+        : null;
+
+    final netAssetTile = HomeNetAssetTile(
+      summary: netAsset.valueOrNull,
+      isLoading: netAsset.isLoading,
+      onTap: () => _openOverview(context),
+    );
+
+    final greeting = HomeGreetingHeader(
+      userDisplayName: userDisplayName,
+      streak: streak.valueOrNull,
+    );
+
+    final quote = HomeQuoteFooter();
+
+    final hasAlerts =
+        reminders.isLoading || (reminders.valueOrNull ?? const []).isNotEmpty;
+
+    return SingleChildScrollView(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final twoColumn = constraints.maxWidth >= _twoColumnBreakpoint;
+
+          if (!twoColumn) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _section(0, greeting),
+                _gap,
+                _section(1, hero),
+                _gap,
+                _section(2, quickActions),
+                _gap,
+                _section(3, insightStrip),
+                if (hasAlerts) ...[_gap, _section(4, alerts)],
+                _gap,
+                _section(
+                  5,
+                  Row(
+                    children: [
+                      if (todayActionTile != null)
+                        Expanded(child: todayActionTile),
+                      if (todayActionTile != null) const SizedBox(width: 12),
+                      Expanded(child: netAssetTile),
+                    ],
+                  ),
+                ),
+                if (healthStrip != null) ...[_gap, _section(6, healthStrip)],
+                _gap,
+                _section(7, weeklyTrend),
+                _gap,
+                _section(8, categoryPanel),
+                _gap,
+                _section(9, recentPanel),
+                const SizedBox(height: 8),
+                quote,
+              ],
             );
-            if (transaction != null) {
-              unawaited(_showTransactionDetail(context, ref, transaction));
-            }
-          },
-        );
+          }
 
-        return SingleChildScrollView(
-          child: Column(
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (hasLoading) ...[
-                const LinearProgressIndicator(minHeight: 2),
-                const SizedBox(height: 8),
-              ],
-              if (compact) ...[
-                AppSectionEntrance(
-                  delay: const Duration(milliseconds: 40),
-                  child: greeting,
-                ),
-                const SizedBox(height: 12),
-                if (showTodayAction) ...[
-                  AppSectionEntrance(
-                    delay: const Duration(milliseconds: 55),
-                    child: todayActionCard,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                AppSectionEntrance(
-                  delay: const Duration(milliseconds: 70),
-                  child: todayCard,
-                ),
-                const SizedBox(height: 12),
-                AppSectionEntrance(
-                  delay: const Duration(milliseconds: 100),
-                  child: budgetCard,
-                ),
-                if (reminderItems.maybeWhen(
-                  data: (items) => items.isNotEmpty,
-                  loading: () => true,
-                  orElse: () => false,
-                )) ...[
-                  const SizedBox(height: 12),
-                  AppSectionEntrance(
-                    delay: const Duration(milliseconds: 115),
-                    child: urgentRemindersPanel,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                AppSectionEntrance(
-                  delay: const Duration(milliseconds: 130),
-                  child: categoryPanel,
-                ),
-                const SizedBox(height: 12),
-                AppSectionEntrance(
-                  delay: const Duration(milliseconds: 160),
-                  child: recentPanel,
-                ),
-              ] else ...[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          AppSectionEntrance(
-                            delay: const Duration(milliseconds: 40),
-                            child: greeting,
-                          ),
-                          const SizedBox(height: 12),
-                          if (showTodayAction) ...[
-                            AppSectionEntrance(
-                              delay: const Duration(milliseconds: 55),
-                              child: todayActionCard,
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          AppSectionEntrance(
-                            delay: const Duration(milliseconds: 100),
-                            child: todayCard,
-                          ),
-                          const SizedBox(height: 12),
-                          AppSectionEntrance(
-                            delay: const Duration(milliseconds: 160),
-                            child: recentPanel,
-                          ),
-                        ],
-                      ),
+              _section(0, greeting),
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 8,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _section(1, hero),
+                        _gap,
+                        _section(2, quickActions),
+                        _gap,
+                        _section(3, insightStrip),
+                        _gap,
+                        _section(4, weeklyTrend),
+                        _gap,
+                        _section(5, recentPanel),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          AppSectionEntrance(
-                            delay: const Duration(milliseconds: 70),
-                            child: budgetCard,
-                          ),
-                          if (reminderItems.maybeWhen(
-                            data: (items) => items.isNotEmpty,
-                            loading: () => true,
-                            orElse: () => false,
-                          )) ...[
-                            const SizedBox(height: 12),
-                            AppSectionEntrance(
-                              delay: const Duration(milliseconds: 115),
-                              child: urgentRemindersPanel,
-                            ),
-                          ],
-                          const SizedBox(height: 12),
-                          AppSectionEntrance(
-                            delay: const Duration(milliseconds: 130),
-                            child: categoryPanel,
-                          ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (hasAlerts) ...[_section(6, alerts), _gap],
+                        if (todayActionTile != null) ...[
+                          _section(7, todayActionTile),
+                          _gap,
                         ],
-                      ),
+                        _section(8, netAssetTile),
+                        _gap,
+                        if (healthStrip != null) ...[
+                          _section(9, healthStrip),
+                          _gap,
+                        ],
+                        _section(10, categoryPanel),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              quote,
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildTodayActionCard(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final actionViewAsync = ref.watch(todayActionItemsProvider);
+  static const _gap = SizedBox(height: 12);
 
-    return actionViewAsync.when(
-      data: (view) {
-        if (view.items.isEmpty) return const SizedBox.shrink();
-
-        return Card(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => context.push(AppRoutes.gtd),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 标题行
-                  Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.today_rounded,
-                          size: 20,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '今日行动',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '已完成 ${view.completedCount} / ${view.totalCount}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(3),
-                              child: LinearProgressIndicator(
-                                value: view.completionRate,
-                                minHeight: 4,
-                                backgroundColor:
-                                    theme.colorScheme.surfaceContainerHighest,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: theme.colorScheme.outline,
-                      ),
-                    ],
-                  ),
-                  // 摘要列表（最多5条）
-                  if (view.items.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    const Divider(height: 1),
-                    const SizedBox(height: 8),
-                    ...view.items.take(5).map((item) {
-                      return _HomeActionSummaryTile(item: item);
-                    }),
-                    if (view.items.length > 5)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          '还有 ${view.items.length - 5} 项...',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                      ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+  Widget _section(int index, Widget child) {
+    return AppSectionEntrance(
+      delay: Duration(milliseconds: 40 + index * 15),
+      child: child,
     );
+  }
+
+  /// 切换选中的周。
+  ///
+  /// 这里**只改周，不改月份**。旧实现会在「第 N 周的中心日落到下个月」时
+  /// 顺手把选中月份切走，而新月份（尤其是未来月份）没有数据，用户会以为
+  /// 数据丢了。周窗口现在按月份切分，永远不会跨月切换。
+  void _onWeekChanged(WidgetRef ref, int offset) {
+    ref.read(homeWeekOffsetProvider.notifier).set(offset);
   }
 
   void _openRemindersPage(BuildContext context) {
@@ -533,37 +468,48 @@ class _HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Future<void> _openBudgetDialog(BuildContext context, WidgetRef ref) async {
-    final result = await showAppResponsiveDialog<Object>(
-      context: context,
-      expandCompactSheet: true,
-      builder: (context) => const BudgetFormDialog(),
-    );
-    if (!context.mounted || result is! MoneyBudgetDraft) {
-      return;
-    }
-
-    try {
-      await ref
-          .read(currentUserMoneyBudgetActionsProvider)
-          .createBudget(result);
-      if (!context.mounted) return;
-      AppToast.success(_ensureToast(context), context, '预算已创建');
-    } catch (error) {
-      if (!context.mounted) return;
-      AppToast.error(
-        _ensureToast(context),
-        context,
-        _errorText(error, '创建预算失败'),
-      );
+  void _openInsightTarget(BuildContext context, HomeInsightTarget target) {
+    switch (target) {
+      case HomeInsightTarget.transactions:
+        _openTransactionsPage(context);
+      case HomeInsightTarget.categories:
+        _openBookkeepingSection(context, 'categories');
+      case HomeInsightTarget.budgets:
+        _openBookkeepingSection(context, 'budgets');
     }
   }
 
-  Future<void> _showTransactionDetail(
+  void _openBookkeepingSection(BuildContext context, String section) {
+    context.go(
+      Uri(
+        path: AppRoutes.bookkeeping,
+        queryParameters: {'section': section},
+      ).toString(),
+    );
+  }
+
+  void _openOverview(BuildContext context) {
+    context.go(
+      Uri(
+        path: AppRoutes.bookkeeping,
+        queryParameters: {'section': 'overview'},
+      ).toString(),
+    );
+  }
+
+  Future<void> _openTransactionDetail(
     BuildContext context,
     WidgetRef ref,
-    MoneyTransactionEntity transaction,
+    String id,
   ) async {
+    final transactions =
+        ref.read(homeMonthTransactionsProvider).valueOrNull ??
+        const <MoneyTransactionEntity>[];
+    final transaction = _transactionById(transactions, id);
+    if (transaction == null) {
+      return;
+    }
+
     Future<void> refreshHome() async {
       ref.read(moneyDataRefreshCoordinatorProvider).refreshHome();
     }
@@ -572,39 +518,29 @@ class _HomeDashboard extends ConsumerWidget {
       return MoneyTransactionActions(
         context: context,
         ref: ref,
-        ensureToast: () => _ensureToast(context),
+        ensureToast: () => FToast()..init(context),
         isMounted: () => context.mounted,
         onChanged: refreshHome,
       );
     }
 
-    return showTransactionDetailProviderDialog(
+    await showTransactionDetailProviderDialog(
       context: context,
       transaction: transaction,
       onEdit: transaction.isInstallmentPosting
           ? null
-          : () {
-              unawaited(actions().edit(transaction));
-            },
+          : () => unawaited(actions().edit(transaction)),
       onDelete: transaction.isInstallmentPosting
           ? null
-          : () {
-              unawaited(actions().delete(transaction));
-            },
+          : () => unawaited(actions().delete(transaction)),
       onRefund:
           transaction.isInstallmentPosting ||
               transaction.type != MoneyTransactionType.expense ||
               transaction.status != MoneyTransactionStatus.completed ||
               transaction.amountMinor <= transaction.refundAmountMinor
           ? null
-          : () {
-              unawaited(actions().refund(transaction));
-            },
+          : () => unawaited(actions().refund(transaction)),
     );
-  }
-
-  FToast _ensureToast(BuildContext context) {
-    return FToast()..init(context);
   }
 
   MoneyTransactionEntity? _transactionById(
@@ -618,124 +554,67 @@ class _HomeDashboard extends ConsumerWidget {
     }
     return null;
   }
-
-  String _errorText(Object error, String fallback) {
-    if (error is! MoneyRepositoryException) {
-      return fallback;
-    }
-    return switch (error.code) {
-      MoneyRepositoryErrorCode.insufficientFunds => '账户余额不足',
-      MoneyRepositoryErrorCode.invalidTransferAccounts => '转账账户不能相同',
-      MoneyRepositoryErrorCode.invalidSplitAmount => '请检查分摊金额',
-      MoneyRepositoryErrorCode.ledgerNotFound => '账本不可用',
-      _ => fallback,
-    };
-  }
 }
 
-class _HomeActionSummaryTile extends StatelessWidget {
-  const _HomeActionSummaryTile({required this.item});
-
-  final TodayActionItem item;
+/// 首屏骨架：高度固定，避免数据回来时整页重排。
+class _HomeSkeleton extends StatelessWidget {
+  const _HomeSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final it = item;
+    return const SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              _SkeletonBox(width: 168, height: 24),
+              Spacer(),
+              _SkeletonBox(width: 80, height: 24, radius: 999),
+            ],
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _SkeletonBox(height: 78)),
+              SizedBox(width: 8),
+              Expanded(child: _SkeletonBox(height: 78)),
+              SizedBox(width: 8),
+              Expanded(child: _SkeletonBox(height: 78)),
+              SizedBox(width: 8),
+              Expanded(child: _SkeletonBox(height: 78)),
+            ],
+          ),
+          SizedBox(height: 12),
+          _SkeletonBox(height: 232),
+          SizedBox(height: 12),
+          _SkeletonBox(height: 76),
+          SizedBox(height: 12),
+          _SkeletonBox(height: 180),
+        ],
+      ),
+    );
+  }
+}
 
-    if (it is TodayTodoActionItem) {
-      final task = it.task;
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Row(
-          children: [
-            Icon(
-              task.status == TodoTaskStatus.completed
-                  ? Icons.check_circle_rounded
-                  : Icons.radio_button_unchecked_rounded,
-              size: 16,
-              color: task.status == TodoTaskStatus.completed
-                  ? Colors.green.shade400
-                  : task.isOverdue
-                  ? colorScheme.error
-                  : colorScheme.outline,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                task.title,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  decoration: task.status == TodoTaskStatus.completed
-                      ? TextDecoration.lineThrough
-                      : null,
-                  color: task.status == TodoTaskStatus.completed
-                      ? colorScheme.outline
-                      : colorScheme.onSurface,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: colorScheme.tertiaryContainer.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Text(
-                '任务',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onTertiaryContainer,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+class _SkeletonBox extends StatelessWidget {
+  const _SkeletonBox({this.width, required this.height, this.radius = 16});
 
-    if (it is TodayHabitActionItem) {
-      final progress = it.progress;
-      final plan = progress.plan;
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Row(
-          children: [
-            Text(plan.icon, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                plan.name,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: colorScheme.secondaryContainer.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Text(
-                '习惯',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSecondaryContainer,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+  final double? width;
+  final double height;
+  final double radius;
 
-    return const SizedBox.shrink();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(radius),
+      ),
+    );
   }
 }

@@ -21,6 +21,14 @@ class UserPreferences extends Table {
   BoolColumn get showHomeTodayAction =>
       boolean().withDefault(const Constant(true))();
 
+  /// 首页金额隐私：开启后所有金额以模糊 / 占位方式展示。
+  BoolColumn get maskMoneyAmounts =>
+      boolean().withDefault(const Constant(false))();
+
+  /// 首页是否显示健康窄条（经期 / 孕期提示）。
+  BoolColumn get showHomeHealthStrip =>
+      boolean().withDefault(const Constant(false))();
+
   DateTimeColumn get createdAt => dateTime()();
 
   DateTimeColumn get updatedAt => dateTime()();

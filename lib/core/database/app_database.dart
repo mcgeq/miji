@@ -98,7 +98,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration {
@@ -237,6 +237,17 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'CREATE INDEX IF NOT EXISTS sync_change_logs_dataset_synced '
             "ON sync_change_logs(dataset_id, synced_at)",
+          );
+        }
+        if (from < 21) {
+          // V1.4: 首页金额隐私 / 健康窄条显示开关。
+          await migrator.addColumn(
+            userPreferences,
+            userPreferences.maskMoneyAmounts,
+          );
+          await migrator.addColumn(
+            userPreferences,
+            userPreferences.showHomeHealthStrip,
           );
         }
       },

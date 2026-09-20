@@ -6,11 +6,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/core/database/app_database.dart';
 
 /// Reproduces the phone upgrade path: an existing database from a previous
-/// release (schema v15/v16/v17/v18) is opened by the current v19 code.
+/// release (schema v15/v16/v17/v18/v20) is opened by the current v21 code.
 ///
 /// The old database is simulated by creating the current schema, dropping the
 /// todo tables (which did not exist at v15) or the V1.1 columns (v16), then
 /// rewinding `user_version`.
+
+/// V1.4 给 `user_preferences` 增加了两列。迁移测试通过「建当前 schema →
+/// 删列 → 回退 user_version」来伪造旧库，所以伪造 v20 及更早版本时
+/// 必须把这两列一并删掉，否则迁移会因重复列而失败。
+Future<void> _dropV14PreferenceColumns(AppDatabase db) async {
+  await db.customStatement(
+    'ALTER TABLE user_preferences DROP COLUMN mask_money_amounts',
+  );
+  await db.customStatement(
+    'ALTER TABLE user_preferences DROP COLUMN show_home_health_strip',
+  );
+}
+
 void main() {
   late Directory tempDir;
   late File dbFile;
@@ -50,10 +63,11 @@ void main() {
     await v18db.customStatement(
       'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
     );
+    await _dropV14PreferenceColumns(v18db);
     await v18db.customStatement('PRAGMA user_version = 15');
     await v18db.close();
 
-    // Reopen with the current schema: this runs the 15 -> 19 migration.
+    // Reopen with the current schema: this runs the 15 -> 21 migration.
     final db = AppDatabase(NativeDatabase(dbFile));
     await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
 
@@ -116,13 +130,14 @@ void main() {
     await v18db.customStatement(
       'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
     );
+    await _dropV14PreferenceColumns(v18db);
     await v18db.customStatement('DROP TABLE IF EXISTS todo_task_tags');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_tags');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_recurrence_rules');
     await v18db.customStatement('PRAGMA user_version = 16');
     await v18db.close();
 
-    // Reopen with the current schema: this runs the 16 -> 19 migration.
+    // Reopen with the current schema: this runs the 16 -> 21 migration.
     final db = AppDatabase(NativeDatabase(dbFile));
     await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
 
@@ -166,6 +181,7 @@ void main() {
     await v18db.customStatement(
       'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
     );
+    await _dropV14PreferenceColumns(v18db);
     await v18db.customStatement('PRAGMA user_version = 17');
     await v18db.close();
 
@@ -221,10 +237,11 @@ void main() {
       await v19db.customStatement(
         'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
       );
+      await _dropV14PreferenceColumns(v19db);
       await v19db.customStatement('PRAGMA user_version = 18');
       await v19db.close();
 
-      // Reopen with the current schema: this runs the 18 -> 19 migration.
+      // Reopen with the current schema: this runs the 18 -> 21 migration.
       final db = AppDatabase(NativeDatabase(dbFile));
       await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
 
@@ -238,6 +255,62 @@ void main() {
       final preferences = await (db.select(db.userPreferences)).getSingle();
       expect(preferences.userId, 'user-1');
       expect(preferences.showHomeTodayAction, isTrue);
+      await db.close();
+    },
+  );
+
+  test(
+    'v20 -> v21 upgrade adds the home preference columns with safe defaults',
+    () async {
+      final now = DateTime.now().toUtc();
+
+      final v20db = AppDatabase(NativeDatabase(dbFile));
+      await v20db
+          .into(v20db.users)
+          .insert(
+            UsersCompanion.insert(
+              id: 'user-1',
+              username: 'demo',
+              email: 'demo@example.com',
+              displayName: 'Demo',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await v20db
+          .into(v20db.userPreferences)
+          .insert(
+            UserPreferencesCompanion.insert(
+              userId: 'user-1',
+              themeSeedColor: 0xFF6750A4,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      // Simulate a v20 release: drop the V1.4 columns that v20 lacked.
+      await _dropV14PreferenceColumns(v20db);
+      await v20db.customStatement('PRAGMA user_version = 20');
+      await v20db.close();
+
+      // Reopen with the current schema: this runs the 20 -> 21 migration.
+      final db = AppDatabase(NativeDatabase(dbFile));
+      await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+      final columns = await db
+          .customSelect('PRAGMA table_info(user_preferences)')
+          .get()
+          .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+      expect(
+        columns,
+        containsAll(['mask_money_amounts', 'show_home_health_strip']),
+      );
+
+      // 老用户默认不隐藏金额、不显示健康条。
+      final preferences = await (db.select(db.userPreferences)).getSingle();
+      expect(preferences.userId, 'user-1');
+      expect(preferences.maskMoneyAmounts, isFalse);
+      expect(preferences.showHomeHealthStrip, isFalse);
       await db.close();
     },
   );

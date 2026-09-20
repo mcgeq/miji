@@ -1,0 +1,1260 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>米记 · 首页改版预览</title>
+<style>
+/* ============================================================
+   主题变量
+   ============================================================ */
+:root{
+  --bg:#F6EFE9;
+  --canvas:#FFF8F2;
+  --surface:#FFFFFF;
+  --surface-2:#FFF0E5;
+  --surface-3:#FBEDE4;
+  --line:#EAD8CC;
+  --line-soft:rgba(234,216,204,.55);
+  --text:#2B1F1A;
+  --text-2:#7C6A61;
+  --text-3:#A9988F;
+  --primary:#E45F4F;
+  --primary-ink:#B03A2C;
+  --primary-soft:rgba(228,95,79,.10);
+  --primary-soft-2:rgba(228,95,79,.18);
+  --secondary:#21A78B;
+  --secondary-soft:rgba(33,167,139,.12);
+  --tertiary:#D85C93;
+  --income:#168A5B;
+  --income-soft:rgba(22,138,91,.10);
+  --expense:#D44D6E;
+  --expense-soft:rgba(212,77,110,.10);
+  --transfer:#4F7DD9;
+  --warning:#C97A12;
+  --warning-soft:rgba(224,138,30,.13);
+  --sk:rgba(43,31,26,.07);
+  --shadow-sm:0 1px 2px rgba(74,45,32,.04);
+  --shadow:0 1px 2px rgba(74,45,32,.05), 0 10px 26px -18px rgba(74,45,32,.35);
+  --shadow-lg:0 24px 60px -28px rgba(74,45,32,.45);
+  --radius:20px;
+  --radius-sm:14px;
+  --radius-xs:10px;
+}
+html[data-theme="dark"]{
+  --bg:#120E0C;
+  --canvas:#1B1412;
+  --surface:#241C19;
+  --surface-2:#2E211C;
+  --surface-3:#332520;
+  --line:#4A3730;
+  --line-soft:rgba(74,55,48,.6);
+  --text:#F6EBE5;
+  --text-2:#B7A49B;
+  --text-3:#8B7870;
+  --primary:#FF9A88;
+  --primary-ink:#FFC3B6;
+  --primary-soft:rgba(255,154,136,.14);
+  --primary-soft-2:rgba(255,154,136,.24);
+  --secondary:#7AE1C8;
+  --secondary-soft:rgba(122,225,200,.14);
+  --tertiary:#FFADD1;
+  --income:#63D3A4;
+  --income-soft:rgba(99,211,164,.14);
+  --expense:#FF8EA8;
+  --expense-soft:rgba(255,142,168,.14);
+  --transfer:#92B4FF;
+  --warning:#F0B45C;
+  --warning-soft:rgba(240,180,92,.16);
+  --sk:rgba(255,255,255,.08);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 28px -20px rgba(0,0,0,.8);
+  --shadow-lg:0 30px 70px -30px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 12% -8%, var(--primary-soft), transparent 60%),
+    radial-gradient(900px 500px at 96% 4%, var(--secondary-soft), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  font-size:15px;
+  line-height:1.5;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ============================================================
+   页面外壳
+   ============================================================ */
+.page{max-width:1560px;margin:0 auto;padding:40px 28px 96px}
+.page-head{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;justify-content:space-between;margin-bottom:26px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary)}
+.eyebrow::before{content:"";width:22px;height:2px;border-radius:2px;background:var(--primary)}
+h1{margin:10px 0 8px;font-size:34px;line-height:1.2;letter-spacing:-.02em;font-weight:800}
+.lede{margin:0;max-width:60ch;color:var(--text-2);font-size:15px}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;padding:4px;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow-sm)}
+.seg button{
+  appearance:none;border:0;background:transparent;color:var(--text-2);
+  font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;cursor:pointer;
+  transition:.18s ease;white-space:nowrap;
+}
+.seg button:hover{color:var(--text)}
+.seg button[aria-pressed="true"]{background:var(--primary);color:#fff;box-shadow:0 4px 12px -4px var(--primary)}
+html[data-theme="dark"] .seg button[aria-pressed="true"]{color:#2B1F1A}
+.switch{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:var(--surface);
+  border:1px solid var(--line);border-radius:999px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-2);
+  box-shadow:var(--shadow-sm);transition:.18s ease;
+}
+.switch:hover{color:var(--text);border-color:var(--text-3)}
+
+/* ============================================================
+   分析区
+   ============================================================ */
+.analysis{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin:34px 0 40px}
+.panel{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:22px;box-shadow:var(--shadow-sm);
+}
+.panel h2{margin:0 0 4px;font-size:16px;font-weight:800;letter-spacing:-.01em}
+.panel p.sub{margin:0 0 16px;color:var(--text-3);font-size:13px}
+.span-7{grid-column:span 7}
+.span-5{grid-column:span 5}
+.span-12{grid-column:span 12}
+
+.issue-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.issue-list li{display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:start}
+.issue-list .idx{
+  width:26px;height:26px;border-radius:9px;display:grid;place-items:center;
+  background:var(--expense-soft);color:var(--expense);font-size:12px;font-weight:800;
+}
+.issue-list b{display:block;font-size:14px;font-weight:700}
+.issue-list span{color:var(--text-2);font-size:13px}
+
+.goal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.goal{
+  border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px;background:var(--surface-2);
+}
+.goal .k{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--secondary);text-transform:uppercase}
+.goal b{display:block;margin:6px 0 3px;font-size:14px}
+.goal span{font-size:12.5px;color:var(--text-2)}
+
+.map-table{width:100%;border-collapse:collapse;font-size:13px}
+.map-table th{
+  text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);
+  font-weight:800;padding:0 10px 10px;border-bottom:1px solid var(--line);
+}
+.map-table td{padding:11px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.map-table tr:last-child td{border-bottom:0}
+.map-table td:first-child{font-weight:700;white-space:nowrap}
+.map-table code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;
+  background:var(--surface-2);border:1px solid var(--line-soft);color:var(--text-2);
+  padding:2px 6px;border-radius:6px;display:inline-block;margin:1px 0;
+}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  padding:3px 9px;border-radius:999px;background:var(--secondary-soft);color:var(--secondary);
+}
+.badge.new{background:var(--primary-soft);color:var(--primary)}
+
+/* ============================================================
+   预览区
+   ============================================================ */
+.previews{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+.preview-col{display:flex;flex-direction:column;gap:14px}
+.preview-label{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.preview-label .dot{width:8px;height:8px;border-radius:50%;background:var(--primary)}
+
+/* 手机外框 */
+.phone{
+  width:392px;background:var(--canvas);border:1px solid var(--line);border-radius:38px;
+  box-shadow:var(--shadow-lg);overflow:hidden;position:relative;flex:0 0 auto;
+}
+.phone-screen{height:812px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+.phone-screen::-webkit-scrollbar{width:5px}
+.phone-screen::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+
+/* 桌面外框 */
+.desktop{
+  width:1140px;background:var(--canvas);border:1px solid var(--line);border-radius:24px;
+  box-shadow:var(--shadow-lg);overflow:hidden;display:flex;flex:0 0 auto;
+}
+.desktop-main{flex:1;min-width:0;height:812px;overflow-y:auto;scrollbar-width:thin}
+.desktop-main::-webkit-scrollbar{width:6px}
+.desktop-main::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+
+/* ============================================================
+   通用 UI 元素（模拟）
+   ============================================================ */
+.topbar{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
+  padding:12px 16px;background:color-mix(in srgb, var(--canvas) 88%, transparent);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft);
+}
+.mark{
+  width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,var(--primary),#C9483A);
+  color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;flex:0 0 auto;
+  box-shadow:0 6px 14px -6px var(--primary);
+}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;
+  background:var(--surface-2);border:1px solid var(--line-soft);font-size:13px;font-weight:700;cursor:default;
+}
+.chip.ghost{background:transparent;border-color:var(--line)}
+.icon-btn{
+  width:34px;height:34px;border-radius:999px;border:1px solid var(--line);background:var(--surface);
+  display:grid;place-items:center;font-size:12px;font-weight:800;color:var(--text-2);cursor:default;flex:0 0 auto;
+}
+.avatar{
+  width:34px;height:34px;border-radius:999px;background:var(--primary-soft);
+  color:var(--primary);display:grid;place-items:center;font-weight:800;font-size:14px;flex:0 0 auto;
+  border:1px solid var(--primary-soft-2);
+}
+.spacer{flex:1}
+
+.body-pad{padding:16px 16px 40px;display:flex;flex-direction:column;gap:14px}
+
+/* 卡片 */
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;box-shadow:var(--shadow-sm);position:relative;transition:box-shadow .2s ease,border-color .2s ease;
+}
+.card:hover{box-shadow:var(--shadow)}
+.card-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.card-head .t{font-size:14px;font-weight:800;letter-spacing:-.01em}
+.card-head .s{font-size:12px;color:var(--text-3);font-weight:600}
+.link{
+  background:transparent;border:0;color:var(--primary);font:inherit;font-size:12.5px;
+  font-weight:700;cursor:pointer;padding:4px 2px;border-radius:8px;
+}
+.link:hover{background:var(--primary-soft)}
+
+/* 问候 */
+.greet{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:2px 2px 0}
+.greet .hi{font-size:21px;font-weight:800;letter-spacing:-.02em}
+.greet .sub{font-size:12.5px;color:var(--text-3);font-weight:600;margin-top:2px}
+.pill-time{
+  font-size:11.5px;font-weight:700;color:var(--secondary);background:var(--secondary-soft);
+  padding:5px 10px;border-radius:999px;white-space:nowrap;
+}
+
+/* Hero */
+.hero{
+  border:0;color:#fff;overflow:hidden;
+  background:linear-gradient(135deg,#E45F4F 0%,#D14A5E 48%,#8E4BC4 100%);
+  box-shadow:0 18px 40px -22px rgba(180,60,70,.75);
+}
+html[data-theme="dark"] .hero{
+  background:linear-gradient(135deg,#7E2F2A 0%,#6A2440 50%,#3E2A72 100%);
+  border:1px solid rgba(255,255,255,.08);
+}
+.hero::after{
+  content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:50%;
+  background:rgba(255,255,255,.13);pointer-events:none;
+}
+.hero::before{
+  content:"";position:absolute;right:40px;bottom:-110px;width:180px;height:180px;border-radius:50%;
+  background:rgba(255,255,255,.08);pointer-events:none;
+}
+.hero .card-head{margin-bottom:12px;position:relative;z-index:1}
+.hero .card-head .t{color:#fff}
+.hero .tag{
+  font-size:11px;font-weight:800;letter-spacing:.04em;padding:4px 9px;border-radius:999px;
+  background:rgba(255,255,255,.2);color:#fff;
+}
+.hero .pace{
+  margin-left:auto;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;
+  background:rgba(255,255,255,.18);color:#fff;display:inline-flex;align-items:center;gap:6px;
+}
+.hero .pace::before{content:"";width:6px;height:6px;border-radius:50%;background:#FFD9A0}
+.hero .pace.slow::before{background:#9BF5D4}
+.hero-body{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;position:relative;z-index:1}
+.hero-label{font-size:12px;font-weight:700;opacity:.82;letter-spacing:.02em}
+.hero-value{font-size:41px;line-height:1.05;font-weight:800;letter-spacing:-.03em;margin-top:4px}
+.hero-value .dec{font-size:24px;font-weight:700;opacity:.75}
+.hero-foot{font-size:12px;opacity:.78;margin-top:7px;font-weight:600}
+.ring{width:86px;height:86px;flex:0 0 auto}
+.ring text{font-family:inherit}
+.hero-pills{display:flex;gap:8px;margin-top:16px;position:relative;z-index:1;flex-wrap:wrap}
+.hp{
+  flex:1 1 0;min-width:86px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.16);
+  border-radius:14px;padding:9px 11px;backdrop-filter:blur(4px);
+}
+.hp .k{font-size:11px;opacity:.8;font-weight:700}
+.hp .v{font-size:15px;font-weight:800;margin-top:3px;letter-spacing:-.01em}
+.dual{margin-top:16px;position:relative;z-index:1}
+.dual-track{height:8px;border-radius:999px;background:rgba(255,255,255,.2);position:relative;overflow:visible}
+.dual-time{position:absolute;inset:0 auto 0 0;border-radius:999px;background:rgba(255,255,255,.42)}
+.dual-spend{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:#fff}
+.dual-mark{
+  position:absolute;top:-4px;width:2px;height:16px;border-radius:2px;background:rgba(255,255,255,.9);
+}
+.dual-legend{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;opacity:.86;font-weight:700}
+
+/* 快捷动作 */
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.qa{
+  display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 6px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);
+  cursor:pointer;transition:.18s ease;box-shadow:var(--shadow-sm);
+}
+.qa:hover{transform:translateY(-2px);border-color:var(--primary-soft-2);box-shadow:var(--shadow)}
+.qa .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:16px}
+.qa .lb{font-size:12px;font-weight:700;color:var(--text-2)}
+.qa:hover .lb{color:var(--text)}
+.qa.primary .ic{background:var(--expense-soft);color:var(--expense)}
+.qa.income .ic{background:var(--income-soft);color:var(--income)}
+.qa.transfer .ic{background:rgba(79,125,217,.12);color:var(--transfer)}
+.qa.budget .ic{background:var(--primary-soft);color:var(--primary)}
+
+/* 提醒条 */
+.alerts{
+  border:1px solid var(--warning-soft);background:linear-gradient(180deg,var(--warning-soft),transparent 140%);
+  border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:10px;
+}
+.alerts-head{display:flex;align-items:center;gap:8px}
+.alerts-head .t{font-size:13px;font-weight:800;color:var(--warning)}
+.alerts-head .count{
+  font-size:11px;font-weight:800;background:var(--warning);color:#fff;border-radius:999px;padding:1px 7px;
+}
+html[data-theme="dark"] .alerts-head .count{color:#2B1F1A}
+.alert-row{display:flex;align-items:center;gap:10px}
+.alert-row .ic{
+  width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;
+  background:var(--surface);border:1px solid var(--line-soft);font-size:14px;
+}
+.alert-row .txt{flex:1;min-width:0}
+.alert-row .tit{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.alert-row .meta{font-size:11.5px;color:var(--text-3);font-weight:600}
+.alert-row .amt{font-size:13.5px;font-weight:800;color:var(--expense)}
+.alert-row .amt.warn{color:var(--warning)}
+
+/* Bento 两列 */
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mini .top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mini .top .t{font-size:12.5px;font-weight:800;color:var(--text-2)}
+.mini .top .ic{font-size:14px}
+.mini .big{font-size:23px;font-weight:800;letter-spacing:-.02em}
+.mini .delta{font-size:11.5px;font-weight:700;margin-top:4px;display:inline-flex;align-items:center;gap:4px}
+.delta.up{color:var(--income)}
+.delta.down{color:var(--expense)}
+.mini .bar{height:7px;border-radius:999px;background:var(--surface-2);margin-top:11px;overflow:hidden}
+.mini .bar i{display:block;height:100%;border-radius:999px;background:var(--secondary)}
+.mini .foot{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:7px}
+
+/* 分段控件 */
+.mini-seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:999px;padding:3px;gap:2px}
+.mini-seg span{
+  font-size:12px;font-weight:700;color:var(--text-2);padding:5px 12px;border-radius:999px;cursor:default;
+}
+.mini-seg span.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+
+/* 柱状图 */
+.chart{position:relative;display:flex;align-items:flex-end;gap:8px;height:118px;margin-top:4px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end;position:relative}
+.bar{
+  width:100%;max-width:30px;border-radius:8px 8px 5px 5px;background:var(--expense-soft);
+  border:1px solid rgba(212,77,110,.22);position:relative;transition:.2s ease;
+}
+.bar.today{background:linear-gradient(180deg,var(--primary),#C9483A);border-color:transparent;box-shadow:0 8px 18px -10px var(--primary)}
+.bar:hover{filter:brightness(1.06);transform:translateY(-2px)}
+.bar .tip{
+  position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%) scale(.94);
+  background:var(--text);color:var(--canvas);font-size:11px;font-weight:700;padding:4px 8px;border-radius:8px;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:.16s ease;
+}
+.bar:hover .tip{opacity:1;transform:translateX(-50%) scale(1)}
+.bar-x{font-size:11px;font-weight:700;color:var(--text-3)}
+.bar-x.today{color:var(--primary)}
+.avg-line{
+  position:absolute;left:0;right:0;border-top:1.5px dashed var(--expense);opacity:.55;
+}
+.chart-legend{display:flex;align-items:center;gap:14px;margin-top:12px;font-size:11.5px;color:var(--text-3);font-weight:600}
+.chart-legend .dot{width:16px;height:0;border-top:1.5px dashed var(--expense);opacity:.7}
+.chart-legend .sp{flex:1}
+.chart-legend b{color:var(--text);font-weight:800}
+
+/* 分类 */
+.cat-wrap{display:flex;gap:18px;align-items:center}
+.donut{
+  width:132px;height:132px;border-radius:50%;flex:0 0 auto;position:relative;
+  background:conic-gradient(
+    var(--expense) 0 34%,
+    var(--warning) 34% 57%,
+    var(--transfer) 57% 75%,
+    var(--tertiary) 75% 88%,
+    var(--secondary) 88% 96%,
+    var(--line) 96% 100%
+  );
+  -webkit-mask:radial-gradient(farthest-side,transparent 56%,#000 57%);
+  mask:radial-gradient(farthest-side,transparent 56%,#000 57%);
+}
+.donut-hole{
+  position:absolute;inset:0;display:grid;place-content:center;text-align:center;
+}
+.donut-hole .k{font-size:10.5px;color:var(--text-3);font-weight:700}
+.donut-hole .v{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.cat-list{flex:1;min-width:0;display:flex;flex-direction:column;gap:11px}
+.cat-row{display:grid;grid-template-columns:10px 1fr auto;gap:9px;align-items:center}
+.cat-row .sw{width:9px;height:9px;border-radius:3px}
+.cat-row .nm{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-row .nm span{font-size:11.5px;color:var(--text-3);font-weight:700;margin-left:6px}
+.cat-row .amt{font-size:12.5px;font-weight:800;color:var(--expense)}
+.cat-row .track{grid-column:2 / 4;height:5px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:-4px}
+.cat-row .track i{display:block;height:100%;border-radius:999px}
+
+/* 列表 */
+.list{display:flex;flex-direction:column}
+.row{
+  display:flex;align-items:center;gap:11px;padding:10px 8px;border-radius:12px;transition:.16s ease;cursor:pointer;
+}
+.row:hover{background:var(--surface-2)}
+.row + .row{border-top:1px solid var(--line-soft)}
+.row .ic{
+  width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-size:15px;flex:0 0 auto;
+}
+.row .ic.exp{background:var(--expense-soft);color:var(--expense)}
+.row .ic.inc{background:var(--income-soft);color:var(--income)}
+.row .ic.trf{background:rgba(79,125,217,.12);color:var(--transfer)}
+.row .mid{flex:1;min-width:0}
+.row .tit{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .meta{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .amt{font-size:14px;font-weight:800;white-space:nowrap}
+.row .amt.exp{color:var(--expense)}
+.row .amt.inc{color:var(--income)}
+.row .amt.trf{color:var(--transfer)}
+.day-sep{font-size:11px;font-weight:800;color:var(--text-3);letter-spacing:.06em;padding:12px 8px 5px}
+
+/* 脚注金句 */
+.tip{
+  text-align:center;font-size:12px;color:var(--text-3);font-weight:600;padding:6px 20px 4px;line-height:1.6;
+}
+.tip b{color:var(--text-2)}
+
+/* 洞察条 */
+.insight{
+  display:flex;align-items:flex-start;gap:11px;padding:13px 14px;border-radius:var(--radius-sm);
+  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-sm);
+}
+.insight .em{
+  width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;
+  background:var(--secondary-soft);color:var(--secondary);font-size:14px;
+}
+.insight .t{font-size:13.5px;font-weight:700;line-height:1.55}
+.insight .t b{color:var(--primary);font-weight:800}
+.insight .s{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:3px}
+
+/* 连续记录 */
+.streak{
+  display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;
+  color:var(--warning);background:var(--warning-soft);padding:5px 10px;border-radius:999px;white-space:nowrap;flex:0 0 auto;
+}
+
+/* Hero 内的分类预算明细 */
+.bd{margin-top:15px;padding-top:13px;border-top:1px solid rgba(255,255,255,.22);position:relative;z-index:1}
+.bd-head{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;opacity:.82}
+.bd-head .sp{flex:1}
+.bd-row{display:flex;align-items:center;gap:9px;margin-top:9px}
+.bd-row .nm{font-size:12px;font-weight:700;width:42px;flex:0 0 auto;opacity:.92}
+.bd-row .tr{flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,.22);overflow:hidden}
+.bd-row .tr i{display:block;height:100%;border-radius:999px;background:#fff}
+.bd-row .tr i.warn{background:#FFD9A0}
+.bd-row .vl{font-size:11.5px;font-weight:800;opacity:.92;min-width:78px;text-align:right}
+
+/* 健康窄条 */
+.health{
+  display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:var(--radius-sm);
+  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-sm);
+}
+.health .ic{
+  width:32px;height:32px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto;font-size:15px;
+  background:rgba(216,92,147,.12);color:var(--tertiary);
+}
+.health .mid{flex:1;min-width:0}
+.health .tit{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.health .meta{font-size:11.5px;color:var(--text-3);font-weight:600}
+.health .go{font-size:11.5px;font-weight:800;color:var(--tertiary);white-space:nowrap}
+
+/* 异常标记 */
+.anom{
+  font-size:10px;font-weight:800;color:var(--warning);background:var(--warning-soft);
+  padding:2px 6px;border-radius:6px;margin-left:6px;vertical-align:middle;
+}
+
+/* 隐私模式 */
+html[data-privacy="on"] .num{filter:blur(6px);user-select:none}
+.icon-btn.on{background:var(--primary-soft);color:var(--primary);border-color:var(--primary-soft-2)}
+.icon-btn{cursor:pointer;transition:.16s ease}
+.icon-btn:hover{border-color:var(--text-3);color:var(--text)}
+
+/* 首次使用 */
+.only-onboard{display:none;flex-direction:column;gap:14px}
+.onboard-hero{
+  border-radius:var(--radius);padding:22px;color:#fff;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#E45F4F,#8E4BC4);box-shadow:0 18px 40px -24px rgba(180,60,70,.75);
+}
+html[data-theme="dark"] .onboard-hero{background:linear-gradient(135deg,#7E2F2A,#3E2A72)}
+.onboard-hero h3{margin:0 0 6px;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.onboard-hero p{margin:0;font-size:12.5px;opacity:.88;line-height:1.65}
+.steps{display:flex;flex-direction:column;gap:10px}
+.step{
+  display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);
+  border-radius:var(--radius-sm);background:var(--surface);box-shadow:var(--shadow-sm);
+}
+.step .n{
+  width:28px;height:28px;border-radius:999px;display:grid;place-items:center;flex:0 0 auto;
+  font-size:12px;font-weight:800;background:var(--surface-2);color:var(--text-2);
+}
+.step.done .n{background:var(--income-soft);color:var(--income)}
+.step .mid{flex:1;min-width:0}
+.step .tit{font-size:13.5px;font-weight:700}
+.step .meta{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:1px}
+.step .cta{font-size:12px;font-weight:800;color:var(--primary);white-space:nowrap}
+.step.done .cta{color:var(--income)}
+
+/* 骨架屏 */
+html[data-state="loading"] .v,
+html[data-state="loading"] .val,
+html[data-state="loading"] .hero-value,
+html[data-state="loading"] .big,
+html[data-state="loading"] .bar-x,
+html[data-state="loading"] .amt,
+html[data-state="loading"] .row .tit,
+html[data-state="loading"] .row .meta,
+html[data-state="loading"] .cat-row .nm,
+html[data-state="loading"] .hp .v,
+html[data-state="loading"] .hp .k,
+html[data-state="loading"] .dual-legend span,
+html[data-state="loading"] .alert-row .tit,
+html[data-state="loading"] .alert-row .meta,
+html[data-state="loading"] .mini .foot,
+html[data-state="loading"] .mini .delta,
+html[data-state="loading"] .greet .hi,
+html[data-state="loading"] .greet .sub,
+html[data-state="loading"] .donut-hole .v,
+html[data-state="loading"] .donut-hole .k{
+  color:transparent!important;background:var(--sk);border-radius:7px;box-shadow:none!important;
+  background-image:none!important;
+}
+html[data-state="loading"] .hero-value,
+html[data-state="loading"] .big{width:150px}
+html[data-state="loading"] .bar{background:var(--sk);border-color:transparent}
+html[data-state="loading"] .donut{background:var(--sk);opacity:.7}
+html[data-state="loading"] .alerts,
+html[data-state="loading"] .row .ic,
+html[data-state="loading"] .mini .bar i,
+html[data-state="loading"] .cat-row .sw,
+html[data-state="loading"] .dual-spend,
+html[data-state="loading"] .dual-time{opacity:.35}
+html[data-state="loading"] .only-data{display:none!important}
+html[data-state="loading"] .only-loading{display:block}
+.only-loading{display:none}
+.dash{display:contents}
+html[data-state="onboarding"] .dash{display:none!important}
+html[data-state="onboarding"] .only-onboard{display:flex}
+
+/* 标注 */
+.note{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(14px);
+  background:var(--text);color:var(--canvas);border-radius:16px;padding:14px 18px;max-width:640px;width:calc(100% - 40px);
+  box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.24s cubic-bezier(.2,.8,.2,1);z-index:99;
+}
+html[data-theme="dark"] .note{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+.note.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.note .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+.note .b{font-size:13.5px;margin-top:6px;line-height:1.6}
+.note .b code{
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;background:rgba(255,255,255,.16);
+  padding:1px 5px;border-radius:5px;
+}
+html[data-theme="dark"] .note .b code{background:rgba(255,255,255,.08)}
+[data-note]{cursor:pointer}
+[data-note]:hover{outline:2px solid var(--primary-soft-2);outline-offset:2px}
+
+@media (max-width:1240px){
+  .span-7,.span-5{grid-column:span 12}
+  .analysis{grid-template-columns:repeat(12,1fr)}
+}
+@media (max-width:760px){
+  .page{padding:24px 16px 60px}
+  h1{font-size:26px}
+  .goal-grid{grid-template-columns:1fr}
+  .phone,.desktop{width:100%;max-width:100%}
+  .desktop-main,.phone-screen{height:auto;max-height:none}
+  .desktop{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===================== 页头 ===================== -->
+  <div class="page-head">
+    <div>
+      <span class="eyebrow">Miji · Home Redesign</span>
+      <h1>首页改版方案预览</h1>
+      <p class="lede">把「一个堆满指标的仪表盘」变成「一眼看懂、两步记完」的首页。下面是设计分析、新首页的移动 / 桌面预览，以及与现有 Provider 的对应关系。</p>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="数据状态">
+        <button data-state-btn="normal" aria-pressed="true">正常</button>
+        <button data-state-btn="loading" aria-pressed="false">加载中</button>
+        <button data-state-btn="onboarding" aria-pressed="false">首次使用</button>
+      </div>
+      <div class="seg" role="group" aria-label="主题">
+        <button data-theme-btn="light" aria-pressed="true">浅色</button>
+        <button data-theme-btn="dark" aria-pressed="false">深色</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 分析 ===================== -->
+  <section class="analysis">
+    <div class="panel span-7">
+      <h2>现状诊断：9 个具体问题</h2>
+      <p class="sub">基于 <code style="font-family:ui-monospace">lib/features/home/</code> 现有实现的逐块分析</p>
+      <ol class="issue-list">
+        <li><span class="idx">1</span><div><b>没有主角数字</b><span>面板标题是「今日概览」，但卡片里最大的字是「本月支出 / 本月收入 / 结余」。真正的「今日支出」只出现在柱子的 tooltip 里，点一下才看得到。</span></div></li>
+        <li><span class="idx">2</span><div><b>指标重复堆叠</b><span>单张卡里塞了 6 个彩色小方块（本月三项 + 本周三项，还会被"选中日收入"顶掉一格），字号 9–10px，扫读成本极高。</span></div></li>
+        <li><span class="idx">3</span><div><b>交互完全不可见</b><span>左右滑动柱状图换周、底部 6 个小圆点换周，都没有任何提示；点不同周还会连带切换月份，逻辑隐晦。</span></div></li>
+        <li><span class="idx">4</span><div><b>六张卡片同一权重</b><span>问候、今日行动、周图、预算、提醒、分类、最近账单全部使用同一种 <code style="font-family:ui-monospace">AppContentPanel</code> 外观，没有主次，只能从上往下读。</span></div></li>
+        <li><span class="idx">5</span><div><b>问候区排版别扭 + 会跳动</b><span>日期靠左、问候靠右、随机理财金句再靠右，三行右对齐；金句每次重建都随机，每次进首页都在变。</span></div></li>
+        <li><span class="idx">6</span><div><b>高频动作没有就近入口</b><span>记一笔只能靠底部居中的 FAB，支出 / 收入 / 转账三个最高频动作没有快捷入口。</span></div></li>
+        <li><span class="idx">7</span><div><b>净资产缺席</b><span>README 宣传「资产总览与净资产」，首页实际上没有。而 <code style="font-family:ui-monospace">currentUserBookkeepingOverviewProvider</code> 早就提供了 <code style="font-family:ui-monospace">netAssetMinor</code>。</span></div></li>
+        <li><span class="idx">8</span><div><b>加载态会闪</b><span>顶部一条全局 <code style="font-family:ui-monospace">LinearProgressIndicator</code>，每张卡再各来一条，数据回来时整页重排。</span></div></li>
+        <li><span class="idx">9</span><div><b>条件区块导致布局跳动</b><span>「紧急提醒」无数据时整块消失，下面的分类 / 账单会上移；出现时又把内容推下去。</span></div></li>
+      </ol>
+    </div>
+
+    <div class="panel span-5">
+      <h2>改版目标</h2>
+      <p class="sub">四条原则，全部服务于「更快看懂 + 更快记录」</p>
+      <div class="goal-grid">
+        <div class="goal"><span class="k">Hierarchy</span><b>一个主角</b><span>「本月还可花」独占视觉焦点，今日支出作为第二层级紧随其后。</span></div>
+        <div class="goal"><span class="k">Explicit</span><b>手势变控件</b><span>周切换、收支切换、月份切换全部改为可见的分段控件与胶囊按钮。</span></div>
+        <div class="goal"><span class="k">Bento</span><b>分块而非堆叠</b><span>移动端单列分区，桌面端 8/4 双栏；每块只回答一个问题。</span></div>
+        <div class="goal"><span class="k">Actionable</span><b>动作就近</b><span>顶部一行四个快捷记账动作，提醒条可一键处理，列表项直接打开详情。</span></div>
+      </div>
+      <p style="margin:16px 0 0;font-size:12.5px;color:var(--text-2)">
+        视觉上：暖白底 + 珊瑚主色（沿用现有 <code style="font-family:ui-monospace">AppThemeTokens</code>），大圆角、数字使用 tabular-nums 对齐、阴影极轻；加载态用骨架屏替代进度条，避免闪烁。
+      </p>
+    </div>
+
+    <div class="panel span-12">
+      <h2>本轮补充：新增 8 项（在上一版基础上）</h2>
+      <p class="sub">其中第 1、2 项属于「必须补」——否则是功能回归</p>
+      <table class="map-table">
+        <thead><tr><th style="width:190px">补充项</th><th style="width:90px">优先级</th><th>理由与做法</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>1. 账本切换器</td>
+            <td><span class="badge new">必须</span></td>
+            <td>现有 <code>_MobileShellTopBar</code> 在首页顶栏就带 <code>CurrentLedgerSelector.compact()</code>，上一版把它漏掉了，属于功能回归。新版顶栏恢复为「账本 + 月份 + 隐私 + 头像」。</td>
+          </tr>
+          <tr>
+            <td>2. 金额隐私开关</td>
+            <td><span class="badge new">必须</span></td>
+            <td>账户页已有「资产 ***」的隐私处理，首页却是明文。顶栏加一个眼睛按钮，一键模糊所有金额（演示里点右上角眼睛即可）。</td>
+          </tr>
+          <tr>
+            <td>3. 洞察条 Insight</td>
+            <td><span class="badge">高</span></td>
+            <td>把数据变成一句话结论：「今天比日均少花 ¥154」。首页原来只有数字没有判断，这一条是性价比最高的新增，数据全部来自已有的 summary。</td>
+          </tr>
+          <tr>
+            <td>4. Hero 内分类预算</td>
+            <td><span class="badge">高</span></td>
+            <td>原来的「本月预算」只看总额，用户知道超了却不知道哪超了。Hero 内嵌 2 条分类预算进度（餐饮 78% / 购物 45%），让预算真正可行动。</td>
+          </tr>
+          <tr>
+            <td>5. 首次使用引导</td>
+            <td><span class="badge">高</span></td>
+            <td>新用户面对空首页会直接退出。新增「首次使用」状态：欢迎卡 + 三步清单（建账户 → 设预算 → 记第一笔），复用同一个 <code>data-state</code> 切换器演示。</td>
+          </tr>
+          <tr>
+            <td>6. 连续记录 streak</td>
+            <td><span class="badge">中</span></td>
+            <td>「🔥 连续 128 天」放在问候行右侧。已有 <code>usage_stats</code> 表，成本极低，对留存有效。</td>
+          </tr>
+          <tr>
+            <td>7. 异常支出标记</td>
+            <td><span class="badge">中</span></td>
+            <td>README 里的「异常检测」已实现但首页没用。在最近账单里给异常项加一个「异常」小标，比另开一张卡更轻。</td>
+          </tr>
+          <tr>
+            <td>8. 健康窄条（可关）</td>
+            <td><span class="badge">中</span></td>
+            <td>健康是独立 Tab，首页只用一行提示「距下次经期还有 5 天」，不做成卡片。默认关闭，用户可在设置里打开。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel span-12">
+      <h2>区块 ↔ 数据源映射（全部复用现有 Provider）</h2>
+      <p class="sub">改版不新增数据层，只重组展示；仅「净资产」「快捷动作」是新暴露的入口</p>
+      <table class="map-table">
+        <thead><tr><th style="width:180px">新区块</th><th style="width:330px">数据来源</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>本月还可花（Hero）</td><td><code>homeMonthBudgetSummaryProvider</code></td><td>remainingMinor / progress / periodProgress / paceLabel / dailyAllowanceMinor 已有，直接作为主角展示。</td></tr>
+          <tr><td>今日支出 · 本月收入 · 日均</td><td><code>homeTodaySpendingSummaryProvider</code></td><td>todayExpenseMinor / monthIncomeMinor / dailyAverageExpenseMinor 已存在，只是从未被放到显眼位置。</td></tr>
+          <tr><td>周柱状图</td><td><code>homeWeeklySpendingProvider</code> + <code>homeWeeklyWeekCountProvider</code> + <code>homeWeekOffsetProvider</code></td><td>把隐藏的滑动换周改为「本周 / 上周 / 更早」分段控件，仍复用同一个 offset。</td></tr>
+          <tr><td>快捷记账 4 动作</td><td><code>MoneyQuickActionFab</code> 同一套 action</td><td><span class="badge new">新入口</span>把 FAB 里的支出 / 收入 / 转账提到首页，降低一次点击。</td></tr>
+          <tr><td>紧急提醒条</td><td><code>currentUserPendingReminderCenterItemsProvider</code></td><td>由「整卡」改为「条带」，最多 2 条 + 全部入口，避免条件渲染导致跳动。</td></tr>
+          <tr><td>今日行动</td><td><code>todayActionItemsProvider</code></td><td>保持，但压缩为一张 bento 小卡：完成度环 + 下一件事。</td></tr>
+          <tr><td>净资产</td><td><code>currentUserBookkeepingOverviewProvider</code> → <code>netAssetMinor</code></td><td><span class="badge new">新入口</span>与「资产 / 负债」拆分，点击进入记账页总览。</td></tr>
+          <tr><td>分类结构</td><td><code>homeCategoryStructureProvider</code> + <code>homeCategoryStructureTypeProvider</code></td><td>保留环形图，删掉冗余的中心文字；图例直接展示 Top 4 金额与占比。</td></tr>
+          <tr><td>最近账单</td><td><code>homeRecentTransactionsProvider</code></td><td>按日期分组，金额右对齐并带收支符号，整行可点开详情弹窗。</td></tr>
+          <tr><td>问候 + 金句</td><td>本地时间 + 静态金句</td><td>问候左对齐放首位；金句固定按「日期」取模选择，保证同一天不跳变，并移到页面底部。</td></tr>
+          <tr><td>账本切换器</td><td><code>CurrentLedgerSelector.compact()</code> + <code>currentUserCurrentLedgerProvider</code></td><td>沿用现有组件，直接放回首页顶栏。</td></tr>
+          <tr><td>金额隐私开关</td><td>新增一条用户偏好（参考账户页的 *** 逻辑）</td><td><span class="badge new">新偏好</span>仅影响展示层，不改数据。</td></tr>
+          <tr><td>洞察条</td><td><code>homeTodaySpendingSummaryProvider</code> + <code>homeMonthBudgetSummaryProvider</code> + <code>homeCategoryStructureProvider</code></td><td>纯前端计算，无新查询。文案按「今日 vs 日均」「分类占比 vs 上月」两条规则生成。</td></tr>
+          <tr><td>Hero 内分类预算</td><td><code>currentUserBudgetsProvider</code>（<code>MoneyBudgetScopeType.category</code>）</td><td>复用已有预算列表，取本月生效的 2 条金额最大的分类预算。</td></tr>
+          <tr><td>连续记录 streak</td><td><code>money_usage_stats</code> / 交易日期去重</td><td>已存在统计表，读取即可。</td></tr>
+          <tr><td>异常支出标记</td><td>现有异常检测结果</td><td>在最近账单行内渲染一个小标，不新增区块。</td></tr>
+          <tr><td>健康窄条</td><td><code>currentUserHealthSummaryProvider</code> / <code>currentUserActivePregnancyProvider</code></td><td>仅当用户在设置里开启「首页显示健康提示」时渲染。</td></tr>
+          <tr><td>首次使用引导</td><td>账户数 / 预算数 / 交易数均为 0 时触发</td><td>替换整个 dashboard，避免新用户看到一屏 0。</td></tr>
+          <tr><td>空 / 加载 / 错误态</td><td>各 provider 的 AsyncValue</td><td>骨架屏统一占位，高度固定，不再重排。</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== 预览 ===================== -->
+  <div class="previews">
+
+    <!-- ---------- 移动端 ---------- -->
+    <div class="preview-col">
+      <div class="preview-label"><span class="dot"></span>移动端 · 392 × 812</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="topbar">
+            <div class="mark">米</div>
+            <div class="chip" data-note="账本切换器：与记账页共用同一个 CurrentLedgerSelector.compact()，个人账本 / 家庭账本随时切。上一版把它漏掉了，属于功能回归，必须补回。">日常账本 ▾</div>
+            <div class="chip ghost">10月 ▾</div>
+            <div class="spacer"></div>
+            <div class="icon-btn" data-privacy-toggle title="隐藏 / 显示金额">👁</div>
+            <div class="avatar">明</div>
+          </div>
+
+          <div class="body-pad">
+            <div class="only-onboard">
+              <div class="onboard-hero">
+                <h3>欢迎使用米记 👋</h3>
+                <p>三步开始你的记账：先建账户，再设预算，然后记下第一笔。</p>
+              </div>
+              <div class="steps">
+                <div class="step done"><div class="n">✓</div><div class="mid"><div class="tit">创建第一个账户</div><div class="meta">已创建 · 现金账户</div></div><div class="cta">已完成</div></div>
+                <div class="step"><div class="n">2</div><div class="mid"><div class="tit">设置本月预算</div><div class="meta">设置后首页会显示「还可花多少」</div></div><div class="cta">去设置</div></div>
+                <div class="step"><div class="n">3</div><div class="mid"><div class="tit">记下第一笔支出</div><div class="meta">支持支出 / 收入 / 转账</div></div><div class="cta">记一笔</div></div>
+              </div>
+              <div class="insight">
+                <div class="em">🔒</div>
+                <div><div class="t">所有数据只存在你的设备上</div><div class="s">支持 WebDAV 加密备份，随时可导出</div></div>
+              </div>
+            </div>
+            <div class="dash">
+            <!-- 问候 -->
+            <div class="greet" data-note="问候区：左对齐、两级排版。右侧的「连续记录」streak 替代了原来的随机金句（金句已移到页面底部并按日期固定，不再每次进入都跳）。">
+              <div>
+                <div class="hi">早上好，小明</div>
+                <div class="sub">10月16日 星期四 · 本月已过 52%</div>
+              </div>
+              <div class="streak">🔥 连续 128 天</div>
+            </div>
+
+            <!-- HERO -->
+            <section class="card hero" data-note="Hero：回答『这个月我还能花多少』。数值来自 homeMonthBudgetSummaryProvider.remainingMinor，环形是 progress，底部双轨进度条对比『时间进度』与『花费进度』，一眼判断超支风险。">
+              <div class="card-head">
+                <span class="tag">本月预算</span>
+                <span class="pace slow">节奏正常</span>
+              </div>
+              <div class="hero-body">
+                <div>
+                  <div class="hero-label">本月还可花</div>
+                  <div class="hero-value num">¥3,420<span class="dec">.50</span></div>
+                  <div class="hero-foot num">预算 ¥8,000 · 已用 ¥4,579 · 日均可花 ¥212</div>
+                </div>
+                <div class="ring">
+                  <svg viewBox="0 0 86 86" width="86" height="86">
+                    <circle cx="43" cy="43" r="34" fill="none" stroke="rgba(255,255,255,.24)" stroke-width="8"/>
+                    <circle cx="43" cy="43" r="34" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"
+                            stroke-dasharray="213.6" stroke-dashoffset="91.9" transform="rotate(-90 43 43)"/>
+                    <text x="43" y="47" text-anchor="middle" fill="#fff" font-size="17" font-weight="800">57%</text>
+                  </svg>
+                </div>
+              </div>
+              <div class="hero-pills">
+                <div class="hp"><div class="k">今日支出</div><div class="v num">¥58.00</div></div>
+                <div class="hp"><div class="k">本月收入</div><div class="v num">+¥10,000</div></div>
+                <div class="hp"><div class="k">日均支出</div><div class="v num">¥212</div></div>
+              </div>
+              <div class="bd" data-note="分类预算：原「本月预算」只看总额，用户知道超了却不知道哪超了。在 Hero 内嵌 2 条金额最大的分类预算进度，让预算真正可行动。数据来自 currentUserBudgetsProvider 中 scopeType=category 的项。">
+                <div class="bd-head"><span>分类预算</span><span class="sp"></span><span>2 项接近上限</span></div>
+                <div class="bd-row"><span class="nm">餐饮</span><span class="tr"><i class="warn" style="width:78%"></i></span><span class="vl num">¥1,560 / 2,000</span></div>
+                <div class="bd-row"><span class="nm">购物</span><span class="tr"><i style="width:45%"></i></span><span class="vl num">¥675 / 1,500</span></div>
+              </div>
+              <div class="dual">
+                <div class="dual-track">
+                  <div class="dual-time" style="width:52%"></div>
+                  <div class="dual-spend" style="width:57%"></div>
+                  <div class="dual-mark" style="left:52%"></div>
+                </div>
+                <div class="dual-legend">
+                  <span>时间进度 52%</span>
+                  <span>花费进度 57%</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- 洞察 -->
+            <div class="insight" data-note="洞察条：首页原来只有数字、没有判断。这一条用一句话把三个已有数据拼成结论，全部在前端计算，不新增查询。">
+              <div class="em">💡</div>
+              <div>
+                <div class="t">今天比日均少花 <b class="num">¥154</b>；餐饮占本月支出 <b>34%</b>，比上月高 8%。</div>
+                <div class="s">基于本月 16 天 · 日均 ¥212</div>
+              </div>
+            </div>
+
+            <!-- 快捷动作 -->
+            <div class="quick" data-note="快捷动作：把底部 FAB 里的支出 / 收入 / 转账提到首屏，再加一个预算入口。记一笔从『找到 FAB → 展开 → 选类型』变成一次点击。">
+              <div class="qa primary"><div class="ic">−</div><div class="lb">记支出</div></div>
+              <div class="qa income"><div class="ic">+</div><div class="lb">记收入</div></div>
+              <div class="qa transfer"><div class="ic">⇄</div><div class="lb">转账</div></div>
+              <div class="qa budget"><div class="ic">◎</div><div class="lb">预算</div></div>
+            </div>
+
+            <!-- 提醒条 -->
+            <div class="alerts" data-note="提醒条：原『紧急提醒』整卡改为条带，最多显示 2 条 + 全部入口，且无论有无数据都占位（无数据时显示『暂无待办提醒』），消除布局跳动。">
+              <div class="alerts-head">
+                <span class="t">⚠︎ 需要关注</span>
+                <span class="count">3</span>
+                <div class="spacer"></div>
+                <button class="link">全部</button>
+              </div>
+              <div class="alert-row">
+                <div class="ic">💳</div>
+                <div class="txt">
+                  <div class="tit">招商银行信用卡还款</div>
+                  <div class="meta num">10月18日到期 · 还剩 2 天</div>
+                </div>
+                <div class="amt num">¥2,860</div>
+              </div>
+              <div class="alert-row">
+                <div class="ic">🔁</div>
+                <div class="txt">
+                  <div class="tit">房租自动记账</div>
+                  <div class="meta num">10月20日预计扣款</div>
+                </div>
+                <div class="amt warn num">¥3,200</div>
+              </div>
+            </div>
+
+            <!-- Bento -->
+            <div class="bento">
+              <div class="card mini" data-note="今日行动：由整卡压缩为 bento 小卡，只保留完成度 + 下一件待办，点击进入打卡页。">
+                <div class="top"><span class="ic">✅</span><span class="t">今日行动</span></div>
+                <div class="big num">3<span style="font-size:15px;color:var(--text-3)"> / 5</span></div>
+                <div class="delta" style="color:var(--text-2)">下一件 · 背单词 30 分钟</div>
+                <div class="bar"><i style="width:60%"></i></div>
+                <div class="foot">已完成 60%</div>
+              </div>
+              <div class="card mini" data-note="净资产：新增到首页的数据。来自 currentUserBookkeepingOverviewProvider 的 assetMinor / liabilityMinor，点击进入记账页总览。">
+                <div class="top"><span class="ic">🏦</span><span class="t">净资产</span></div>
+                <div class="big num">¥52,340</div>
+                <div class="delta up">▲ 较上月 +¥1,280</div>
+                <div class="bar" style="background:var(--income-soft)"><i style="width:72%;background:var(--income)"></i></div>
+                <div class="foot num">资产 ¥58.2k · 负债 ¥5.9k</div>
+              </div>
+            </div>
+
+            <!-- 健康（可选） -->
+            <div class="health" data-note="健康窄条：健康是独立 Tab，首页只用一行提示，不做成卡片。默认关闭，用户在设置里开启「首页显示健康提示」时才渲染。">
+              <div class="ic">🌸</div>
+              <div class="mid"><div class="tit">距下次经期还有 5 天</div><div class="meta">10月21日预计开始 · 今天还没记录</div></div>
+              <div class="go">去记录 →</div>
+            </div>
+
+            <!-- 周趋势 -->
+            <section class="card" data-note="周趋势：把手势换周改成显式分段控件；柱子上直接标金额，虚线是日均线，今天用主色高亮。数据来自 homeWeeklySpendingProvider。">
+              <div class="card-head">
+                <span class="t">支出趋势</span>
+                <div class="spacer"></div>
+                <div class="mini-seg">
+                  <span class="on">本周</span><span>上周</span><span>更早</span>
+                </div>
+              </div>
+              <div class="chart">
+                <div class="avg-line" style="bottom:64px"></div>
+                <div class="bar-col"><div class="bar" style="height:34%"><span class="tip num">周一 ¥96</span></div><div class="bar-x">一</div></div>
+                <div class="bar-col"><div class="bar" style="height:62%"><span class="tip num">周二 ¥178</span></div><div class="bar-x">二</div></div>
+                <div class="bar-col"><div class="bar" style="height:20%"><span class="tip num">周三 ¥58</span></div><div class="bar-x">三</div></div>
+                <div class="bar-col"><div class="bar today" style="height:74%"><span class="tip num">今天 ¥212</span></div><div class="bar-x today">四</div></div>
+                <div class="bar-col"><div class="bar" style="height:44%"><span class="tip num">周五 ¥126</span></div><div class="bar-x">五</div></div>
+                <div class="bar-col"><div class="bar" style="height:88%"><span class="tip num">周六 ¥252</span></div><div class="bar-x">六</div></div>
+                <div class="bar-col"><div class="bar" style="height:52%"><span class="tip num">周日 ¥149</span></div><div class="bar-x">日</div></div>
+              </div>
+              <div class="chart-legend">
+                <span class="dot"></span><span>日均线</span>
+                <span class="sp"></span>
+                <span>本周合计 <b class="num">¥1,071</b></span>
+                <span>·</span>
+                <span>较上周 <b style="color:var(--expense)" class="num">+12%</b></span>
+              </div>
+            </section>
+
+            <!-- 分类 -->
+            <section class="card" data-note="分类结构：保留环形图，去掉中间冗余文字；右侧图例直接给出 Top 4 的金额与占比条，比原来『点扇区才显示』更快。数据来自 homeCategoryStructureProvider。">
+              <div class="card-head">
+                <span class="t">支出分类</span>
+                <div class="spacer"></div>
+                <div class="mini-seg"><span class="on">支出</span><span>收入</span></div>
+              </div>
+              <div class="cat-wrap">
+                <div class="donut"><div class="donut-hole"><div class="k">合计</div><div class="v num">¥6,579</div></div></div>
+                <div class="cat-list">
+                  <div class="cat-row"><span class="sw" style="background:var(--expense)"></span><span class="nm">餐饮<span>34%</span></span><span class="amt num">¥2,237</span><span class="track"><i style="width:34%;background:var(--expense)"></i></span></div>
+                  <div class="cat-row"><span class="sw" style="background:var(--warning)"></span><span class="nm">购物<span>23%</span></span><span class="amt num">¥1,513</span><span class="track"><i style="width:23%;background:var(--warning)"></i></span></div>
+                  <div class="cat-row"><span class="sw" style="background:var(--transfer)"></span><span class="nm">交通<span>18%</span></span><span class="amt num">¥1,184</span><span class="track"><i style="width:18%;background:var(--transfer)"></i></span></div>
+                  <div class="cat-row"><span class="sw" style="background:var(--tertiary)"></span><span class="nm">居住<span>13%</span></span><span class="amt num">¥855</span><span class="track"><i style="width:13%;background:var(--tertiary)"></i></span></div>
+                </div>
+              </div>
+              <button class="link" style="margin-top:12px">查看全部 12 个分类 →</button>
+            </section>
+
+            <!-- 最近账单 -->
+            <section class="card" data-note="最近账单：按日期分组，金额右对齐带符号，整行可点开原有详情弹窗（复用 showTransactionDetailProviderDialog）。数据来自 homeRecentTransactionsProvider。">
+              <div class="card-head">
+                <span class="t">最近账单</span>
+                <div class="spacer"></div>
+                <button class="link">全部</button>
+              </div>
+              <div class="list">
+                <div class="day-sep">今天</div>
+                <div class="row"><div class="ic exp">🍜</div><div class="mid"><div class="tit">楼下的牛肉面</div><div class="meta">餐饮 · 支付宝 · 12:20</div></div><div class="amt exp num">−¥38.00</div></div>
+                <div class="row"><div class="ic trf">⇄</div><div class="mid"><div class="tit">转出到余额宝</div><div class="meta">转账 · 招商银行 · 09:05</div></div><div class="amt trf num">¥2,000</div></div>
+                <div class="day-sep">昨天</div>
+                <div class="row"><div class="ic inc">💰</div><div class="mid"><div class="tit">10月工资</div><div class="meta">工资 · 招商银行 · 18:40</div></div><div class="amt inc num">+¥10,000</div></div>
+                <div class="row"><div class="ic exp">🛒</div><div class="mid"><div class="tit">永辉超市<span class="anom">异常</span></div><div class="meta">购物 · 微信 · 20:12 · 比同类高 3.2 倍</div></div><div class="amt exp num">−¥186.40</div></div>
+              </div>
+            </section>
+
+            <div class="tip only-data">「<b>记录每一笔收支，才能更好地规划未来。</b>」</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- 桌面端 ---------- -->
+    <div class="preview-col">
+      <div class="preview-label"><span class="dot"></span>桌面端 · 1140 × 812（导航栏在左侧 rail，此处仅示意内容区）</div>
+      <div class="desktop">
+        <!-- rail -->
+        <div style="width:64px;flex:0 0 64px;border-right:1px solid var(--line-soft);background:var(--surface);display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 0">
+          <div class="mark" style="width:38px;height:38px;border-radius:12px">米</div>
+          <div style="height:6px"></div>
+          <div class="icon-btn" style="width:40px;height:40px">☑</div>
+          <div class="icon-btn" style="width:40px;height:40px">💴</div>
+          <div class="icon-btn" style="width:40px;height:40px;background:var(--primary-soft);color:var(--primary);border-color:var(--primary-soft-2)">⌂</div>
+          <div class="icon-btn" style="width:40px;height:40px">♥</div>
+          <div class="spacer"></div>
+          <div class="icon-btn" style="width:40px;height:40px">⚙</div>
+        </div>
+
+        <div class="desktop-main">
+          <div class="topbar">
+            <div class="chip">日常账本 ▾</div>
+            <div class="chip ghost">10月 ▾</div>
+            <div class="icon-btn" title="回到本月">今</div>
+            <div class="spacer"></div>
+            <div class="chip ghost">搜索 ⌘K</div>
+            <div class="icon-btn" data-privacy-toggle title="隐藏 / 显示金额">👁</div>
+            <div class="icon-btn">🔔</div>
+            <div class="avatar">明</div>
+          </div>
+
+          <div style="padding:18px 20px 40px">
+            <div class="only-onboard">
+              <div class="onboard-hero">
+                <h3>欢迎使用米记 👋</h3>
+                <p>三步开始你的记账：先建账户，再设预算，然后记下第一笔。所有数据只存在你的设备上，支持 WebDAV 加密备份。</p>
+              </div>
+              <div class="steps" style="display:grid;grid-template-columns:repeat(3,1fr)">
+                <div class="step done"><div class="n">✓</div><div class="mid"><div class="tit">创建第一个账户</div><div class="meta">已创建 · 现金账户</div></div></div>
+                <div class="step"><div class="n">2</div><div class="mid"><div class="tit">设置本月预算</div><div class="meta">首页会显示「还可花多少」</div></div></div>
+                <div class="step"><div class="n">3</div><div class="mid"><div class="tit">记下第一笔支出</div><div class="meta">支持支出 / 收入 / 转账</div></div></div>
+              </div>
+            </div>
+            <div class="dash">
+            <div class="greet" style="margin-bottom:16px">
+              <div>
+                <div class="hi">早上好，小明</div>
+                <div class="sub">10月16日 星期四 · 本月已过 52%</div>
+              </div>
+              <div class="streak">🔥 连续 128 天</div>
+            </div>
+
+            <!-- 8/4 双栏 -->
+            <div style="display:grid;grid-template-columns:8fr 4fr;gap:16px;align-items:start">
+
+              <!-- 左栏 -->
+              <div style="display:flex;flex-direction:column;gap:16px">
+                <section class="card hero">
+                  <div class="card-head">
+                    <span class="tag">本月预算</span>
+                    <span class="pace slow">节奏正常</span>
+                  </div>
+                  <div class="hero-body">
+                    <div>
+                      <div class="hero-label">本月还可花</div>
+                      <div class="hero-value num" style="font-size:46px">¥3,420<span class="dec">.50</span></div>
+                      <div class="hero-foot num">预算 ¥8,000 · 已用 ¥4,579 · 剩余 15 天 · 日均可花 ¥212</div>
+                    </div>
+                    <div class="hero-pills" style="margin:0;flex:0 0 300px">
+                      <div class="hp"><div class="k">今日支出</div><div class="v num">¥58.00</div></div>
+                      <div class="hp"><div class="k">本月收入</div><div class="v num">+¥10,000</div></div>
+                    </div>
+                  </div>
+                  <div class="bd">
+                    <div class="bd-head"><span>分类预算</span><span class="sp"></span><span>2 项接近上限</span></div>
+                    <div class="bd-row"><span class="nm">餐饮</span><span class="tr"><i class="warn" style="width:78%"></i></span><span class="vl num">¥1,560 / 2,000</span></div>
+                    <div class="bd-row"><span class="nm">购物</span><span class="tr"><i style="width:45%"></i></span><span class="vl num">¥675 / 1,500</span></div>
+                  </div>
+                  <div class="dual">
+                    <div class="dual-track">
+                      <div class="dual-time" style="width:52%"></div>
+                      <div class="dual-spend" style="width:57%"></div>
+                      <div class="dual-mark" style="left:52%"></div>
+                    </div>
+                    <div class="dual-legend"><span>时间进度 52%</span><span>花费进度 57%</span></div>
+                  </div>
+                </section>
+
+                <div class="quick">
+                  <div class="qa primary"><div class="ic">−</div><div class="lb">记支出</div></div>
+                  <div class="qa income"><div class="ic">+</div><div class="lb">记收入</div></div>
+                  <div class="qa transfer"><div class="ic">⇄</div><div class="lb">转账</div></div>
+                  <div class="qa budget"><div class="ic">◎</div><div class="lb">预算</div></div>
+                </div>
+
+                <div class="insight">
+                  <div class="em">💡</div>
+                  <div>
+                    <div class="t">今天比日均少花 <b class="num">¥154</b>；餐饮占本月支出 <b>34%</b>，比上月高 8%。</div>
+                    <div class="s">基于本月 16 天 · 日均 ¥212</div>
+                  </div>
+                </div>
+
+                <section class="card">
+                  <div class="card-head">
+                    <span class="t">支出趋势</span>
+                    <div class="spacer"></div>
+                    <div class="mini-seg"><span class="on">本周</span><span>上周</span><span>更早</span></div>
+                  </div>
+                  <div class="chart" style="height:140px">
+                    <div class="avg-line" style="bottom:76px"></div>
+                    <div class="bar-col"><div class="bar" style="height:34%"><span class="tip num">周一 ¥96</span></div><div class="bar-x">一</div></div>
+                    <div class="bar-col"><div class="bar" style="height:62%"><span class="tip num">周二 ¥178</span></div><div class="bar-x">二</div></div>
+                    <div class="bar-col"><div class="bar" style="height:20%"><span class="tip num">周三 ¥58</span></div><div class="bar-x">三</div></div>
+                    <div class="bar-col"><div class="bar today" style="height:74%"><span class="tip num">今天 ¥212</span></div><div class="bar-x today">四</div></div>
+                    <div class="bar-col"><div class="bar" style="height:44%"><span class="tip num">周五 ¥126</span></div><div class="bar-x">五</div></div>
+                    <div class="bar-col"><div class="bar" style="height:88%"><span class="tip num">周六 ¥252</span></div><div class="bar-x">六</div></div>
+                    <div class="bar-col"><div class="bar" style="height:52%"><span class="tip num">周日 ¥149</span></div><div class="bar-x">日</div></div>
+                  </div>
+                  <div class="chart-legend">
+                    <span class="dot"></span><span>日均线</span><span class="sp"></span>
+                    <span>本周合计 <b class="num">¥1,071</b></span><span>·</span>
+                    <span>较上周 <b style="color:var(--expense)" class="num">+12%</b></span>
+                  </div>
+                </section>
+
+                <section class="card">
+                  <div class="card-head">
+                    <span class="t">最近账单</span>
+                    <div class="spacer"></div>
+                    <button class="link">全部</button>
+                  </div>
+                  <div class="list">
+                    <div class="row"><div class="ic exp">🍜</div><div class="mid"><div class="tit">楼下的牛肉面</div><div class="meta">餐饮 · 支付宝 · 今天 12:20</div></div><div class="amt exp num">−¥38.00</div></div>
+                    <div class="row"><div class="ic trf">⇄</div><div class="mid"><div class="tit">转出到余额宝</div><div class="meta">转账 · 招商银行 · 今天 09:05</div></div><div class="amt trf num">¥2,000</div></div>
+                    <div class="row"><div class="ic inc">💰</div><div class="mid"><div class="tit">10月工资</div><div class="meta">工资 · 招商银行 · 昨天 18:40</div></div><div class="amt inc num">+¥10,000</div></div>
+                    <div class="row"><div class="ic exp">🛒</div><div class="mid"><div class="tit">永辉超市<span class="anom">异常</span></div><div class="meta">购物 · 微信 · 昨天 20:12 · 比同类高 3.2 倍</div></div><div class="amt exp num">−¥186.40</div></div>
+                  </div>
+                </section>
+              </div>
+
+              <!-- 右栏 -->
+              <div style="display:flex;flex-direction:column;gap:16px">
+                <div class="alerts">
+                  <div class="alerts-head">
+                    <span class="t">⚠︎ 需要关注</span>
+                    <span class="count">3</span>
+                    <div class="spacer"></div>
+                    <button class="link">全部</button>
+                  </div>
+                  <div class="alert-row">
+                    <div class="ic">💳</div>
+                    <div class="txt"><div class="tit">招行信用卡还款</div><div class="meta num">10月18日 · 还剩 2 天</div></div>
+                    <div class="amt num">¥2,860</div>
+                  </div>
+                  <div class="alert-row">
+                    <div class="ic">🔁</div>
+                    <div class="txt"><div class="tit">房租自动记账</div><div class="meta num">10月20日预计扣款</div></div>
+                    <div class="amt warn num">¥3,200</div>
+                  </div>
+                </div>
+
+                <div class="card mini">
+                  <div class="top"><span class="ic">✅</span><span class="t">今日行动</span><div class="spacer"></div><span style="font-size:11.5px;color:var(--text-3);font-weight:700">3 / 5</span></div>
+                  <div class="bar" style="margin-top:0"><i style="width:60%"></i></div>
+                  <div class="foot" style="margin-top:11px">下一件 · 背单词 30 分钟</div>
+                  <div class="foot">已完成 · 喝水打卡</div>
+                </div>
+
+                <div class="card mini">
+                  <div class="top"><span class="ic">🏦</span><span class="t">净资产</span></div>
+                  <div class="big num">¥52,340</div>
+                  <div class="delta up">▲ 较上月 +¥1,280</div>
+                  <div class="bar" style="background:var(--income-soft)"><i style="width:72%;background:var(--income)"></i></div>
+                  <div class="foot num">资产 ¥58.2k · 负债 ¥5.9k</div>
+                </div>
+
+                <div class="health">
+                  <div class="ic">🌸</div>
+                  <div class="mid"><div class="tit">距下次经期还有 5 天</div><div class="meta">10月21日预计开始 · 今天还没记录</div></div>
+                  <div class="go">去记录 →</div>
+                </div>
+
+                <section class="card">
+                  <div class="card-head">
+                    <span class="t">支出分类</span>
+                    <div class="spacer"></div>
+                    <div class="mini-seg"><span class="on">支出</span><span>收入</span></div>
+                  </div>
+                  <div style="display:flex;justify-content:center;padding:4px 0 14px">
+                    <div class="donut" style="width:118px;height:118px">
+                      <div class="donut-hole"><div class="k">合计</div><div class="v num">¥6,579</div></div>
+                    </div>
+                  </div>
+                  <div class="cat-list">
+                    <div class="cat-row"><span class="sw" style="background:var(--expense)"></span><span class="nm">餐饮<span>34%</span></span><span class="amt num">¥2,237</span><span class="track"><i style="width:34%;background:var(--expense)"></i></span></div>
+                    <div class="cat-row"><span class="sw" style="background:var(--warning)"></span><span class="nm">购物<span>23%</span></span><span class="amt num">¥1,513</span><span class="track"><i style="width:23%;background:var(--warning)"></i></span></div>
+                    <div class="cat-row"><span class="sw" style="background:var(--transfer)"></span><span class="nm">交通<span>18%</span></span><span class="amt num">¥1,184</span><span class="track"><i style="width:18%;background:var(--transfer)"></i></span></div>
+                    <div class="cat-row"><span class="sw" style="background:var(--tertiary)"></span><span class="nm">居住<span>13%</span></span><span class="amt num">¥855</span><span class="track"><i style="width:13%;background:var(--tertiary)"></i></span></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <div class="tip only-data" style="margin-top:22px">「<b>记录每一笔收支，才能更好地规划未来。</b>」</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 备注 ===================== -->
+  <section class="analysis" style="margin-top:44px">
+    <div class="panel span-5">
+      <h2>本次未改动 / 待确认</h2>
+      <p class="sub">留给人工评审决策</p>
+      <ul class="issue-list">
+        <li><span class="idx" style="background:var(--warning-soft);color:var(--warning)">?</span><div><b>健康窄条默认开关</b><span>已按「一行提示、不做卡片」实现，但默认开还是默认关需要定；建议默认关，用户在设置里打开。</span></div></li>
+        <li><span class="idx" style="background:var(--warning-soft);color:var(--warning)">?</span><div><b>卡片自定义</b><span>现有偏好只有 <code>showHomeTodayAction</code>。是否把它扩展为「首页卡片管理」（今日行动 / 净资产 / 健康 / 洞察均可关）？</span></div></li>
+        <li><span class="idx" style="background:var(--warning-soft);color:var(--warning)">?</span><div><b>洞察条文案规则</b><span>建议并列候选：今日 vs 日均、分类占比环比、本周 vs 上周、大额异常，最多每天显示 1 条，避免变噪声。</span></div></li>
+        <li><span class="idx" style="background:var(--warning-soft);color:var(--warning)">?</span><div><b>Hero 主角选谁</b><span>本方案选「本月还可花」。若用户多数不设预算，则回退为「本月结余」，此时环形改为收支占比。</span></div></li>
+        <li><span class="idx" style="background:var(--warning-soft);color:var(--warning)">?</span><div><b>多账本 / 多币种</b><span>净资产需按账本聚合；当前 overview provider 已按币种汇总，首页默认只展示基准币种。</span></div></li>
+        <li><span class="idx" style="background:var(--warning-soft);color:var(--warning)">?</span><div><b>桌面右侧栏顺序</b><span>提醒 / 今日行动 / 净资产 / 分类的优先级可调，本方案把「需要关注」放最上。</span></div></li>
+      </ul>
+    </div>
+    <div class="panel span-7">
+      <h2>交互与状态清单</h2>
+      <p class="sub">可直接作为实现时的验收点</p>
+      <table class="map-table">
+        <thead><tr><th style="width:150px">状态</th><th>表现</th></tr></thead>
+        <tbody>
+          <tr><td>加载中</td><td>所有数值位替换为骨架条，卡片高度固定；不使用顶部线性进度条。</td></tr>
+          <tr><td>无预算</td><td>Hero 切换为「本月结余」+「去设置预算」按钮，环形隐藏，其余区块不变。</td></tr>
+          <tr><td>无提醒</td><td>提醒条保留占位并显示「暂无待办提醒」，不隐藏、不重排。</td></tr>
+          <tr><td>无账单 / 无分类</td><td>列表区显示一行浅色空态文案 + 「记一笔」入口，保持卡片高度。</td></tr>
+          <tr><td>错误</td><td>卡片级错误态（可单独重试），替代整页 AppErrorState。</td></tr>
+          <tr><td>月份切换</td><td>顶部胶囊选择月份；切换后 Hero 文案变「本月/月度」，周趋势回到该月第一周。</td></tr>
+          <tr><td>超支</td><td>Hero 渐变切换为红色系，Hero 数字变「已超支 ¥x」，提醒条置顶。</td></tr>
+          <tr><td>首次使用</td><td>账户 / 预算 / 交易均为 0 时，用欢迎卡 + 三步清单替掉整个 dashboard，不让新用户面对一屏「0」。</td></tr>
+          <tr><td>隐私模式</td><td>顶栏眼睛按钮启用后，所有金额模糊化（不是隐藏，保留布局），状态持久化到偏好。</td></tr>
+          <tr><td>账本切换</td><td>切换账本后，Hero / 净资产 / 分类 / 账单全部跟随刷新，月份保持不变。</td></tr>
+          <tr><td>连续记录</td><td>断签时显示「今天还没记一笔」，有记录时显示天数。</td></tr>
+          <tr><td>响应式断点</td><td>&lt;840px 单列；≥840px 8/4 双栏；≥1280px Hero 内指标横排；平板（≥720px）可先上 2 列 bento。</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<div class="note" id="note"><div class="k">区块说明</div><div class="b"></div></div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+
+  // 主题
+  document.querySelectorAll('[data-theme-btn]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var t = btn.getAttribute('data-theme-btn');
+      root.setAttribute('data-theme', t);
+      document.querySelectorAll('[data-theme-btn]').forEach(function(b){
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+    });
+  });
+
+  // 数据状态
+  document.querySelectorAll('[data-state-btn]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var s = btn.getAttribute('data-state-btn');
+      root.setAttribute('data-state', s);
+      document.querySelectorAll('[data-state-btn]').forEach(function(b){
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+    });
+  });
+
+  // 金额隐私
+  document.querySelectorAll('[data-privacy-toggle]').forEach(function(btn){
+    btn.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      var on = root.getAttribute('data-privacy') === 'on';
+      root.setAttribute('data-privacy', on ? 'off' : 'on');
+      btn.classList.toggle('on', !on);
+    });
+  });
+
+  // 区块说明
+  var note = document.getElementById('note');
+  var noteBody = note.querySelector('.b');
+  var current = null;
+  document.querySelectorAll('[data-note]').forEach(function(el){
+    el.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      if (current === el) { hide(); return; }
+      current = el;
+      noteBody.textContent = el.getAttribute('data-note');
+      note.classList.add('on');
+    });
+  });
+  function hide(){ current = null; note.classList.remove('on'); }
+  document.addEventListener('click', hide);
+  note.addEventListener('click', function(e){ e.stopPropagation(); });
+})();
+</script>
+</body>
+</html>

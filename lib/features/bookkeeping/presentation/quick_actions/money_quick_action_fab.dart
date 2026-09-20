@@ -3,38 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:go_router/go_router.dart';
-import 'package:miji/core/presentation/app_toast.dart';
-import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
-import 'package:miji/core/preferences/providers/preferences_providers.dart';
 
-import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
-import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
-import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
-import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
-import 'package:miji/features/bookkeeping/domain/money_repository.dart';
-import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
-import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
-import 'package:miji/features/bookkeeping/presentation/accounts/account_form_dialog.dart';
-import 'package:miji/features/bookkeeping/presentation/budgets/budget_form_dialog.dart';
-import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
-import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
-import 'package:miji/features/bookkeeping/presentation/transactions/transfer_form_dialog.dart';
-import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
-
-enum _MoneyQuickAction {
-  expense,
-  income,
-  transfer,
-  task,
-  account,
-  installment,
-  budget,
-  plan,
-}
+import 'package:miji/features/bookkeeping/presentation/quick_actions/money_quick_action_launcher.dart';
 
 enum MoneyQuickActionFabPlacement { bottomRight, centerDocked }
 
+/// 悬浮的快捷新增入口。动作实现全部委托给 [MoneyQuickActionLauncher]，
+/// 这里只负责展示与分发。
 class MoneyQuickActionFab extends ConsumerStatefulWidget {
   const MoneyQuickActionFab({
     super.key,
@@ -55,6 +30,24 @@ class _MoneyQuickActionFabState extends ConsumerState<MoneyQuickActionFab> {
   FToast _ensureToast() {
     return _toast ??= (FToast()..init(context));
   }
+
+  late final MoneyQuickActionLauncher _launcher = MoneyQuickActionLauncher(
+    context: context,
+    ref: ref,
+    ensureToast: _ensureToast,
+  );
+
+  /// 悬浮面板展示全部动作，顺序即优先级。
+  static const _actions = <MoneyQuickAction>[
+    MoneyQuickAction.expense,
+    MoneyQuickAction.income,
+    MoneyQuickAction.transfer,
+    MoneyQuickAction.task,
+    MoneyQuickAction.account,
+    MoneyQuickAction.installment,
+    MoneyQuickAction.budget,
+    MoneyQuickAction.plan,
+  ];
 
   @override
   void dispose() {
@@ -103,6 +96,7 @@ class _MoneyQuickActionFabState extends ConsumerState<MoneyQuickActionFab> {
     final entry = OverlayEntry(
       builder: (context) => Positioned.fill(
         child: _MoneyQuickActionSheet(
+          actions: _actions,
           onAction: _handleAction,
           onDismiss: _hideActions,
           docked: isDocked,
@@ -122,228 +116,15 @@ class _MoneyQuickActionFabState extends ConsumerState<MoneyQuickActionFab> {
     _actionsOverlay = null;
   }
 
-  void _handleAction(_MoneyQuickAction action) {
+  void _handleAction(MoneyQuickAction action) {
     _hideActions();
-    unawaited(_runAction(action));
-  }
-
-  Future<void> _runAction(_MoneyQuickAction action) async {
-    switch (action) {
-      case _MoneyQuickAction.expense:
-        await _openTransactionDialog(MoneyTransactionType.expense);
-      case _MoneyQuickAction.income:
-        await _openTransactionDialog(MoneyTransactionType.income);
-      case _MoneyQuickAction.transfer:
-        await _openTransferDialog();
-      case _MoneyQuickAction.task:
-        await _openTaskSheet();
-      case _MoneyQuickAction.account:
-        await _openAccountDialog();
-      case _MoneyQuickAction.installment:
-        await _openInstallmentDialog();
-      case _MoneyQuickAction.budget:
-        await _openBudgetDialog();
-      case _MoneyQuickAction.plan:
-        if (context.mounted) {
-          context.push('/app/gtd/plans/create');
-        }
-    }
-  }
-
-  Future<void> _openAccountDialog() async {
-    final defaultCurrencyCode = ref
-        .read(currentUserPreferencesProvider)
-        .maybeWhen(
-          data: (preferences) => preferences?.currencyCode,
-          orElse: () => null,
-        );
-    final result = await showAppResponsiveDialog<AccountFormResult>(
-      context: context,
-      expandCompactSheet: true,
-      builder: (context) =>
-          AccountFormDialog(defaultCurrencyCode: defaultCurrencyCode),
-    );
-    if (!mounted || result?.draft == null) {
-      return;
-    }
-
-    try {
-      await ref
-          .read(currentUserMoneyAccountActionsProvider)
-          .createAccount(result!.draft!);
-      if (!mounted) return;
-      AppToast.success(_ensureToast(), context, '账户已创建');
-    } catch (error) {
-      if (!mounted) return;
-      AppToast.error(_ensureToast(), context, _errorText(error, '创建账户失败'));
-    }
-  }
-
-  Future<void> _openTransactionDialog(MoneyTransactionType type) async {
-    final ledger = ref.read(currentUserEffectiveTransactionLedgerValueProvider);
-
-    final result = await showAppResponsiveDialog<Object>(
-      context: context,
-      expandCompactSheet: true,
-      builder: (context) => TransactionFormDialog(type: type, ledger: ledger),
-    );
-    if (!mounted || result is! TransactionCreateFormResult) {
-      return;
-    }
-
-    try {
-      final splitConfig = result.splitConfig;
-      if (splitConfig == null) {
-        await ref
-            .read(currentUserMoneyTransactionActionsProvider)
-            .createTransaction(result.draft);
-      } else {
-        await ref
-            .read(currentUserMoneyTransactionActionsProvider)
-            .createTransactionWithSplit(result.draft, splitConfig);
-      }
-      if (!mounted) return;
-      AppToast.success(_ensureToast(), context, '${type.label}已记录');
-    } catch (error) {
-      if (!mounted) return;
-      AppToast.error(_ensureToast(), context, _errorText(error, '记录失败'));
-    }
-  }
-
-  Future<void> _openTransferDialog() async {
-    final result = await showAppResponsiveDialog<Object>(
-      context: context,
-      expandCompactSheet: true,
-      builder: (context) => const TransferFormDialog(),
-    );
-    if (!mounted || result is! MoneyTransferDraft) {
-      return;
-    }
-
-    try {
-      await ref
-          .read(currentUserMoneyTransactionActionsProvider)
-          .createTransfer(result);
-      if (!mounted) return;
-      AppToast.success(_ensureToast(), context, '转账已记录');
-    } catch (error) {
-      if (!mounted) return;
-      AppToast.error(_ensureToast(), context, _errorText(error, '转账失败'));
-    }
-  }
-
-  Future<void> _openTaskSheet() async {
-    final result = await showTodoQuickCreateSheet(context);
-    if (result == true && mounted) {
-      AppToast.success(_ensureToast(), context, '任务已创建');
-    }
-  }
-
-  Future<void> _openBudgetDialog() async {
-    final result = await showAppResponsiveDialog<Object>(
-      context: context,
-      expandCompactSheet: true,
-      builder: (context) => const BudgetFormDialog(),
-    );
-    if (!mounted || result == null) {
-      return;
-    }
-
-    try {
-      if (result is MoneyBudgetDraft) {
-        await ref
-            .read(currentUserMoneyBudgetActionsProvider)
-            .createBudget(result);
-        if (!mounted) return;
-        AppToast.success(_ensureToast(), context, '预算已创建');
-      }
-    } catch (error) {
-      if (!mounted) return;
-      AppToast.error(_ensureToast(), context, _errorText(error, '创建预算失败'));
-    }
-  }
-
-  Future<void> _openInstallmentDialog() async {
-    final currentLedger = ref.read(currentUserCurrentLedgerValueProvider);
-    final accounts = await _valueOrEmpty(
-      currentLedger == null
-          ? Future.value(const <MoneyAccountEntity>[])
-          : ref.read(
-              currentUserMoneyLedgerAccountsProvider(currentLedger.id).future,
-            ),
-    );
-    final categoryCatalog = await _valueOrEmptyCatalog(
-      ref.read(
-        currentUserCategoryCatalogProvider(MoneyCategoryKind.expense).future,
-      ),
-    );
-    if (!mounted) {
-      return;
-    }
-
-    final result = await showAppResponsiveDialog<MoneyInstallmentPlanDraft>(
-      context: context,
-      expandCompactSheet: true,
-      builder: (context) => InstallmentPlanFormDialog(
-        accounts: accounts,
-        categoryCatalog: categoryCatalog,
-      ),
-    );
-    if (!mounted || result == null) {
-      return;
-    }
-
-    try {
-      await ref
-          .read(currentUserMoneyInstallmentActionsProvider)
-          .createInstallmentPlan(result);
-      if (!mounted) return;
-      AppToast.success(_ensureToast(), context, '分期计划已创建');
-    } catch (error) {
-      if (!mounted) return;
-      AppToast.error(_ensureToast(), context, _errorText(error, '创建分期失败'));
-    }
-  }
-
-  Future<List<MoneyAccountEntity>> _valueOrEmpty(
-    Future<List<MoneyAccountEntity>> future,
-  ) async {
-    try {
-      return await future;
-    } catch (_) {
-      return const <MoneyAccountEntity>[];
-    }
-  }
-
-  Future<MoneyCategoryCatalog> _valueOrEmptyCatalog(
-    Future<MoneyCategoryCatalog> future,
-  ) async {
-    try {
-      return await future;
-    } catch (_) {
-      return const MoneyCategoryCatalog.empty();
-    }
-  }
-
-  String _errorText(Object error, String fallback) {
-    if (error is! MoneyRepositoryException) {
-      return fallback;
-    }
-    return switch (error.code) {
-      MoneyRepositoryErrorCode.insufficientFunds => '账户余额不足',
-      MoneyRepositoryErrorCode.invalidTransferAccounts => '转账账户不能相同',
-      MoneyRepositoryErrorCode.invalidInstallmentAccount => '请选择信用账户',
-      MoneyRepositoryErrorCode.invalidInstallmentAmount => '请检查分期金额和期数',
-      MoneyRepositoryErrorCode.invalidInstallmentStatus => '当前分期状态不可操作',
-      MoneyRepositoryErrorCode.ledgerNotFound => '账本不可用',
-      MoneyRepositoryErrorCode.invalidSplitAmount => '请检查分摊金额',
-      _ => fallback,
-    };
+    unawaited(_launcher.run(action));
   }
 }
 
 class _MoneyQuickActionSheet extends StatelessWidget {
   const _MoneyQuickActionSheet({
+    required this.actions,
     required this.onAction,
     required this.onDismiss,
     required this.docked,
@@ -351,7 +132,8 @@ class _MoneyQuickActionSheet extends StatelessWidget {
     required this.padding,
   });
 
-  final ValueChanged<_MoneyQuickAction> onAction;
+  final List<MoneyQuickAction> actions;
+  final ValueChanged<MoneyQuickAction> onAction;
   final VoidCallback onDismiss;
   final bool docked;
   final Alignment alignment;
@@ -365,48 +147,6 @@ class _MoneyQuickActionSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final actions = const [
-      _ActionItem(
-        action: _MoneyQuickAction.expense,
-        icon: Icons.remove_rounded,
-        label: '支出',
-      ),
-      _ActionItem(
-        action: _MoneyQuickAction.income,
-        icon: Icons.add_rounded,
-        label: '收入',
-      ),
-      _ActionItem(
-        action: _MoneyQuickAction.transfer,
-        icon: Icons.swap_horiz_rounded,
-        label: '转账',
-      ),
-      _ActionItem(
-        action: _MoneyQuickAction.task,
-        icon: Icons.task_alt_rounded,
-        label: '任务',
-      ),
-      _ActionItem(
-        action: _MoneyQuickAction.account,
-        icon: Icons.account_balance_wallet_rounded,
-        label: '账户',
-      ),
-      _ActionItem(
-        action: _MoneyQuickAction.installment,
-        icon: Icons.calendar_month_rounded,
-        label: '分期',
-      ),
-      _ActionItem(
-        action: _MoneyQuickAction.budget,
-        icon: Icons.flag_rounded,
-        label: '预算',
-      ),
-      _ActionItem(
-        action: _MoneyQuickAction.plan,
-        icon: Icons.check_circle_outline_rounded,
-        label: '计划',
-      ),
-    ];
 
     if (docked) {
       return Stack(
@@ -459,10 +199,10 @@ class _MoneyQuickActionSheet extends StatelessWidget {
                           crossAxisSpacing: 6,
                           childAspectRatio: 1.08,
                           children: [
-                            for (final item in actions)
+                            for (final action in actions)
                               _QuickActionGridTile(
-                                item: item,
-                                onTap: () => onAction(item.action),
+                                action: action,
+                                onTap: () => onAction(action),
                               ),
                           ],
                         ),
@@ -508,12 +248,12 @@ class _MoneyQuickActionSheet extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        for (final item in actions) ...[
+                        for (final action in actions) ...[
                           _QuickActionTile(
-                            item: item,
-                            onTap: () => onAction(item.action),
+                            action: action,
+                            onTap: () => onAction(action),
                           ),
-                          if (item != actions.last) const SizedBox(height: 8),
+                          if (action != actions.last) const SizedBox(height: 8),
                         ],
                       ],
                     ),
@@ -528,31 +268,20 @@ class _MoneyQuickActionSheet extends StatelessWidget {
   }
 }
 
-class _ActionItem {
-  const _ActionItem({
-    required this.action,
-    required this.icon,
-    required this.label,
-  });
-
-  final _MoneyQuickAction action;
-  final IconData icon;
-  final String label;
-}
-
 class _QuickActionGridTile extends StatelessWidget {
-  const _QuickActionGridTile({required this.item, required this.onTap});
+  const _QuickActionGridTile({required this.action, required this.onTap});
 
-  final _ActionItem item;
+  final MoneyQuickAction action;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final label = action.label;
 
     return Tooltip(
-      message: item.label,
+      message: label,
       child: Material(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(18),
@@ -561,7 +290,7 @@ class _QuickActionGridTile extends StatelessWidget {
           onTap: onTap,
           child: Semantics(
             button: true,
-            label: item.label,
+            label: label,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: Column(
@@ -577,14 +306,14 @@ class _QuickActionGridTile extends StatelessWidget {
                       color: colorScheme.primaryContainer,
                     ),
                     child: Icon(
-                      item.icon,
+                      action.icon,
                       color: colorScheme.onPrimaryContainer,
                       size: 18,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    item.label,
+                    label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.labelSmall?.copyWith(
@@ -604,17 +333,18 @@ class _QuickActionGridTile extends StatelessWidget {
 }
 
 class _QuickActionTile extends StatelessWidget {
-  const _QuickActionTile({required this.item, required this.onTap});
+  const _QuickActionTile({required this.action, required this.onTap});
 
-  final _ActionItem item;
+  final MoneyQuickAction action;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final label = action.label;
 
     return Tooltip(
-      message: item.label,
+      message: label,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(999),
@@ -623,7 +353,7 @@ class _QuickActionTile extends StatelessWidget {
           onTap: onTap,
           child: Semantics(
             button: true,
-            label: item.label,
+            label: label,
             child: SizedBox.square(
               dimension: 48,
               child: Center(
@@ -636,7 +366,7 @@ class _QuickActionTile extends StatelessWidget {
                     color: colorScheme.primaryContainer,
                   ),
                   child: Icon(
-                    item.icon,
+                    action.icon,
                     color: colorScheme.onPrimaryContainer,
                     size: 24,
                   ),

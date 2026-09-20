@@ -1371,6 +1371,8 @@ class _AppearanceSection extends ConsumerStatefulWidget {
 class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
   AppThemeModePreference? _savingThemeMode;
   bool? _savingHomeTodayAction;
+  bool? _savingMaskMoneyAmounts;
+  bool? _savingHomeHealthStrip;
   FToast? _toast;
 
   Future<void> _updateThemeMode(AppThemeModePreference themeMode) async {
@@ -1498,57 +1500,113 @@ class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
           leadingIcon: Icons.home_outlined,
           leadingColor: colorScheme.primary,
           title: '首页显示',
-          subtitle: '控制首页各区块的显示',
-          child: AppSwitchField(
-            title: '今日行动',
-            subtitle: '在首页顶部显示今日行动卡片',
-            icon: Icons.today_outlined,
-            value: preferences.showHomeTodayAction,
-            onChanged: _savingHomeTodayAction == null
-                ? (value) => _updateShowHomeTodayAction(value)
-                : null,
+          subtitle: '控制首页各区块的显示与金额隐私',
+          child: Column(
+            children: [
+              AppSwitchField(
+                title: '今日行动',
+                subtitle: '在首页顶部显示今日行动卡片',
+                icon: Icons.today_outlined,
+                value: preferences.showHomeTodayAction,
+                onChanged: _savingHomeTodayAction == null
+                    ? (value) => _updateShowHomeTodayAction(value)
+                    : null,
+              ),
+              const SizedBox(height: 10),
+              AppSwitchField(
+                title: '隐藏金额',
+                subtitle: '首页金额以占位符展示，适合公共场合查看',
+                icon: Icons.visibility_off_outlined,
+                value: preferences.maskMoneyAmounts,
+                onChanged: _savingMaskMoneyAmounts == null
+                    ? (value) => _updateMaskMoneyAmounts(value)
+                    : null,
+              ),
+              const SizedBox(height: 10),
+              AppSwitchField(
+                title: '健康提示',
+                subtitle: '在首页显示一行经期 / 孕期提示',
+                icon: Icons.favorite_outline_rounded,
+                value: preferences.showHomeHealthStrip,
+                onChanged: _savingHomeHealthStrip == null
+                    ? (value) => _updateShowHomeHealthStrip(value)
+                    : null,
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Future<void> _updateShowHomeTodayAction(bool show) async {
-    final userId = widget.userId;
-    final preferences = widget.preferences;
+  Future<void> _updateMaskMoneyAmounts(bool mask) async {
+    await _updateHomePreference(
+      apply: () => setState(() => _savingMaskMoneyAmounts = mask),
+      clear: () => setState(() => _savingMaskMoneyAmounts = null),
+      action: (userId) => ref
+          .read(preferencesRepositoryProvider)
+          .updateMaskMoneyAmounts(userId, mask),
+      successText: mask ? '首页金额已隐藏' : '首页金额已显示',
+      failureText: '金额隐私设置更新失败，请重试',
+    );
+  }
 
-    if (userId == null || preferences == null) {
+  Future<void> _updateShowHomeHealthStrip(bool show) async {
+    await _updateHomePreference(
+      apply: () => setState(() => _savingHomeHealthStrip = show),
+      clear: () => setState(() => _savingHomeHealthStrip = null),
+      action: (userId) => ref
+          .read(preferencesRepositoryProvider)
+          .updateShowHomeHealthStrip(userId, show),
+      successText: '首页显示已更新',
+      failureText: '首页显示更新失败，请重试',
+    );
+  }
+
+  Future<void> _updateHomePreference({
+    required VoidCallback apply,
+    required VoidCallback clear,
+    required Future<void> Function(String userId) action,
+    required String successText,
+    required String failureText,
+  }) async {
+    final userId = widget.userId;
+    if (userId == null || widget.preferences == null) {
       return;
     }
 
-    setState(() {
-      _savingHomeTodayAction = show;
-    });
+    apply();
 
     try {
-      await ref
-          .read(preferencesRepositoryProvider)
-          .updateShowHomeTodayAction(userId, show);
+      await action(userId);
       ref.invalidate(currentUserPreferencesProvider);
 
       if (!mounted) {
         return;
       }
-
-      AppToast.success(_ensureToast(), context, '首页显示已更新');
+      AppToast.success(_ensureToast(), context, successText);
     } catch (_) {
       if (!mounted) {
         return;
       }
-
-      AppToast.error(_ensureToast(), context, '首页显示更新失败，请重试');
+      AppToast.error(_ensureToast(), context, failureText);
     } finally {
       if (mounted) {
-        setState(() {
-          _savingHomeTodayAction = null;
-        });
+        clear();
       }
     }
+  }
+
+  Future<void> _updateShowHomeTodayAction(bool show) async {
+    await _updateHomePreference(
+      apply: () => setState(() => _savingHomeTodayAction = show),
+      clear: () => setState(() => _savingHomeTodayAction = null),
+      action: (userId) => ref
+          .read(preferencesRepositoryProvider)
+          .updateShowHomeTodayAction(userId, show),
+      successText: '首页显示已更新',
+      failureText: '首页显示更新失败，请重试',
+    );
   }
 
   FToast _ensureToast() {

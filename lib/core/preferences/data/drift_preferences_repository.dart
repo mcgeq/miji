@@ -174,6 +174,49 @@ class DriftPreferencesRepository implements PreferencesRepository {
     }
   }
 
+  @override
+  Future<void> updateMaskMoneyAmounts(String userId, bool mask) async {
+    await _updateBooleanPreference(
+      userId,
+      UserPreferencesCompanion(maskMoneyAmounts: Value(mask)),
+    );
+  }
+
+  @override
+  Future<void> updateShowHomeHealthStrip(String userId, bool show) async {
+    await _updateBooleanPreference(
+      userId,
+      UserPreferencesCompanion(showHomeHealthStrip: Value(show)),
+    );
+  }
+
+  Future<void> _updateBooleanPreference(
+    String userId,
+    UserPreferencesCompanion companion,
+  ) async {
+    try {
+      final updatedRows =
+          await (database.update(
+            database.userPreferences,
+          )..where((preferences) => preferences.userId.equals(userId))).write(
+            companion.copyWith(updatedAt: Value(DateTime.now().toUtc())),
+          );
+
+      if (updatedRows == 0) {
+        throw const PreferencesRepositoryException(
+          PreferencesRepositoryErrorCode.preferencesNotFound,
+        );
+      }
+    } on PreferencesRepositoryException {
+      rethrow;
+    } catch (error) {
+      throw PreferencesRepositoryException(
+        PreferencesRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
   UserPreferencesEntity _mapPreferences(UserPreference preferences) {
     return UserPreferencesEntity(
       userId: preferences.userId,
@@ -186,6 +229,8 @@ class DriftPreferencesRepository implements PreferencesRepository {
       timezone: preferences.timezone,
       currencyCode: preferences.currencyCode,
       showHomeTodayAction: preferences.showHomeTodayAction,
+      maskMoneyAmounts: preferences.maskMoneyAmounts,
+      showHomeHealthStrip: preferences.showHomeHealthStrip,
       createdAt: preferences.createdAt,
       updatedAt: preferences.updatedAt,
     );

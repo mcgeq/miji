@@ -16,6 +16,10 @@ abstract class PreferencesRepository {
   );
 
   Future<void> updateShowHomeTodayAction(String userId, bool show);
+
+  Future<void> updateMaskMoneyAmounts(String userId, bool mask);
+
+  Future<void> updateShowHomeHealthStrip(String userId, bool show);
 }
 
 enum PreferencesRepositoryErrorCode {

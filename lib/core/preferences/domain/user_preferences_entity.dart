@@ -46,6 +46,8 @@ class UserPreferencesEntity {
     this.timezone,
     this.currencyCode,
     this.showHomeTodayAction = true,
+    this.maskMoneyAmounts = false,
+    this.showHomeHealthStrip = false,
   });
 
   final String userId;
@@ -56,6 +58,12 @@ class UserPreferencesEntity {
   final String? timezone;
   final String? currencyCode;
   final bool showHomeTodayAction;
+
+  /// 首页金额隐私：开启后所有金额以模糊 / 占位方式展示。
+  final bool maskMoneyAmounts;
+
+  /// 首页是否显示健康窄条。
+  final bool showHomeHealthStrip;
   final DateTime createdAt;
   final DateTime updatedAt;
 }
