@@ -158,8 +158,7 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
     unawaited(_loadHiddenIds(_hiddenIdsLoadedForUserId));
   }
 
-  String? get _currentUserId =>
-      ref.read(authSessionControllerProvider).userId;
+  String? get _currentUserId => ref.read(authSessionControllerProvider).userId;
 
   Future<void> _loadHiddenIds(String? userId) async {
     if (userId == null || userId.isEmpty) {
@@ -358,7 +357,7 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
                 padding: const EdgeInsets.only(bottom: 18),
               ),
             ),
-          ],
+        ],
       ],
     );
   }
@@ -826,18 +825,18 @@ class _NetWorthHero extends ConsumerWidget {
                       child: Row(
                         children: [
                           Expanded(
-                            flex: (worth.assetRatio * 1000)
-                                .round()
-                                .clamp(1, 1000),
+                            flex: (worth.assetRatio * 1000).round().clamp(
+                              1,
+                              1000,
+                            ),
                             child: ColoredBox(color: Colors.white),
                           ),
                           Expanded(
-                            flex: ((1 - worth.assetRatio) * 1000)
-                                .round()
-                                .clamp(1, 1000),
-                            child: ColoredBox(
-                              color: const Color(0xFFFFD9A0),
+                            flex: ((1 - worth.assetRatio) * 1000).round().clamp(
+                              1,
+                              1000,
                             ),
+                            child: ColoredBox(color: const Color(0xFFFFD9A0)),
                           ),
                         ],
                       ),
@@ -1075,11 +1074,7 @@ class _AccountsHeader extends StatelessWidget {
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
         ),
       ),
-      child: Icon(
-        icon,
-        size: 18,
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
+      child: Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
     );
   }
 
@@ -1428,7 +1423,6 @@ class _AccountTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     final creditBill = account.type.isCreditLike
         ? ref
               .watch(currentUserCreditCardBillViewProvider(account.id))
@@ -1689,7 +1683,9 @@ class _AccountTileContent extends StatelessWidget {
       return null;
     }
     final theme = Theme.of(context);
-    final color = isOverdue ? theme.colorScheme.error : theme.moneyColors.warning;
+    final color = isOverdue
+        ? theme.colorScheme.error
+        : theme.moneyColors.warning;
     return Text(
       isOverdue
           ? '已逾期 · ${statement.repaymentDate.month}月${statement.repaymentDate.day}日应还'
@@ -2033,7 +2029,9 @@ class _AccountActionsMenu extends StatelessWidget {
           value: _AccountMenuAction.toggleAmount,
           child: _menuRow(
             context,
-            isAmountHidden ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+            isAmountHidden
+                ? Icons.visibility_rounded
+                : Icons.visibility_off_rounded,
             isAmountHidden ? '显示金额' : '隐藏金额',
           ),
         ),
@@ -2094,7 +2092,11 @@ class _AccountActionsMenu extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Icon(icon, size: 18, color: color ?? theme.colorScheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: 18,
+          color: color ?? theme.colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: 10),
         Text(
           label,
@@ -2124,7 +2126,6 @@ class _AccountIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     // 未显式设置颜色时用类型对应的品牌色，一列账户能靠颜色区分。
     final accentColor = account.color == null
         ? appColorFromHex(defaultAccountColorForType(account.type))

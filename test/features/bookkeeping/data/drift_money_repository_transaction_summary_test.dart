@@ -111,10 +111,7 @@ void main() {
     await database.close();
   });
 
-  Future<MoneyTransactionEntity> addExpense(
-    int amountMinor, {
-    DateTime? at,
-  }) {
+  Future<MoneyTransactionEntity> addExpense(int amountMinor, {DateTime? at}) {
     return repository.createTransaction(
       'user_1',
       MoneyTransactionDraft(

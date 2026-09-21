@@ -58,6 +58,9 @@ enum HealthCalendarMarkerKind {
   dailyLog,
 }
 
+/// 用于区分 copyWith 的「未传参」与「显式置空」。
+const Object _healthUnset = Object();
+
 class HealthPeriodSettingsModel {
   const HealthPeriodSettingsModel({
     required this.averageCycleLength,
@@ -185,6 +188,7 @@ class HealthCyclePrediction {
     required this.currentCycleDay,
     required this.currentPeriodDay,
     required this.pregnancyWeek,
+    this.daysUntilNextPeriod,
     required this.nextPeriodStart,
     required this.nextPeriodEnd,
     required this.fertileWindowStart,
@@ -202,6 +206,7 @@ class HealthCyclePrediction {
         currentCycleDay: null,
         currentPeriodDay: null,
         pregnancyWeek: null,
+        daysUntilNextPeriod: null,
         nextPeriodStart: null,
         nextPeriodEnd: null,
         fertileWindowStart: null,
@@ -215,6 +220,7 @@ class HealthCyclePrediction {
     required String mainStatus,
     required int currentCycleDay,
     required DateTime nextPeriodStart,
+    int? daysUntilNextPeriod,
     required DateTime nextPeriodEnd,
     required DateTime fertileWindowStart,
     required DateTime fertileWindowEnd,
@@ -229,6 +235,7 @@ class HealthCyclePrediction {
          currentCycleDay: currentCycleDay,
          currentPeriodDay: null,
          pregnancyWeek: null,
+         daysUntilNextPeriod: daysUntilNextPeriod,
          nextPeriodStart: nextPeriodStart,
          nextPeriodEnd: nextPeriodEnd,
          fertileWindowStart: fertileWindowStart,
@@ -250,6 +257,7 @@ class HealthCyclePrediction {
          currentCycleDay: null,
          currentPeriodDay: currentPeriodDay,
          pregnancyWeek: null,
+         daysUntilNextPeriod: null,
          nextPeriodStart: null,
          nextPeriodEnd: null,
          fertileWindowStart: null,
@@ -270,6 +278,7 @@ class HealthCyclePrediction {
          currentCycleDay: null,
          currentPeriodDay: null,
          pregnancyWeek: pregnancyWeek,
+         daysUntilNextPeriod: null,
          nextPeriodStart: null,
          nextPeriodEnd: null,
          fertileWindowStart: null,
@@ -290,6 +299,13 @@ class HealthCyclePrediction {
   final int? currentCycleDay;
   final int? currentPeriodDay;
   final int? pregnancyWeek;
+
+  /// 距离预计下次经期的天数；负数表示已经推迟。
+  final int? daysUntilNextPeriod;
+
+  /// 预计经期已经推迟。
+  bool get isOverdue => (daysUntilNextPeriod ?? 0) < 0;
+
   final DateTime? nextPeriodStart;
   final DateTime? nextPeriodEnd;
   final DateTime? fertileWindowStart;
@@ -466,6 +482,41 @@ class HealthDailyLog {
       if (medications.isNotEmpty) medications,
     ].where((value) => value != null).length;
   }
+
+  /// 转成可编辑草稿；编辑既有记录时必须走这里，避免丢失字段。
+  HealthDailyLogDraft toDraft() {
+    return HealthDailyLogDraft(
+      date: date,
+      flowLevel: flowLevel,
+      symptoms: symptoms,
+      mood: mood,
+      exerciseIntensity: exerciseIntensity,
+      sexualActivity: sexualActivity,
+      contraceptionMethod: contraceptionMethod,
+      ovulationTest: ovulationTest,
+      medications: [
+        for (final medication in medications)
+          HealthMedicationDraft(
+            id: medication.id,
+            name: medication.name,
+            dosage: medication.dosage,
+            frequency: medication.frequency,
+            startDate: medication.startDate,
+            endDate: medication.endDate,
+            notes: medication.notes,
+            periodRecordId: medication.periodRecordId,
+          ),
+      ],
+      diet: diet,
+      waterIntake: waterIntake,
+      sleepMinutes: sleepMinutes,
+      weightGrams: weightGrams,
+      temperatureCelsiusTenths: temperatureCelsiusTenths,
+      stressLevel: stressLevel,
+      calories: calories,
+      notes: notes,
+    );
+  }
 }
 
 class HealthDailyLogDraft {
@@ -517,6 +568,57 @@ class HealthDailyLogDraft {
   final int? stressLevel;
   final int? calories;
   final String? notes;
+
+  /// 字段级合并。未传入的字段保持原值；传 `null` 会显式清空（用哨兵区分）。
+  HealthDailyLogDraft copyWith({
+    DateTime? date,
+    Object? flowLevel = _healthUnset,
+    List<HealthSymptomLog>? symptoms,
+    Object? mood = _healthUnset,
+    Object? exerciseIntensity = _healthUnset,
+    Object? sexualActivity = _healthUnset,
+    Object? contraceptionMethod = _healthUnset,
+    Object? ovulationTest = _healthUnset,
+    List<HealthMedicationDraft>? medications,
+    Object? diet = _healthUnset,
+    Object? waterIntake = _healthUnset,
+    Object? sleepMinutes = _healthUnset,
+    Object? weightGrams = _healthUnset,
+    Object? temperatureCelsiusTenths = _healthUnset,
+    Object? stressLevel = _healthUnset,
+    Object? calories = _healthUnset,
+    Object? notes = _healthUnset,
+  }) {
+    T? resolve<T>(Object? value, T? current) {
+      return identical(value, _healthUnset) ? current : value as T?;
+    }
+
+    return HealthDailyLogDraft(
+      date: date ?? this.date,
+      flowLevel: resolve(flowLevel, this.flowLevel),
+      symptoms: symptoms ?? this.symptoms,
+      mood: resolve(mood, this.mood),
+      exerciseIntensity: resolve(exerciseIntensity, this.exerciseIntensity),
+      sexualActivity: resolve(sexualActivity, this.sexualActivity),
+      contraceptionMethod: resolve(
+        contraceptionMethod,
+        this.contraceptionMethod,
+      ),
+      ovulationTest: resolve(ovulationTest, this.ovulationTest),
+      medications: medications ?? this.medications,
+      diet: resolve(diet, this.diet),
+      waterIntake: resolve(waterIntake, this.waterIntake),
+      sleepMinutes: resolve(sleepMinutes, this.sleepMinutes),
+      weightGrams: resolve(weightGrams, this.weightGrams),
+      temperatureCelsiusTenths: resolve(
+        temperatureCelsiusTenths,
+        this.temperatureCelsiusTenths,
+      ),
+      stressLevel: resolve(stressLevel, this.stressLevel),
+      calories: resolve(calories, this.calories),
+      notes: resolve(notes, this.notes),
+    );
+  }
 }
 
 class HealthTodaySnapshot {

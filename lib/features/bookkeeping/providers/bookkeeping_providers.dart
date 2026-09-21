@@ -233,34 +233,33 @@ final currentUserCreditCardStatementProvider = FutureProvider.autoDispose
 ///
 /// 只统计启用中的账户，并统一用账本基准币种；`internal` 类型账户
 /// 不在 `currentUserVisibleAccountsProvider` 里，天然被排除。
-final currentUserNetWorthSummaryProvider =
-    FutureProvider<MoneyNetWorthSummary>((ref) async {
-      ref.watch(moneyDataRefreshVersionProvider);
-      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
-      final currencyCode = ledger?.baseCurrencyCode ?? 'CNY';
-      final accounts = await ref.watch(
-        currentUserVisibleAccountsProvider.future,
-      );
+final currentUserNetWorthSummaryProvider = FutureProvider<MoneyNetWorthSummary>(
+  (ref) async {
+    ref.watch(moneyDataRefreshVersionProvider);
+    final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+    final currencyCode = ledger?.baseCurrencyCode ?? 'CNY';
+    final accounts = await ref.watch(currentUserVisibleAccountsProvider.future);
 
-      var assetMinor = 0;
-      var liabilityMinor = 0;
-      for (final account in accounts) {
-        if (!account.isActive) {
-          continue;
-        }
-        if (account.type.isCreditLike) {
-          liabilityMinor += account.usedCreditMinor;
-        } else {
-          assetMinor += account.balanceMinor;
-        }
+    var assetMinor = 0;
+    var liabilityMinor = 0;
+    for (final account in accounts) {
+      if (!account.isActive) {
+        continue;
       }
+      if (account.type.isCreditLike) {
+        liabilityMinor += account.usedCreditMinor;
+      } else {
+        assetMinor += account.balanceMinor;
+      }
+    }
 
-      return MoneyNetWorthSummary(
-        currencyCode: currencyCode,
-        assetMinor: assetMinor,
-        liabilityMinor: liabilityMinor,
-      );
-    });
+    return MoneyNetWorthSummary(
+      currencyCode: currencyCode,
+      assetMinor: assetMinor,
+      liabilityMinor: liabilityMinor,
+    );
+  },
+);
 
 /// 当前筛选条件下的全量汇总（不受列表分页影响）。
 ///

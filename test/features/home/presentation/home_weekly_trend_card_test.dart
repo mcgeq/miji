@@ -57,7 +57,11 @@ Widget _host(Widget child, {double width = 360}) {
   );
 }
 
-Widget _card(HomeTrendWindow window, {bool masked = false, ValueChanged<int>? onWeekChanged}) {
+Widget _card(
+  HomeTrendWindow window, {
+  bool masked = false,
+  ValueChanged<int>? onWeekChanged,
+}) {
   return HomeWeeklyTrendCard(
     points: _week(window.start),
     window: window,
@@ -126,7 +130,8 @@ void main() {
     expect(
       (todayRect.center.dx - chartRect.center.dx).abs(),
       lessThan(12),
-      reason: '今天应位于图表中央，实际偏差 ${(todayRect.center.dx - chartRect.center.dx).abs()}',
+      reason:
+          '今天应位于图表中央，实际偏差 ${(todayRect.center.dx - chartRect.center.dx).abs()}',
     );
   });
 
@@ -146,9 +151,7 @@ void main() {
   testWidgets('keeps the chip row for single-block months hidden', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      _host(_card(_rollingWindow(blockCount: 1))),
-    );
+    await tester.pumpWidget(_host(_card(_rollingWindow(blockCount: 1))));
     await tester.pumpAndSettle();
 
     expect(find.text('本周'), findsNothing);
@@ -156,9 +159,7 @@ void main() {
   });
 
   testWidgets('uses calendar-week labels for a past month', (tester) async {
-    await tester.pumpWidget(
-      _host(_card(_calendarWindow(blockCount: 4))),
-    );
+    await tester.pumpWidget(_host(_card(_calendarWindow(blockCount: 4))));
     await tester.pumpAndSettle();
 
     expect(find.text('第 1 周'), findsOneWidget);
@@ -168,9 +169,7 @@ void main() {
     expect(find.text('今天'), findsNothing);
   });
 
-  testWidgets('masks the weekly total when privacy mode is on', (
-    tester,
-  ) async {
+  testWidgets('masks the weekly total when privacy mode is on', (tester) async {
     await tester.pumpWidget(_host(_card(_rollingWindow(), masked: true)));
     await tester.pumpAndSettle();
 

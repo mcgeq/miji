@@ -101,7 +101,8 @@ class _MoneyTransactionsSectionState
   String? _merchantFilter;
   String? _customPaymentMethodNameFilter;
   DateTime? _dateStartFilter;
-  MoneyTransactionSortField _sortField = MoneyTransactionSortField.transactionAt;
+  MoneyTransactionSortField _sortField =
+      MoneyTransactionSortField.transactionAt;
   bool _sortAscending = false;
   DateTime? _dateEndFilter;
   String? _keywordFilter;
@@ -277,41 +278,42 @@ class _MoneyTransactionsSectionState
               title: '高级筛选',
               hasActiveFilters: _hasActiveFilters,
               children: [
-            _TransactionFilterFields(
-              type: _typeFilter,
-              budgetId: _budgetIdFilter,
-              accountId: _accountIdFilter,
-              paymentMethod: _paymentMethodFilter,
-              categoryId: _categoryIdFilter,
-              subCategoryId: _subCategoryIdFilter,
-              dateStart: _dateStartFilter,
-              dateEnd: _dateEndFilter,
-              budgets: budgetRows,
-              accounts: accountRows,
-              catalog: _typeFilter == MoneyTransactionType.income
-                  ? incomeCatalogValue
-                  : expenseCatalogValue,
-              categoryKind: _typeFilter == MoneyTransactionType.income
-                  ? MoneyCategoryKind.income
-                  : MoneyCategoryKind.expense,
-              contextLabel: widget.filterContext?.contextLabel,
-              isTypeLocked: _isTypeLocked,
-              isAccountLocked: _isAccountLocked,
-              isCategoryLocked: _isCategoryLocked,
-              isDateLocked: _isDateLocked,
-              keywordController: _keywordController,
-              merchantController: _merchantController,
-              onBudgetChanged: (value) => _setBudgetFilter(value, budgetRows),
-              onTypeChanged: _setTypeFilter,
-              onAccountChanged: _setAccountFilter,
-              onPaymentMethodChanged: _setPaymentMethodFilter,
-              onCategoryChanged: _setCategoryFilter,
-              onSubCategoryChanged: _setSubCategoryFilter,
-              onDateRangePressed: _pickDateRange,
-              onClearDateRange: _clearDateRange,
-              onKeywordChanged: _setKeywordFilterDebounced,
-              onMerchantChanged: _setMerchantFilterDebounced,
-              onClearContext: widget.filterContext?.onClear,
+                _TransactionFilterFields(
+                  type: _typeFilter,
+                  budgetId: _budgetIdFilter,
+                  accountId: _accountIdFilter,
+                  paymentMethod: _paymentMethodFilter,
+                  categoryId: _categoryIdFilter,
+                  subCategoryId: _subCategoryIdFilter,
+                  dateStart: _dateStartFilter,
+                  dateEnd: _dateEndFilter,
+                  budgets: budgetRows,
+                  accounts: accountRows,
+                  catalog: _typeFilter == MoneyTransactionType.income
+                      ? incomeCatalogValue
+                      : expenseCatalogValue,
+                  categoryKind: _typeFilter == MoneyTransactionType.income
+                      ? MoneyCategoryKind.income
+                      : MoneyCategoryKind.expense,
+                  contextLabel: widget.filterContext?.contextLabel,
+                  isTypeLocked: _isTypeLocked,
+                  isAccountLocked: _isAccountLocked,
+                  isCategoryLocked: _isCategoryLocked,
+                  isDateLocked: _isDateLocked,
+                  keywordController: _keywordController,
+                  merchantController: _merchantController,
+                  onBudgetChanged: (value) =>
+                      _setBudgetFilter(value, budgetRows),
+                  onTypeChanged: _setTypeFilter,
+                  onAccountChanged: _setAccountFilter,
+                  onPaymentMethodChanged: _setPaymentMethodFilter,
+                  onCategoryChanged: _setCategoryFilter,
+                  onSubCategoryChanged: _setSubCategoryFilter,
+                  onDateRangePressed: _pickDateRange,
+                  onClearDateRange: _clearDateRange,
+                  onKeywordChanged: _setKeywordFilterDebounced,
+                  onMerchantChanged: _setMerchantFilterDebounced,
+                  onClearContext: widget.filterContext?.onClear,
                 ),
               ],
             ),
@@ -1957,7 +1959,8 @@ class _TransactionsSortButton extends StatelessWidget {
 
   final MoneyTransactionSortField sortField;
   final bool sortAscending;
-  final void Function(MoneyTransactionSortField field, bool ascending) onChanged;
+  final void Function(MoneyTransactionSortField field, bool ascending)
+  onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -2040,63 +2043,68 @@ class _TransactionDateChips extends StatelessWidget {
       height: 32,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        children: [
-          _chip(
-            context,
-            label: '本周',
-            selected: _isSameRange(_weekRange()),
-            onTap: () {
-              final range = _weekRange();
-              onSelectPreset(range.$1, range.$2);
-            },
-          ),
-          _chip(
-            context,
-            label: '本月',
-            selected: _isSameRange(_monthRange(0)),
-            onTap: () {
-              final range = _monthRange(0);
-              onSelectPreset(range.$1, range.$2);
-            },
-          ),
-          _chip(
-            context,
-            label: '上月',
-            selected: _isSameRange(_monthRange(-1)),
-            onTap: () {
-              final range = _monthRange(-1);
-              onSelectPreset(range.$1, range.$2);
-            },
-          ),
-          _chip(
-            context,
-            label: '近 90 天',
-            selected: false,
-            onTap: () {
-              final now = DateTime.now();
-              onSelectPreset(
-                DateTime(now.year, now.month, now.day - 89),
-                DateTime(now.year, now.month, now.day),
-              );
-            },
-          ),
-          _chip(
-            context,
-            label: dateStart == null && dateEnd == null
-                ? '自定义…'
-                : '${_short(dateStart)} - ${_short(dateEnd)}',
-            selected: dateStart != null || dateEnd != null,
-            onTap: onPickRange,
-            trailing: dateStart == null && dateEnd == null ? null : '✕',
-            onTrailingTap: dateStart == null && dateEnd == null
-                ? null
-                : () => onSelectPreset(null, null),
-            accent: colorScheme.primary,
-          ),
-        ].map((widget) => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: widget,
-        )).toList(),
+        children:
+            [
+                  _chip(
+                    context,
+                    label: '本周',
+                    selected: _isSameRange(_weekRange()),
+                    onTap: () {
+                      final range = _weekRange();
+                      onSelectPreset(range.$1, range.$2);
+                    },
+                  ),
+                  _chip(
+                    context,
+                    label: '本月',
+                    selected: _isSameRange(_monthRange(0)),
+                    onTap: () {
+                      final range = _monthRange(0);
+                      onSelectPreset(range.$1, range.$2);
+                    },
+                  ),
+                  _chip(
+                    context,
+                    label: '上月',
+                    selected: _isSameRange(_monthRange(-1)),
+                    onTap: () {
+                      final range = _monthRange(-1);
+                      onSelectPreset(range.$1, range.$2);
+                    },
+                  ),
+                  _chip(
+                    context,
+                    label: '近 90 天',
+                    selected: false,
+                    onTap: () {
+                      final now = DateTime.now();
+                      onSelectPreset(
+                        DateTime(now.year, now.month, now.day - 89),
+                        DateTime(now.year, now.month, now.day),
+                      );
+                    },
+                  ),
+                  _chip(
+                    context,
+                    label: dateStart == null && dateEnd == null
+                        ? '自定义…'
+                        : '${_short(dateStart)} - ${_short(dateEnd)}',
+                    selected: dateStart != null || dateEnd != null,
+                    onTap: onPickRange,
+                    trailing: dateStart == null && dateEnd == null ? null : '✕',
+                    onTrailingTap: dateStart == null && dateEnd == null
+                        ? null
+                        : () => onSelectPreset(null, null),
+                    accent: colorScheme.primary,
+                  ),
+                ]
+                .map(
+                  (widget) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: widget,
+                  ),
+                )
+                .toList(),
       ),
     );
   }
@@ -2219,12 +2227,13 @@ class _TransactionSummaryBar extends ConsumerWidget {
           data: (value) => value,
           orElse: () => const MoneyTransactionSummary.empty(),
         );
-    final currencyCode = ref
-        .watch(currentUserPreferencesProvider)
-        .maybeWhen(
-          data: (preferences) => preferences?.currencyCode,
-          orElse: () => null,
-        ) ??
+    final currencyCode =
+        ref
+            .watch(currentUserPreferencesProvider)
+            .maybeWhen(
+              data: (preferences) => preferences?.currencyCode,
+              orElse: () => null,
+            ) ??
         'CNY';
 
     final hasFilter = _hasAnyFilter(query);
@@ -2285,12 +2294,7 @@ class _TransactionSummaryBar extends ConsumerWidget {
     );
   }
 
-  Widget _metric(
-    ThemeData theme,
-    String label,
-    String value,
-    Color color,
-  ) {
+  Widget _metric(ThemeData theme, String label, String value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,

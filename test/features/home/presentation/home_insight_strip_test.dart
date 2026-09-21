@@ -61,9 +61,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _host(
-        const HomeInsight(items: [_exceeded, _topCategory, _noSpending]),
-      ),
+      _host(const HomeInsight(items: [_exceeded, _topCategory, _noSpending])),
     );
     await tester.pumpAndSettle();
 
@@ -77,7 +75,10 @@ void main() {
     }
 
     final tops = [
-      tester.getRect(find.text(_exceeded.plainText, findRichText: true)).center.dy,
+      tester
+          .getRect(find.text(_exceeded.plainText, findRichText: true))
+          .center
+          .dy,
       tester
           .getRect(find.text(_topCategory.plainText, findRichText: true))
           .center
@@ -119,7 +120,9 @@ void main() {
 
     final theme = AppTheme.light();
     final icons = tester.widgetList<Icon>(
-      find.byWidgetPredicate((widget) => widget is Icon && widget.color != null),
+      find.byWidgetPredicate(
+        (widget) => widget is Icon && widget.color != null,
+      ),
     );
     final colors = icons.map((icon) => icon.color).toSet();
     // 超支 / 偏快 / 正向三种语气必须是三种不同颜色。

@@ -55,10 +55,7 @@ double hueDistance(Color a, Color b) {
 
 /// 深浅主题里所有会承载白字的渐变停靠点，都必须达到 AA 正文标准。
 void main() {
-  final themes = {
-    'light': AppTheme.light(),
-    'dark': AppTheme.dark(),
-  };
+  final themes = {'light': AppTheme.light(), 'dark': AppTheme.dark()};
 
   group('Hero 渐变', () {
     for (final entry in themes.entries) {
@@ -113,11 +110,7 @@ void main() {
     test('净资产渐变跨越足够大的色相，保证有色彩流动感', () {
       final light = AppTheme.light().heroGradients.netWorth;
       final span = hueDistance(light.colors.first, light.colors.last);
-      expect(
-        span,
-        greaterThan(60),
-        reason: '净资产渐变是唯一跨越冷色区的大跨度渐变，实际 $span°',
-      );
+      expect(span, greaterThan(60), reason: '净资产渐变是唯一跨越冷色区的大跨度渐变，实际 $span°');
     });
 
     test('深色主题下净资产渐变右端不会亮到看不清白字', () {
@@ -151,8 +144,7 @@ void main() {
           expect(
             ratio,
             greaterThanOrEqualTo(4.5),
-            reason:
-                '浅色 / $name 在 $bgName 上只有 ${ratio.toStringAsFixed(2)}:1',
+            reason: '浅色 / $name 在 $bgName 上只有 ${ratio.toStringAsFixed(2)}:1',
           );
         });
       });
@@ -179,8 +171,7 @@ void main() {
           expect(
             ratio,
             greaterThanOrEqualTo(4.5),
-            reason:
-                '深色 / $name 在 $bgName 上只有 ${ratio.toStringAsFixed(2)}:1',
+            reason: '深色 / $name 在 $bgName 上只有 ${ratio.toStringAsFixed(2)}:1',
           );
         });
       });
@@ -261,12 +252,8 @@ void main() {
     });
 
     test('lerp 在档数一致时逐档插值', () {
-      const a = AppHeroGradient(
-        colors: [Color(0xFF000000), Color(0xFF000000)],
-      );
-      const b = AppHeroGradient(
-        colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
-      );
+      const a = AppHeroGradient(colors: [Color(0xFF000000), Color(0xFF000000)]);
+      const b = AppHeroGradient(colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)]);
       final mid = a.lerpTo(b, 0.5);
       expect(mid.colors.length, 2);
       // Color.lerp 会给到 8bit 量化附近的值（127 或 128），不做精确比较。
@@ -278,9 +265,7 @@ void main() {
 
     test('lerp 在档数不一致时不做危险插值', () {
       const a = AppHeroGradient(colors: [Color(0xFF000000)]);
-      const b = AppHeroGradient(
-        colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
-      );
+      const b = AppHeroGradient(colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)]);
       expect(a.lerpTo(b, 0.4).colors, a.colors);
       expect(a.lerpTo(b, 0.6).colors, b.colors);
     });

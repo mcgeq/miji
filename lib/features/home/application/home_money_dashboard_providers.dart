@@ -458,7 +458,10 @@ DateTime _addDays(DateTime date, int days) {
 }
 
 DateTime _mondayOfWeekContaining(DateTime date) {
-  return _addDays(DateTime(date.year, date.month, date.day), -(date.weekday - 1));
+  return _addDays(
+    DateTime(date.year, date.month, date.day),
+    -(date.weekday - 1),
+  );
 }
 
 int _daysBetween(DateTime from, DateTime to) {
@@ -952,7 +955,10 @@ HomeInsight? buildHomeInsight({
         segments: [
           const HomeInsightSegment('本月预算已超支 '),
           HomeInsightSegment(
-            formatMoneyMinor(budget.usedMinor - budget.totalMinor, currencyCode),
+            formatMoneyMinor(
+              budget.usedMinor - budget.totalMinor,
+              currencyCode,
+            ),
             emphasis: true,
           ),
         ],
@@ -987,9 +993,7 @@ HomeInsight? buildHomeInsight({
       items.add(
         HomeInsightItem(
           kind: HomeInsightKind.spendingVsAverage,
-          tone: less
-              ? HomeInsightTone.positive
-              : HomeInsightTone.neutral,
+          tone: less ? HomeInsightTone.positive : HomeInsightTone.neutral,
           segments: [
             HomeInsightSegment(less ? '今天比日均少花 ' : '今天比日均多花 '),
             HomeInsightSegment(
@@ -1025,10 +1029,7 @@ HomeInsight? buildHomeInsight({
         actionLabel: '看分类',
         segments: [
           HomeInsightSegment('${top.categoryName}占本月支出 '),
-          HomeInsightSegment(
-            '${(top.ratio * 100).round()}%',
-            emphasis: true,
-          ),
+          HomeInsightSegment('${(top.ratio * 100).round()}%', emphasis: true),
         ],
       ),
     );

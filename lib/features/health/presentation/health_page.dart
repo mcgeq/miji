@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:table_calendar/table_calendar.dart';
 
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -13,10 +12,12 @@ import 'package:miji/core/presentation/components/app_sliding_segmented_control.
 import 'package:miji/features/health/domain/health_models.dart';
 import 'package:miji/features/health/domain/health_repository.dart';
 import 'package:miji/features/health/health_text.dart';
-import 'package:miji/features/health/presentation/health_action_dialogs.dart';
 import 'package:miji/features/health/presentation/health_calendar_tab.dart';
 import 'package:miji/features/health/presentation/health_daily_log_sheet.dart';
+import 'package:miji/features/health/presentation/health_dialog_shell.dart';
+import 'package:miji/features/health/presentation/health_quick_dialogs.dart';
 import 'package:miji/features/health/presentation/health_settings_tab.dart';
+import 'package:miji/features/health/presentation/health_today_tab.dart';
 import 'package:miji/features/health/presentation/health_trends_tab.dart';
 import 'package:miji/features/health/providers/health_providers.dart';
 
@@ -35,10 +36,10 @@ class HealthPage extends ConsumerStatefulWidget {
   ConsumerState<HealthPage> createState() => _HealthPageState();
 }
 
-enum _HealthPanel { calendar, trends, settings }
+enum _HealthPanel { today, calendar, trends, settings }
 
 class _HealthPageState extends ConsumerState<HealthPage> {
-  var _selectedPanel = _HealthPanel.calendar;
+  var _selectedPanel = _HealthPanel.today;
   late DateTime _calendarFocusedDay;
 
   @override
@@ -51,9 +52,14 @@ class _HealthPageState extends ConsumerState<HealthPage> {
   @override
   Widget build(BuildContext context) {
     final panelSelector = AppSlidingSegmentedControl<_HealthPanel>(
-      minSegmentWidth: 80,
+      minSegmentWidth: 68,
       value: _selectedPanel,
       segments: const [
+        AppSlidingSegment(
+          value: _HealthPanel.today,
+          icon: Icons.today_rounded,
+          label: '今日',
+        ),
         AppSlidingSegment(
           value: _HealthPanel.calendar,
           icon: Icons.calendar_month_rounded,
@@ -83,7 +89,7 @@ class _HealthPageState extends ConsumerState<HealthPage> {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             child: panelSelector,
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           Expanded(child: _buildSelectedTab()),
         ],
       ),
@@ -92,10 +98,36 @@ class _HealthPageState extends ConsumerState<HealthPage> {
 
   Widget _buildSelectedTab() {
     return switch (_selectedPanel) {
+      _HealthPanel.today => _buildToday(),
       _HealthPanel.calendar => _buildCalendar(),
       _HealthPanel.trends => _buildTrends(),
       _HealthPanel.settings => _buildSettings(),
     };
+  }
+
+  Widget _buildToday() {
+    final snapshot = ref.watch(currentUserHealthTodaySnapshotProvider);
+    return snapshot.when(
+      data: (value) {
+        if (value == null) {
+          return _HealthPlaceholderTab(
+            icon: Icons.lock_outline_rounded,
+            title: healthLockedLabel(),
+          );
+        }
+        return HealthTodayTab(
+          snapshot: value,
+          onQuickAction: (action) =>
+              _handleQuickAction(action, value, value.dailyLog),
+          onEditDailyLog: () => _openRecordSheet(value.date),
+        );
+      },
+      loading: () => const _HealthLoading(),
+      error: (error, stackTrace) => AppErrorState(
+        title: '读取今日健康数据失败',
+        onRetry: () => ref.invalidate(currentUserHealthTodaySnapshotProvider),
+      ),
+    );
   }
 
   Widget _buildCalendar() {
@@ -103,17 +135,19 @@ class _HealthPageState extends ConsumerState<HealthPage> {
     final todaySnapshot = ref.watch(currentUserHealthTodaySnapshotProvider);
     final range = _calendarRange(_calendarFocusedDay);
     final markers = ref.watch(currentUserHealthCalendarMarkersProvider(range));
+    final dayLog = ref.watch(currentUserHealthDailyLogProvider(selectedDay));
+
     return markers.when(
       data: (items) {
         final snapshot = todaySnapshot.asData?.value;
-        final periodTrackingEnabled =
-            snapshot?.settings.periodTrackingEnabled ?? true;
         return HealthCalendarTab(
           focusedDay: _calendarFocusedDay,
           selectedDay: selectedDay,
           todaySnapshot: snapshot,
-          periodTrackingEnabled: periodTrackingEnabled,
+          periodTrackingEnabled:
+              snapshot?.settings.periodTrackingEnabled ?? true,
           markers: items,
+          selectedDayLog: dayLog.asData?.value,
           onPageChanged: (focusedDay) {
             setState(() => _calendarFocusedDay = focusedDay);
           },
@@ -122,36 +156,8 @@ class _HealthPageState extends ConsumerState<HealthPage> {
             setState(() => _calendarFocusedDay = focusedDay);
           },
           onQuickAction: (action) =>
-              _handleCalendarQuickAction(action, selectedDay, snapshot),
-          onEditDailyLog: () {
-            final formKey = GlobalKey<HealthDailyLogSheetState>();
-            showAppResponsiveDialog<void>(
-              context: context,
-              builder: (dialogContext) {
-                return AppDialogScaffold(
-                  title: '每日记录',
-                  maxWidth: 440,
-                  body: HealthDailyLogSheet(
-                    key: formKey,
-                    initialDate: selectedDay,
-                    initialLog: HealthDailyLog.empty(selectedDay),
-                    onSave: (draft) {
-                      Navigator.of(dialogContext).pop();
-                      unawaited(
-                        ref
-                            .read(currentUserHealthWriteControllerProvider)
-                            .upsertDailyLog(draft),
-                      );
-                    },
-                  ),
-                  actions: appDialogIconActions(
-                    onCancel: () => Navigator.of(dialogContext).pop(),
-                    onConfirm: () => formKey.currentState?.save(),
-                  ),
-                );
-              },
-            );
-          },
+              _handleQuickAction(action, snapshot, dayLog.asData?.value),
+          onEditDailyLog: () => _openRecordSheet(selectedDay),
         );
       },
       loading: () => const _HealthLoading(),
@@ -162,59 +168,131 @@ class _HealthPageState extends ConsumerState<HealthPage> {
     );
   }
 
-  void _handleCalendarQuickAction(
+  void _handleQuickAction(
     HealthQuickAction action,
-    DateTime date,
-    HealthTodaySnapshot? todaySnapshot,
+    HealthTodaySnapshot? snapshot,
+    HealthDailyLog? log,
   ) {
-    if (action == HealthQuickAction.period &&
-        todaySnapshot?.settings.periodTrackingEnabled == false) {
+    final date = snapshot == null
+        ? ref.read(healthTodayDateProvider)
+        : snapshot.date;
+    if (action == HealthQuickAction.period) {
+      if (snapshot?.settings.periodTrackingEnabled == false) {
+        return;
+      }
+      _handlePeriodAction(date, snapshot);
       return;
     }
-    final writer = ref.read(currentUserHealthWriteControllerProvider);
-    final existing = isSameDay(date, DateTime.now()) && todaySnapshot != null
-        ? todaySnapshot.dailyLog
-        : HealthDailyLog.empty(date);
-    void save(HealthDailyLogDraft draft) {
-      unawaited(writer.upsertDailyLog(draft));
+    if (action == HealthQuickAction.more) {
+      unawaited(_openRecordSheet(date));
+      return;
     }
 
+    // 每个快捷按钮只编辑对应字段，只有「完整记录」才打开整张表。
+    final existing = log ?? HealthDailyLog.empty(date);
+    final writer = ref.read(currentUserHealthWriteControllerProvider);
+    void save(HealthDailyLogDraft draft) =>
+        unawaited(writer.upsertDailyLog(draft));
+
     switch (action) {
-      case HealthQuickAction.period:
-        _handleCalendarPeriodAction(date, todaySnapshot);
       case HealthQuickAction.flow:
-        showFlowDialog(context: context, existing: existing, onSave: save);
+        unawaited(
+          showHealthFlowDialog(
+            context: context,
+            existing: existing,
+            onSave: save,
+          ),
+        );
       case HealthQuickAction.symptoms:
-        showSymptomsDialog(context: context, existing: existing, onSave: save);
+        unawaited(
+          showHealthSymptomsDialog(
+            context: context,
+            existing: existing,
+            onSave: save,
+          ),
+        );
       case HealthQuickAction.mood:
-        showMoodDialog(context: context, existing: existing, onSave: save);
+        unawaited(
+          showHealthMoodDialog(
+            context: context,
+            existing: existing,
+            onSave: save,
+          ),
+        );
       case HealthQuickAction.temperatureSleep:
-        showTemperatureSleepDialog(
-          context: context,
-          existing: existing,
-          onSave: save,
+        unawaited(
+          showHealthTemperatureSleepDialog(
+            context: context,
+            existing: existing,
+            onSave: save,
+          ),
         );
       case HealthQuickAction.ovulationTest:
-        showOvulationTestDialog(
-          context: context,
-          existing: existing,
-          onSave: save,
+        unawaited(
+          showHealthOvulationTestDialog(
+            context: context,
+            existing: existing,
+            onSave: save,
+          ),
         );
       case HealthQuickAction.medication:
-        showMedicationDialog(
-          context: context,
-          existing: existing,
-          onSave: save,
+        unawaited(
+          showHealthMedicationDialog(
+            context: context,
+            existing: existing,
+            onSave: save,
+          ),
         );
+      case HealthQuickAction.period:
       case HealthQuickAction.more:
         break;
     }
   }
 
-  void _handleCalendarPeriodAction(
-    DateTime date,
-    HealthTodaySnapshot? todaySnapshot,
-  ) {
+  Future<void> _openRecordSheet(DateTime date) async {
+    HealthDailyLog log;
+    try {
+      log =
+          await ref.read(currentUserHealthDailyLogProvider(date).future) ??
+          HealthDailyLog.empty(date);
+    } catch (_) {
+      log = HealthDailyLog.empty(date);
+    }
+    if (!mounted) {
+      return;
+    }
+    final formKey = GlobalKey<HealthDailyLogSheetState>();
+    final writer = ref.read(currentUserHealthWriteControllerProvider);
+    return showAppResponsiveDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final snapshot = ref
+            .read(currentUserHealthTodaySnapshotProvider)
+            .asData
+            ?.value;
+        return HealthEntryDialog(
+          icon: Icons.edit_note_rounded,
+          title: '每日记录',
+          subtitle: '${date.month}月${date.day}日',
+          onSave: () => formKey.currentState?.save(),
+          child: HealthDailyLogSheet(
+            key: formKey,
+            initialDate: date,
+            initialLog: log,
+            periodTrackingEnabled:
+                snapshot?.settings.periodTrackingEnabled ?? true,
+            isPregnant: snapshot?.activePregnancy != null,
+            onSave: (draft) {
+              Navigator.of(dialogContext).pop();
+              unawaited(writer.upsertDailyLog(draft));
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _handlePeriodAction(DateTime date, HealthTodaySnapshot? todaySnapshot) {
     final isPregnant = todaySnapshot?.activePregnancy != null;
     final hasOpenPeriod =
         !isPregnant &&
@@ -222,55 +300,20 @@ class _HealthPageState extends ConsumerState<HealthPage> {
         todaySnapshot?.activePeriod != null;
     final writer = ref.read(currentUserHealthWriteControllerProvider);
 
-    if (hasOpenPeriod) {
-      showAppResponsiveDialog<void>(
+    unawaited(
+      showHealthPeriodDialog(
         context: context,
-        expandCompactSheet: false,
-        builder: (ctx) {
-          return AppDialogScaffold(
-            title: '结束经期',
-            maxWidth: 380,
-            titleTextAlign: TextAlign.center,
-            actionsAlignment: WrapAlignment.center,
-            body: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text('确定结束当前经期？'),
-            ),
-            actions: appDialogIconActions(
-              onCancel: () => Navigator.of(ctx).pop(),
-              onConfirm: () {
-                Navigator.of(ctx).pop();
-                unawaited(writer.endPeriod(date));
-              },
-            ),
+        hasOpenPeriod: hasOpenPeriod,
+        initialDate: date,
+        onSubmit: (picked, notes) {
+          unawaited(
+            hasOpenPeriod
+                ? writer.endPeriod(picked, notes: notes)
+                : writer.startPeriod(picked, notes: notes),
           );
         },
-      );
-    } else {
-      showAppResponsiveDialog<void>(
-        context: context,
-        expandCompactSheet: false,
-        builder: (ctx) {
-          return AppDialogScaffold(
-            title: '开始经期',
-            maxWidth: 380,
-            titleTextAlign: TextAlign.center,
-            actionsAlignment: WrapAlignment.center,
-            body: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text('将从 ${date.month}月${date.day}日 开始记录经期。'),
-            ),
-            actions: appDialogIconActions(
-              onCancel: () => Navigator.of(ctx).pop(),
-              onConfirm: () {
-                Navigator.of(ctx).pop();
-                unawaited(writer.startPeriod(date));
-              },
-            ),
-          );
-        },
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildTrends() {

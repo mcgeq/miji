@@ -264,15 +264,14 @@ void main() {
 }
 
 /// 断言主角金额按 displaySmall 渲染，而不是回退到默认正文字号。
-void _expectHeroAmountIsLarge(
-  WidgetTester tester, {
-  required String expected,
-}) {
+void _expectHeroAmountIsLarge(WidgetTester tester, {required String expected}) {
   final finder = find.byKey(const ValueKey('home-hero-amount'));
   expect(finder, findsOneWidget);
 
   final amountText = tester
-      .widgetList<Text>(find.descendant(of: finder, matching: find.byType(Text)))
+      .widgetList<Text>(
+        find.descendant(of: finder, matching: find.byType(Text)),
+      )
       .first;
   final plain = amountText.data ?? amountText.textSpan?.toPlainText() ?? '';
   expect(plain, contains(expected), reason: '主角金额应为「$expected」，实际「$plain」');

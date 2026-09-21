@@ -102,4 +102,30 @@ void main() {
     expect(prediction.pregnancyWeek, 11);
     expect(prediction.mainStatus, '孕 11 周 · 预产期 4月7日');
   });
+
+  test('reports overdue when predicted start is already in the past', () {
+    final prediction = HealthPredictionService.predictCycle(
+      today: DateTime.utc(2026, 7, 30),
+      settings: settings,
+      periods: [
+        HealthPeriodRecordModel(
+          id: 'period_1',
+          startDate: DateTime.utc(2026, 5, 31),
+          endDate: DateTime.utc(2026, 6, 4),
+          notes: null,
+        ),
+        HealthPeriodRecordModel(
+          id: 'period_2',
+          startDate: DateTime.utc(2026, 6, 29),
+          endDate: DateTime.utc(2026, 7, 3),
+          notes: null,
+        ),
+      ],
+      activePregnancy: null,
+    );
+
+    expect(prediction.daysUntilNextPeriod, -2);
+    expect(prediction.isOverdue, isTrue);
+    expect(prediction.mainStatus, contains('已推迟 2 天'));
+  });
 }

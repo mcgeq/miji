@@ -41,10 +41,7 @@ const _longItems = [
   ),
 ];
 
-Widget _host(
-  List<HomeCategorySpendingItem> items, {
-  double width = 420,
-}) {
+Widget _host(List<HomeCategorySpendingItem> items, {double width = 420}) {
   return MaterialApp(
     theme: AppTheme.light(),
     home: Scaffold(
@@ -132,11 +129,7 @@ void main() {
       await tester.pumpWidget(_host(_longItems, width: width));
       await tester.pumpAndSettle();
 
-      expect(
-        tester.takeException(),
-        isNull,
-        reason: '宽度 $width 时不应出现溢出',
-      );
+      expect(tester.takeException(), isNull, reason: '宽度 $width 时不应出现溢出');
     }
   });
 

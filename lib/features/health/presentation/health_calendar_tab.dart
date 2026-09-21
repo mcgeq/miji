@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
 
 import 'package:miji/features/health/domain/health_models.dart';
+import 'package:miji/features/health/presentation/health_cycle_hero.dart';
+import 'package:miji/features/health/presentation/health_log_grid.dart';
+import 'package:miji/features/health/presentation/health_month_grid.dart';
 import 'package:miji/features/health/presentation/health_presentation_helpers.dart';
+import 'package:miji/features/health/presentation/health_theme.dart';
 
 class HealthCalendarTab extends StatelessWidget {
   const HealthCalendarTab({
@@ -15,6 +18,7 @@ class HealthCalendarTab extends StatelessWidget {
     super.key,
     this.periodTrackingEnabled = true,
     this.todaySnapshot,
+    this.selectedDayLog,
     this.onPageChanged,
   });
 
@@ -27,622 +31,404 @@ class HealthCalendarTab extends StatelessWidget {
   final ValueChanged<HealthQuickAction> onQuickAction;
   final VoidCallback onEditDailyLog;
   final HealthTodaySnapshot? todaySnapshot;
+  final HealthDailyLog? selectedDayLog;
 
   @override
   Widget build(BuildContext context) {
     final visibleMarkers = periodTrackingEnabled
         ? markers
-        : markers.where((marker) {
-            return marker.kind != HealthCalendarMarkerKind.actualPeriod &&
-                marker.kind != HealthCalendarMarkerKind.predictedPeriod &&
-                marker.kind != HealthCalendarMarkerKind.pms &&
-                marker.kind != HealthCalendarMarkerKind.fertileWindow;
-          }).toList();
-    final grouped = _groupMarkers(visibleMarkers);
+        : markers
+              .where(
+                (marker) =>
+                    marker.kind != HealthCalendarMarkerKind.actualPeriod &&
+                    marker.kind != HealthCalendarMarkerKind.predictedPeriod &&
+                    marker.kind != HealthCalendarMarkerKind.pms &&
+                    marker.kind != HealthCalendarMarkerKind.fertileWindow,
+              )
+              .toList();
+    final grouped = <int, List<HealthCalendarMarker>>{};
+    for (final marker in visibleMarkers) {
+      (grouped[HealthDate.dayKey(marker.date)] ??= []).add(marker);
+    }
     final selectedMarkers =
-        grouped[_dayKey(selectedDay)] ?? const <HealthCalendarMarker>[];
-    final firstDay = DateTime.utc(focusedDay.year - 1, 1);
-    final lastDay = DateTime.utc(focusedDay.year + 1, 12, 31);
+        grouped[HealthDate.dayKey(selectedDay)] ??
+        const <HealthCalendarMarker>[];
     final hasOpenPeriod = visibleMarkers.any(
-      (m) => m.kind == HealthCalendarMarkerKind.actualPeriod,
+      (marker) => marker.kind == HealthCalendarMarkerKind.actualPeriod,
     );
     final isPregnant = todaySnapshot?.activePregnancy != null;
-    final phaseMap = _buildPhaseMap(visibleMarkers);
-    final isTodaySelected = isSameDay(selectedDay, DateTime.now());
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
       children: [
-        _buildCalendar(context, firstDay, lastDay, grouped, phaseMap),
+        if (todaySnapshot != null) ...[
+          HealthCycleHero(snapshot: todaySnapshot!, date: selectedDay),
+          const SizedBox(height: 18),
+        ],
+        _MonthCard(
+          focusedDay: focusedDay,
+          selectedDay: selectedDay,
+          markersByDay: grouped,
+          periodTrackingEnabled: periodTrackingEnabled,
+          onDaySelected: onDaySelected,
+          onPageChanged: onPageChanged,
+        ),
         const SizedBox(height: 16),
-        if (isTodaySelected && todaySnapshot != null)
-          _TodayPredictionPanel(snapshot: todaySnapshot!),
-        if (isTodaySelected && todaySnapshot != null)
-          const SizedBox(height: 12),
-        _SelectedDayPanel(
+        _SelectedDayCard(
           selectedDay: selectedDay,
           markers: selectedMarkers,
           hasOpenPeriod: hasOpenPeriod,
           isPregnant: isPregnant,
+          periodTrackingEnabled: periodTrackingEnabled,
+          log: selectedDayLog,
           onQuickAction: onQuickAction,
           onEditDailyLog: onEditDailyLog,
-          periodTrackingEnabled: periodTrackingEnabled,
-          dailyLog: isTodaySelected && todaySnapshot != null
-              ? todaySnapshot!.dailyLog
-              : null,
         ),
       ],
     );
   }
-
-  Widget _buildCalendar(
-    BuildContext context,
-    DateTime firstDay,
-    DateTime lastDay,
-    Map<DateTime, List<HealthCalendarMarker>> grouped,
-    Map<DateTime, _PhaseColor> phaseMap,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: TableCalendar<HealthCalendarMarker>(
-          firstDay: firstDay,
-          lastDay: lastDay,
-          focusedDay: focusedDay,
-          selectedDayPredicate: (day) => isSameDay(day, selectedDay),
-          eventLoader: (day) =>
-              grouped[_dayKey(day)] ?? const <HealthCalendarMarker>[],
-          onDaySelected: onDaySelected,
-          onPageChanged: onPageChanged,
-          startingDayOfWeek: StartingDayOfWeek.monday,
-          headerStyle: HeaderStyle(
-            formatButtonVisible: false,
-            titleCentered: true,
-            titleTextFormatter: (date, locale) =>
-                '${date.year}年${date.month.toString().padLeft(2, '0')}月',
-            titleTextStyle: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: colorScheme.onSurface,
-              letterSpacing: 0,
-            ),
-            leftChevronIcon: Icon(
-              Icons.chevron_left_rounded,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            rightChevronIcon: Icon(
-              Icons.chevron_right_rounded,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          calendarStyle: CalendarStyle(
-            outsideDaysVisible: false,
-            selectedDecoration: BoxDecoration(
-              color: colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            todayDecoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            selectedTextStyle: TextStyle(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.w800,
-            ),
-            todayTextStyle: TextStyle(
-              color: colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.w800,
-            ),
-            defaultTextStyle: TextStyle(
-              color: colorScheme.onSurface,
-              letterSpacing: 0,
-            ),
-            weekendTextStyle: TextStyle(
-              color: colorScheme.onSurface,
-              letterSpacing: 0,
-            ),
-            cellMargin: const EdgeInsets.all(2),
-          ),
-          daysOfWeekStyle: DaysOfWeekStyle(
-            dowTextFormatter: (date, locale) {
-              const labels = ['', '一', '二', '三', '四', '五', '六', '日'];
-              return labels[date.weekday];
-            },
-            weekdayStyle: TextStyle(
-              color: colorScheme.onSurfaceVariant,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0,
-            ),
-            weekendStyle: TextStyle(
-              color: colorScheme.onSurfaceVariant,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0,
-            ),
-          ),
-          calendarBuilders: CalendarBuilders<HealthCalendarMarker>(
-            markerBuilder: (context, day, dayMarkers) {
-              if (dayMarkers.isEmpty) return const SizedBox.shrink();
-              return Positioned(
-                bottom: 3,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (final marker in dayMarkers.take(3))
-                      Container(
-                        width: 6,
-                        height: 6,
-                        margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: markerColor(
-                            marker.kind,
-                            Theme.of(context).colorScheme,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-            defaultBuilder: (context, day, focusedDay) {
-              final key = _dayKey(day);
-              final phase = phaseMap[key];
-              if (phase == null) return null;
-              return Container(
-                margin: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: phase.color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    '${day.day}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Map<DateTime, _PhaseColor> _buildPhaseMap(List<HealthCalendarMarker> source) {
-    final map = <DateTime, _PhaseColor>{};
-    for (final marker in source) {
-      final key = _dayKey(marker.date);
-      final existing = map[key];
-      if (existing != null &&
-          existing.priority <= _phasePriority(marker.kind)) {
-        continue;
-      }
-      map[key] = _PhaseColor(
-        color: _phaseColor(marker.kind),
-        priority: _phasePriority(marker.kind),
-      );
-    }
-    return map;
-  }
-
-  Color _phaseColor(HealthCalendarMarkerKind kind) {
-    return switch (kind) {
-      HealthCalendarMarkerKind.actualPeriod => const Color(0xFFE57373),
-      HealthCalendarMarkerKind.predictedPeriod => const Color(0xFFEF9A9A),
-      HealthCalendarMarkerKind.fertileWindow => const Color(0xFF81C784),
-      HealthCalendarMarkerKind.pms => const Color(0xFFCE93D8),
-      HealthCalendarMarkerKind.ovulationTest => const Color(0xFF64B5F6),
-      HealthCalendarMarkerKind.medication => const Color(0xFFA1887F),
-      HealthCalendarMarkerKind.dailyLog => const Color(0xFFBDBDBD),
-    };
-  }
-
-  int _phasePriority(HealthCalendarMarkerKind kind) {
-    return switch (kind) {
-      HealthCalendarMarkerKind.actualPeriod => 0,
-      HealthCalendarMarkerKind.predictedPeriod => 1,
-      HealthCalendarMarkerKind.fertileWindow => 2,
-      HealthCalendarMarkerKind.pms => 3,
-      HealthCalendarMarkerKind.ovulationTest => 4,
-      HealthCalendarMarkerKind.medication => 5,
-      HealthCalendarMarkerKind.dailyLog => 6,
-    };
-  }
-
-  Map<DateTime, List<HealthCalendarMarker>> _groupMarkers(
-    List<HealthCalendarMarker> source,
-  ) {
-    final grouped = <DateTime, List<HealthCalendarMarker>>{};
-    for (final marker in source) {
-      (grouped[_dayKey(marker.date)] ??= <HealthCalendarMarker>[]).add(marker);
-    }
-    return grouped;
-  }
-
-  DateTime _dayKey(DateTime date) {
-    return DateTime.utc(date.year, date.month, date.day);
-  }
 }
 
-class _PhaseColor {
-  const _PhaseColor({required this.color, required this.priority});
-  final Color color;
-  final int priority;
-}
-
-class _SelectedDayPanel extends StatelessWidget {
-  const _SelectedDayPanel({
+class _MonthCard extends StatelessWidget {
+  const _MonthCard({
+    required this.focusedDay,
     required this.selectedDay,
-    required this.markers,
-    required this.hasOpenPeriod,
-    required this.isPregnant,
-    required this.onQuickAction,
-    required this.onEditDailyLog,
-    this.dailyLog,
-    this.periodTrackingEnabled = true,
+    required this.markersByDay,
+    required this.periodTrackingEnabled,
+    required this.onDaySelected,
+    required this.onPageChanged,
   });
 
+  final DateTime focusedDay;
   final DateTime selectedDay;
-  final List<HealthCalendarMarker> markers;
+  final Map<int, List<HealthCalendarMarker>> markersByDay;
   final bool periodTrackingEnabled;
-  final bool hasOpenPeriod;
-  final bool isPregnant;
-  final ValueChanged<HealthQuickAction> onQuickAction;
-  final VoidCallback onEditDailyLog;
-  final HealthDailyLog? dailyLog;
+  final void Function(DateTime selectedDay, DateTime focusedDay) onDaySelected;
+  final ValueChanged<DateTime>? onPageChanged;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final monthDay = '${selectedDay.month}月${selectedDay.day}日';
-    final weekday = _weekdayLabel(selectedDay.weekday);
+    final today = DateTime.utc(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
 
     return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.6),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildHeader(theme, colorScheme, monthDay, weekday),
-          const Divider(height: 1),
-          if (markers.isEmpty && dailyLog == null)
-            _buildEmptyState(theme, colorScheme)
-          else ...[
-            if (markers.isNotEmpty) _buildMarkerList(context),
-            if (dailyLog != null && dailyLog!.visibleRecordCount > 0)
-              _buildSummary(context, theme, colorScheme),
+          Row(
+            children: [
+              IconButton(
+                tooltip: '上个月',
+                visualDensity: VisualDensity.compact,
+                onPressed: onPageChanged == null
+                    ? null
+                    : () => onPageChanged!(_shift(focusedDay, -1)),
+                icon: const Icon(Icons.chevron_left_rounded),
+              ),
+              Expanded(
+                child: Text(
+                  '${focusedDay.year}年${focusedDay.month.toString().padLeft(2, '0')}月',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: '下个月',
+                visualDensity: VisualDensity.compact,
+                onPressed: onPageChanged == null
+                    ? null
+                    : () => onPageChanged!(_shift(focusedDay, 1)),
+                icon: const Icon(Icons.chevron_right_rounded),
+              ),
+              if (!_isSameMonth(focusedDay, today))
+                TextButton(
+                  onPressed: () {
+                    onDaySelected(today, today);
+                    onPageChanged?.call(today);
+                  },
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: const Text('回到今天'),
+                ),
+            ],
+          ),
+          if (periodTrackingEnabled) ...[
+            const SizedBox(height: 6),
+            const _Legend(),
           ],
-          const Divider(height: 1),
-          _buildQuickActions(context, theme, colorScheme),
+          const SizedBox(height: 8),
+          HealthMonthGrid(
+            month: focusedDay,
+            selectedDay: selectedDay,
+            today: today,
+            markersByDay: markersByDay,
+            periodTrackingEnabled: periodTrackingEnabled,
+            onDaySelected: (day) => onDaySelected(day, day),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    String monthDay,
-    String weekday,
-  ) {
-    final isToday = isSameDay(selectedDay, DateTime.now());
+  DateTime _shift(DateTime day, int delta) {
+    return DateTime.utc(day.year, day.month + delta, 1);
+  }
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Row(
+  bool _isSameMonth(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month;
+  }
+}
+
+class _Legend extends StatelessWidget {
+  const _Legend();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = HealthPalette.of(context);
+    return Wrap(
+      spacing: 14,
+      runSpacing: 6,
+      children: [
+        _LegendItem(color: palette.period, label: '经期', filled: true),
+        _LegendItem(color: palette.period, label: '预计经期', filled: false),
+        _LegendItem(color: palette.fertile, label: '易孕期', filled: false),
+        _LegendItem(color: palette.pms, label: '经前期', filled: false),
+        Text(
+          '圆点 = 有记录',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    required this.filled,
+  });
+
+  final Color color;
+  final String label;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: filled ? color : color.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(3),
+            border: filled ? null : Border.all(color: color, width: 1.2),
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SelectedDayCard extends StatelessWidget {
+  const _SelectedDayCard({
+    required this.selectedDay,
+    required this.markers,
+    required this.hasOpenPeriod,
+    required this.isPregnant,
+    required this.periodTrackingEnabled,
+    required this.log,
+    required this.onQuickAction,
+    required this.onEditDailyLog,
+  });
+
+  final DateTime selectedDay;
+  final List<HealthCalendarMarker> markers;
+  final bool hasOpenPeriod;
+  final bool isPregnant;
+  final bool periodTrackingEnabled;
+  final HealthDailyLog? log;
+  final ValueChanged<HealthQuickAction> onQuickAction;
+  final VoidCallback onEditDailyLog;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isToday = _isSameDay(selectedDay, DateTime.now());
+    final recordCount = log?.visibleRecordCount ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(
-            Icons.calendar_today_rounded,
-            size: 16,
-            color: colorScheme.primary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            monthDay,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            '周$weekday',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              letterSpacing: 0,
-            ),
-          ),
-          const Spacer(),
-          if (isToday)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '今天',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.w700,
+          Row(
+            children: [
+              Text(
+                '${selectedDay.month}月${selectedDay.day}日',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 0,
                 ),
               ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(ThemeData theme, ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.inbox_rounded,
-              size: 28,
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '暂无记录',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                letterSpacing: 0,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMarkerList(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: [
-          for (final marker in markers)
-            _MarkerChip(kind: marker.kind, label: marker.label),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActions(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: [
-          for (final action in HealthQuickAction.values)
-            if (_actionVisible(action))
-              _CalendarQuickChip(
-                action: action,
-                label: quickActionLabel(action, hasOpenPeriod),
-                onPressed: () {
-                  if (action == HealthQuickAction.more) {
-                    onEditDailyLog();
-                  }
-                  onQuickAction(action);
-                },
-              ),
-        ],
-      ),
-    );
-  }
-
-  bool _actionVisible(HealthQuickAction action) {
-    if (!periodTrackingEnabled && action == HealthQuickAction.period) {
-      return false;
-    }
-    if (!isPregnant) return true;
-    return switch (action) {
-      HealthQuickAction.period => false,
-      HealthQuickAction.flow => false,
-      HealthQuickAction.ovulationTest => false,
-      _ => true,
-    };
-  }
-
-  Widget _buildSummary(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final log = dailyLog!;
-    final items = <_SummaryItem>[
-      if (log.flowLevel != null)
-        _SummaryItem('经量', flowLabel(log.flowLevel!), Icons.invert_colors),
-      if (log.mood != null)
-        _SummaryItem('情绪', moodLabel(log.mood!), Icons.mood),
-      if (log.sleepMinutes != null)
-        _SummaryItem(
-          '睡眠',
-          '${(log.sleepMinutes! / 60).toStringAsFixed(1)} 小时',
-          Icons.bedtime_outlined,
-        ),
-      if (log.symptoms.isNotEmpty)
-        _SummaryItem('症状', '${log.symptoms.length}', Icons.healing),
-      if (log.medications.isNotEmpty)
-        _SummaryItem('用药', '${log.medications.length}', Icons.medication),
-    ];
-
-    if (items.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final item in items)
-            Container(
-              constraints: const BoxConstraints(minWidth: 100),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.54),
+              const SizedBox(width: 8),
+              Text(
+                '周${_weekdayLabel(selectedDay.weekday)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  letterSpacing: 0,
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(item.icon, size: 16, color: colorScheme.primary),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.label,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                        Text(
-                          item.value,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                      ],
+              const Spacer(),
+              if (isToday)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '今天',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
                     ),
                   ),
-                ],
-              ),
+                ),
+            ],
+          ),
+          if (markers.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final marker in markers) _MarkerChip(marker: marker),
+              ],
             ),
+          ],
+          const SizedBox(height: 14),
+          HealthLogGrid(
+            hasOpenPeriod: hasOpenPeriod,
+            log: log ?? HealthDailyLog.empty(selectedDay),
+            periodTrackingEnabled: periodTrackingEnabled,
+            isPregnant: isPregnant,
+            onAction: (action) {
+              if (action == HealthQuickAction.more) {
+                onEditDailyLog();
+                return;
+              }
+              onQuickAction(action);
+            },
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onEditDailyLog,
+                  icon: const Icon(Icons.edit_note_rounded, size: 18),
+                  label: Text(
+                    recordCount > 0 ? '编辑这一天（$recordCount）' : '记录这一天',
+                  ),
+                ),
+              ),
+              if (periodTrackingEnabled && !isPregnant) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => onQuickAction(HealthQuickAction.period),
+                    icon: const Icon(Icons.water_drop_outlined, size: 18),
+                    label: Text(hasOpenPeriod ? '结束经期' : '开始经期'),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
   }
 
-  String _weekdayLabel(int weekday) {
+  static bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  static String _weekdayLabel(int weekday) {
     const labels = ['', '一', '二', '三', '四', '五', '六', '日'];
     return labels[weekday];
   }
 }
 
-class _SummaryItem {
-  const _SummaryItem(this.label, this.value, this.icon);
-  final String label;
-  final String value;
-  final IconData icon;
-}
-
-class _TodayPredictionPanel extends StatelessWidget {
-  const _TodayPredictionPanel({required this.snapshot});
-
-  final HealthTodaySnapshot snapshot;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
-        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Icon(Icons.today_rounded, size: 20, color: colorScheme.primary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final indicator in snapshot.prediction.indicators)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: colorScheme.primary.withValues(alpha: 0.1),
-                    ),
-                    child: Text(
-                      indicator,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _MarkerChip extends StatelessWidget {
-  const _MarkerChip({required this.kind, required this.label});
+  const _MarkerChip({required this.marker});
 
-  final HealthCalendarMarkerKind kind;
-  final String label;
+  final HealthCalendarMarker marker;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = markerColor(kind, colorScheme);
+    final color = markerColor(marker.kind, context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.24)),
-        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(9),
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_markerIcon(kind), size: 12, color: color),
+          Icon(_icon(marker.kind), size: 12, color: color),
           const SizedBox(width: 5),
           Text(
-            label,
+            marker.label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11.5,
               fontWeight: FontWeight.w700,
+              color: color,
               letterSpacing: 0,
             ),
           ),
@@ -651,7 +437,7 @@ class _MarkerChip extends StatelessWidget {
     );
   }
 
-  IconData _markerIcon(HealthCalendarMarkerKind kind) {
+  IconData _icon(HealthCalendarMarkerKind kind) {
     return switch (kind) {
       HealthCalendarMarkerKind.actualPeriod => Icons.water_drop,
       HealthCalendarMarkerKind.predictedPeriod => Icons.water_drop_outlined,
@@ -661,52 +447,5 @@ class _MarkerChip extends StatelessWidget {
       HealthCalendarMarkerKind.medication => Icons.medication_outlined,
       HealthCalendarMarkerKind.dailyLog => Icons.edit_note_rounded,
     };
-  }
-}
-
-class _CalendarQuickChip extends StatelessWidget {
-  const _CalendarQuickChip({
-    required this.action,
-    required this.label,
-    required this.onPressed,
-  });
-
-  final HealthQuickAction action;
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final color = quickActionColor(action, colorScheme);
-
-    return Material(
-      color: color.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(quickActionIcon(action), size: 14, color: color),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
-                  fontSize: 11,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

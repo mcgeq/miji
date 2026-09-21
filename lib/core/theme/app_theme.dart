@@ -106,18 +106,10 @@ class AppTheme {
           colors: [Color(0xFF74608B), Color(0xFF4A7D85)],
         ),
         brand: AppHeroGradient(
-          colors: [
-            Color(0xFF8A5349),
-            Color(0xFF8B5A62),
-            Color(0xFF8C5F73),
-          ],
+          colors: [Color(0xFF8A5349), Color(0xFF8B5A62), Color(0xFF8C5F73)],
         ),
         danger: AppHeroGradient(
-          colors: [
-            Color(0xFF703741),
-            Color(0xFF8E4250),
-            Color(0xFFAA5463),
-          ],
+          colors: [Color(0xFF703741), Color(0xFF8E4250), Color(0xFFAA5463)],
         ),
       ),
     );

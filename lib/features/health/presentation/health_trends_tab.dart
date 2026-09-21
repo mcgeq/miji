@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'package:miji/features/health/domain/health_models.dart';
@@ -26,7 +28,7 @@ class HealthTrendsTab extends StatelessWidget {
     final periodTrackingEnabled = summary.periodTrackingEnabled;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -38,6 +40,8 @@ class HealthTrendsTab extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (periodTrackingEnabled) ...[
+            _CycleInsight(cycleLengths: summary.cycleLengths),
+            const SizedBox(height: 12),
             HealthTrendSection(
               title: '周期长度',
               icon: Icons.timeline_rounded,
@@ -45,6 +49,8 @@ class HealthTrendsTab extends StatelessWidget {
               child: HealthTrendLineChart(
                 points: summary.cycleLengthSeries,
                 emptyLabel: '暂无可统计记录',
+                unitSuffix: ' 天',
+                normalRange: const (21, 35),
               ),
             ),
             const SizedBox(height: 12),
@@ -55,6 +61,8 @@ class HealthTrendsTab extends StatelessWidget {
               child: HealthTrendLineChart(
                 points: summary.periodDurationSeries,
                 emptyLabel: '暂无可统计记录',
+                unitSuffix: ' 天',
+                normalRange: const (2, 7),
               ),
             ),
             const SizedBox(height: 12),
@@ -138,6 +146,91 @@ class HealthTrendsTab extends StatelessWidget {
   }
 }
 
+class _CycleInsight extends StatelessWidget {
+  const _CycleInsight({required this.cycleLengths});
+
+  final List<int> cycleLengths;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final hasSample = cycleLengths.length >= 2;
+    final title = !hasSample
+        ? '样本不足，先记录 2 个完整周期'
+        : _isRegular(cycleLengths)
+        ? '周期规律性良好'
+        : '周期波动较大';
+    final subtitle = !hasSample
+        ? '记录满 2 个完整周期后即可判断规律性'
+        : _subtitle(cycleLengths);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: colorScheme.secondaryContainer.withValues(alpha: 0.34),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: colorScheme.secondary.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              hasSample && _isRegular(cycleLengths)
+                  ? Icons.check_rounded
+                  : Icons.insights_rounded,
+              size: 17,
+              color: colorScheme.secondary,
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isRegular(List<int> values) {
+    return (values.reduce(math.max) - values.reduce(math.min)) <= 4;
+  }
+
+  String _subtitle(List<int> values) {
+    final average = values.reduce((a, b) => a + b) / values.length;
+    final spread = values.reduce(math.max) - values.reduce(math.min);
+    final avgLabel = average == average.roundToDouble()
+        ? average.toStringAsFixed(0)
+        : average.toStringAsFixed(1);
+    return '近 ${values.length} 个周期平均 $avgLabel 天，波动 $spread 天（参考范围 21–35 天）';
+  }
+}
+
 class _TrendFilters extends StatelessWidget {
   const _TrendFilters({
     required this.selectedPhase,
@@ -153,12 +246,33 @@ class _TrendFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final preset = _currentPreset(selectedStartDate, now);
+
     return HealthTrendSection(
       title: '筛选范围',
       icon: Icons.tune_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final option in const [
+                (_RangePreset.threeCycles, '默认 3 周期'),
+                (_RangePreset.sixMonths, '近 6 月'),
+                (_RangePreset.oneYear, '近 1 年'),
+              ])
+                ChoiceChip(
+                  label: Text(option.$2),
+                  selected: preset == option.$1,
+                  onSelected: (_) =>
+                      onStartDateChanged(_startFor(option.$1, now)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -177,7 +291,6 @@ class _TrendFilters extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    final now = DateTime.now();
                     final picked = await showDatePicker(
                       context: context,
                       initialDate: selectedStartDate ?? now,
@@ -190,7 +303,7 @@ class _TrendFilters extends StatelessWidget {
                       );
                     }
                   },
-                  icon: const Icon(Icons.event_rounded),
+                  icon: const Icon(Icons.event_rounded, size: 18),
                   label: Text(
                     selectedStartDate == null
                         ? '默认最近 3 个周期'
@@ -212,7 +325,36 @@ class _TrendFilters extends StatelessWidget {
       ),
     );
   }
+
+  DateTime? _startFor(_RangePreset preset, DateTime now) {
+    return switch (preset) {
+      _RangePreset.threeCycles => null,
+      _RangePreset.sixMonths => DateTime.utc(now.year, now.month - 6, now.day),
+      _RangePreset.oneYear => DateTime.utc(now.year - 1, now.month, now.day),
+    };
+  }
+
+  _RangePreset? _currentPreset(DateTime? start, DateTime now) {
+    if (start == null) {
+      return _RangePreset.threeCycles;
+    }
+    final sixMonths = DateTime.utc(now.year, now.month - 6, now.day);
+    final oneYear = DateTime.utc(now.year - 1, now.month, now.day);
+    if (_sameDay(start, sixMonths)) {
+      return _RangePreset.sixMonths;
+    }
+    if (_sameDay(start, oneYear)) {
+      return _RangePreset.oneYear;
+    }
+    return null;
+  }
+
+  bool _sameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
 }
+
+enum _RangePreset { threeCycles, sixMonths, oneYear }
 
 class _CycleComparisonRows extends StatelessWidget {
   const _CycleComparisonRows({
@@ -234,6 +376,12 @@ class _CycleComparisonRows extends StatelessWidget {
         HealthTrendMetricRow(
           label: '经期时长',
           value: _daysAverageLabel(periodDurations),
+        ),
+        HealthTrendMetricRow(
+          label: '样本数',
+          value: cycleLengths.isEmpty
+              ? '暂无'
+              : '周期 ${cycleLengths.length} 次 · 经期 ${periodDurations.length} 次',
         ),
       ],
     );
@@ -344,7 +492,11 @@ String _daysAverageLabel(List<int> values) {
     return '暂无可统计记录';
   }
   final total = values.fold<int>(0, (sum, value) => sum + value);
-  return '${(total / values.length).round()} 天';
+  final average = total / values.length;
+  final label = average == average.roundToDouble()
+      ? average.toStringAsFixed(0)
+      : average.toStringAsFixed(1);
+  return '$label 天（近 ${values.length} 次）';
 }
 
 String _minutesLabel(int? value) {

@@ -7,7 +7,9 @@ import 'package:miji/features/home/presentation/home_quick_actions_row.dart';
 Widget _host(Widget child) {
   return MaterialApp(
     theme: AppTheme.light(),
-    home: Scaffold(body: Center(child: SizedBox(width: 360, child: child))),
+    home: Scaffold(
+      body: Center(child: SizedBox(width: 360, child: child)),
+    ),
   );
 }
 
@@ -69,10 +71,7 @@ void main() {
     await tester.pumpWidget(
       _host(
         HomeQuickActionsRow(
-          actions: const [
-            MoneyQuickAction.expense,
-            MoneyQuickAction.income,
-          ],
+          actions: const [MoneyQuickAction.expense, MoneyQuickAction.income],
           onAction: tapped.add,
         ),
       ),

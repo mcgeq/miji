@@ -1,3 +1,4 @@
+import 'package:miji/features/health/domain/health_cycle_phase.dart';
 import 'package:miji/features/health/domain/health_models.dart';
 
 enum HealthQuickAction {
@@ -29,6 +30,12 @@ String healthPredictionPeriodDayLabel(int periodDay) {
 }
 
 String healthPredictionCycleDayLabel(int currentCycleDay, int daysUntil) {
+  if (daysUntil < 0) {
+    return '周期第 $currentCycleDay 天 · 已推迟 ${-daysUntil} 天';
+  }
+  if (daysUntil == 0) {
+    return '周期第 $currentCycleDay 天 · 预计今天开始经期';
+  }
   return '周期第 $currentCycleDay 天 · 预计 $daysUntil 天后开始经期';
 }
 
@@ -41,6 +48,20 @@ String healthPredictionPregnancyLabel(int week, DateTime? dueDate) {
 
 String healthNextExpectedStartLabel(DateTime date) {
   return '预计下次开始：${healthMonthDayLabel(date)}';
+}
+
+String healthCycleOverdueLabel(int daysOverdue) {
+  return '已推迟 $daysOverdue 天';
+}
+
+String healthCycleCountdownLabel(int daysUntil) {
+  if (daysUntil < 0) {
+    return healthCycleOverdueLabel(-daysUntil);
+  }
+  if (daysUntil == 0) {
+    return '预计今天开始';
+  }
+  return '还有 $daysUntil 天';
 }
 
 String healthOpenPeriodActiveLabel() => '当前经期记录已开启';
@@ -140,6 +161,18 @@ String healthPredictionBasisLabel(HealthPredictionBasis basis) {
     HealthPredictionBasis.settings => '按设置',
     HealthPredictionBasis.history => '按历史',
     HealthPredictionBasis.pregnancy => '孕期',
+  };
+}
+
+String healthCyclePhaseLabel(HealthCyclePhase phase) {
+  return switch (phase) {
+    HealthCyclePhase.period => '经期',
+    HealthCyclePhase.follicular => '卵泡期',
+    HealthCyclePhase.fertile => '易孕期',
+    HealthCyclePhase.luteal => '黄体期',
+    HealthCyclePhase.pms => '经前期',
+    HealthCyclePhase.pregnancy => '孕期',
+    HealthCyclePhase.none => '待记录',
   };
 }
 

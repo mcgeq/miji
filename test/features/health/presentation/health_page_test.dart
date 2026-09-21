@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:table_calendar/table_calendar.dart';
 
+import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/features/health/domain/health_models.dart';
 import 'package:miji/features/health/presentation/health_calendar_tab.dart';
 import 'package:miji/features/health/presentation/health_daily_log_sheet.dart';
+import 'package:miji/features/health/presentation/health_dialog_shell.dart';
+import 'package:miji/features/health/presentation/health_log_grid.dart';
+import 'package:miji/features/health/presentation/health_month_grid.dart';
 import 'package:miji/features/health/presentation/health_settings_tab.dart';
-import 'package:miji/features/health/presentation/health_trends_tab.dart';
 import 'package:miji/features/health/presentation/health_today_tab.dart';
+import 'package:miji/features/health/presentation/health_trends_tab.dart';
 
 void main() {
-  testWidgets('HealthTodayTab shows prediction and neutral summary', (
+  testWidgets('HealthTodayTab shows cycle hero and today records', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -19,7 +22,11 @@ void main() {
       ),
     );
 
-    expect(find.text('周期第 20 天 · 预计 10 天后开始经期'), findsOneWidget);
+    // 周期 Hero：当前周期第 20 天。
+    expect(find.text('当前周期第 20 天'), findsOneWidget);
+    // 快速记录磁贴。
+    expect(find.byType(HealthLogGrid), findsOneWidget);
+    // 今日记录计数（只在标题出现一次）。
     expect(find.text('今日共 2 条记录'), findsOneWidget);
   });
 
@@ -37,16 +44,40 @@ void main() {
     },
   );
 
+  testWidgets('HealthTodayTab hides period tile when tracking is disabled', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        child: HealthTodayTab(
+          snapshot: _snapshot(
+            settings: _settings(periodTrackingEnabled: false),
+          ),
+          onEditDailyLog: () {},
+        ),
+      ),
+    );
+
+    // 磁贴现在只显示图标，标签走 Tooltip / Semantics。
+    expect(find.byTooltip('经期'), findsNothing);
+    expect(find.byTooltip('经量'), findsOneWidget);
+    expect(find.text('经量'), findsNothing);
+  });
+
   testWidgets(
-    'HealthDailyLogSheet exposes ordinary fields before private expansion',
+    'HealthDailyLogSheet renders its fields inside the dialog scroll host',
     (tester) async {
+      // 弹窗由 AppDialogKeyboardScroll 提供滚动，记录表本身不能再嵌套一个
+      // ListView，否则会拿到无界高度，导致整个弹窗布局失败、内容空白。
       await tester.pumpWidget(
         _TestApp(
           child: Scaffold(
-            body: HealthDailyLogSheet(
-              initialDate: DateTime.utc(2026, 7, 18),
-              initialLog: HealthDailyLog.empty(DateTime.utc(2026, 7, 18)),
-              onSave: (_) {},
+            body: SingleChildScrollView(
+              child: HealthDailyLogSheet(
+                initialDate: DateTime.utc(2026, 7, 18),
+                initialLog: HealthDailyLog.empty(DateTime.utc(2026, 7, 18)),
+                onSave: (_) {},
+              ),
             ),
           ),
         ),
@@ -56,16 +87,36 @@ void main() {
       expect(find.text('情绪'), findsOneWidget);
       expect(find.text('睡眠'), findsOneWidget);
       expect(find.text('备注'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text('私密生殖健康'),
-        180,
-        scrollable: find.byType(Scrollable).first,
-      );
       expect(find.text('私密生殖健康'), findsOneWidget);
+      // 折叠区未展开时不显示排卵试纸。
       expect(find.text('排卵试纸'), findsNothing);
     },
   );
-  testWidgets('HealthCalendarTab renders date markers', (tester) async {
+
+  testWidgets('HealthDailyLogSheet round-trips an existing log', (
+    tester,
+  ) async {
+    final existing = _log();
+    await tester.pumpWidget(
+      _TestApp(
+        child: Scaffold(
+          body: SingleChildScrollView(
+            child: HealthDailyLogSheet(
+              initialDate: existing.date,
+              initialLog: existing,
+              onSave: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // 已记录的经量与情绪应回填为选中态。
+    expect(find.text('中量'), findsOneWidget);
+    expect(find.text('平静'), findsOneWidget);
+  });
+
+  testWidgets('HealthCalendarTab renders the month grid', (tester) async {
     await tester.pumpWidget(
       _TestApp(
         child: HealthCalendarTab(
@@ -85,7 +136,41 @@ void main() {
       ),
     );
 
-    expect(find.byType(TableCalendar<HealthCalendarMarker>), findsOneWidget);
+    expect(find.byType(HealthMonthGrid), findsOneWidget);
+    expect(find.text('18'), findsWidgets);
+  });
+
+  testWidgets('HealthCalendarTab hides period legend when tracking is off', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        child: HealthCalendarTab(
+          focusedDay: DateTime.utc(2026, 7, 18),
+          selectedDay: DateTime.utc(2026, 7, 18),
+          periodTrackingEnabled: false,
+          markers: [
+            HealthCalendarMarker(
+              date: DateTime.utc(2026, 7, 18),
+              kind: HealthCalendarMarkerKind.actualPeriod,
+              label: '经期',
+            ),
+            HealthCalendarMarker(
+              date: DateTime.utc(2026, 7, 18),
+              kind: HealthCalendarMarkerKind.dailyLog,
+              label: '日记录',
+            ),
+          ],
+          onDaySelected: (_, _) {},
+          onQuickAction: (_) {},
+          onEditDailyLog: () {},
+        ),
+      ),
+    );
+
+    // 图例与标记文案都不出现，但网格仍在。
+    expect(find.text('预计经期'), findsNothing);
+    expect(find.byType(HealthMonthGrid), findsOneWidget);
   });
 
   testWidgets('HealthSettingsTab exposes period recording toggle', (
@@ -109,56 +194,38 @@ void main() {
   });
 
   testWidgets(
-    'HealthTodayTab hides period quick action when period recording is disabled',
+    'HealthSettingsTab exposes three reminder toggles and pregnancy entry',
     (tester) async {
       await tester.pumpWidget(
         _TestApp(
-          child: HealthTodayTab(
-            snapshot: _snapshot(
-              settings: _settings(periodTrackingEnabled: false),
-            ),
-            onEditDailyLog: () {},
+          child: HealthSettingsTab(
+            settings: _settings(),
+            onSave: (_) {},
+            onStartPregnancyMode: (_) {},
           ),
         ),
       );
 
-      expect(find.text('开始经期'), findsNothing);
-      expect(find.text('经量'), findsWidgets);
-    },
-  );
-
-  testWidgets(
-    'HealthCalendarTab hides period markers when period recording is disabled',
-    (tester) async {
-      await tester.pumpWidget(
-        _TestApp(
-          child: HealthCalendarTab(
-            focusedDay: DateTime.utc(2026, 7, 18),
-            selectedDay: DateTime.utc(2026, 7, 18),
-            periodTrackingEnabled: false,
-            markers: [
-              HealthCalendarMarker(
-                date: DateTime.utc(2026, 7, 18),
-                kind: HealthCalendarMarkerKind.actualPeriod,
-                label: '经期',
-              ),
-              HealthCalendarMarker(
-                date: DateTime.utc(2026, 7, 18),
-                kind: HealthCalendarMarkerKind.dailyLog,
-                label: '日记录',
-              ),
-            ],
-            onDaySelected: (_, _) {},
-            onQuickAction: (_) {},
-            onEditDailyLog: () {},
-          ),
-        ),
+      expect(find.text('经期提醒'), findsOneWidget);
+      expect(find.text('排卵提醒'), findsOneWidget);
+      expect(find.text('经前提醒'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('孕期模式'),
+        180,
+        scrollable: find.byType(Scrollable).first,
       );
-
-      expect(find.text('经期'), findsNothing);
-      expect(find.text('日记录'), findsWidgets);
+      expect(find.text('孕期模式'), findsOneWidget);
+      // 之前被隐藏回写的两个字段现在要显式出现。
+      await tester.scrollUntilVisible(
+        find.text('参与健康数据同步'),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('参与健康数据同步'), findsOneWidget);
+      expect(find.text('匿名使用统计'), findsOneWidget);
     },
   );
+
   testWidgets('HealthTrendsTab renders one-page dashboard sections', (
     tester,
   ) async {
@@ -218,30 +285,59 @@ void main() {
     },
   );
 
-  testWidgets(
-    'HealthSettingsTab exposes three reminder toggles and pregnancy mode entry',
-    (tester) async {
+  testWidgets('record sheet dialog renders content on phone and desktop', (
+    tester,
+  ) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    Future<void> openAndVerify(Size size) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(
-        _TestApp(
-          child: HealthSettingsTab(
-            settings: _settings(),
-            onSave: (_) {},
-            onStartPregnancyMode: (_) {},
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => Center(
+                child: ElevatedButton(
+                  onPressed: () => showAppResponsiveDialog<void>(
+                    context: context,
+                    builder: (ctx) => HealthEntryDialog(
+                      icon: Icons.edit_note_rounded,
+                      title: '每日记录',
+                      onSave: () {},
+                      child: HealthDailyLogSheet(
+                        initialDate: DateTime.utc(2026, 7, 18),
+                        initialLog: HealthDailyLog.empty(
+                          DateTime.utc(2026, 7, 18),
+                        ),
+                        onSave: (_) {},
+                      ),
+                    ),
+                  ),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
           ),
         ),
       );
 
-      expect(find.text('经期提醒'), findsOneWidget);
-      expect(find.text('排卵提醒'), findsOneWidget);
-      expect(find.text('经前提醒'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text('孕期模式'),
-        180,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('孕期模式'), findsOneWidget);
-    },
-  );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      // 修复前这里嵌套了 ListView，列表拿到无界高度，弹窗整块空白。
+      expect(find.text('经量'), findsWidgets);
+      expect(find.text('情绪'), findsOneWidget);
+      expect(find.text('私密生殖健康'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('取消'));
+      await tester.pumpAndSettle();
+    }
+
+    await openAndVerify(const Size(400, 820));
+    await openAndVerify(const Size(1000, 820));
+  });
 }
 
 class _TestApp extends StatelessWidget {
@@ -272,6 +368,30 @@ HealthPeriodSettingsModel _settings({bool periodTrackingEnabled = true}) {
   );
 }
 
+HealthDailyLog _log() {
+  return HealthDailyLog(
+    id: 'daily_1',
+    date: DateTime.utc(2026, 7, 18),
+    periodRecordId: null,
+    flowLevel: HealthFlowLevel.medium,
+    symptoms: const [],
+    mood: HealthMood.calm,
+    exerciseIntensity: null,
+    sexualActivity: true,
+    contraceptionMethod: HealthContraceptionMethod.condom,
+    ovulationTest: null,
+    medications: const [],
+    diet: null,
+    waterIntake: null,
+    sleepMinutes: null,
+    weightGrams: null,
+    temperatureCelsiusTenths: null,
+    stressLevel: null,
+    calories: null,
+    notes: null,
+  );
+}
+
 HealthTodaySnapshot _snapshot({
   DateTime? date,
   HealthPeriodSettingsModel? settings,
@@ -284,6 +404,7 @@ HealthTodaySnapshot _snapshot({
       basis: HealthPredictionBasis.history,
       mainStatus: '周期第 20 天 · 预计 10 天后开始经期',
       currentCycleDay: 20,
+      daysUntilNextPeriod: 10,
       nextPeriodStart: DateTime.utc(2026, 7, 28),
       nextPeriodEnd: DateTime.utc(2026, 8, 1),
       fertileWindowStart: DateTime.utc(2026, 7, 12),
@@ -292,27 +413,7 @@ HealthTodaySnapshot _snapshot({
       pmsEnd: DateTime.utc(2026, 7, 27),
     ),
     activePeriod: null,
-    dailyLog: HealthDailyLog(
-      id: 'daily_1',
-      date: snapshotDate,
-      periodRecordId: null,
-      flowLevel: HealthFlowLevel.medium,
-      symptoms: const [],
-      mood: HealthMood.calm,
-      exerciseIntensity: null,
-      sexualActivity: true,
-      contraceptionMethod: HealthContraceptionMethod.condom,
-      ovulationTest: null,
-      medications: const [],
-      diet: null,
-      waterIntake: null,
-      sleepMinutes: null,
-      weightGrams: null,
-      temperatureCelsiusTenths: null,
-      stressLevel: null,
-      calories: null,
-      notes: null,
-    ),
+    dailyLog: _log(),
     activePregnancy: null,
   );
 }

@@ -64,6 +64,7 @@ class HealthPredictionService {
           : HealthPredictionBasis.settings,
       mainStatus: healthPredictionCycleDayLabel(currentCycleDay, daysUntil),
       currentCycleDay: currentCycleDay,
+      daysUntilNextPeriod: daysUntil,
       nextPeriodStart: nextStart,
       nextPeriodEnd: nextEnd,
       fertileWindowStart: nextStart.subtract(const Duration(days: 16)),

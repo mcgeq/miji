@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:miji/features/health/domain/health_models.dart';
 import 'package:miji/features/health/health_text.dart' as health_text;
+import 'package:miji/features/health/presentation/health_theme.dart';
 
 export 'package:miji/features/health/health_text.dart' show HealthQuickAction;
 
@@ -14,7 +15,21 @@ IconData quickActionIcon(health_text.HealthQuickAction action) {
     health_text.HealthQuickAction.temperatureSleep => Icons.thermostat_outlined,
     health_text.HealthQuickAction.ovulationTest => Icons.science_outlined,
     health_text.HealthQuickAction.medication => Icons.medication_outlined,
-    health_text.HealthQuickAction.more => Icons.more_horiz_rounded,
+    health_text.HealthQuickAction.more => Icons.edit_note_rounded,
+  };
+}
+
+/// 磁贴上的短标签（非「开始/结束经期」这种带状态的文案）。
+String quickActionTileLabel(health_text.HealthQuickAction action) {
+  return switch (action) {
+    health_text.HealthQuickAction.period => '经期',
+    health_text.HealthQuickAction.flow => '经量',
+    health_text.HealthQuickAction.symptoms => '症状',
+    health_text.HealthQuickAction.mood => '情绪',
+    health_text.HealthQuickAction.temperatureSleep => '体温睡眠',
+    health_text.HealthQuickAction.ovulationTest => '排卵试纸',
+    health_text.HealthQuickAction.medication => '用药',
+    health_text.HealthQuickAction.more => '完整记录',
   };
 }
 
@@ -27,30 +42,13 @@ String quickActionLabel(
 
 Color quickActionColor(
   health_text.HealthQuickAction action,
-  ColorScheme colorScheme,
+  BuildContext context,
 ) {
-  return switch (action) {
-    health_text.HealthQuickAction.period => colorScheme.error,
-    health_text.HealthQuickAction.flow => colorScheme.tertiary,
-    health_text.HealthQuickAction.symptoms => colorScheme.errorContainer,
-    health_text.HealthQuickAction.mood => colorScheme.primary,
-    health_text.HealthQuickAction.temperatureSleep => colorScheme.secondary,
-    health_text.HealthQuickAction.ovulationTest => colorScheme.secondary,
-    health_text.HealthQuickAction.medication => colorScheme.inversePrimary,
-    health_text.HealthQuickAction.more => colorScheme.onSurfaceVariant,
-  };
+  return HealthPalette.of(context).actionColor(action);
 }
 
-Color markerColor(HealthCalendarMarkerKind kind, ColorScheme colorScheme) {
-  return switch (kind) {
-    HealthCalendarMarkerKind.actualPeriod => colorScheme.error,
-    HealthCalendarMarkerKind.predictedPeriod => colorScheme.errorContainer,
-    HealthCalendarMarkerKind.pms => colorScheme.tertiary,
-    HealthCalendarMarkerKind.fertileWindow => colorScheme.primary,
-    HealthCalendarMarkerKind.ovulationTest => colorScheme.secondary,
-    HealthCalendarMarkerKind.medication => colorScheme.inversePrimary,
-    HealthCalendarMarkerKind.dailyLog => colorScheme.onSurfaceVariant,
-  };
+Color markerColor(HealthCalendarMarkerKind kind, BuildContext context) {
+  return HealthPalette.of(context).marker(kind);
 }
 
 String flowLabel(HealthFlowLevel value) {

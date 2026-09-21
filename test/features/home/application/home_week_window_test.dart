@@ -46,7 +46,10 @@ void main() {
   group('homeRollingBlockCount', () {
     test('counts only windows that still start inside the month', () {
       // 2026-09-20 -> 本周起点 09-17，往前 09-10 / 09-03 仍在本月，09-27 不是。
-      expect(homeRollingBlockCount(DateTime(2026, 9), DateTime(2026, 9, 20)), 3);
+      expect(
+        homeRollingBlockCount(DateTime(2026, 9), DateTime(2026, 9, 20)),
+        3,
+      );
       // 月初时只剩本周一个窗口。
       expect(homeRollingBlockCount(DateTime(2026, 9), DateTime(2026, 9, 2)), 1);
       expect(homeRollingBlockCount(DateTime(2026, 9), DateTime(2026, 9, 1)), 1);
@@ -93,7 +96,10 @@ void main() {
         final window = container.read(homeTrendWindowProvider);
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
-        expect(today.difference(window.start).inDays, homeTrendTodayIndex + offset * 7);
+        expect(
+          today.difference(window.start).inDays,
+          homeTrendTodayIndex + offset * 7,
+        );
       }
     });
 

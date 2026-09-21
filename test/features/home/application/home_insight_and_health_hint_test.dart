@@ -81,14 +81,11 @@ void main() {
 
       expect(insight, isNotNull);
       expect(insight!.items.length, 3);
-      expect(
-        insight.items.map((item) => item.plainText),
-        [
-          '本月预算已超支 ¥400.00',
-          '贷款还款占本月支出 47%',
-          '今天还没有支出记录',
-        ],
-      );
+      expect(insight.items.map((item) => item.plainText), [
+        '本月预算已超支 ¥400.00',
+        '贷款还款占本月支出 47%',
+        '今天还没有支出记录',
+      ]);
     });
 
     test('sorts by severity so the alert comes first', () {
@@ -123,10 +120,7 @@ void main() {
         categories: [_category('餐饮', 0.34)],
       );
 
-      expect(
-        insight!.items.length,
-        lessThanOrEqualTo(homeInsightMaxItems),
-      );
+      expect(insight!.items.length, lessThanOrEqualTo(homeInsightMaxItems));
     });
 
     test('warns while the budget is still within the limit', () {
@@ -172,7 +166,9 @@ void main() {
       );
 
       expect(
-        insight!.items.where((item) => item.kind == HomeInsightKind.topCategory),
+        insight!.items.where(
+          (item) => item.kind == HomeInsightKind.topCategory,
+        ),
         isEmpty,
       );
     });
@@ -188,17 +184,12 @@ void main() {
         now: DateTime(2026, 9, 20, 20),
       );
 
-      final byKind = {
-        for (final item in insight!.items) item.kind: item,
-      };
+      final byKind = {for (final item in insight!.items) item.kind: item};
       expect(
         byKind[HomeInsightKind.budgetExceeded]!.target,
         HomeInsightTarget.budgets,
       );
-      expect(
-        byKind[HomeInsightKind.budgetExceeded]!.actionLabel,
-        '看预算',
-      );
+      expect(byKind[HomeInsightKind.budgetExceeded]!.actionLabel, '看预算');
       expect(
         byKind[HomeInsightKind.topCategory]!.target,
         HomeInsightTarget.categories,

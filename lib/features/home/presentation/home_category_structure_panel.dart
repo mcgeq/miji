@@ -89,8 +89,7 @@ class _HomeCategoryStructurePanelState
                 // 环形图与图例并排时，图例列只剩不到 200px，分类名会被截断
                 // （「人情往来」这类 4 字名都放不下）。宽度不够就改成上下排，
                 // 让图例拿到整行宽度。
-                final sideBySide =
-                    constraints.maxWidth >= _sideBySideMinWidth;
+                final sideBySide = constraints.maxWidth >= _sideBySideMinWidth;
                 final donut = _Donut(
                   slices: slices,
                   selected: selected,
@@ -361,9 +360,7 @@ class _CategoryRow extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: amountMaxWidth,
-                        ),
+                        constraints: BoxConstraints(maxWidth: amountMaxWidth),
                         child: MoneyAmountText(
                           amountMinor: item.amountMinor,
                           currencyCode: item.currencyCode,

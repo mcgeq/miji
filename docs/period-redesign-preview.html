@@ -1,0 +1,1302 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>米记 · 经期功能改版评审</title>
+<style>
+/* ============================================================
+   主题变量（沿用 docs/home-redesign-preview.html 的暖色体系）
+   ============================================================ */
+:root{
+  --bg:#F6EFE9;
+  --canvas:#FFF8F2;
+  --surface:#FFFFFF;
+  --surface-2:#FFF0E5;
+  --surface-3:#FBEDE4;
+  --line:#EAD8CC;
+  --line-soft:rgba(234,216,204,.55);
+  --text:#2B1F1A;
+  --text-2:#7C6A61;
+  --text-3:#A9988F;
+  --primary:#E45F4F;
+  --primary-ink:#B03A2C;
+  --on-primary:#FFFFFF;
+  --primary-soft:rgba(228,95,79,.10);
+  --primary-soft-2:rgba(228,95,79,.18);
+  --secondary:#21A78B;
+  --secondary-soft:rgba(33,167,139,.12);
+  --tertiary:#D85C93;
+  --income:#168A5B;
+  --income-soft:rgba(22,138,91,.10);
+  --expense:#D44D6E;
+  --expense-soft:rgba(212,77,110,.10);
+  --transfer:#4F7DD9;
+  --warning:#C97A12;
+  --warning-soft:rgba(224,138,30,.13);
+  --sk:rgba(43,31,26,.07);
+  --shadow-sm:0 1px 2px rgba(74,45,32,.04);
+  --shadow:0 1px 2px rgba(74,45,32,.05), 0 10px 26px -18px rgba(74,45,32,.35);
+  --shadow-lg:0 24px 60px -28px rgba(74,45,32,.45);
+  --radius:20px;
+  --radius-sm:14px;
+  --radius-xs:10px;
+
+  /* 经期语义色：与 AppTheme 的 error / secondary / tertiary 对齐，
+     但区分度更高，专门服务「阶段」这种需要同时出现 5 种颜色的场景 */
+  --period:#D8456B;
+  --period-soft:rgba(216,69,107,.12);
+  --period-ink:#A82C4F;
+  --fertile:#17967A;
+  --fertile-soft:rgba(23,150,122,.13);
+  --pms:#8A5AC2;
+  --pms-soft:rgba(138,90,194,.13);
+  --luteal:#C97A12;
+  --luteal-soft:rgba(201,122,18,.13);
+  --follicle:#4F7DD9;
+  --follicle-soft:rgba(79,125,217,.12);
+  --ovu:#E08A1E;
+  --preg:#D85C93;
+}
+html[data-theme="dark"]{
+  --bg:#120E0C;
+  --canvas:#1B1412;
+  --surface:#241C19;
+  --surface-2:#2E211C;
+  --surface-3:#332520;
+  --line:#4A3730;
+  --line-soft:rgba(74,55,48,.6);
+  --text:#F6EBE5;
+  --text-2:#B7A49B;
+  --text-3:#8B7870;
+  --primary:#FF9A88;
+  --primary-ink:#FFC3B6;
+  --on-primary:#2B1F1A;
+  --primary-soft:rgba(255,154,136,.14);
+  --primary-soft-2:rgba(255,154,136,.24);
+  --secondary:#7AE1C8;
+  --secondary-soft:rgba(122,225,200,.14);
+  --tertiary:#FFADD1;
+  --income:#63D3A4;
+  --income-soft:rgba(99,211,164,.14);
+  --expense:#FF8EA8;
+  --expense-soft:rgba(255,142,168,.14);
+  --transfer:#92B4FF;
+  --warning:#F0B45C;
+  --warning-soft:rgba(240,180,92,.16);
+  --sk:rgba(255,255,255,.08);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 28px -20px rgba(0,0,0,.8);
+  --shadow-lg:0 30px 70px -30px rgba(0,0,0,.9);
+
+  --period:#FF8FAD;
+  --period-soft:rgba(255,143,173,.16);
+  --period-ink:#FFC0D0;
+  --fertile:#6FDCC0;
+  --fertile-soft:rgba(111,220,192,.15);
+  --pms:#C6A0FF;
+  --pms-soft:rgba(198,160,255,.16);
+  --luteal:#F0B45C;
+  --luteal-soft:rgba(240,180,92,.16);
+  --follicle:#9DBAFF;
+  --follicle-soft:rgba(157,186,255,.15);
+  --ovu:#F5C06A;
+  --preg:#FFADD1;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 12% -8%, var(--primary-soft), transparent 60%),
+    radial-gradient(900px 500px at 96% 4%, var(--secondary-soft), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  font-size:15px;
+  line-height:1.5;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;
+  background:var(--surface-2);border:1px solid var(--line-soft);color:var(--text-2);
+  padding:1px 6px;border-radius:6px;display:inline-block}
+
+/* ============================================================
+   页面外壳
+   ============================================================ */
+.page{max-width:1560px;margin:0 auto;padding:40px 28px 96px}
+.page-head{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;justify-content:space-between;margin-bottom:26px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary)}
+.eyebrow::before{content:"";width:22px;height:2px;border-radius:2px;background:var(--primary)}
+h1{margin:10px 0 8px;font-size:34px;line-height:1.2;letter-spacing:-.02em;font-weight:800}
+.lede{margin:0;max-width:66ch;color:var(--text-2);font-size:15px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;padding:4px;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow-sm)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--text-2);font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;cursor:pointer;transition:.18s ease;white-space:nowrap}
+.seg button:hover{color:var(--text)}
+.seg button[aria-pressed="true"]{background:var(--primary);color:#fff;box-shadow:0 4px 12px -4px var(--primary)}
+html[data-theme="dark"] .seg button[aria-pressed="true"]{color:#2B1F1A}
+
+/* ============================================================
+   分析区
+   ============================================================ */
+.analysis{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin:34px 0 40px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow-sm)}
+.panel h2{margin:0 0 4px;font-size:16px;font-weight:800;letter-spacing:-.01em}
+.panel h3{margin:18px 0 8px;font-size:13px;font-weight:800;color:var(--text-2);letter-spacing:.02em}
+.panel p.sub{margin:0 0 16px;color:var(--text-3);font-size:13px}
+.span-7{grid-column:span 7}
+.span-5{grid-column:span 5}
+.span-6{grid-column:span 6}
+.span-12{grid-column:span 12}
+
+.issue-list{list-style:none;margin:0;padding:0;display:grid;gap:11px}
+.issue-list li{display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:start}
+.issue-list .idx{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;background:var(--expense-soft);color:var(--expense);font-size:12px;font-weight:800}
+.issue-list b{display:block;font-size:14px;font-weight:700}
+.issue-list span{color:var(--text-2);font-size:13px}
+.issue-list .sev{font-size:10px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:1px}
+.sev.bug{background:var(--expense-soft);color:var(--expense)}
+.sev.ux{background:var(--warning-soft);color:var(--warning)}
+.sev.a11y{background:var(--transfer);color:#fff}
+html[data-theme="dark"] .sev.a11y{color:#12100e}
+
+.goal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.goal{border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px;background:var(--surface-2)}
+.goal .k{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--secondary);text-transform:uppercase}
+.goal b{display:block;margin:6px 0 3px;font-size:14px}
+.goal span{font-size:12.5px;color:var(--text-2)}
+
+.map-table{width:100%;border-collapse:collapse;font-size:13px}
+.map-table th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);font-weight:800;padding:0 10px 10px;border-bottom:1px solid var(--line)}
+.map-table td{padding:11px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.map-table tr:last-child td{border-bottom:0}
+.map-table td:first-child{font-weight:700}
+.map-table code{margin:1px 0}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--secondary-soft);color:var(--secondary);white-space:nowrap}
+.badge.new{background:var(--primary-soft);color:var(--primary)}
+.badge.fix{background:var(--expense-soft);color:var(--expense)}
+
+/* IA 对比 */
+.ia{display:grid;grid-template-columns:1fr 44px 1fr;gap:14px;align-items:center}
+.ia-col{border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px;background:var(--surface-2);min-height:190px}
+.ia-col .t{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
+.ia-node{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 11px;font-size:12.5px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.ia-node.ghost{opacity:.5;border-style:dashed}
+.ia-node.hot{border-color:var(--primary-soft-2);background:var(--primary-soft);color:var(--primary-ink)}
+.ia-sub{font-size:11.5px;color:var(--text-3);font-weight:600;margin:-4px 0 8px 12px}
+.ia-arrow{display:grid;place-items:center;font-size:22px;color:var(--primary)}
+
+/* ============================================================
+   预览区
+   ============================================================ */
+.previews{margin-top:10px}
+.section-title{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;letter-spacing:-.01em;margin:38px 0 4px}
+.section-title .tag{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+.section-title.before .tag{background:var(--surface-3);color:var(--text-3)}
+.section-title.after .tag{background:var(--primary);color:#fff}
+.section-sub{color:var(--text-3);font-size:13px;margin:0 0 18px}
+.phone-row{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+.preview-col{display:flex;flex-direction:column;gap:12px}
+.preview-label{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.preview-label .dot{width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.preview-label.bad .dot{background:var(--text-3)}
+
+/* 手机外框 */
+.phone{width:392px;background:var(--canvas);border:1px solid var(--line);border-radius:38px;box-shadow:var(--shadow-lg);overflow:hidden;position:relative;flex:0 0 auto}
+.phone-screen{height:812px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+.phone-screen::-webkit-scrollbar{width:5px}
+.phone-screen::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.phone.before{filter:saturate(.82)}
+.phone.before .phone-screen{height:812px}
+
+/* 顶部栏 */
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;padding:12px 16px;background:color-mix(in srgb, var(--canvas) 88%, transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
+.topbar .title{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.topbar .spacer{flex:1}
+.icon-btn{width:34px;height:34px;border-radius:999px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:13px;font-weight:800;color:var(--text-2);cursor:default;flex:0 0 auto}
+.mark{width:32px;height:32px;border-radius:11px;background:linear-gradient(145deg,var(--primary),#C9483A);color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px;flex:0 0 auto;box-shadow:0 6px 14px -6px var(--primary)}
+.body-pad{padding:14px 16px 44px;display:flex;flex-direction:column;gap:14px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);position:relative}
+.card-head{display:flex;align-items:center;gap:8px;margin-bottom:13px}
+.card-head .t{font-size:14px;font-weight:800;letter-spacing:-.01em}
+.card-head .s{font-size:12px;color:var(--text-3);font-weight:600}
+.card-head .spacer{flex:1}
+.link{background:transparent;border:0;color:var(--primary);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;padding:4px 2px;border-radius:8px}
+.link:hover{background:var(--primary-soft)}
+
+/* 分段控件（页内 tab） */
+.seg-ctl{display:flex;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:999px;padding:4px;gap:3px;margin:0 16px}
+.seg-ctl span{flex:1;text-align:center;font-size:12.5px;font-weight:700;color:var(--text-2);padding:8px 4px;border-radius:999px;cursor:default;transition:.16s}
+.seg-ctl span.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);font-weight:800}
+.seg-ctl.mini{margin:0}
+.seg-ctl.mini span{padding:6px 12px;font-size:12px}
+
+/* ============================================================
+   周期 Hero
+   ============================================================ */
+.cycle-hero{border:0;color:#fff;overflow:hidden;background:linear-gradient(135deg,#D8456B 0%,#C24A80 46%,#8E4BC4 100%);box-shadow:0 18px 40px -22px rgba(180,60,90,.75);border-radius:var(--radius);padding:18px;position:relative}
+html[data-theme="dark"] .cycle-hero{background:linear-gradient(135deg,#7E2F4A 0%,#6A2F55 50%,#3E2A72 100%);border:1px solid rgba(255,255,255,.08)}
+.cycle-hero::after{content:"";position:absolute;right:-70px;top:-90px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.12);pointer-events:none}
+.cycle-top{display:flex;align-items:center;gap:8px;position:relative;z-index:1}
+.cycle-phase{font-size:11.5px;font-weight:800;letter-spacing:.03em;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.2);color:#fff}
+.cycle-chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.13);color:#fff;display:inline-flex;align-items:center;gap:5px}
+.cycle-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:#9BF5D4}
+.cycle-body{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px;position:relative;z-index:1}
+.cycle-num{font-size:38px;line-height:1.02;font-weight:800;letter-spacing:-.03em}
+.cycle-num small{font-size:16px;font-weight:700;opacity:.8;letter-spacing:0}
+.cycle-label{font-size:12px;font-weight:700;opacity:.82;margin-top:2px}
+.cycle-foot{font-size:12.5px;opacity:.9;margin-top:12px;font-weight:600;position:relative;z-index:1}
+.cycle-foot b{font-weight:800}
+.ring{width:92px;height:92px;border-radius:50%;flex:0 0 auto;position:relative;
+  background:conic-gradient(#fff 0 71%, rgba(255,255,255,.24) 71% 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent 64%,#000 65%);
+  mask:radial-gradient(farthest-side,transparent 64%,#000 65%);}
+.ring-wrap{position:relative;flex:0 0 auto}
+.ring-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#fff}
+.ring-center .a{font-size:19px;font-weight:800;line-height:1}
+.ring-center .b{font-size:9.5px;font-weight:700;opacity:.78;margin-top:2px}
+.cycle-pills{display:flex;gap:8px;margin-top:16px;position:relative;z-index:1;flex-wrap:wrap}
+.hp{flex:1 1 0;min-width:78px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:9px 11px}
+.hp .k{font-size:10.5px;opacity:.82;font-weight:700}
+.hp .v{font-size:14px;font-weight:800;margin-top:2px;letter-spacing:-.01em}
+
+/* ============================================================
+   快捷记录（改造后：大按钮网格）
+   ============================================================ */
+.log-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.log-tile{height:62px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);cursor:pointer;transition:.16s ease;position:relative}
+.log-tile:hover{transform:translateY(-2px);border-color:var(--primary-soft-2);box-shadow:var(--shadow)}
+.log-tile .ic{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:18px}
+.log-tile.done{border-color:var(--primary-soft-2);background:var(--primary-soft)}
+.log-tile .done-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--income)}
+.ic.period{background:var(--period-soft);color:var(--period)}
+.ic.flow{background:var(--expense-soft);color:var(--expense)}
+.ic.sym{background:var(--warning-soft);color:var(--warning)}
+.ic.mood{background:var(--follicle-soft);color:var(--follicle)}
+.ic.temp{background:var(--transfer);color:#fff}
+html[data-theme="dark"] .ic.temp{color:#12100e}
+.ic.ovu{background:var(--ovu);color:#fff}
+html[data-theme="dark"] .ic.ovu{background:rgba(245,192,106,.22);color:var(--ovu)}
+.ic.med{background:var(--pms-soft);color:var(--pms)}
+.ic.weight{background:var(--secondary-soft);color:var(--secondary)}
+.ic.more{background:var(--surface-2);color:var(--text-2)}
+
+/* ============================================================
+   今日记录列表
+   ============================================================ */
+.rec-list{display:flex;flex-direction:column}
+.rec-row{display:flex;align-items:center;gap:11px;padding:9px 6px;border-radius:12px;cursor:pointer;transition:.16s}
+.rec-row:hover{background:var(--surface-2)}
+.rec-row + .rec-row{border-top:1px solid var(--line-soft)}
+.rec-row .ic{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;font-size:14px;flex:0 0 auto;background:var(--surface-2);color:var(--text-2)}
+.rec-row .mid{flex:1;min-width:0}
+.rec-row .tit{font-size:13.5px;font-weight:700}
+.rec-row .meta{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:1px}
+.rec-row .val{font-size:13px;font-weight:800;color:var(--text)}
+.rec-empty{padding:16px 6px;color:var(--text-3);font-size:13px;display:flex;align-items:center;gap:8px}
+
+/* 洞察条 */
+.insight{display:flex;align-items:flex-start;gap:11px;padding:13px 14px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.insight .em{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;background:var(--secondary-soft);color:var(--secondary);font-size:14px;font-weight:800}
+.insight.warn .em{background:var(--warning-soft);color:var(--warning)}
+.insight.pms .em{background:var(--pms-soft);color:var(--pms)}
+.insight .t{font-size:13.5px;font-weight:700;line-height:1.55}
+.insight .t b{color:var(--primary);font-weight:800}
+.insight .s{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:3px}
+
+/* ============================================================
+   日历
+   ============================================================ */
+.cal-head{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.cal-head .m{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.cal-head .spacer{flex:1}
+.today-btn{font-size:11.5px;font-weight:800;color:var(--primary);background:var(--primary-soft);border:0;padding:6px 11px;border-radius:999px;cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:12px 0 10px}
+.legend span{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--text-2)}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.legend i.p{background:var(--period)}
+.legend i.pp{border:1.5px dashed var(--period)}
+.legend i.f{background:var(--fertile)}
+.legend i.pm{background:var(--pms)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .dow{font-size:11px;font-weight:800;color:var(--text-3);text-align:center;padding:2px 0 6px}
+.cal .c{aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;position:relative;border:1px solid transparent;color:var(--text)}
+.cal .c.muted{color:var(--text-3);opacity:.4}
+.cal .c.period{background:var(--period);color:#fff;font-weight:800}
+.cal .c.predicted{border:1.5px dashed var(--period);color:var(--period-ink);font-weight:700}
+.cal .c.fertile{background:var(--fertile-soft);color:var(--fertile);font-weight:700}
+.cal .c.pms{background:var(--pms-soft);color:var(--pms);font-weight:700}
+.cal .c.log::after{content:"";position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.75}
+.cal .c.ovu::before{content:"";position:absolute;top:4px;width:4px;height:4px;border-radius:50%;background:var(--ovu)}
+.cal .c.today{outline:2px solid var(--primary);outline-offset:-2px}
+.cal .c.sel{box-shadow:0 0 0 2px var(--primary),0 8px 16px -8px var(--primary);font-weight:800}
+
+/* 现状日历的小圆点 */
+.cal .c .dots{position:absolute;bottom:4px;display:flex;gap:2px}
+.cal .c .dots b{width:5px;height:5px;border-radius:50%;display:block}
+
+.day-card-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.day-card-head .d{font-size:15px;font-weight:800}
+.day-card-head .w{font-size:12px;color:var(--text-3);font-weight:600}
+.pill-today{font-size:10.5px;font-weight:800;color:var(--on-primary);background:var(--primary);padding:3px 8px;border-radius:999px}
+.marker-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.mchip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--text-2)}
+.mchip.p{border-color:var(--period-soft);background:var(--period-soft);color:var(--period-ink)}
+.mchip.f{border-color:var(--fertile-soft);background:var(--fertile-soft);color:var(--fertile)}
+.mchip.m{border-color:var(--pms-soft);background:var(--pms-soft);color:var(--pms)}
+.btn-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border:0;border-radius:var(--radius-sm);background:var(--primary);color:var(--on-primary);font:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 10px 22px -12px var(--primary)}
+.btn-ghost{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+
+/* 现状快捷 chip 云 */
+.chip-cloud{display:flex;flex-wrap:wrap;gap:6px}
+.qchip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:5px 8px;border-radius:8px}
+
+/* 现状步进器 */
+.stepper{display:flex;align-items:center;gap:10px;padding:14px;border-radius:8px;background:var(--surface-2);margin-bottom:10px}
+.stepper .mid{flex:1}
+.stepper .lb{font-size:13px;font-weight:800}
+.stepper .sb{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:2px}
+.stepper .val{width:38px;text-align:center;font-size:16px;font-weight:800}
+.step-btn{width:34px;height:34px;border-radius:999px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--text-2);cursor:default}
+.panel-box{border:1px solid var(--line);border-radius:8px;padding:2px 14px;margin-bottom:14px}
+.tile-row{display:flex;align-items:center;gap:11px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.tile-row:last-child{border-bottom:0}
+.tile-row .mid{flex:1}
+.tile-row .tit{font-size:13.5px;font-weight:700}
+.tile-row .sub{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:1px}
+.switch{width:40px;height:23px;border-radius:999px;background:var(--primary);position:relative;flex:0 0 auto}
+.switch::after{content:"";position:absolute;top:2.5px;right:2.5px;width:18px;height:18px;border-radius:50%;background:#fff}
+.switch.off{background:var(--surface-3);border:1px solid var(--line)}
+.switch.off::after{right:auto;left:2.5px;background:var(--surface)}
+
+/* ============================================================
+   趋势
+   ============================================================ */
+.stat-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius-sm);padding:11px 12px}
+.stat .k{font-size:10.5px;font-weight:700;color:var(--text-3)}
+.stat .v{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-top:3px}
+.stat .v small{font-size:11px;font-weight:700;color:var(--text-3)}
+.stat .d{font-size:10.5px;font-weight:800;margin-top:4px;display:inline-flex;align-items:center;gap:3px}
+.d.up{color:var(--income)}
+.d.down{color:var(--expense)}
+.d.flat{color:var(--text-3)}
+.spark{width:100%;height:44px;display:block;margin-top:8px}
+.spark .ln{fill:none;stroke:var(--primary);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.spark .avg{stroke:var(--period);stroke-width:1.4;stroke-dasharray:4 4;opacity:.7}
+.spark .pt{fill:var(--surface);stroke:var(--primary);stroke-width:2}
+.axis{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--text-3);margin-top:4px}
+.bar-list{display:flex;flex-direction:column;gap:9px}
+.bar-item{display:grid;grid-template-columns:64px 1fr 46px;gap:9px;align-items:center}
+.bar-item .nm{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-item .tr{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.bar-item .tr i{display:block;height:100%;border-radius:999px}
+.bar-item .pc{font-size:11.5px;font-weight:800;color:var(--text-3);text-align:right}
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut{width:104px;height:104px;border-radius:50%;flex:0 0 auto;position:relative;
+  background:conic-gradient(var(--period) 0 54%, var(--luteal) 54% 85%, var(--pms) 85% 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent 58%,#000 59%);
+  mask:radial-gradient(farthest-side,transparent 58%,#000 59%);}
+.donut-hole{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.donut-hole .k{font-size:10px;color:var(--text-3);font-weight:700}
+.donut-hole .v{font-size:16px;font-weight:800}
+.donut-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.dl-row{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700}
+.dl-row .sw{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+.dl-row .v{margin-left:auto;color:var(--text-3);font-weight:800}
+.gauge-wrap{display:flex;align-items:center;gap:16px}
+.gauge{width:96px;height:96px;border-radius:50%;flex:0 0 auto;position:relative;
+  background:conic-gradient(var(--secondary) 0 60%, var(--surface-2) 60% 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent 60%,#000 61%);
+  mask:radial-gradient(farthest-side,transparent 60%,#000 61%);}
+.gauge-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.gauge-center .v{font-size:20px;font-weight:800}
+.gauge-center .k{font-size:10px;color:var(--text-3);font-weight:700}
+.completeness-list{flex:1;display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:600;color:var(--text-2)}
+.completeness-list div{display:flex}
+.completeness-list b{margin-left:auto;color:var(--text);font-weight:800}
+
+/* ============================================================
+   设置（改造后）
+   ============================================================ */
+.group{margin-bottom:14px}
+.group>.gt{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin:0 2px 8px}
+.set-row{display:flex;align-items:center;gap:11px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.set-row:last-child{border-bottom:0}
+.set-row .mid{flex:1;min-width:0}
+.set-row .tit{font-size:13.5px;font-weight:700}
+.set-row .sub{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:2px;line-height:1.5}
+.set-row .val{font-size:13.5px;font-weight:800;color:var(--primary)}
+.chip-pick{display:flex;flex-wrap:wrap;gap:6px}
+.chip-pick span{font-size:12px;font-weight:700;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--text-2);cursor:default}
+.chip-pick span.on{background:var(--primary);border-color:var(--primary);color:#fff}
+html[data-theme="dark"] .chip-pick span.on{color:#2B1F1A}
+.range-row{display:flex;align-items:center;gap:12px}
+.range-row input[type=range]{flex:1;accent-color:var(--primary)}
+.range-val{display:flex;align-items:baseline;gap:3px;font-size:18px;font-weight:800;color:var(--primary);min-width:52px;justify-content:flex-end}
+.range-val small{font-size:11px;color:var(--text-3);font-weight:700}
+.hint{font-size:11.5px;color:var(--text-3);font-weight:600;line-height:1.55;margin-top:6px}
+.remind-preview{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;color:var(--text-2);background:var(--surface-2);border-radius:10px;padding:7px 10px;margin-top:7px}
+.remind-preview b{color:var(--primary)}
+.preg-card{border:1px solid var(--preg);background:linear-gradient(180deg,color-mix(in srgb,var(--preg) 12%,transparent),transparent 150%);border-radius:var(--radius-sm);padding:14px}
+html[data-theme="dark"] .preg-card{border-color:rgba(255,173,209,.4)}
+.preg-card .row{display:flex;align-items:center;gap:11px}
+.preg-card .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--preg);color:#fff;font-size:15px;flex:0 0 auto}
+html[data-theme="dark"] .preg-card .ic{color:#12100e}
+.preg-card .tit{font-size:13.5px;font-weight:800}
+.preg-card .sub{font-size:11.5px;color:var(--text-3);font-weight:600;margin-top:2px}
+
+/* ============================================================
+   记录表（bottom sheet 预览）
+   ============================================================ */
+.sheet-demo{width:392px;background:var(--canvas);border:1px solid var(--line);border-radius:38px;box-shadow:var(--shadow-lg);overflow:hidden;flex:0 0 auto;position:relative}
+.sheet-back{height:240px;background:var(--surface-3);padding:14px 16px;filter:blur(.4px);opacity:.6}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--canvas);border-top-left-radius:26px;border-top-right-radius:26px;border-top:1px solid var(--line);box-shadow:0 -20px 50px -30px rgba(0,0,0,.5);max-height:640px;overflow-y:auto}
+.sheet-grab{width:38px;height:4px;border-radius:999px;background:var(--line);margin:10px auto 6px}
+.sheet-pad{padding:6px 16px 18px}
+.sheet-title{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.sheet-title .d{font-size:16px;font-weight:800}
+.sheet-title .spacer{flex:1}
+.flow-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px}
+.flow-pick span{display:flex;flex-direction:column;align-items:center;gap:6px;padding:11px 4px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--surface);font-size:11.5px;font-weight:700;color:var(--text-2);cursor:default}
+.flow-pick span.on{border-color:var(--period);background:var(--period-soft);color:var(--period-ink)}
+.flow-pick .drops{display:flex;gap:2px}
+.flow-pick .drops i{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9}
+.sym-pick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.sym-pick span{font-size:12px;font-weight:700;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--text-2);cursor:default}
+.sym-pick span.on{border-color:var(--warning);background:var(--warning-soft);color:var(--warning)}
+.field{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:11px 13px;background:var(--surface);margin-bottom:8px}
+.field .lb{font-size:11.5px;font-weight:700;color:var(--text-3);width:52px;flex:0 0 auto}
+.field .in{flex:1;font-size:14px;font-weight:700}
+.field .unit{font-size:12px;font-weight:700;color:var(--text-3)}
+.sheet-field-label{font-size:12px;font-weight:800;color:var(--text-2);margin:14px 0 8px}
+.privacy-fold{display:flex;align-items:center;gap:9px;padding:13px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);font-size:13px;font-weight:700;color:var(--text-2);margin-top:14px}
+.save-bar{display:flex;gap:8px;margin-top:16px}
+
+/* 标注 */
+[data-note]{cursor:pointer}
+[data-note]:hover{outline:2px solid var(--primary-soft-2);outline-offset:2px}
+.note{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(14px);background:var(--text);color:var(--canvas);border-radius:16px;padding:14px 18px;max-width:640px;width:calc(100% - 40px);box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.24s cubic-bezier(.2,.8,.2,1);z-index:99}
+html[data-theme="dark"] .note{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+.note.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.note .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+.note .b{font-size:13.5px;margin-top:6px;line-height:1.6}
+.note .b code{background:rgba(255,255,255,.16);border-color:transparent;color:inherit}
+html[data-theme="dark"] .note .b code{background:rgba(255,255,255,.08)}
+
+@media (max-width:1240px){
+  .span-7,.span-5,.span-6{grid-column:span 12}
+}
+@media (max-width:760px){
+  .page{padding:24px 16px 60px}
+  h1{font-size:26px}
+  .goal-grid,.ia{grid-template-columns:1fr}
+  .ia-arrow{transform:rotate(90deg)}
+  .phone,.sheet-demo{width:100%;max-width:100%}
+  .phone-screen{height:auto;max-height:none}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===================== 页头 ===================== -->
+  <div class="page-head">
+    <div>
+      <span class="eyebrow">Miji · Period Redesign</span>
+      <h1>经期功能改版评审</h1>
+      <p class="lede">对 <code>lib/features/health/</code> 现有实现的逐块诊断，以及「今日 / 日历 / 趋势 / 设置」四个面板的重构方案。所有改版都基于现有 <code>HealthRepository</code> / Provider，不新增数据层；标 <span class="sev bug">数据</span> 的项目属于必须修复的功能缺陷。下方可切换明暗主题，每个标注元素都可点击查看说明。</p>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="主题">
+        <button data-theme-btn="light" aria-pressed="true">浅色</button>
+        <button data-theme-btn="dark" aria-pressed="false">深色</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 分析 ===================== -->
+  <section class="analysis">
+
+    <div class="panel span-7">
+      <h2>现状诊断：13 个具体问题</h2>
+      <p class="sub">逐文件核对 <code>presentation/</code> 与 <code>health_page.dart</code>。前 4 条是功能缺陷，不是审美问题。</p>
+      <ol class="issue-list">
+        <li><span class="idx">1</span><div><b>编辑每日记录会清空已有数据<span class="sev bug">数据</span></b><span><code>health_page.dart</code> 的 <code>onEditDailyLog</code> 固定传 <code>HealthDailyLog.empty(selectedDay)</code>，即使当天已有记录也打开空表单；保存时 <code>symptoms / exerciseIntensity / diet / calories / medications</code> 全部取空值回写，等于删除。今天点「更多」就会触发。</span></div></li>
+        <li><span class="idx">2</span><div><b>「更多」既打开表单又派发一次空动作<span class="sev bug">数据</span></b><span><code>_CalendarQuickChip.onPressed</code> 先调 <code>onEditDailyLog()</code>，再调 <code>onQuickAction(more)</code>；<code>more</code> 分支是 <code>break</code>，但整套 <code>_handleCalendarQuickAction</code> 仍会先构造 <code>existing</code> 快照，逻辑绕且脆弱。</span></div></li>
+        <li><span class="idx">3</span><div><b>预计经期推迟时文案出错<span class="sev bug">数据</span></b><span><code>healthPredictionCycleDayLabel</code> 直接拼 <code>daysUntil</code>：经期推迟 3 天会显示「预计 -3 天后开始经期」。<code>HealthPredictionService</code> 没有 overdue 分支。</span></div></li>
+        <li><span class="idx">4</span><div><b>隐藏设置被静默回写<span class="sev bug">数据</span></b><span><code>dataSyncEnabled / analyticsEnabled</code> 在 UI 中完全不存在，却每次 <code>_autoSave</code> 都随 draft 写回，用户无法感知也没法修改。</span></div></li>
+        <li><span class="idx">5</span><div><b>日历格子只有 3 个 6px 圆点<span class="sev ux">体验</span></b><span>经期 / 预计 / 经前 / 易孕 4 种状态共用同一种视觉（<code>markerBuilder</code> 取前 3 个画点），用户分不清哪天是「已发生」哪天是「预测」。</span></div></li>
+        <li><span class="idx">6</span><div><b>两套颜色体系打架<span class="sev a11y">主题</span></b><span>格子底色用硬编码 <code>Color(0xFFE57373)</code> 等 7 个颜色（<code>_phaseColor</code>），标记点又用 <code>markerColor(colorScheme)</code>；深色 / 暖色主题下这 7 个硬编码色对比度不合格，且和 App 主色系脱节。</span></div></li>
+        <li><span class="idx">7</span><div><b>快捷动作是一团 25px 的药丸<span class="sev a11y">主题</span></b><span>8 个 <code>_CalendarQuickChip</code> 字号 11、高约 25px、间距 6，触控目标远低于 48dp；「更多」和「结束经期」混在同一排，无主次。</span></div></li>
+        <li><span class="idx">8</span><div><b>只有选中「今天」才有上下文</b><span><code>_TodayPredictionPanel</code> 仅当 <code>isTodaySelected</code> 时渲染，选中其它日期时顶部完全空白，看不到周期第几天、下次经期。</span></div></li>
+        <li><span class="idx">9</span><div><b>同一段摘要逻辑复制两份<span class="sev ux">体验</span></b><span><code>_SelectedDayPanel._buildSummary</code> 与 <code>health_today_tab.dart._DailySummary</code> 几乎逐行相同；而 <code>HealthTodayTab</code> 主页面根本没用到（只有 dev mock 用）。</span></div></li>
+        <li><span class="idx">10</span><div><b>趋势页没有结论、没有基准<span class="sev ux">体验</span></b><span>折线图不显示数值、无平均线；「周期对比」只有两个平均数，不给样本量、不给波动范围；分布图用 <code>LinearProgressIndicator</code>，只有「x 天」没有占比。</span></div></li>
+        <li><span class="idx">11</span><div><b>筛选器要用户自己选日期<span class="sev ux">体验</span></b><span>5 个 <code>ChoiceChip</code> + 一个日期选择器，没有「近 3 周期 / 近 6 月 / 近 1 年」这类快捷区间；<code>interval: 1</code> 让 x 轴标签在数据点多时必然重叠。</span></div></li>
+        <li><span class="idx">12</span><div><b>设置只有 +/- 没有输入<span class="sev ux">体验</span></b><span>周期 18–45 共 28 档只能连点；每次点按即时落库，没有保存反馈、没有撤销；提醒三个开关没有任何「什么时候响、响什么」的预览。</span></div></li>
+        <li><span class="idx">13</span><div><b>孕期模式是个残废入口<span class="sev ux">体验</span></b><span>开始只取「今天」，不能改开始日期、不能填预产期——而 <code>HealthPregnancyDraft</code> 明明有 <code>startDate</code> 和 <code>dueDate</code>。结束孕期用裸 <code>AlertDialog</code>，和其它面板的 <code>AppDialogScaffold</code> 风格不一致。</span></div></li>
+      </ol>
+    </div>
+
+    <div class="panel span-5">
+      <h2>改版目标</h2>
+      <p class="sub">四条原则，全部服务于「一眼知道现在处于什么阶段 + 一步记完当天」</p>
+      <div class="goal-grid">
+        <div class="goal"><span class="k">Hero</span><b>周期状态先行</b><span>任何面板顶部都有一张周期 Hero：第几天、什么阶段、还有几天来月经，不再要求用户先选中「今天」。</span></div>
+        <div class="goal"><span class="k">Encoded</span><b>格子会说话</b><span>经期实心、预测量虚线描边、易孕/经前只做浅色底，颜色语义化并全部走主题 token；图例常驻。</span></div>
+        <div class="goal"><span class="k">Touch</span><b>记录是大按钮</b><span>把 8 个 25px 药丸换成 4×2 的 48dp+ 磁贴，已记录的显示绿点，点一下即改，不再有「更多」这种模糊入口。</span></div>
+        <div class="goal"><span class="k">Insight</span><b>趋势要给结论</b><span>先给一句人能懂的话（规律 / 波动 / 异常），再给图和表；图表带平均线与数值，分布给占比。</span></div>
+      </div>
+      <h3>信息架构对比</h3>
+      <div class="ia">
+        <div class="ia-col">
+          <div class="t">现状</div>
+          <div class="ia-node">日历</div>
+          <div class="ia-node">趋势</div>
+          <div class="ia-node">设置</div>
+          <div class="ia-node ghost">今日（存在但未挂载）</div>
+          <div class="ia-sub">日历 → 选中今天 → 才出现预测摘要</div>
+        </div>
+        <div class="ia-arrow">→</div>
+        <div class="ia-col">
+          <div class="t">改版</div>
+          <div class="ia-node hot">今日 <span style="font-weight:600;font-size:11px">· 默认</span></div>
+          <div class="ia-node">日历</div>
+          <div class="ia-node">趋势</div>
+          <div class="ia-node ghost">设置（右上角齿轮）</div>
+          <div class="ia-sub">周期 Hero 常驻在今日/日历顶部；趋势与设置解耦</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel span-12">
+      <h2>区块 ↔ 现有数据源映射</h2>
+      <p class="sub">改版不新增表、不新增 Provider；仅把已经算出来但没展示的字段暴露出来，并新增一条通知偏好。</p>
+      <table class="map-table">
+        <thead><tr><th style="width:210px">新界面区块</th><th style="width:320px">数据来源</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>周期 Hero（天数/阶段/倒计时）</td><td><code>currentUserHealthTodaySnapshotProvider</code> → <code>prediction.currentCycleDay / currentPeriodDay / pregnancyWeek / nextPeriodStart / fertileWindow* / pms*</code></td><td>现有 <code>HealthCyclePrediction</code> 字段齐全，只是过去只在「选中今天」时展示。</td></tr>
+          <tr><td>阶段标签（经期/卵泡/易孕/黄体/经前）</td><td>由 <code>prediction</code> 的日期区间本地推导</td><td><span class="badge new">新派生</span>纯展示层函数，不落库。</td></tr>
+          <tr><td>今日记录清单</td><td><code>snapshot.dailyLog</code> + <code>visibleRecordCount</code></td><td>修复「打开即空」后，直接复用 <code>dailyLog</code> 回填。</td></tr>
+          <tr><td>8 个记录磁贴</td><td>现有 8 个 <code>HealthQuickAction</code></td><td>不删动作，只换容器；<code>more</code> 改为「完整记录」而非「打开空表单」。</td></tr>
+          <tr><td>日历格子阶段色</td><td><code>listCalendarMarkers</code> → <code>HealthCalendarMarker.kind</code></td><td>4 种状态改为实心/虚线/浅底三档视觉，颜色统一走主题扩展。</td></tr>
+          <tr><td>趋势区间快捷选择</td><td><code>healthTrendStartDateProvider</code> + <code>HealthTrendQuery.defaultCompletedPeriodCount</code></td><td><span class="badge new">新入口</span>把「近 3 周期」映射为已存在的默认值，另外两档由 startDate 推算。</td></tr>
+          <tr><td>趋势结论卡</td><td><code>summary.cycleLengths / cycleLengthSeries / completeness</code></td><td><span class="badge new">新派生</span>用已有的周期数组算均值/极差/规律性。</td></tr>
+          <tr><td>近 3 次经期明细</td><td><code>summary.recentPeriods</code> + <code>healthPeriodRangeLabel</code>（已存在但未使用）</td><td><span class="badge new">新入口</span>现成的 helper 一直没有被调用。</td></tr>
+          <tr><td>记录表（统一编辑器）</td><td><code>HealthDailyLogSheet</code> + 6 个 dialog 合并</td><td>8 处重复构造 <code>HealthDailyLogDraft</code> 收敛为 1 处。</td></tr>
+          <tr><td>提醒时间预览</td><td><code>reminderDays</code> + 三个 <code>*ReminderEnabled</code> + 新增「提醒时间」偏好</td><td><span class="badge new">新偏好</span>仅影响通知调度与展示文案。</td></tr>
+          <tr><td>孕期开始/结束</td><td><code>HealthPregnancyDraft.startDate / dueDate</code>、<code>HealthPregnancyEndDraft</code></td><td>字段已存在，补日期选择器与预产期输入即可。</td></tr>
+          <tr><td>数据与隐私</td><td><code>dataSyncEnabled / analyticsEnabled</code></td><td><span class="badge fix">修复</span>从「隐藏回写」改为显式开关。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel span-12">
+      <h2>实现前的修复清单（按优先级）</h2>
+      <p class="sub">这些是改版落地时必须一起处理的，否则新 UI 只是把旧 bug 换个皮肤。</p>
+      <table class="map-table">
+        <thead><tr><th style="width:110px">优先级</th><th style="width:260px">位置</th><th>动作</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge fix">P0</span></td><td><code>health_page.dart</code> <code>onEditDailyLog</code></td><td>改用 <code>currentUserHealthDailyLogProvider(selectedDay)</code> 回填真实记录；或直接在日历选中日面板内联编辑，不再弹空表单。</td></tr>
+          <tr><td><span class="badge fix">P0</span></td><td><code>health_action_dialogs.dart</code> ×6</td><td>抽出 <code>HealthDailyLogDraft.copyWith</code>，把 6 处「整份复制」改成字段级合并，从根上避免丢字段。</td></tr>
+          <tr><td><span class="badge fix">P0</span></td><td><code>health_prediction_service.dart</code></td><td>增加 <code>isOverdue</code>/<code>daysOverdue</code>，文案分「还有 N 天 / 今天开始 / 已推迟 N 天」三分支。</td></tr>
+          <tr><td><span class="badge">P1</span></td><td><code>health_text.dart</code></td><td>删除或显式暴露 <code>dataSyncEnabled / analyticsEnabled</code>；给 <code>healthPredictionBasisLabel</code>（已存在未用）接到 Hero。</td></tr>
+          <tr><td><span class="badge">P1</span></td><td><code>health_calendar_tab.dart</code></td><td>删除 <code>_phaseColor</code> 硬编码，统一走主题扩展；<code>_groupMarkers</code> 的 key 改为 <code>HealthDate.dayKey</code>。</td></tr>
+          <tr><td><span class="badge">P1</span></td><td><code>health_today_tab.dart</code></td><td>要么挂到主页面（改版方案正是如此），要么删除，避免第二份摘要逻辑漂移。</td></tr>
+          <tr><td><span class="badge">P2</span></td><td><code>drift_health_repository.dart</code></td><td><code>Stream.fromFuture</code> 是伪响应式，靠 <code>_refreshAfterWrite</code> 手动失效。改版不要求重构，但应记录为技术债。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- ===================== 预览 ===================== -->
+  <section class="previews">
+
+    <!-- ---------- 现状复刻 ---------- -->
+    <div class="section-title before"><span class="tag">Before</span>现状复刻（可直接对照 flutter run -t lib/dev/health_mock_main.dart）</div>
+    <p class="section-sub">用同一套 mock 数据（今天 = 2026-07-18）还原三个面板，问题点已标注。</p>
+    <div class="phone-row">
+
+      <!-- 现状 · 日历 -->
+      <div class="preview-col">
+        <div class="preview-label bad"><span class="dot"></span>现状 · 日历</div>
+        <div class="phone before">
+          <div class="phone-screen">
+            <div class="topbar">
+              <div class="mark">经</div>
+              <div class="title">健康</div>
+              <div class="spacer"></div>
+              <div class="icon-btn" data-note="现状把「日历 / 趋势 / 设置」三段挂在顶部，没有「今日」入口。周期摘要要选中今天才出现。" >⋯</div>
+            </div>
+            <div class="seg-ctl" data-note="AppSlidingSegmentedControl：只有三个面板。缺「今日」，而 HealthTodayTab 其实已经写好，只是没挂。" style="margin-top:10px">
+              <span class="on">日历</span><span>趋势</span><span>设置</span>
+            </div>
+            <div class="body-pad">
+              <div class="card" data-note="TableCalendar 格子：经期/预计/经前/易孕都用 6px 圆点，最多画 3 个。用户无法区分「已发生」和「预测」。">
+                <div class="cal-head"><span style="color:var(--text-2)">‹</span><div class="m" style="text-align:center;flex:1">2026年07月</div><span style="color:var(--text-2)">›</span></div>
+                <div class="cal">
+                  <div class="dow">一</div><div class="dow">二</div><div class="dow">三</div><div class="dow">四</div><div class="dow">五</div><div class="dow">六</div><div class="dow">日</div>
+                  <!-- row 1 -->
+                  <div class="c muted">29</div><div class="c muted">30</div>
+                  <div class="c" style="background:rgba(229,115,115,.15);border-radius:8px">1<div class="dots"><b style="background:#E57373"></b></div></div>
+                  <div class="c" style="background:rgba(229,115,115,.15);border-radius:8px">2<div class="dots"><b style="background:#E57373"></b></div></div>
+                  <div class="c" style="background:rgba(229,115,115,.15);border-radius:8px">3<div class="dots"><b style="background:#E57373"></b></div></div>
+                  <div class="c" style="background:rgba(229,115,115,.15);border-radius:8px">4<div class="dots"><b style="background:#E57373"></b></div></div>
+                  <div class="c" style="background:rgba(229,115,115,.15);border-radius:8px">5<div class="dots"><b style="background:#E57373"></b></div></div>
+                  <!-- row 2 -->
+                  <div class="c">6</div><div class="c">7</div><div class="c">8</div><div class="c">9</div><div class="c">10</div><div class="c">11</div>
+                  <div class="c" style="background:rgba(129,199,132,.15);border-radius:8px">12<div class="dots"><b style="background:#81C784"></b></div></div>
+                  <!-- row 3 -->
+                  <div class="c" style="background:rgba(129,199,132,.15);border-radius:8px">13<div class="dots"><b style="background:#81C784"></b></div></div>
+                  <div class="c" style="background:rgba(129,199,132,.15);border-radius:8px">14<div class="dots"><b style="background:#81C784"></b><b style="background:#64B5F6"></b></div></div>
+                  <div class="c" style="background:rgba(129,199,132,.15);border-radius:8px">15<div class="dots"><b style="background:#81C784"></b></div></div>
+                  <div class="c" style="background:rgba(129,199,132,.15);border-radius:8px">16<div class="dots"><b style="background:#81C784"></b></div></div>
+                  <div class="c" style="background:rgba(129,199,132,.15);border-radius:8px">17<div class="dots"><b style="background:#81C784"></b></div></div>
+                  <div class="c" style="background:var(--primaryContainer,#FCD9D3);border-radius:50%;color:#8a2b1f;font-weight:800" data-note="「今天」用 primaryContainer 圆点，和阶段底色的圆角方块风格不统一。">18<div class="dots"><b style="background:#BDBDBD"></b><b style="background:#A1887F"></b></div></div>
+                  <div class="c">19</div>
+                  <!-- row 4 -->
+                  <div class="c">20</div>
+                  <div class="c" style="background:rgba(206,147,216,.15);border-radius:8px">21<div class="dots"><b style="background:#CE93D8"></b></div></div>
+                  <div class="c" style="background:rgba(206,147,216,.15);border-radius:8px">22<div class="dots"><b style="background:#CE93D8"></b></div></div>
+                  <div class="c" style="background:rgba(206,147,216,.15);border-radius:8px">23<div class="dots"><b style="background:#CE93D8"></b></div></div>
+                  <div class="c" style="background:rgba(206,147,216,.15);border-radius:8px">24<div class="dots"><b style="background:#CE93D8"></b></div></div>
+                  <div class="c" style="background:rgba(206,147,216,.15);border-radius:8px">25<div class="dots"><b style="background:#CE93D8"></b></div></div>
+                  <div class="c" style="background:rgba(206,147,216,.15);border-radius:8px">26<div class="dots"><b style="background:#CE93D8"></b></div></div>
+                  <!-- row 5 -->
+                  <div class="c" style="background:rgba(206,147,216,.15);border-radius:8px">27<div class="dots"><b style="background:#CE93D8"></b></div></div>
+                  <div class="c" style="background:rgba(239,154,154,.15);border-radius:8px">28<div class="dots"><b style="background:#EF9A9A"></b></div></div>
+                  <div class="c" style="background:rgba(239,154,154,.15);border-radius:8px">29<div class="dots"><b style="background:#EF9A9A"></b></div></div>
+                  <div class="c" style="background:rgba(239,154,154,.15);border-radius:8px">30<div class="dots"><b style="background:#EF9A9A"></b></div></div>
+                  <div class="c" style="background:rgba(239,154,154,.15);border-radius:8px">31<div class="dots"><b style="background:#EF9A9A"></b></div></div>
+                  <div class="c muted">1</div><div class="c muted">2</div>
+                </div>
+              </div>
+
+              <div class="insight" data-note="_TodayPredictionPanel 只在选中今天时出现，且只展示 indicators 字符串（如「历史预测」），没有周期天数、下次经期等关键信息。">
+                <div class="em">今</div>
+                <div><div class="t" style="font-size:12.5px">历史预测 · 经前提醒已开 · 易孕期已过</div><div class="s">仅一行标签，没有天数与倒计时</div></div>
+              </div>
+
+              <div class="card" data-note="所选日期面板：空态只有「暂无记录」+ 收件箱图标，没有引导下一步。">
+                <div class="day-card-head">
+                  <span class="d">7月18日</span><span class="w">周六</span>
+                  <span class="spacer" style="flex:1"></span>
+                  <span class="pill-today">今天</span>
+                </div>
+                <div style="text-align:center;padding:16px 0;color:var(--text-3)">
+                  <div style="font-size:26px;opacity:.4">🗂</div>
+                  <div style="font-size:13px;margin-top:6px">暂无记录</div>
+                </div>
+                <div style="border-top:1px solid var(--line-soft);padding-top:12px">
+                  <div class="chip-cloud" data-note="8 个快捷 chip：字号 11、高约 25px、间距 6，触控目标远小于 48dp。而且这份「药丸云」正是触发 P0 空表单 bug 的入口。">
+                    <span class="qchip" style="background:rgba(212,77,110,.12);color:#D44D6E">💧 开始经期</span>
+                    <span class="qchip" style="background:rgba(216,92,147,.12);color:#D85C93">🩸 经量</span>
+                    <span class="qchip" style="background:rgba(255,142,168,.14);color:#C04E63">🩹 症状</span>
+                    <span class="qchip" style="background:rgba(79,125,217,.12);color:#4F7DD9">🙂 情绪</span>
+                    <span class="qchip" style="background:rgba(33,167,139,.12);color:#1F9E7F">🌡 体温和睡眠</span>
+                    <span class="qchip" style="background:rgba(33,167,139,.12);color:#1F9E7F">🧪 排卵试纸</span>
+                    <span class="qchip" style="background:rgba(138,90,194,.12);color:#8A5AC2">💊 用药</span>
+                    <span class="qchip" style="background:rgba(43,31,26,.07);color:#7C6A61">⋯ 更多</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 现状 · 趋势 -->
+      <div class="preview-col">
+        <div class="preview-label bad"><span class="dot"></span>现状 · 趋势</div>
+        <div class="phone before">
+          <div class="phone-screen">
+            <div class="topbar"><div class="mark">经</div><div class="title">健康</div><div class="spacer"></div><div class="icon-btn">⋯</div></div>
+            <div class="body-pad">
+              <div class="card" data-note="筛选范围：5 个 ChoiceChip + 一个「默认最近 3 个周期」按钮。没有「近 6 月 / 近 1 年」快捷区间，用户改区间必须打开日期选择器。">
+                <div class="card-head"><span class="t">筛选范围</span></div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <span class="mchip p">全部</span><span class="mchip">经期</span><span class="mchip">经前</span><span class="mchip">易孕期</span><span class="mchip">非经期</span>
+                </div>
+                <div class="btn-ghost" style="margin-top:12px">📅 默认最近 3 个周期</div>
+              </div>
+
+              <div class="card" data-note="折线图：isCurved 曲线、无数据点数值、无平均线、y 轴只给数字没有单位；interval:1 让每个点都写标签，点多必然重叠。">
+                <div class="card-head"><span class="t">周期长度</span><span class="s">基于最近记录</span></div>
+                <svg class="spark" viewBox="0 0 320 60" preserveAspectRatio="none" style="height:90px">
+                  <line class="avg" x1="12" y1="30" x2="308" y2="30"/>
+                  <path class="ln" d="M40,20 C110,20 130,52 190,40 C250,28 270,50 300,52" style="fill:none;stroke:var(--primary);stroke-width:3"/>
+                  <circle class="pt" cx="40" cy="20" r="4"/><circle class="pt" cx="130" cy="38" r="4"/>
+                  <circle class="pt" cx="220" cy="38" r="4"/><circle class="pt" cx="300" cy="52" r="4"/>
+                </svg>
+                <div class="axis"><span>5月5日</span><span>6月2日</span><span>7月1日</span><span>7月1日</span></div>
+              </div>
+
+              <div class="card" data-note="「周期对比」只有两个平均数，不给样本量、不给波动范围，也没有「比上次长/短」的结论。">
+                <div class="card-head"><span class="t">周期对比</span></div>
+                <div class="set-row"><div class="mid"><div class="tit" style="font-weight:600;color:var(--text-2)">周期长度</div></div><span class="val" style="color:var(--text)">28 天</span></div>
+                <div class="set-row"><div class="mid"><div class="tit" style="font-weight:600;color:var(--text-2)">经期时长</div></div><span class="val" style="color:var(--text)">5 天</span></div>
+              </div>
+
+              <div class="card">
+                <div class="card-head"><span class="t">经量趋势</span></div>
+                <div class="bar-list">
+                  <div class="bar-item"><span class="nm">中量</span><span class="tr"><i style="width:100%;background:var(--primary)"></i></span><span class="pc">7 天</span></div>
+                  <div class="bar-item"><span class="nm">少量</span><span class="tr"><i style="width:57%;background:var(--primary)"></i></span><span class="pc">4 天</span></div>
+                  <div class="bar-item"><span class="nm">大量</span><span class="tr"><i style="width:29%;background:var(--primary)"></i></span><span class="pc">2 天</span></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head"><span class="t">健康指标</span></div>
+                <div class="set-row"><div class="mid"><div class="tit" style="font-weight:600;color:var(--text-2)">记录天数</div></div><span class="val" style="color:var(--text)">18 天</span></div>
+                <div class="set-row"><div class="mid"><div class="tit" style="font-weight:600;color:var(--text-2)">睡眠</div></div><span class="val" style="color:var(--text)">7小时8分钟</span></div>
+                <div class="set-row"><div class="mid"><div class="tit" style="font-weight:600;color:var(--text-2)">体重</div></div><span class="val" style="color:var(--text)">56.1 kg</span></div>
+                <div class="set-row"><div class="mid"><div class="tit" style="font-weight:600;color:var(--text-2)">体温</div></div><span class="val" style="color:var(--text)">36.5℃</span></div>
+              </div>
+
+              <div class="card" data-note="数据完整度只有一条进度条 + 6 行文字，且「应记录天数」的来源没有解释。">
+                <div class="card-head"><span class="t">数据完整度</span><span class="s">记录覆盖</span></div>
+                <div class="bar-item" style="grid-template-columns:1fr 46px"><span class="tr"><i style="width:60%;background:var(--primary)"></i></span><span class="pc">60%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 现状 · 设置 -->
+      <div class="preview-col">
+        <div class="preview-label bad"><span class="dot"></span>现状 · 设置</div>
+        <div class="phone before">
+          <div class="phone-screen">
+            <div class="topbar"><div class="mark">经</div><div class="title">健康</div><div class="spacer"></div><div class="icon-btn">⋯</div></div>
+            <div class="body-pad">
+              <div class="panel-box">
+                <div class="tile-row">
+                  <div class="mid"><div class="tit">启用经期记录</div><div class="sub">关闭后保留每日记录统计</div></div>
+                  <div class="switch"></div>
+                </div>
+              </div>
+
+              <div class="stepper" data-note="_NumberStepper：周期 18–45 共 28 档只能连点 +/-，不能直接输入、不能长按连加。每次点按立即 _autoSave 落库，无反馈、无撤销。">
+                <div class="mid"><div class="lb">平均周期长度</div><div class="sb">28 天</div></div>
+                <div class="step-btn">−</div><div class="val">28</div><div class="step-btn">+</div>
+              </div>
+              <div class="stepper">
+                <div class="mid"><div class="lb">平均经期长度</div><div class="sb">5 天</div></div>
+                <div class="step-btn">−</div><div class="val">5</div><div class="step-btn">+</div>
+              </div>
+
+              <div class="panel-box" data-note="三个提醒开关 + 「提醒提前天数」共四个控件，却没有任何「什么时候响、响什么内容」的预览；而 dataSyncEnabled / analyticsEnabled 这两个真字段反而完全不出现。">
+                <div class="tile-row"><div class="mid"><div class="tit">经期提醒</div></div><div class="switch"></div></div>
+                <div class="tile-row"><div class="mid"><div class="tit">排卵提醒</div></div><div class="switch"></div></div>
+                <div class="tile-row"><div class="mid"><div class="tit">经前提醒</div></div><div class="switch"></div></div>
+              </div>
+
+              <div class="stepper">
+                <div class="mid"><div class="lb">提醒提前天数</div><div class="sb">2 天</div></div>
+                <div class="step-btn">−</div><div class="val">2</div><div class="step-btn">+</div>
+              </div>
+
+              <div class="panel-box" data-note="孕期模式只是个 ListTile，开始只取「今天」，不能改开始日期、不能填预产期；结束用裸 AlertDialog，和别的面板的 AppDialogScaffold 不一致。">
+                <div class="tile-row">
+                  <div class="mid"><div class="tit">孕期模式</div><div class="sub">开始于 7月18日</div></div>
+                  <span style="color:var(--text-2)">›</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ---------- 改版方案 ---------- -->
+    <div class="section-title after"><span class="tag">After</span>改版方案 · 四个面板</div>
+    <p class="section-sub">周期 Hero 常驻；记录改成大磁贴；日历用实心/虚线编码；趋势先给结论再给图；设置按语义分组并补回隐藏字段。</p>
+    <div class="phone-row">
+
+      <!-- 改版 · 今日 -->
+      <div class="preview-col">
+        <div class="preview-label"><span class="dot"></span>今日 · 默认面板</div>
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="topbar">
+              <div class="mark">经</div>
+              <div class="title">经期</div>
+              <div class="spacer"></div>
+              <div class="icon-btn" data-note="设置不再和「日历/趋势」抢同一排分段控件，收敛到右上角齿轮，日历与趋势获得完整高度。">⚙</div>
+            </div>
+            <div class="seg-ctl" style="margin-top:10px">
+              <span class="on">今日</span><span>日历</span><span>趋势</span>
+            </div>
+            <div class="body-pad">
+
+              <div class="cycle-hero" data-note="周期 Hero：常驻在任何面板顶部。左上是当前阶段与提醒状态，中间是周期第几天，右侧环形显示 20/28 的进度，底部是倒计时与三个关键数字。所有字段都来自现有 HealthCyclePrediction。">
+                <div class="cycle-top">
+                  <span class="cycle-phase">黄体期</span>
+                  <span class="cycle-chip">经前提醒已开</span>
+                </div>
+                <div class="cycle-body">
+                  <div>
+                    <div class="cycle-num">20<small> 天</small></div>
+                    <div class="cycle-label">当前周期第 20 天</div>
+                  </div>
+                  <div class="ring-wrap">
+                    <div class="ring"></div>
+                    <div class="ring-center"><div class="a">20/28</div><div class="b">周期进度</div></div>
+                  </div>
+                </div>
+                <div class="cycle-foot">距下次经期还有 <b>10 天</b> · 预计 <b>7月28日</b></div>
+                <div class="cycle-pills">
+                  <div class="hp"><div class="k">平均周期</div><div class="v">28 天</div></div>
+                  <div class="hp"><div class="k">平均经期</div><div class="v">5 天</div></div>
+                  <div class="hp"><div class="k">预测依据</div><div class="v">历史</div></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="card-head" style="padding:0 2px">
+                  <span class="t">快速记录</span><span class="s">点一下即记录 · 长按看名称</span>
+                </div>
+                <div class="log-grid" data-note="8 个动作换成 4×2 磁贴：图标居中、整块 62px 高、触控目标 ≥48dp；不再显示文字，名称走长按提示与无障碍标签。已记录的右上角有绿点；「完整记录」单独放最后。">
+                  <div class="log-tile done"><span class="ic flow">🩸</span><span class="done-dot"></span></div>
+                  <div class="log-tile done"><span class="ic sym">🩹</span><span class="done-dot"></span></div>
+                  <div class="log-tile done"><span class="ic mood">🙂</span><span class="done-dot"></span></div>
+                  <div class="log-tile done"><span class="ic temp">🌡</span><span class="done-dot"></span></div>
+                  <div class="log-tile"><span class="ic period">💧</span></div>
+                  <div class="log-tile done"><span class="ic ovu">🧪</span><span class="done-dot"></span></div>
+                  <div class="log-tile done"><span class="ic med">💊</span><span class="done-dot"></span></div>
+                  <div class="log-tile"><span class="ic more">✏️</span></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <span class="t">今日记录</span><span class="s">12 条</span>
+                  <span class="spacer"></span>
+                  <button class="link" data-note="打开完整记录表时会回填 dailyLog，修掉「点开是空表单、保存清空数据」的 P0 问题。">编辑</button>
+                </div>
+                <div class="rec-list">
+                  <div class="rec-row"><span class="ic">🩸</span><div class="mid"><div class="tit">经量 · 中量</div><div class="meta">7月18日</div></div><span style="color:var(--text-3)">›</span></div>
+                  <div class="rec-row"><span class="ic">🩹</span><div class="mid"><div class="tit">症状 · 抽筋（中）、疲劳（轻）</div><div class="meta">午后明显</div></div><span style="color:var(--text-3)">›</span></div>
+                  <div class="rec-row"><span class="ic">🙂</span><div class="mid"><div class="tit">情绪 · 平静</div><div class="meta">运动 · 轻度</div></div><span style="color:var(--text-3)">›</span></div>
+                  <div class="rec-row"><span class="ic">🌡</span><div class="mid"><div class="tit">体温 36.5℃ · 睡眠 7小时10分</div><div class="meta">体重 56.0kg · 饮水 1600ml</div></div><span style="color:var(--text-3)">›</span></div>
+                  <div class="rec-row"><span class="ic">💊</span><div class="mid"><div class="tit">用药 · 布洛芬 200mg</div><div class="meta">一次</div></div><span style="color:var(--text-3)">›</span></div>
+                </div>
+              </div>
+
+              <div class="insight pms" data-note="趋势结论前置到今日：把 prediction 的日期区间翻译成一句人话，而不是让用户自己算。">
+                <div class="em">◔</div>
+                <div><div class="t">易孕期已结束，<b>3 天后</b>进入经前期</div><div class="s">经前提醒将于 7月19日 提前 2 天推送</div></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 改版 · 日历 -->
+      <div class="preview-col">
+        <div class="preview-label"><span class="dot"></span>日历</div>
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="topbar"><div class="mark">经</div><div class="title">经期</div><div class="spacer"></div><div class="icon-btn">⚙</div></div>
+            <div class="seg-ctl" style="margin-top:10px"><span>今日</span><span class="on">日历</span><span>趋势</span></div>
+            <div class="body-pad">
+
+              <div class="card" data-note="格子重做：经期=实心色块（已发生）、预计经期=虚线描边（未发生）、易孕/经前=浅色底，视觉上一眼区分「事实」与「预测」。今天加 outline，选中加双重高亮。图例常驻在日历上方。">
+                <div class="cal-head">
+                  <div class="m">2026年7月</div>
+                  <span class="spacer"></span>
+                  <button class="today-btn">回到今天</button>
+                </div>
+                <div class="legend">
+                  <span><i class="p"></i>经期</span>
+                  <span><i class="pp"></i>预计经期</span>
+                  <span><i class="f"></i>易孕期</span>
+                  <span><i class="pm"></i>经前期</span>
+                </div>
+                <div class="cal">
+                  <div class="dow">一</div><div class="dow">二</div><div class="dow">三</div><div class="dow">四</div><div class="dow">五</div><div class="dow">六</div><div class="dow">日</div>
+                  <div class="c muted">29</div><div class="c muted">30</div>
+                  <div class="c period log">1</div><div class="c period log">2</div><div class="c period log">3</div><div class="c period log">4</div><div class="c period log">5</div>
+                  <div class="c">6</div><div class="c">7</div><div class="c log">8</div><div class="c">9</div><div class="c">10</div><div class="c">11</div><div class="c fertile">12</div>
+                  <div class="c fertile">13</div><div class="c fertile ovu">14</div><div class="c fertile">15</div><div class="c fertile">16</div><div class="c fertile">17</div>
+                  <div class="c today sel log">18</div><div class="c">19</div>
+                  <div class="c">20</div><div class="c pms">21</div><div class="c pms">22</div><div class="c pms">23</div><div class="c pms">24</div><div class="c pms">25</div><div class="c pms">26</div>
+                  <div class="c pms">27</div><div class="c predicted">28</div><div class="c predicted">29</div><div class="c predicted">30</div><div class="c predicted">31</div><div class="c muted">1</div><div class="c muted">2</div>
+                </div>
+              </div>
+
+              <div class="card" data-note="选中日卡片：日期 + 阶段标签 + 当天的标记 + 内联快捷记录。空的日期给引导文案，而不是只有「暂无记录」。">
+                <div class="day-card-head">
+                  <span class="d">7月18日</span><span class="w">周六</span>
+                  <span class="spacer"></span>
+                  <span class="pill-today">今天</span>
+                </div>
+                <div class="marker-chips">
+                  <span class="mchip f">✓ 易孕期刚结束</span>
+                  <span class="mchip">周期第 20 天</span>
+                </div>
+                <div class="stat-3" style="margin-bottom:12px">
+                  <div class="stat"><div class="k">下次经期</div><div class="v" style="font-size:15px">7月28日</div></div>
+                  <div class="stat"><div class="k">还有</div><div class="v" style="font-size:15px">10 天</div></div>
+                  <div class="stat"><div class="k">阶段</div><div class="v" style="font-size:15px">黄体期</div></div>
+                </div>
+                <div class="log-grid">
+                  <div class="log-tile done"><span class="ic flow">🩸</span><span class="done-dot"></span></div>
+                  <div class="log-tile done"><span class="ic sym">🩹</span><span class="done-dot"></span></div>
+                  <div class="log-tile"><span class="ic mood">🙂</span></div>
+                  <div class="log-tile"><span class="ic temp">🌡</span></div>
+                </div>
+                <div class="btn-row">
+                  <button class="btn-primary" style="box-shadow:none">📝 记录这一天</button>
+                  <button class="btn-ghost">💧 开始经期</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 改版 · 趋势 -->
+      <div class="preview-col">
+        <div class="preview-label"><span class="dot"></span>趋势</div>
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="topbar"><div class="mark">经</div><div class="title">经期</div><div class="spacer"></div><div class="icon-btn">⚙</div></div>
+            <div class="seg-ctl" style="margin-top:10px"><span>今日</span><span>日历</span><span class="on">趋势</span></div>
+            <div class="body-pad">
+
+              <div class="seg-ctl mini" data-note="区间换成分段控件：近 3 周期 / 近 6 周期 / 近 1 年。第一档直接用 HealthTrendQuery.defaultCompletedPeriodCount 的默认值，无需日期选择器；需要精确定位时再点「自定义」。">
+                <span class="on">近 3 周期</span><span>近 6 周期</span><span>近 1 年</span>
+              </div>
+
+              <div class="insight" data-note="结论先行：用 cycleLengths 算均值与极差，给出「规律性」判断。这是趋势页存在的意义——用户要的是结论，不是三个数字。">
+                <div class="em">✓</div>
+                <div><div class="t">周期规律性<b>良好</b></div><div class="s">近 3 个周期平均 28 天，波动 ±1 天（世界卫生组织参考：21–35 天）</div></div>
+              </div>
+
+              <div class="card">
+                <div class="card-head"><span class="t">周期长度</span><span class="s">天</span><span class="spacer"></span><button class="link">明细 ›</button></div>
+                <svg class="spark" viewBox="0 0 320 120" style="height:120px">
+                  <line class="avg" x1="16" y1="66" x2="304" y2="66"/>
+                  <rect x="16" y="46" width="288" height="40" rx="10" fill="var(--secondary-soft)"/>
+                  <path class="ln" d="M40,84 L120,40 L200,70 L290,88"/>
+                  <circle class="pt" cx="40" cy="84" r="4.5"/><circle class="pt" cx="120" cy="40" r="4.5"/>
+                  <circle class="pt" cx="200" cy="70" r="4.5"/><circle class="pt" cx="290" cy="88" r="4.5"/>
+                  <text x="40" y="76" font-size="11" font-weight="800" fill="var(--primary)" text-anchor="middle">29</text>
+                  <text x="120" y="32" font-size="11" font-weight="800" fill="var(--primary)" text-anchor="middle">27</text>
+                  <text x="200" y="62" font-size="11" font-weight="800" fill="var(--primary)" text-anchor="middle">28</text>
+                  <text x="290" y="80" font-size="11" font-weight="800" fill="var(--primary)" text-anchor="middle">30</text>
+                </svg>
+                <div class="axis" style="padding:0 6px"><span>5月5日</span><span>6月2日</span><span>7月1日</span><span>7月30日</span></div>
+                <div class="hint">浅色区间为 26–30 天正常范围，虚线为区间平均值 28.5 天。<span data-note="把 cycleLengthSeries 的统计区间显式画出来，异常点会被立刻看见。" style="color:var(--primary);font-weight:800">?</span></div>
+              </div>
+
+              <div class="stat-3">
+                <div class="stat"><div class="k">本次周期</div><div class="v">28<small> 天</small></div><div class="d flat">— 与平均持平</div></div>
+                <div class="stat"><div class="k">平均周期</div><div class="v">28.3<small> 天</small></div><div class="d flat">近 6 次</div></div>
+                <div class="stat"><div class="k">经期时长</div><div class="v">5<small> 天</small></div><div class="d up">↓ 比上次短 1 天</div></div>
+              </div>
+
+              <div class="card">
+                <div class="card-head"><span class="t">经量分布</span><span class="s">近 3 周期</span></div>
+                <div class="donut-wrap">
+                  <div style="position:relative"><div class="donut"></div><div class="donut-hole"><div class="v">13</div><div class="k">天</div></div></div>
+                  <div class="donut-legend">
+                    <div class="dl-row"><span class="sw" style="background:var(--period)"></span>中量<span class="v">54%</span></div>
+                    <div class="dl-row"><span class="sw" style="background:var(--luteal)"></span>少量<span class="v">31%</span></div>
+                    <div class="dl-row"><span class="sw" style="background:var(--pms)"></span>大量<span class="v">15%</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head"><span class="t">经前症状 Top 3</span><span class="s">经前 7 天</span></div>
+                <div class="bar-list">
+                  <div class="bar-item"><span class="nm">抽筋</span><span class="tr"><i style="width:100%;background:var(--pms)"></i></span><span class="pc">6 次</span></div>
+                  <div class="bar-item"><span class="nm">疲劳</span><span class="tr"><i style="width:83%;background:var(--pms)"></i></span><span class="pc">5 次</span></div>
+                  <div class="bar-item"><span class="nm">头痛</span><span class="tr"><i style="width:33%;background:var(--pms)"></i></span><span class="pc">2 次</span></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head"><span class="t">健康指标</span><span class="s">近 30 天平均</span></div>
+                <div class="stat-3">
+                  <div class="stat"><div class="k">睡眠</div><div class="v" style="font-size:16px">7h08</div><div class="d flat">目标 7h30</div></div>
+                  <div class="stat"><div class="k">体重</div><div class="v" style="font-size:16px">56.1<small>kg</small></div><div class="d up">↓ 0.3</div></div>
+                  <div class="stat"><div class="k">体温</div><div class="v" style="font-size:16px">36.5<small>℃</small></div><div class="d flat">稳定</div></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head"><span class="t">数据完整度</span></div>
+                <div class="gauge-wrap">
+                  <div style="position:relative"><div class="gauge"></div><div class="gauge-center"><div class="v">60%</div><div class="k">覆盖</div></div></div>
+                  <div class="completeness-list">
+                    <div>应记录<b>30 天</b></div>
+                    <div>已记录<b>18 天</b></div>
+                    <div>含情绪<b>15 天</b></div>
+                    <div>含症状<b>11 天</b></div>
+                  </div>
+                </div>
+                <div class="hint">应记录 = 最近 30 天；补记任意一天即可提升覆盖。</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 改版 · 设置 -->
+      <div class="preview-col">
+        <div class="preview-label"><span class="dot"></span>设置</div>
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="topbar"><div class="icon-btn">‹</div><div class="title">经期设置</div><div class="spacer"></div></div>
+            <div class="body-pad">
+
+              <div class="group">
+                <div class="gt">周期与经期</div>
+                <div class="card" style="padding:4px 16px">
+                  <div class="tile-row">
+                    <div class="mid"><div class="tit">启用经期记录</div><div class="sub">关闭后隐藏日历标注与周期趋势，每日记录统计保留</div></div>
+                    <div class="switch"></div>
+                  </div>
+                  <div class="set-row" style="display:block">
+                    <div class="tit" style="margin-bottom:8px">平均周期长度</div>
+                    <div class="range-row">
+                      <input type="range" min="18" max="45" value="28">
+                      <div class="range-val">28<small>天</small></div>
+                    </div>
+                    <div class="hint">两次经期第一天的间隔，通常在 21–35 天。留空则由历史自动计算。</div>
+                  </div>
+                  <div class="set-row" style="display:block">
+                    <div class="tit" style="margin-bottom:8px">平均经期长度</div>
+                    <div class="chip-pick">
+                      <span>2</span><span>3</span><span>4</span><span class="on">5</span><span>6</span><span>7</span><span>8+</span>
+                    </div>
+                  </div>
+                  <div class="set-row" style="display:block">
+                    <div class="tit" style="margin-bottom:8px">预测依据</div>
+                    <div class="seg-ctl mini"><span class="on">自动（历史优先）</span><span>仅用设置值</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="group">
+                <div class="gt">提醒</div>
+                <div class="card" style="padding:4px 16px">
+                  <div class="tile-row" data-note="每个提醒开关下直接给出调度预览：提前 N 天、几点推送。用户不用猜「提醒提前天数」到底作用在哪个开关。">
+                    <div class="mid"><div class="tit">经期提醒</div><div class="sub">预计 7月28日 开始</div><div class="remind-preview">🔔 <span>提前 <b>2 天</b> · 7月26日 20:00</span></div></div>
+                    <div class="switch"></div>
+                  </div>
+                  <div class="tile-row">
+                    <div class="mid"><div class="tit">排卵提醒</div><div class="sub">易孕期 7月12日–17日</div><div class="remind-preview">🔔 <span>易孕期首日 <b>7月12日</b> 08:00</span></div></div>
+                    <div class="switch"></div>
+                  </div>
+                  <div class="tile-row">
+                    <div class="mid"><div class="tit">经前提醒</div><div class="sub">经前期 7月21日–27日</div><div class="remind-preview">🔔 <span>提前 <b>2 天</b> · 7月19日 20:00</span></div></div>
+                    <div class="switch"></div>
+                  </div>
+                  <div class="set-row" style="display:block">
+                    <div class="tit" style="margin-bottom:8px">提醒时间</div>
+                    <div class="chip-pick"><span>08:00</span><span class="on">20:00</span><span>22:00</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="group">
+                <div class="gt">孕期</div>
+                <div class="preg-card" data-note="孕期卡片不再是裸 ListTile：开始日期、预产期都可编辑（HealthPregnancyDraft 本来就有这两个字段），结束时用和其它面板一致的 AppDialogScaffold。">
+                  <div class="row">
+                    <span class="ic">♥</span>
+                    <div style="flex:1"><div class="tit">孕期模式</div><div class="sub">未开启 · 开启后暂停周期预测</div></div>
+                    <button class="today-btn">开启</button>
+                  </div>
+                  <div class="btn-row" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                    <div class="stat"><div class="k">开始日期</div><div class="v" style="font-size:14px">—</div></div>
+                    <div class="stat"><div class="k">预产期</div><div class="v" style="font-size:14px">—</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="group">
+                <div class="gt">数据与隐私</div>
+                <div class="card" style="padding:4px 16px">
+                  <div class="tile-row" data-note="dataSyncEnabled / analyticsEnabled 过去只在 draft 里被静默回写，现在显式暴露；默认关闭。">
+                    <div class="mid"><div class="tit">参与健康数据同步</div><div class="sub">随 WebDAV 备份一起同步经期记录</div></div>
+                    <div class="switch off"></div>
+                  </div>
+                  <div class="tile-row">
+                    <div class="mid"><div class="tit">匿名使用统计</div><div class="sub">仅本地汇总，不上传任何明细</div></div>
+                    <div class="switch off"></div>
+                  </div>
+                  <div class="tile-row">
+                    <div class="mid"><div class="tit">导出经期数据</div><div class="sub">CSV / JSON，含周期与每日记录</div></div>
+                    <span style="color:var(--text-2)">›</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ---------- 记录表 ---------- -->
+    <div class="section-title after"><span class="tag">After</span>记录入口：6 个专注弹窗 + 1 张完整表</div>
+    <p class="section-sub">快捷按钮各开一个「只编辑单一字段」的弹窗（点经量就只选经量，不夹带其它表单）；只有「完整记录」才打开这张整表。两者都走字段级 <code>copyWith</code> 合并，并在打开时用真实记录回填——修复了旧版 6 处整份 draft 拷贝导致的丢字段。</p>
+    <div class="phone-row">
+      <div class="preview-col">
+        <div class="preview-label"><span class="dot"></span>完整记录表 · 由「完整记录」打开</div>
+        <div class="sheet-demo">
+          <div class="sheet-back">
+            <div style="font-size:13px;font-weight:800;color:var(--text-2)">经期</div>
+            <div style="height:14px"></div>
+            <div style="height:70px;border-radius:16px;background:var(--surface)"></div>
+          </div>
+          <div class="sheet">
+            <div class="sheet-grab"></div>
+            <div class="sheet-pad">
+              <div class="sheet-title"><span class="d">7月18日 周六</span><span class="spacer"></span><span class="pill-today">今天</span></div>
+
+              <div class="sheet-field-label">经量</div>
+              <div class="flow-pick">
+                <span><span class="drops"><i></i></span>点滴</span>
+                <span><span class="drops"><i></i><i></i></span>少量</span>
+                <span class="on"><span class="drops"><i></i><i></i><i></i></span>中量</span>
+                <span><span class="drops"><i></i><i></i><i></i><i></i></span>大量</span>
+              </div>
+
+              <div class="sheet-field-label">症状（可多选）</div>
+              <div class="sym-pick" data-note="症状改成多选胶囊：过去只能在一个 CheckboxListTile 列表里滚，现在一屏选完，强度用长按二级菜单补。">
+                <span class="on">抽筋</span><span class="on">疲劳</span><span>头痛</span><span>腹胀</span><span>情绪波动</span><span>乳房胀痛</span><span>失眠</span>
+              </div>
+
+              <div class="sheet-field-label">情绪</div>
+              <div class="sym-pick">
+                <span>开心</span><span>低落</span><span>生气</span><span>焦虑</span><span class="on">平静</span><span>烦躁</span>
+              </div>
+
+              <div class="sheet-field-label">体温与睡眠</div>
+              <div class="field"><span class="lb">体温</span><span class="in">36.5</span><span class="unit">℃</span></div>
+              <div class="field" data-note="睡眠过去只有 6/7/8/9 四个固定档；改为小时+分钟输入，保留常用档快捷。">
+                <span class="lb">睡眠</span><span class="in">7 小时 10 分</span><span class="unit">⌄</span>
+              </div>
+
+              <div class="sheet-field-label">体重 / 饮水 / 压力</div>
+              <div class="field"><span class="lb">体重</span><span class="in">56.0</span><span class="unit">kg</span></div>
+              <div class="field"><span class="lb">饮水</span><span class="in">1600</span><span class="unit">ml</span></div>
+              <div class="field"><span class="lb">压力</span><span class="in">3</span><span class="unit">/ 5</span></div>
+
+              <div class="privacy-fold" data-note="私密字段（性生活 / 避孕 / 排卵试纸）折叠在一个显式开关后，默认收起，减少视觉噪音同时不隐藏功能。">
+                🔒 私密生殖健康 <span style="margin-left:auto;color:var(--text-3)">▾</span>
+              </div>
+
+              <div class="save-bar">
+                <button class="btn-ghost" style="flex:1">取消</button>
+                <button class="btn-primary" style="flex:2;box-shadow:none">保存记录</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-col" style="max-width:420px">
+        <div class="panel" style="padding:20px">
+          <h2>记录表的结构变化</h2>
+          <p class="sub">从「每个入口各复制整份 draft」变成「专注编辑 + 字段级合并」</p>
+          <table class="map-table">
+            <thead><tr><th>字段</th><th>现状</th><th>改版</th></tr></thead>
+            <tbody>
+              <tr><td>经量</td><td>独立 dialog</td><td>4 档胶囊，一屏直选</td></tr>
+              <tr><td>症状</td><td>独立 dialog，Checkbox 列表，强度固定「中」</td><td>多选胶囊 + 长按调强度</td></tr>
+              <tr><td>情绪</td><td>独立 dialog</td><td>同行胶囊</td></tr>
+              <tr><td>体温 / 睡眠</td><td>独立 dialog，睡眠固定 4 档</td><td>同表数字输入 + 常用档</td></tr>
+              <tr><td>排卵试纸</td><td>独立 dialog</td><td>折叠区</td></tr>
+              <tr><td>用药</td><td>独立 dialog，只能加第一个</td><td>折叠区，可增删多条</td></tr>
+              <tr><td>体重 / 饮水 / 压力</td><td>仅完整表有，无单位校验</td><td>带单位与范围校验</td></tr>
+              <tr><td>draft 构造</td><td>6 处整份复制</td><td>共享 <code>copyWith</code></td></tr>
+              <tr><td>回填</td><td>入口传空 log（P0）</td><td>传真实 <code>dailyLog</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================== 验收点 ===================== -->
+  <section class="analysis">
+    <div class="panel span-12">
+      <h2>交互与状态清单</h2>
+      <p class="sub">可直接作为实现与 Code Review 的验收点</p>
+      <table class="map-table">
+        <thead><tr><th style="width:170px">状态</th><th>表现</th></tr></thead>
+        <tbody>
+          <tr><td>加载中</td><td>Hero 与卡片用骨架条占位，高度固定；不使用整页转圈（现为 <code>_HealthLoading</code>）。</td></tr>
+          <tr><td>无经期历史</td><td>Hero 显示「记录第一次经期即可开始预测」+ 主按钮「开始经期」，隐藏环形与倒计时，其余面板不重排。</td></tr>
+          <tr><td>经期记录已关闭</td><td>Hero 切成中性色并提示「经期记录已关闭」；日历隐藏经期/预计/经前/易孕标注；趋势隐藏周期相关区块，保留情绪/症状/指标。</td></tr>
+          <tr><td>经期推迟</td><td>倒计时变「已推迟 N 天」，颜色转 warning，Hero 底部给出「重新记录开始日」入口。<span class="badge fix">修复 P0</span></td></tr>
+          <tr><td>孕期中</td><td>Hero 切换为孕周 + 预产期，隐藏经期相关磁贴与日历标注，趋势隐藏周期区块。</td></tr>
+          <tr><td>选中非今天</td><td>Hero 仍显示当前周期状态；选中日卡片展示那天的记录与「补记」按钮。</td></tr>
+          <tr><td>当天已有记录</td><td>磁贴右上角绿点；打开完整记录表时字段全部回填。<span class="badge fix">修复 P0</span></td></tr>
+          <tr><td>保存</td><td>走 <code>copyWith</code> 更新，写入成功给轻提示，失败保留表单并提示重试；不再静默 <code>unawaited</code>。</td></tr>
+          <tr><td>趋势样本不足</td><td>结论卡显示「还需 1 个完整周期才能判断规律性」，图表显示单点而非空态。</td></tr>
+          <tr><td>区间切换</td><td>近 3/6 周期与近 1 年三档；切换后所有区块（含健康指标平均）同步重算。</td></tr>
+          <tr><td>深色主题</td><td>阶段色全部来自主题扩展，无硬编码；日历实心块使用 onPeriod 前景色保证对比度 ≥4.5:1。</td></tr>
+          <tr><td>触控</td><td>所有可点区域 ≥48dp；快捷磁贴、流程图例、分段控件均满足；Tooltip 覆盖图标按钮。</td></tr>
+          <tr><td>响应式</td><td>&lt;720px 单列；≥840px 日历与「选中日/今日记录」左右双栏；≥1280px 趋势 2 列。</td></tr>
+          <tr><td>设置保存</td><td>改为显式「保存」或防抖自动保存 + 可撤销提示；<code>dataSyncEnabled / analyticsEnabled</code> 必须能在 UI 中找到。<span class="badge fix">修复 P0</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<div class="note" id="note"><div class="k">区块说明</div><div class="b"></div></div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+
+  document.querySelectorAll('[data-theme-btn]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var t = btn.getAttribute('data-theme-btn');
+      root.setAttribute('data-theme', t);
+      document.querySelectorAll('[data-theme-btn]').forEach(function(b){
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+    });
+  });
+
+  var note = document.getElementById('note');
+  var noteBody = note.querySelector('.b');
+  var current = null;
+  document.querySelectorAll('[data-note]').forEach(function(el){
+    el.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      if (current === el) { hide(); return; }
+      current = el;
+      noteBody.textContent = el.getAttribute('data-note');
+      note.classList.add('on');
+    });
+  });
+  function hide(){ current = null; note.classList.remove('on'); }
+  document.addEventListener('click', hide);
+  note.addEventListener('click', function(e){ e.stopPropagation(); });
+})();
+</script>
+</body>
+</html>
