@@ -16,6 +16,7 @@ import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_bill_view.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
@@ -4418,8 +4419,11 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       if (usageCompare != 0) {
         return usageCompare;
       }
-      if (left.isSystem != right.isSystem) {
-        return left.isSystem ? -1 : 1;
+      // 兜底用业务顺序（餐饮/交通/购物…），不再用 isSystem（内置分类全是
+      // system=true，没有区分度，只会把自建分类永远压到最后）。
+      final orderCompare = _compareSortOrder(left.sortOrder, right.sortOrder);
+      if (orderCompare != 0) {
+        return orderCompare;
       }
       return left.name.compareTo(right.name);
     });
@@ -4441,8 +4445,9 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       if (usageCompare != 0) {
         return usageCompare;
       }
-      if (left.isSystem != right.isSystem) {
-        return left.isSystem ? -1 : 1;
+      final orderCompare = _compareSortOrder(left.sortOrder, right.sortOrder);
+      if (orderCompare != 0) {
+        return orderCompare;
       }
       return left.name.compareTo(right.name);
     });
@@ -4462,15 +4467,23 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     final leftLastUsedAt = left?.lastUsedAt;
     final rightLastUsedAt = right?.lastUsedAt;
     if (leftLastUsedAt != null && rightLastUsedAt != null) {
-      return rightLastUsedAt.compareTo(leftLastUsedAt);
-    }
-    if (leftLastUsedAt != null) {
+      final recency = rightLastUsedAt.compareTo(leftLastUsedAt);
+      if (recency != 0) {
+        return recency;
+      }
+    } else if (leftLastUsedAt != null) {
       return -1;
-    }
-    if (rightLastUsedAt != null) {
+    } else if (rightLastUsedAt != null) {
       return 1;
     }
     return 0;
+  }
+
+  /// 业务顺序（餐饮 / 交通 / 购物…）。0 表示未设置，排在最后。
+  int _compareSortOrder(int left, int right) {
+    final leftKey = left <= 0 ? 1 << 20 : left;
+    final rightKey = right <= 0 ? 1 << 20 : right;
+    return leftKey.compareTo(rightKey);
   }
 
   MoneyAccountEntity _mapAccount(MoneyAccount account) {
@@ -4549,6 +4562,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       color: category.color,
       icon: category.icon,
       isSystem: category.isSystem,
+      sortOrder: category.sortOrder,
     );
   }
 
@@ -4562,6 +4576,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       color: subCategory.color,
       icon: subCategory.icon,
       isSystem: subCategory.isSystem,
+      sortOrder: subCategory.sortOrder,
     );
   }
 

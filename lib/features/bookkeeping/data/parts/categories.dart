@@ -18,10 +18,9 @@ mixin _Categories on _DriftMoneyRepositoryBase {
             ? basePredicate
             : basePredicate & category.isDeleted.equals(false);
       })
-      ..orderBy([
-        (category) => OrderingTerm.desc(category.isSystem),
-        (category) => OrderingTerm.asc(category.name),
-      ]);
+      // 不再用 isSystem 排序：种子数据里所有内置分类都是 system=true，
+      // 这一层对它们没有区分度，只会把用户自建分类（往往最在意）永远压到后面。
+      ..orderBy([(category) => OrderingTerm.asc(category.name)]);
 
     await for (final categoryRows in categoryQuery.watch()) {
       final categoryIds = categoryRows.map((category) => category.id).toList();
@@ -74,6 +73,7 @@ mixin _Categories on _DriftMoneyRepositoryBase {
 
       final now = DateTime.now().toUtc();
       final categoryId = _uuid.v4();
+      final nextSortOrder = await _nextCategorySortOrder(userId, draft.kind);
       await database
           .into(database.moneyCategories)
           .insert(
@@ -85,6 +85,8 @@ mixin _Categories on _DriftMoneyRepositoryBase {
               color: Value<String?>(draft.color),
               icon: Value<String?>(draft.icon),
               isSystem: const Value(false),
+              // 自建分类追加到业务顺序末尾。
+              sortOrder: Value(nextSortOrder),
               deviceId: const Value<String?>(null),
               version: const Value(1),
               isDeleted: const Value(false),
@@ -273,6 +275,10 @@ mixin _Categories on _DriftMoneyRepositoryBase {
 
       final now = DateTime.now().toUtc();
       final subCategoryId = _uuid.v4();
+      final nextSortOrder = await _nextSubCategorySortOrder(
+        userId,
+        draft.categoryId,
+      );
       await database
           .into(database.moneySubCategories)
           .insert(
@@ -285,6 +291,8 @@ mixin _Categories on _DriftMoneyRepositoryBase {
               color: Value<String?>(draft.color),
               icon: Value<String?>(draft.icon),
               isSystem: const Value(false),
+              // 自建子分类追加到该分类内的末尾。
+              sortOrder: Value(nextSortOrder),
               deviceId: const Value<String?>(null),
               version: const Value(1),
               isDeleted: const Value(false),
@@ -613,6 +621,64 @@ mixin _Categories on _DriftMoneyRepositoryBase {
     }
 
     return subCategory;
+  }
+
+  /// 下一个可用的业务顺序（父分类维度，按 kind 隔离）。
+  Future<int> _nextCategorySortOrder(
+    String userId,
+    MoneyCategoryKind kind,
+  ) async {
+    final maxOrder = database.moneyCategories.sortOrder.max();
+    final query = database.selectOnly(database.moneyCategories)
+      ..addColumns([maxOrder])
+      ..where(
+        database.moneyCategories.kind.equals(kind.storageValue) &
+            (database.moneyCategories.userId.isNull() |
+                database.moneyCategories.userId.equals(userId)),
+      );
+    final row = await query.getSingleOrNull();
+    return (row?.read(maxOrder) ?? 0) + 1;
+  }
+
+  /// 下一个可用的业务顺序（同一父分类内的子分类）。
+  Future<int> _nextSubCategorySortOrder(
+    String userId,
+    String categoryId,
+  ) async {
+    final maxOrder = database.moneySubCategories.sortOrder.max();
+    final query = database.selectOnly(database.moneySubCategories)
+      ..addColumns([maxOrder])
+      ..where(
+        database.moneySubCategories.categoryId.equals(categoryId) &
+            (database.moneySubCategories.userId.isNull() |
+                database.moneySubCategories.userId.equals(userId)),
+      );
+    final row = await query.getSingleOrNull();
+    return (row?.read(maxOrder) ?? 0) + 1;
+  }
+
+  @override
+  Future<MoneyCategoryUsage> getCategoryUsageStatsForUser(String userId) async {
+    final categoryRanks = await _categoryUsageRanks(userId);
+    final subCategoryRanks = await _subCategoryUsageRanks(userId);
+    return MoneyCategoryUsage.fromStats(
+      categoryStats: {
+        for (final entry in categoryRanks.entries)
+          entry.key: MoneyUsageStat(
+            amountMinor: entry.value.totalAmountMinor,
+            useCount: entry.value.useCount,
+            lastUsedAt: entry.value.lastUsedAt?.toLocal(),
+          ),
+      },
+      subCategoryStats: {
+        for (final entry in subCategoryRanks.entries)
+          entry.key: MoneyUsageStat(
+            amountMinor: entry.value.totalAmountMinor,
+            useCount: entry.value.useCount,
+            lastUsedAt: entry.value.lastUsedAt?.toLocal(),
+          ),
+      },
+    );
   }
 
   Future<Map<String, _UsageStat>> _categoryUsageRanks(String userId) async {

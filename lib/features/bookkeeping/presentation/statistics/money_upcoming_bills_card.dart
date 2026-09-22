@@ -5,8 +5,15 @@ import 'package:miji/core/presentation/components/app_content_panel.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
-import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 
+/// 未来 7 / 30 / 90 天待付金额。
+///
+/// 口径统一：
+/// * 到期日走 [effectiveBillReminderDueDate]（重复提醒会推到下一次），
+///   原来直接用 `dueDate`，按月/周重复的提醒会算错窗口；
+/// * 已逾期的提醒不进这个卡片（由「提醒中心」负责），原来一条两个月前的旧提醒
+///   会一直占着「最近待付」首位并显示「今天」；
+/// * 金额币种按提醒自身的 `currencyCode`，多币种时不展示分档合计。
 class MoneyUpcomingBillsCard extends StatelessWidget {
   const MoneyUpcomingBillsCard({
     super.key,
@@ -22,10 +29,27 @@ class MoneyUpcomingBillsCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final pending = bills
-        .where((b) => b.isActive && _effectiveAmountMinor(b) > 0)
-        .toList();
-    if (pending.isEmpty) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final upcoming = <_UpcomingBill>[];
+    for (final bill in bills) {
+      if (!bill.isActive) {
+        continue;
+      }
+      final amountMinor = _effectiveAmountMinor(bill);
+      if (amountMinor <= 0) {
+        continue;
+      }
+      final dueDate = effectiveBillReminderDueDate(bill, today);
+      if (dueDate.isBefore(today)) {
+        continue;
+      }
+      upcoming.add(
+        _UpcomingBill(bill: bill, dueDate: dueDate, amountMinor: amountMinor),
+      );
+    }
+
+    if (upcoming.isEmpty) {
       return AppContentPanel(
         title: '待付账单',
         subtitle: '未来 7/30/90 天待付金额',
@@ -36,14 +60,11 @@ class MoneyUpcomingBillsCard extends StatelessWidget {
       );
     }
 
-    final now = DateTime.now();
-    final next7 = _sumInWindow(pending, now, 7);
-    final next30 = _sumInWindow(pending, now, 30);
-    final next90 = _sumInWindow(pending, now, 90);
-
-    // Top 5 upcoming by dueDate
-    pending.sort((a, b) => a.dueDate.compareTo(b.dueDate));
-    final top = pending.take(5).toList();
+    upcoming.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    final currencies = upcoming.map((item) => item.bill.currencyCode).toSet();
+    // 多币种下「7 天合计」没有意义，只列明细。
+    final currencyCode = currencies.length == 1 ? currencies.first : null;
+    final top = upcoming.take(5).toList();
 
     return AppContentPanel(
       title: '待付账单',
@@ -51,19 +72,34 @@ class MoneyUpcomingBillsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              _Bucket(label: '7 天', amountMinor: next7),
-              const SizedBox(width: 12),
-              _Bucket(label: '30 天', amountMinor: next30),
-              const SizedBox(width: 12),
-              _Bucket(label: '90 天', amountMinor: next90),
-            ],
-          ),
+          if (currencyCode != null)
+            Row(
+              children: [
+                _Bucket(
+                  label: '7 天',
+                  amountMinor: _sumInWindow(upcoming, today, 7),
+                  currencyCode: currencyCode,
+                ),
+                const SizedBox(width: 12),
+                _Bucket(
+                  label: '30 天',
+                  amountMinor: _sumInWindow(upcoming, today, 30),
+                  currencyCode: currencyCode,
+                ),
+                const SizedBox(width: 12),
+                _Bucket(
+                  label: '90 天',
+                  amountMinor: _sumInWindow(upcoming, today, 90),
+                  currencyCode: currencyCode,
+                ),
+              ],
+            ),
           if (top.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Divider(height: 1, color: colorScheme.outlineVariant),
-            const SizedBox(height: 10),
+            if (currencyCode != null) ...[
+              const SizedBox(height: 14),
+              Divider(height: 1, color: colorScheme.outlineVariant),
+              const SizedBox(height: 10),
+            ],
             Text(
               '最近待付',
               style: theme.textTheme.labelMedium?.copyWith(
@@ -73,23 +109,20 @@ class MoneyUpcomingBillsCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            for (final bill in top)
-              _BillRow(bill: bill, amountMinor: _effectiveAmountMinor(bill)),
+            for (final item in top) _BillRow(item: item, today: today),
           ],
         ],
       ),
     );
   }
 
-  int _sumInWindow(
-    List<MoneyBillReminderEntity> bills,
-    DateTime from,
-    int days,
-  ) {
+  int _sumInWindow(List<_UpcomingBill> items, DateTime from, int days) {
     final end = from.add(Duration(days: days));
-    return bills
-        .where((b) => b.dueDate.isAfter(from) && b.dueDate.isBefore(end))
-        .fold<int>(0, (sum, b) => sum + _effectiveAmountMinor(b));
+    return items
+        .where(
+          (item) => !item.dueDate.isBefore(from) && item.dueDate.isBefore(end),
+        )
+        .fold<int>(0, (sum, item) => sum + item.amountMinor);
   }
 
   int _effectiveAmountMinor(MoneyBillReminderEntity reminder) {
@@ -102,11 +135,28 @@ class MoneyUpcomingBillsCard extends StatelessWidget {
   }
 }
 
+class _UpcomingBill {
+  const _UpcomingBill({
+    required this.bill,
+    required this.dueDate,
+    required this.amountMinor,
+  });
+
+  final MoneyBillReminderEntity bill;
+  final DateTime dueDate;
+  final int amountMinor;
+}
+
 class _Bucket extends StatelessWidget {
-  const _Bucket({required this.label, required this.amountMinor});
+  const _Bucket({
+    required this.label,
+    required this.amountMinor,
+    required this.currencyCode,
+  });
 
   final String label;
   final int amountMinor;
+  final String currencyCode;
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +172,7 @@ class _Bucket extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              formatMoneyMinor(amountMinor, defaultMoneyCurrencyCode),
+              formatMoneyMinor(amountMinor, currencyCode),
               style: theme.textTheme.titleSmall?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w900,
@@ -145,21 +195,21 @@ class _Bucket extends StatelessWidget {
 }
 
 class _BillRow extends StatelessWidget {
-  const _BillRow({required this.bill, required this.amountMinor});
+  const _BillRow({required this.item, required this.today});
 
-  final MoneyBillReminderEntity bill;
-  final int amountMinor;
+  final _UpcomingBill item;
+  final DateTime today;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final daysLeft = bill.dueDate.difference(DateTime.now()).inDays;
-    final dueLabel = daysLeft <= 0
-        ? '今天'
-        : daysLeft == 1
-        ? '明天'
-        : '$daysLeft 天后';
+    final daysLeft = item.dueDate.difference(today).inDays;
+    final dueLabel = switch (daysLeft) {
+      <= 0 => '今天',
+      1 => '明天',
+      _ => '$daysLeft 天后',
+    };
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -170,7 +220,7 @@ class _BillRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  bill.name,
+                  item.bill.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -193,7 +243,7 @@ class _BillRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            formatMoneyMinor(amountMinor, bill.currencyCode),
+            formatMoneyMinor(item.amountMinor, item.bill.currencyCode),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w800,

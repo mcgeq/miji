@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/core/database/app_database.dart';
@@ -159,4 +160,90 @@ void main() {
     expect(catalog.categoryById('remote-category-1')?.name, '宠物');
     expect(catalog.subCategoryById('remote-sub-category-1')?.name, '猫粮');
   });
+
+  test(
+    'keeps the seed business order when nothing has been used yet',
+    () async {
+      // 种子按声明顺序写入 sort_order（餐饮=1、交通=2 …），
+      // 排序在「无用量」时就应该落到这个业务顺序，而不是中文码点序。
+      // ensureReadyForUser 内部会跑一次种子（含内置分类的业务顺序）。
+      await repository.ensureReadyForUser('user_1');
+
+      final catalog = await repository
+          .watchCategoryCatalogForUser('user_1', MoneyCategoryKind.expense)
+          .first;
+
+      final names = catalog.categories.map((c) => c.name).toList();
+      // 种子前几个：餐饮 / 交通 / 购物 / 居住缴费。
+      expect(names.take(4).toList(), ['餐饮', '交通', '购物', '居住缴费']);
+      // 码点序（交通/人情礼金/其他支出…）不再是兜底顺序。
+      expect(names.first, isNot('交通'));
+
+      final first = catalog.categoryById('expense_food')!;
+      final second = catalog.categoryById('expense_transport')!;
+      expect(first.sortOrder, lessThan(second.sortOrder));
+
+      // 子分类同理：餐饮下第一个应该是种子里的第一个。
+      final foodSubs = catalog.subCategoriesFor('expense_food');
+      expect(foodSubs.first.name, '早餐');
+      expect(foodSubs.first.sortOrder, lessThan(foodSubs[1].sortOrder));
+    },
+  );
+
+  test(
+    'user-created categories append to the end of the business order',
+    () async {
+      // ensureReadyForUser 内部会跑一次种子（含内置分类的业务顺序）。
+      await repository.ensureReadyForUser('user_1');
+
+      final created = await repository.createCategory(
+        'user_1',
+        const MoneyCategoryDraft(
+          name: '自定义尾部分类',
+          kind: MoneyCategoryKind.expense,
+        ),
+      );
+
+      final catalog = await repository
+          .watchCategoryCatalogForUser('user_1', MoneyCategoryKind.expense)
+          .first;
+
+      // sort_order 取 max + 1 → 排在所有内置分类之后。
+      final maxSystemOrder = catalog.categories
+          .where((c) => c.isSystem)
+          .map((c) => c.sortOrder)
+          .reduce((a, b) => a > b ? a : b);
+      expect(created.sortOrder, maxSystemOrder + 1);
+      expect(catalog.categories.last.id, created.id);
+    },
+  );
+
+  test(
+    'sortOrder of 0 (e.g. missing in a sync payload) sinks to the end',
+    () async {
+      // ensureReadyForUser 内部会跑一次种子（含内置分类的业务顺序）。
+      await repository.ensureReadyForUser('user_1');
+
+      // 模拟同步下来缺失 sort_order 的记录。
+      await database
+          .into(database.moneyCategories)
+          .insert(
+            MoneyCategoriesCompanion.insert(
+              id: 'legacy-category',
+              userId: const Value<String?>('user_1'),
+              name: '阿历史分类',
+              kind: 'expense',
+              createdAt: DateTime.utc(2026, 1, 2),
+              updatedAt: DateTime.utc(2026, 1, 2),
+            ),
+          );
+
+      final catalog = await repository
+          .watchCategoryCatalogForUser('user_1', MoneyCategoryKind.expense)
+          .first;
+
+      // 0 视为未设置 → 排最后，即使它的名字在码点序里很靠前（阿…）。
+      expect(catalog.categories.last.id, 'legacy-category');
+    },
+  );
 }

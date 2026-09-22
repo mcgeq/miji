@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/categories/category_icon.dart';
 
 class CategorySelector extends StatelessWidget {
   const CategorySelector({
@@ -198,22 +199,18 @@ class _SelectorItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final iconText = icon?.trim();
 
     return Row(
       children: [
         SizedBox(
           width: 24,
           child: Center(
-            child: iconText == null || iconText.isEmpty
-                ? Icon(fallbackIcon, size: 18, color: colorScheme.primary)
-                : Text(
-                    iconText,
-                    overflow: TextOverflow.clip,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      letterSpacing: 0,
-                    ),
-                  ),
+            child: CategoryIconWidget(
+              icon,
+              size: 18,
+              color: colorScheme.primary,
+              fallback: fallbackIcon,
+            ),
           ),
         ),
         const SizedBox(width: 10),

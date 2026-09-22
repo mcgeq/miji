@@ -102,12 +102,118 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('暂无处理历史'), findsOneWidget);
   });
+
+  testWidgets('groups pending reminders by urgency', (tester) async {
+    final today = DateTime.now();
+    await _pumpSection(
+      tester,
+      pending: [
+        _item(
+          title: '逾期账单',
+          state: MoneyReminderCenterState.pending,
+          dueDate: today.subtract(const Duration(days: 3)),
+        ),
+        _item(
+          title: '今天到期',
+          state: MoneyReminderCenterState.pending,
+          dueDate: today,
+        ),
+        _item(
+          title: '以后再说',
+          state: MoneyReminderCenterState.pending,
+          dueDate: today.add(const Duration(days: 20)),
+        ),
+      ],
+      history: const [],
+    );
+
+    // 原来是一条平铺列表，逾期项会被埋在十几条里。
+    expect(find.text('已逾期'), findsOneWidget);
+    expect(find.text('今天'), findsOneWidget);
+    expect(find.text('以后'), findsOneWidget);
+    expect(find.text('逾期账单'), findsOneWidget);
+    expect(find.text('今天到期'), findsOneWidget);
+    expect(find.text('以后再说'), findsOneWidget);
+  });
+
+  testWidgets('offers a create entry point and an inline complete action', (
+    tester,
+  ) async {
+    await _pumpSection(
+      tester,
+      pending: [_item(title: '信用卡还款', state: MoneyReminderCenterState.pending)],
+      history: const [],
+    );
+
+    // 提醒中心以前只能「完成/延后/忽略」，无法新建账单提醒。
+    expect(find.byTooltip('新增提醒'), findsOneWidget);
+    expect(find.byTooltip('标记完成'), findsOneWidget);
+  });
+
+  testWidgets('long press enters selection mode with a bulk action bar', (
+    tester,
+  ) async {
+    await _pumpSection(
+      tester,
+      pending: [
+        _item(title: '房租提醒', state: MoneyReminderCenterState.pending),
+        _item(title: '信用卡还款', state: MoneyReminderCenterState.pending),
+      ],
+      history: const [],
+    );
+
+    await tester.longPress(find.text('房租提醒'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('已选 1 项'), findsOneWidget);
+    expect(find.text('完成'), findsWidgets);
+
+    // 多选模式下点另一条继续勾选。
+    await tester.tap(find.text('信用卡还款'));
+    await tester.pumpAndSettle();
+    expect(find.text('已选 2 项'), findsOneWidget);
+
+    // 退出多选。
+    await tester.tap(find.byTooltip('退出多选'));
+    await tester.pumpAndSettle();
+    expect(find.text('已选 2 项'), findsNothing);
+  });
+
+  testWidgets('bulk complete marks every selected reminder done', (
+    tester,
+  ) async {
+    final completed = <String>[];
+    await _pumpSection(
+      tester,
+      pending: [
+        _item(title: '房租提醒', state: MoneyReminderCenterState.pending),
+        _item(title: '信用卡还款', state: MoneyReminderCenterState.pending),
+      ],
+      history: const [],
+      onComplete: (item) => completed.add(item.title),
+    );
+
+    await tester.longPress(find.text('房租提醒'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('信用卡还款'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('完成'));
+    await tester.pumpAndSettle();
+    // 批量完成后会弹 toast，等它的定时器走完，避免 teardown 报 pending timer。
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    expect(completed, containsAll(<String>['房租提醒', '信用卡还款']));
+    expect(find.text('已选 2 项'), findsNothing);
+  });
 }
 
 Future<void> _pumpSection(
   WidgetTester tester, {
   required List<MoneyReminderCenterItem> pending,
   required List<MoneyReminderCenterItem> history,
+  void Function(MoneyReminderCenterItem item)? onComplete,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -118,6 +224,10 @@ Future<void> _pumpSection(
         currentUserReminderCenterHistoryProvider.overrideWith(
           (ref) async => history,
         ),
+        if (onComplete != null)
+          currentUserReminderCenterActionsProvider.overrideWith((ref) {
+            return _FakeReminderActions(onComplete);
+          }),
       ],
       child: MaterialApp(
         theme: AppTheme.light(),
@@ -154,4 +264,19 @@ MoneyReminderCenterItem _item({
     snoozedUntil: snoozedUntil,
     processedAt: processedAt,
   );
+}
+
+/// 只关心「批量完成」写入了哪些项，其余动作留空。
+class _FakeReminderActions implements CurrentUserReminderCenterActions {
+  _FakeReminderActions(this.onComplete);
+
+  final void Function(MoneyReminderCenterItem item) onComplete;
+
+  @override
+  Future<void> complete(MoneyReminderCenterItem item) async {
+    onComplete(item);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => Future<void>.value();
 }

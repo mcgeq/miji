@@ -64,7 +64,7 @@ class MoneyBillReminderNotificationService {
     DateTime today,
     int amountMinor,
   ) {
-    final dueDate = _effectiveDueDate(reminder, today);
+    final dueDate = effectiveBillReminderDueDate(reminder, today);
     final remindFrom = dueDate.subtract(
       Duration(days: reminder.remindBeforeDays),
     );
@@ -127,67 +127,6 @@ class MoneyBillReminderNotificationService {
   DateTime _dateOnly(DateTime date) {
     final local = date.toLocal();
     return DateTime(local.year, local.month, local.day);
-  }
-
-  DateTime _effectiveDueDate(MoneyBillReminderEntity reminder, DateTime today) {
-    final dueDate = _dateOnly(reminder.dueDate);
-    final repeatType = reminder.repeatPeriodType;
-    final interval = reminder.repeatInterval ?? 1;
-    if (repeatType == null || interval <= 0 || !dueDate.isBefore(today)) {
-      return dueDate;
-    }
-
-    return switch (repeatType) {
-      MoneyBillReminderRepeatPeriodType.daily => dueDate.add(
-        Duration(days: _repeatSteps(dueDate, today, interval) * interval),
-      ),
-      MoneyBillReminderRepeatPeriodType.weekly => dueDate.add(
-        Duration(
-          days: _repeatSteps(dueDate, today, interval * 7) * interval * 7,
-        ),
-      ),
-      MoneyBillReminderRepeatPeriodType.monthly => _nextMonthlyDueDate(
-        dueDate,
-        today,
-        interval,
-      ),
-      MoneyBillReminderRepeatPeriodType.yearly => _nextYearlyDueDate(
-        dueDate,
-        today,
-        interval,
-      ),
-    };
-  }
-
-  int _repeatSteps(DateTime start, DateTime today, int intervalDays) {
-    final days = today.difference(start).inDays;
-    return (days / intervalDays).ceil();
-  }
-
-  DateTime _nextMonthlyDueDate(DateTime start, DateTime today, int interval) {
-    var cursor = DateTime(start.year, start.month, start.day);
-    while (cursor.isBefore(today)) {
-      cursor = _dayInMonth(cursor.year, cursor.month + interval, start.day);
-    }
-    return cursor;
-  }
-
-  DateTime _nextYearlyDueDate(DateTime start, DateTime today, int interval) {
-    var cursor = DateTime(start.year, start.month, start.day);
-    while (cursor.isBefore(today)) {
-      cursor = _dayInMonth(cursor.year + interval, start.month, start.day);
-    }
-    return cursor;
-  }
-
-  DateTime _dayInMonth(int year, int month, int day) {
-    final monthStart = DateTime(year, month);
-    final lastDay = DateTime(monthStart.year, monthStart.month + 1, 0).day;
-    return DateTime(
-      monthStart.year,
-      monthStart.month,
-      day > lastDay ? lastDay : day,
-    );
   }
 }
 

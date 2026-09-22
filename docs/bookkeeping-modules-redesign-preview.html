@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>米记 · 记账模块全量界面复核 &amp; 改版预览</title>
+<style>
+:root{
+  --bg:#F6EFE9; --canvas:#FFF8F2; --surface:#FFFFFF; --surface-2:#FFF0E5;
+  --line:#EAD8CC; --line-soft:rgba(234,216,204,.55);
+  --text:#2B1F1A; --text-2:#7C6A61; --text-3:#A9988F;
+  --primary:#E45F4F; --primary-soft:rgba(228,95,79,.10); --primary-soft-2:rgba(228,95,79,.20);
+  --secondary:#21A78B; --secondary-soft:rgba(33,167,139,.12);
+  --tertiary:#D85C93; --tertiary-soft:rgba(216,92,147,.12);
+  --income:#168A5B; --income-soft:rgba(22,138,91,.10);
+  --expense:#D44D6E; --expense-soft:rgba(212,77,110,.10);
+  --transfer:#4F7DD9; --transfer-soft:rgba(79,125,217,.12);
+  --warning:#C97A12; --warning-soft:rgba(224,138,30,.13);
+  --focus:#6C67D8; --focus-soft:rgba(108,103,216,.12);
+  --sk:rgba(43,31,26,.07);
+  --shadow-sm:0 1px 2px rgba(74,45,32,.04);
+  --shadow:0 1px 2px rgba(74,45,32,.05), 0 10px 26px -18px rgba(74,45,32,.35);
+  --shadow-lg:0 24px 60px -28px rgba(74,45,32,.45);
+  --radius:20px; --radius-sm:14px; --radius-xs:10px;
+}
+html[data-theme="dark"]{
+  --bg:#120E0C; --canvas:#1B1412; --surface:#241C19; --surface-2:#30231E;
+  --line:#57433A; --line-soft:rgba(87,67,58,.6);
+  --text:#F6EBE5; --text-2:#B7A49B; --text-3:#8B7870;
+  --primary:#FF9A88; --primary-soft:rgba(255,154,136,.14); --primary-soft-2:rgba(255,154,136,.26);
+  --secondary:#7AE1C8; --secondary-soft:rgba(122,225,200,.14);
+  --tertiary:#FFADD1; --tertiary-soft:rgba(255,173,209,.14);
+  --income:#63D3A4; --income-soft:rgba(99,211,164,.14);
+  --expense:#FF8EA8; --expense-soft:rgba(255,142,168,.14);
+  --transfer:#92B4FF; --transfer-soft:rgba(146,180,255,.14);
+  --warning:#F0B45C; --warning-soft:rgba(240,180,92,.16);
+  --focus:#C1BCFF; --focus-soft:rgba(193,188,255,.14);
+  --sk:rgba(255,255,255,.08);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 28px -20px rgba(0,0,0,.8);
+  --shadow-lg:0 30px 70px -30px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 12% -8%, var(--primary-soft), transparent 60%),
+    radial-gradient(900px 500px at 96% 4%, var(--secondary-soft), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  -webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;background:var(--surface-2);border:1px solid var(--line-soft);color:var(--text-2);padding:1px 5px;border-radius:6px}
+
+.page{max-width:1500px;margin:0 auto;padding:40px 28px 110px}
+.page-head{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;justify-content:space-between;margin-bottom:26px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary)}
+.eyebrow::before{content:"";width:22px;height:2px;border-radius:2px;background:var(--primary)}
+h1{margin:10px 0 8px;font-size:34px;line-height:1.2;letter-spacing:-.02em;font-weight:800}
+.lede{margin:0;max-width:82ch;color:var(--text-2);font-size:15px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;padding:4px;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow-sm)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--text-2);font:inherit;font-size:13px;font-weight:600;padding:7px 15px;border-radius:999px;cursor:pointer;transition:.18s ease;white-space:nowrap}
+.seg button:hover{color:var(--text)}
+.seg button[aria-pressed="true"]{background:var(--primary);color:#fff;box-shadow:0 4px 12px -4px var(--primary)}
+html[data-theme="dark"] .seg button[aria-pressed="true"]{color:#2B1F1A}
+
+h2.section-title{margin:54px 0 6px;font-size:20px;font-weight:800;letter-spacing:-.01em}
+p.section-sub{margin:0 0 18px;color:var(--text-3);font-size:13.5px}
+
+.analysis{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin:26px 0 10px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow-sm)}
+.panel h2{margin:0 0 4px;font-size:16px;font-weight:800;letter-spacing:-.01em}
+.panel p.sub{margin:0 0 16px;color:var(--text-3);font-size:13px}
+.span-3{grid-column:span 3}.span-4{grid-column:span 4}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-12{grid-column:span 12}
+.issue-list{list-style:none;margin:0;padding:0;display:grid;gap:13px}
+.issue-list li{display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:start}
+.issue-list .idx{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;background:var(--expense-soft);color:var(--expense);font-size:12px;font-weight:800}
+.issue-list .idx.ok{background:var(--secondary-soft);color:var(--secondary)}
+.issue-list .idx.q{background:var(--warning-soft);color:var(--warning)}
+.issue-list .idx.n{background:var(--focus-soft);color:var(--focus)}
+.issue-list b{display:block;font-size:14px;font-weight:700}
+.issue-list span{color:var(--text-2);font-size:13px;display:block}
+.issue-list .file{color:var(--text-3);font-size:11.5px;margin-top:3px;display:block}
+.tag-must{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:var(--expense-soft);color:var(--expense);margin-left:6px;vertical-align:middle}
+.tag-nice{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:var(--secondary-soft);color:var(--secondary);margin-left:6px;vertical-align:middle}
+.tag-drop{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:var(--surface-2);color:var(--text-3);margin-left:6px;vertical-align:middle}
+.tag-new{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:var(--focus-soft);color:var(--focus);margin-left:6px;vertical-align:middle}
+
+.map-table{width:100%;border-collapse:collapse;font-size:13px}
+.map-table th{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);font-weight:800;padding:0 10px 10px;border-bottom:1px solid var(--line)}
+.map-table td{padding:11px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.map-table tr:last-child td{border-bottom:0}
+.map-table td:first-child{font-weight:700}
+.map-table.small{font-size:12.5px}
+
+.kpi{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:var(--radius-sm);background:var(--surface-2);border:1px solid var(--line-soft)}
+.kpi .v{font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1}
+.kpi .k{font-size:11.5px;font-weight:700;color:var(--text-2)}
+.kpi .d{font-size:11.5px;color:var(--text-3)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+.previews{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+.preview-col{display:flex;flex-direction:column;gap:14px}
+.preview-label{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.preview-label .dot{width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.preview-label .dot.ok{background:var(--secondary)}
+.preview-label .dot.new{background:var(--focus)}
+.phone{width:392px;background:var(--canvas);border:1px solid var(--line);border-radius:38px;box-shadow:var(--shadow-lg);overflow:hidden;flex:0 0 auto}
+.phone-screen{height:830px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+.phone-screen::-webkit-scrollbar{width:5px}
+.phone-screen::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;padding:12px 16px;background:color-mix(in srgb, var(--canvas) 92%, transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
+.mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,var(--primary),#C9483A);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;flex:0 0 auto}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line-soft);font-size:13px;font-weight:700}
+.icon-btn{width:34px;height:34px;border-radius:999px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:13px;font-weight:800;color:var(--text-2);flex:0 0 auto}
+.avatar{width:34px;height:34px;border-radius:999px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-weight:800;font-size:14px;flex:0 0 auto;border:1px solid var(--primary-soft-2)}
+.spacer{flex:1}
+.body-pad{padding:16px 16px 40px;display:flex;flex-direction:column;gap:14px}
+.body-pad.tight{gap:10px}
+
+/* 面板导航：现状（只图标、需横滑） */
+.panels{display:flex;gap:4px;overflow-x:auto;padding:8px 16px;border-bottom:1px solid var(--line-soft);background:var(--canvas);scrollbar-width:none}
+.panels::-webkit-scrollbar{display:none}
+.panels span{flex:0 0 auto;display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--text-3);padding:7px 12px;border-radius:999px;white-space:nowrap}
+.panels span.on{background:var(--primary-soft);color:var(--primary)}
+
+/* 主 tab + 更多 */
+.tabs{display:flex;gap:2px;padding:6px 12px;border-bottom:1px solid var(--line-soft);background:var(--canvas);position:sticky;top:0;z-index:19}
+.tabs .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;border-radius:12px;font-size:11.5px;font-weight:700;color:var(--text-3)}
+.tabs .tab i{font-style:normal;font-size:16px}
+.tabs .tab.on{background:var(--primary-soft);color:var(--primary)}
+.tabs .tab.on i{filter:saturate(1.2)}
+
+.more-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px}
+.more-grid .mi{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px;border-radius:14px;background:var(--surface-2)}
+.more-grid .mi .ic{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-size:16px}
+.more-grid .mi .t{font-size:11.5px;font-weight:800;color:var(--text-2)}
+.more-grid .mi.bad .t{color:var(--expense)}
+
+
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 11px;box-shadow:var(--shadow-sm)}
+.tile .k{font-size:10.5px;font-weight:700;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .v{font-size:15px;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .d{font-size:10.5px;color:var(--text-3);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.up .v{color:var(--income)}
+.tile.down .v{color:var(--expense)}
+.tile.warn .v{color:var(--warning)}
+
+
+
+/* 通用卡片 */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm)}
+.card-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.card-head .t{font-size:14px;font-weight:800}
+.card-head .sp{flex:1}
+.card-head .s{font-size:11.5px;color:var(--text-3);font-weight:600}
+.card-head .a{font-size:12px;font-weight:800;color:var(--primary)}
+
+.search{display:flex;align-items:center;gap:9px;height:42px;padding:0 13px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-size:13.5px;color:var(--text-3)}
+.search .ph{flex:1}
+.toolbar{display:flex;align-items:center;gap:8px}
+.tool{flex:1;display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--text-2)}
+.tool.sq{flex:0 0 auto;width:38px;justify-content:center}
+.tool.acc{color:var(--primary);border-color:var(--primary-soft-2);background:var(--primary-soft)}
+
+.lbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin:2px 0 -2px}
+
+/* 统计页 tab */
+.stat-tabs{display:flex;gap:6px;padding:2px 0 2px;overflow-x:auto;scrollbar-width:none}
+.stat-tabs::-webkit-scrollbar{display:none}
+.stat-tabs .st{flex:0 0 auto;padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--surface);border:1px solid var(--line);color:var(--text-2);white-space:nowrap}
+.stat-tabs .st.on{background:var(--primary);border-color:transparent;color:#fff}
+html[data-theme="dark"] .stat-tabs .st.on{color:#2B1F1A}
+
+.filter-bar{display:flex;align-items:center;gap:7px;overflow-x:auto;padding:2px 0;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.fchip{flex:0 0 auto;display:flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:999px;background:var(--primary-soft);border:1px solid var(--primary-soft-2);color:var(--primary);font-size:12px;font-weight:800}
+.fchip.plain{background:var(--surface);border-color:var(--line);color:var(--text-2)}
+.fchip.reset{background:transparent;border-style:dashed;color:var(--text-3);font-weight:700}
+
+/* 分类页 */
+.cat-row{display:flex;flex-direction:column;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px;box-shadow:var(--shadow-sm)}
+.cat-top{display:flex;align-items:center;gap:11px}
+.cat-ic{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;font-size:17px;flex:0 0 auto}
+.cat-mid{flex:1;min-width:0}
+.cat-mid .n{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-mid .m{font-size:11px;color:var(--text-3);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-amt{text-align:right;flex:0 0 auto}
+.cat-amt .v{font-size:13.5px;font-weight:800;white-space:nowrap}
+.cat-amt .p{font-size:10.5px;font-weight:700;color:var(--text-3)}
+.cat-bar{height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.cat-bar i{display:block;height:100%;border-radius:999px}
+.cat-chips{display:flex;gap:6px;flex-wrap:wrap}
+.cat-chips .cc{padding:6px 10px;border-radius:10px;font-size:12px;font-weight:600;background:var(--surface-2);border:1px solid var(--line-soft);color:var(--text-2)}
+.cat-chips .cc.off{opacity:.5;text-decoration:line-through}
+.cat-chips .cc.add{border-style:dashed;color:var(--text-3)}
+
+/* 预算 */
+.sum-bar{display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:var(--radius-sm);
+  background:linear-gradient(180deg,var(--primary-soft),transparent 170%);border:1px solid var(--primary-soft-2)}
+.sum-bar .m{display:flex;flex-direction:column;gap:1px;min-width:0}
+.sum-bar .m .k{font-size:10.5px;font-weight:700;color:var(--text-3)}
+.sum-bar .m .v{font-size:13.5px;font-weight:800;white-space:nowrap}
+.sum-bar .x{margin-left:auto;font-size:12px;font-weight:800;color:var(--primary);white-space:nowrap}
+
+.bg-row{display:flex;flex-direction:column;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px;box-shadow:var(--shadow-sm)}
+.bg-row.hot{border-color:rgba(212,77,110,.32)}
+.bg-top{display:flex;align-items:center;gap:11px}
+.bg-top .ic{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:16px;flex:0 0 auto}
+.bg-top .mid{flex:1;min-width:0}
+.bg-top .mid .n{font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bg-top .mid .m{font-size:11px;color:var(--text-3);font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bg-top .v{font-size:13.5px;font-weight:800;white-space:nowrap}
+.bg-track{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden;display:flex}
+.bg-track i{display:block;height:100%}
+.bg-foot{display:flex;align-items:center;gap:9px;font-size:11px;font-weight:700;color:var(--text-3)}
+.bg-foot .sp{flex:1}
+.bg-foot .day{color:var(--secondary);font-weight:800}
+.bg-foot .hot{color:var(--expense);font-weight:800}
+
+/* 提醒分组 */
+.rg{display:flex;flex-direction:column;gap:8px}
+.rg-head{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--text-2);padding:2px 2px 0}
+.rg-head .c{font-size:10.5px;font-weight:800;padding:1px 6px;border-radius:6px;background:var(--surface-2);color:var(--text-3)}
+.rg-head.od .c{background:var(--expense-soft);color:var(--expense)}
+.rg-head.td .c{background:var(--warning-soft);color:var(--warning)}
+.rem{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.rem .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:15px;flex:0 0 auto}
+.rem .mid{flex:1;min-width:0}
+.rem .mid .t{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rem .mid .m{font-size:11px;color:var(--text-3);font-weight:600;margin-top:1px}
+.rem .v{font-size:13px;font-weight:800;white-space:nowrap}
+.rem.od{border-color:rgba(212,77,110,.3);background:linear-gradient(90deg,var(--expense-soft),transparent 70%)}
+.selbar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--text);color:var(--canvas)}
+html[data-theme="dark"] .selbar{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+.selbar .sp{flex:1}
+.selbar .btn{font-size:12px;font-weight:800;color:var(--primary)}
+
+/* 记一笔 */
+.amount-big{display:flex;align-items:baseline;gap:8px;padding:14px 16px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.amount-big .cur{font-size:13px;font-weight:800;color:var(--primary);background:var(--primary-soft);border-radius:8px;padding:3px 8px}
+.amount-big .val{font-size:32px;font-weight:900;letter-spacing:-.02em;margin-left:auto}
+.cat-pick{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.cat-pick .cp{display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 2px;border-radius:13px;background:var(--surface);border:1px solid var(--line)}
+.cat-pick .cp .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:15px}
+.cat-pick .cp .t{font-size:10.5px;font-weight:700;color:var(--text-2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-pick .cp.on{background:var(--primary-soft);border-color:var(--primary-soft-2)}
+.cat-pick .cp.on .t{color:var(--primary);font-weight:800}
+.cat-pick + .cat-pick{margin-top:7px}
+.keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:10px;border-radius:var(--radius-sm);background:var(--surface-2);border:1px solid var(--line-soft)}
+.keypad .key{height:44px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;font-size:17px;font-weight:700;box-shadow:var(--shadow-sm)}
+.keypad .key.fn{font-size:13px;font-weight:800;color:var(--text-2)}
+.keypad .key.acc{background:var(--primary);border-color:transparent;color:#fff;font-size:13px;font-weight:800}
+html[data-theme="dark"] .keypad .key.acc{color:#2B1F1A}
+[data-note]{cursor:pointer}
+[data-note]:hover{outline:2px solid var(--primary-soft-2);outline-offset:2px}
+.note{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(14px);background:var(--text);color:var(--canvas);border-radius:16px;padding:14px 18px;max-width:720px;width:calc(100% - 40px);box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.24s cubic-bezier(.2,.8,.2,1);z-index:99}
+html[data-theme="dark"] .note{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+.note.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.note .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+.note .b{font-size:13.5px;margin-top:6px;line-height:1.6}
+
+@media (max-width:1400px){ .span-3{grid-column:span 6} }
+@media (max-width:1240px){ .span-4,.span-6,.span-8{grid-column:span 12} }
+@media (max-width:900px){
+  .page{padding:24px 16px 70px}
+  h1{font-size:26px}
+  .phone{width:100%;max-width:392px}
+  .phone-screen{height:auto;max-height:830px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <span class="eyebrow">Miji · Bookkeeping Modules</span>
+      <h1>记账模块 · 全量界面复核与改版预览</h1>
+      <p class="lede">
+        覆盖记账模块全部 12 个界面（8 个面板 + 4 类表单/详情），逐个对照源码找问题。
+        <b>「总览」不在本次范围内</b>——首页已经承担了总览职责，记账页不该重复；反而要修掉首页指向已删除面板的那条死链。
+        结论：<b>账户页与流水页已经过一轮改版，质量明显领先</b>；剩下的 6 个面板还停在「能用」阶段，
+        其中还有 6 组是「功能不可达 / 点了没反应」级别的缺口（分类无法新增、账单提醒没有入口、分期没有新增按钮……）。
+        本文件<b>只讨论移动端</b>（360–430dp 手机竖屏），不考虑桌面/平板布局。
+        本文件只做诊断与设计稿，<b>未改任何代码</b>，等确认后再进入实现。
+      </p>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="主题">
+        <button data-theme-btn="light" aria-pressed="true">浅色</button>
+        <button data-theme-btn="dark" aria-pressed="false">深色</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 实施状态 ===================== -->
+  <section class="analysis" style="margin-top:4px">
+    <div class="panel span-12" style="border-color:rgba(33,167,139,.35)">
+      <h2 style="color:var(--secondary)">✓ 本文件已全部实施（2026-09 · 两轮）</h2>
+      <p class="sub">映射表里标「必须」的 8 项、「高」的 6 项、「中」的 5 项已落地；只剩 JPY/KRW 小数位待建模决策。验证方式见本节末</p>
+      <table class="map-table small">
+        <thead><tr><th style="width:100px">状态</th><th style="width:300px">改动</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分类页新增入口</td><td>工具条右侧常驻「＋」，空态保留。原先非空分支没有任何入口，且种子数据总让 categories 非空 → 功能永久不可达。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分类图标渲染修复</td><td>新增 <code>category_icon.dart</code>：146 个 Material 图标名 → <code>IconData</code>，emoji 直接渲染文字，未知回退通用图标。分类/子分类下拉与列表不再出现英文单词。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>预算页新增入口 + 筛选角标</td><td>非空时工具条右侧常驻「＋新增预算」，并补传 <code>hasActiveFilters</code>。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>预算汇总条 + 日均可用</td><td>合计/已用/剩余 + 超支·接近数量；卡片补「日均可用 ¥X · 还剩 N 天」「已超支 ¥X · 仅剩 N 天」。多币种时不展示汇总（求和无意义）。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分期页新增入口</td><td>用起死参数 <code>onCreate</code>；三个空态补动作（新建信用账户 / 去分类页 / 新增分期）；账户表单新增 <code>initialType</code>，空态可直接建信用卡。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分期「下一期」倒计时</td><td><code>11-15</code> → <code>11-15 · 还剩 2 天</code>（今天 / 已逾期 也有对应文案）。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>账单提醒入口</td><td>把表单从死代码抽出为 <code>bill_reminder_form_dialog.dart</code>；提醒中心新增「＋新增提醒」，账单类提醒点行即可编辑。旧列表页 803 行删除。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>提醒中心分组 + 行内完成</td><td>按「已逾期 / 今天 / 3 天内 / 以后」分组并带数量；行尾加「标记完成」，左滑保留。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>流水汇总条「清除筛选」</td><td>空按钮接上真正的清除逻辑，且尊重上下文锁定（从预算/账户进来时保留被锁条件）。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>搜索范围与提示一致</td><td>keyword 查询补 <code>merchant</code>，提示改为「搜索备注、商家」。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>统计页分页标签</td><td>5 个圆点 → 可点可滑的文字标签（概览/消费/渠道/预算/账户），<code>statistics-dot-N</code> 的 key 保留以兼容测试。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>统计筛选状态条</td><td>生效条件做成可点掉的胶囊 + 重置；筛选触发器带角标；controller 补 <code>resetFilters()</code>。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>流水卡分类颜色/图标</td><td>图标与底色改用 <code>category.color</code> / <code>category.icon</code>，一屏流水可按颜色扫读。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>首页净资产 tile 死链</td><td><code>?section=overview</code> → 直接指向账户面板（原来会静默回落到账户页）。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>删除旧概览组件</td><td><code>BookkeepingOverviewSection</code>（702 行）+ 只服务于它的 <code>MoneyOverviewEntity</code> / <code>currentUserBookkeepingOverviewProvider</code> 一并删除。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>币种：日期分组头</td><td>不再硬编码 CNY；当天多币种时不显示合计（跨币种求和无意义）。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>待付账单口径统一</td><td>抽出 domain 层 <code>effectiveBillReminderDueDate()</code>，通知服务与统计卡共用；排除已逾期项；分档合计仅在单一币种时展示。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>导航改 4 tab + 更多（Q1）</td><td>流水 / 账户 / 预算 / 统计 常驻带文字，分类 / 分期 / 自动记账 / 提醒 收进「更多」网格（提醒带待处理角标）；二级面板激活时「更多」标签显示当前面板名。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>面板状态写回 URL</td><td><code>_selectPanel</code> → <code>context.go('?section=xxx')</code>，并加 <code>didUpdateWidget</code> 回环保护。系统返回键回到上一个面板、深链进入后返回栈正确。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分类用量统计（Q5）</td><td>新增 <code>MoneyCategoryUsage</code> + <code>currentUserMonthCategoryUsageProvider</code>：复用统计模块同一个请求（本月份 + 当前账本 + 无筛选），不多发查询也不产生第二套口径。分类卡显示「本月 ¥x · 30.0%」+ 占比条。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分类页搜索 + 按用量排序</td><td>搜索同时匹配分类名与子分类名；排序开关把花得最多的排到前面。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分类「常用」排序口径统一</td><td>原先同一屏里有<b>两套口径</b>：常用网格按「本月金额」，全部分类面板按「历史次数」。后果是某个分类本月只记过一次大额就排到网格第一，但它在面板里可能翻很久才找到。<br>现在统一成一个比较器（<code>compareLeavesByUsage</code>，网格与面板共用）：<b>最近使用 → 使用次数 → 累计金额 → 目录顺序</b>。<br>· 数据源换成用量缓存表（<code>money_category_usage_stats</code>）——它本来就在为仓储层的分类排序服务，现在 UI 与仓储层口径一致；也顺带修掉「月初本月金额全为 0 → 常用项全部归零被挤出网格」<br>· 面板仍按父分类分组（便于查找），但<b>分组顺序与组内顺序都走同一个比较器</b><br>· 去掉 <code>isSystem</code> 降权：种子数据里所有内置分类都是 <code>system=true</code>，这一层没有区分度，只会把用户自建分类（往往最在意）永远压到最后<br>· 转账表单也传同一份 usage，消除「同一组件两种口径」<br><br>· 兜底顺序改成<b>业务顺序</b>（见下一行），不再依赖中文码点序</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分类业务顺序 <code>sortOrder</code>（schema 21 → 22）</td><td>背景：无用量时原来的兜底是 <code>name ASC</code>，而 SQLite 对中文按 UTF-8 码点排序 → 新用户看到「交通 / 人情礼金 / 其他支出 / 公益慈善…」这种没有规律的顺序。<br>· <code>money_categories</code> / <code>money_sub_categories</code> 各加一列 <code>sort_order</code>；排序键变成 <b>用量（最近使用 → 次数 → 金额）→ sort_order → name</b><br>· 内置分类按<b>种子声明顺序</b>写入（餐饮 / 交通 / 购物 / 居住缴费 …，子分类同理），迁移时按 id 回填已有库<br>· 用户自建分类在创建时取 <code>max(sort_order) + 1</code> 追加到末尾（不会插到内置分类前面）<br>· <code>sort_order = 0</code> 视为「未设置」并排到最后：旧数据、以及同步包缺字段的记录都能优雅降级<br>· 迁移测试按既有约定同步更新（伪造 v21 及更早版本要先删掉新列），并新增 v21 → v22 用例验证「回填业务顺序 + 自建分类保持 0」<br><span style="color:var(--text-3)">顺带为后续「拖拽自定义分类顺序」留好了列，但本轮没做拖拽交互。</span></td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>记账表单：分类扁平化到「叶子」</td><td>用户想的是「午餐」而不是「餐饮 → 午餐」，所以表单直接摊平到叶子：<b>点一次即完成</b>，父分类由叶子反推写回 <code>categoryId</code>。<br>· 叶子清单 = 所有（未停用）子分类 + <b>没有子分类的父分类本身</b>（否则这类自建分类永远选不到）<br>· 常用叶子 3 列网格（tile 显示叶子名 + 父分类小字，避免「外卖」认不出属于餐饮），按<b>叶子级</b>本月用量排序<br>· 「全部分类」打开搜索 + 按父分类分组的列表，<b>分组标题可点 = 只记到父分类</b>（保留原能力）<br>· 转账：父分类固定「转账」，去掉那格只读下拉，直接给出账户间转账 / 亲友转账 / 信用卡还款<br><span style="color:var(--text-3)">筛选器与预算的作用域选择器<b>保持两级不变</b>——「给整个餐饮做预算」「筛整个餐饮的流水」在那里是有意义的父级目标。</span></td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>自定义数字键盘（底部停靠 · 5 个表单复用）</td><td><code>MoneyCalculator</code>（纯函数状态机）+ <code>MoneyKeypad</code>：数字 / . / 00 / ⌫ / ＋ / − / =，支持「38 ＋ 12 = 50」连算，待结算时显示算式提示；编辑已有金额时首次按键直接覆盖。键盘像系统键盘一样<b>固定在对话框底部</b>（<code>AppDialogScaffold</code> 新增 <code>bottomDock</code>，内容区在其上方滚动），金额大字就在键盘上方随时可见。<br>封装成 <code>MoneyAmountInput</code> 后已接入：<b>记一笔 / 转账 / 账单提醒 / 预算 / 自动记账</b>。备注/商家/标签拉起系统键盘时自带键盘自动让位。宽屏仍是普通输入框。<br><span style="color:var(--text-3)">多金额字段的表单（账户的初始余额+信用额度、分摊的每人金额、预算分配、分期的本金+利息）保留系统键盘：同时编辑多个数字时，系统键盘的「下一个」更顺手，停靠键盘反而要来回切换目标。</span></td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>保存并继续</td><td>表单新增 <code>onSubmit</code> 契约：提供回调时由表单自己写入（成功关闭或保持打开，失败就地回显）；「保存并继续」提交后保持表单、只清金额与备注，保留账户与分类。流水页 / 快捷动作 / 分类页三处都已接入。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>提醒中心批量多选</td><td>长按进入多选，底部操作条支持批量「完成 / 延后 / 忽略」+ 退出；<code>AppSwipeActionTile</code> 补了通用的 <code>onLongPress</code>。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>预读收敛</td><td><code>_BookkeepingDataPreloader</code> 从「一次 12 个 provider」收到两批（基础选择器 + 流水首页），并在未解锁时直接跳过；进记账 Tab 的固定开销明显下降。</td></tr>
+          <tr><td><span class="tag-drop">已确认</span></td><td>记账页默认落点 = 账户</td><td>Q2 的决定：<code>_panelFromSection(null) =&gt; accounts</code> 保持不变。</td></tr>
+          <tr><td><span class="tag-drop">有意不做</span></td><td>JPY/KRW 两位小数</td><td>数据模型统一按「分」存 2 位小数，且金额输入允许小数；改成 0 位会与用户输入不一致（输入 1234.56 → 显示 ¥1,235）。属于建模决策，等确认。</td></tr>
+        </tbody>
+      </table>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
+        <div class="kpi"><div class="v" style="color:var(--secondary)">干净</div><div class="k">flutter analyze</div><div class="d">No issues found</div></div>
+        <div class="kpi"><div class="v">489</div><div class="k">测试通过</div><div class="d">较改动前 398 新增 91 个回归测试</div></div>
+        <div class="kpi"><div class="v" style="color:var(--warning)">12</div><div class="k">既有失败（与本次无关）</div><div class="d">health 11 + legacy import 1，已用 git stash 在改动前复现</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 盘点 ===================== -->
+  <section class="analysis">
+    <div class="panel span-12">
+      <h2>界面盘点（12 个界面）</h2>
+      <p class="sub">按「是否已改版」分三档：<span class="tag-nice">已改版</span> 只做微调，<span class="tag-must">待改版</span> 是本次重点，<span class="tag-drop">死代码</span> 建议删除或复活</p>
+      <table class="map-table small">
+        <thead>
+          <tr><th style="width:150px">界面</th><th style="width:290px">文件（行数）</th><th style="width:80px">档位</th><th>现状结论</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>账户</td><td><code>money_accounts_section.dart</code> (2151)</td><td><span class="tag-nice">已改版</span></td><td>净资产 Hero、卡片 3 行、额度进度条、<code>⋯</code> 菜单都到位。剩：分组仍是三选一，无「按类型分组」视图。</td></tr>
+          <tr><td>流水</td><td><code>money_transactions_section.dart</code> (2492)</td><td><span class="tag-nice">已改版</span></td><td>常驻搜索、类型分段、日期胶囊、排序、筛选汇总条都在。剩：汇总条「筛选」是空按钮，搜索范围与提示不符。</td></tr>
+          <tr><td>统计</td><td><code>money_statistics_section.dart</code> (1467) + 18 个卡组件</td><td><span class="tag-must">待改版</span></td><td>内容最丰富（18 类图表卡、5 个分页、同屏 20 个卡片位），但分页只有圆点无标签，筛选无状态提示。</td></tr>
+          <tr><td>分类</td><td><code>money_categories_section.dart</code> (709)</td><td><span class="tag-must">待改版</span></td><td><b>有分类时无法新增分类</b>；无搜索、无用量、图标渲染成英文单词。</td></tr>
+          <tr><td>预算</td><td><code>money_budgets_section.dart</code> (590) + 卡/表单/分配/历史 (2629)</td><td><span class="tag-must">待改版</span></td><td>能力最强（5 种作用域、子分配、结转、历史），但非空时没有新增按钮，无汇总、无筛选状态。</td></tr>
+          <tr><td>分期</td><td><code>money_installments_section.dart</code> (1460)</td><td><span class="tag-must">待改版</span></td><td><code>onCreate</code> 是死参数，页面本身没有任何新增入口；三个空态都没有动作按钮。</td></tr>
+          <tr><td>自动记账</td><td><code>money_auto_postings_section.dart</code> (1394)</td><td><span class="tag-must">待改版</span></td><td>有新增入口，但卡片把两次运行历史压在卡内，缺「下次执行」这一最关键信息。</td></tr>
+          <tr><td>提醒中心</td><td><code>money_reminder_center_section.dart</code> (416)</td><td><span class="tag-must">待改版</span></td><td>只能处理已有条目，不能新建；不分逾期/今天/以后；无批量。</td></tr>
+          <tr><td>账本切换/成员/账户</td><td><code>ledger_selector.dart</code> (1425)</td><td><span class="tag-nice">已改版</span></td><td>紧凑选择器 + 底部抽屉 + 成员/账户管理齐全，只需与主页导航对齐。</td></tr>
+          <tr><td>记一笔 / 转账 / 分摊</td><td><code>transaction_form_dialog.dart</code> (1309)、<code>transfer_form_dialog.dart</code> (571)、<code>transaction_split_dialog.dart</code> (814)</td><td><span class="tag-must">待改版</span></td><td>逻辑完备（余额校验、默认值记忆、分期入口、分摊），但录入效率低：二级下拉选分类、系统键盘、无「保存并继续」。</td></tr>
+          <tr><td>流水详情</td><td><code>transaction_detail_content.dart</code> (1123)</td><td><span class="tag-nice">已改版</span></td><td>核心信息 / 备注 / 关联 / 账本归属 / 分摊分段清晰，无需大改。</td></tr>
+          <tr><td>概览（旧）</td><td><code>bookkeeping_overview_section.dart</code> (702)</td><td><span class="tag-drop">死代码</span></td><td>全仓无引用。<b>它的职责已经由首页承担</b>（首页有「本月还可花 Hero + 快捷记账 + 洞察条 + 紧急提醒 + 今日行动/净资产 tile + 周趋势 + 分类结构 + 最近流水」共 12 个 section），建议直接删除，不再往记账页塞第二个总览。</td></tr>
+          <tr><td>账单提醒（旧）</td><td><code>money_bill_reminders_section.dart</code> (803)</td><td><span class="tag-drop">死代码</span></td><td>全仓无引用。它是<b>唯一</b>能新建账单提醒的界面，删掉就等于砍掉功能，必须复活。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel span-8">
+      <h2>问题总览</h2>
+      <p class="sub">按严重程度分四类，共 23 组问题。带 <span class="tag-must">阻塞</span> 的是「用户做不到某件事」，必须先修</p>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="v" style="color:var(--expense)">6</div><div class="k">功能缺口（阻塞）</div><div class="d">做不到 / 点了没反应</div></div>
+        <div class="kpi"><div class="v" style="color:var(--warning)">6</div><div class="k">交互与效率</div><div class="d">能做，但要多点几下</div></div>
+        <div class="kpi"><div class="v" style="color:var(--focus)">6</div><div class="k">导航与信息架构</div><div class="d">找不到 / 看不清全貌</div></div>
+        <div class="kpi"><div class="v" style="color:var(--text-2)">5</div><div class="k">一致性与工程债</div><div class="d">同类交互四种做法</div></div>
+      </div>
+    </div>
+
+    <div class="panel span-4">
+      <h2>三条主线</h2>
+      <p class="sub">所有改动都归到这三条，避免为了改而改</p>
+      <ul class="issue-list">
+        <li><span class="idx ok">1</span><div><b>把入口补齐</b><span>新增/新建按钮必须在「有数据」时依然可见。分类、预算、分期、账单提醒四处缺失。</span></div></li>
+        <li><span class="idx ok">2</span><div><b>把状态说明白</b><span>5 个分页只有圆点、筛选没有生效提示、金额币种硬编码——用户看不到自己在看什么。</span></div></li>
+        <li><span class="idx ok">3</span><div><b>把信息压成一眼</b><span>预算卡 9 层、提醒不分轻重、流水卡不区分类别颜色。</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== 问题清单 ===================== -->
+  <h2 class="section-title">一 · 导航与信息架构（6 组）</h2>
+  <p class="section-sub">8 个面板塞进一个控件，是这一层所有问题的根源</p>
+  <section class="analysis" style="margin-top:0">
+    <div class="panel span-6">
+      <h2>1.1 八个面板挤在一个只显示图标的横条里<span class="tag-must">阻塞</span></h2>
+      <p class="sub"><code>bookkeeping_page.dart:70-133</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>移动端放不下，要横滑</b><span><code>minSegmentWidth:44</code> × 8 = 352px，而 360dp 手机上 <code>AppPageFrame</code> 左右各留 12px，可用只有 336px → 首屏必然出现横向滚动，末尾的「自动记账 / 提醒」被裁掉一截，不滑一下根本看不到还有两个模块（输入框旁边的面板也一样：单个分段只有 44×44 的点击区，且没有文字）。</span></div></li>
+        <li><span class="idx">2</span><div><b>没有文字，只能长按看提示</b><span><code>showLabels:false</code>，标签只作为 <code>Tooltip</code>；手机上要长按才出现，且一次只显示一个。图标语义还互相重叠：<code>query_stats</code>=统计、<code>category</code>=分类、<code>flag</code>=预算、<code>event_repeat</code>=自动记账、<code>notifications_active</code>=提醒，新用户基本靠猜。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>1.2 面板状态不进 URL，返回键会直接退出记账页</h2>
+      <p class="sub"><code>app_router.dart:149-153</code> · <code>bookkeeping_page.dart:41-58</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>路由已经支持 <code>?section=</code>，但只当初始值</b><span><code>initState</code>/<code>didUpdateWidget</code> 读取后写入 <code>setState</code>，切面板不写回路由。Web 上刷新、浏览器后退、分享链接都会掉回「账户」。</span></div></li>
+        <li><span class="idx">2</span><div><b>系统返回键会直接退出记账页</b><span>面板切换是纯 <code>setState</code>，不产生路由历史。所以「统计页点分类 → 跳到流水 → 按返回键」不会回到统计页，而是直接退出记账模块；从首页或通知带 <code>?section=</code> 跳进来之后，返回栈也不对。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>1.3 「总览」已经在首页，记账页反而接不住它</h2>
+      <p class="sub"><code>home_page.dart:250-350</code> · <code>home_page.dart:491-498</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>首页就是总览，不需要第二个</b><span>首页已经有一整套总览：问候 + 连续记账天数、<code>HomeBalanceHeroCard</code>（本月还能花 + 今日支出 + 分类预算）、快捷记账、洞察条、紧急提醒、今日行动 / 净资产 tile、周趋势、分类结构、最近流水。<b>所以记账页不应该再做一个「总览」面板</b>，旧 <code>BookkeepingOverviewSection</code> 应该删除而不是复活。</span></div></li>
+        <li><span class="idx">2</span><div><b>但首页有个死链：净资产 tile 跳了一个已删除的面板</b><span><code>_openOverview()</code> 拼的是 <code>?section=overview</code>，而 <code>_panelFromSection</code> 的 switch 里没有 <code>'overview'</code> 分支，只能落到 <code>_ =&gt; accounts</code>——用户点「净资产」实际到了账户页，不是概览。首页其余跳转（<code>transactions</code> / <code>reminders</code> / <code>categories</code> / <code>budgets</code>）都是对的，只错这一条。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>1.4 两个 700+ 行的界面是死代码</h2>
+      <p class="sub">全仓 grep 无引用，测试也没有覆盖</p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b><code>BookkeepingOverviewSection</code>（702 行）—— 建议删除</b><span>它原本是记账页的「概览」面板，职责已整体迁到首页（见 1.3）。里面的六宫格指标与预算/收入目标双警示卡在首页都有对应实现，留着只会让人以为还能从这里进去。</span></div></li>
+        <li><span class="idx">2</span><div><b><code>MoneyBillRemindersSection</code>（803 行）—— 必须复活</b><span>它是<b>唯一</b>的账单提醒 CRUD 界面，不是重复实现。删掉它，README 里「账单提醒：信用卡还款、周期性账单的待办提醒」就彻底不可用了（见 2.4）。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>1.5 8 个面板全量保活，首屏为「永远不打开的 7 个」买单</h2>
+      <p class="sub"><code>bookkeeping_page.dart:337-420</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>切过一轮后 8 个面板全部驻留</b><span><code>_LazyBookkeepingPanelStack</code> + <code>_KeepAlivePanel</code>：一旦加载就永不销毁，滚动位置、分页、筛选状态全部保留（这是有意的），但内存也全部保留。</span></div></li>
+        <li><span class="idx">2</span><div><b>预读 12 个 provider</b><span><code>_BookkeepingDataPreloader</code> 在进页面 120ms 后一次性 <code>Future.wait</code> 12 个 provider（含账单提醒、自动记账执行、分期、统计上下文、统计请求）。移动端首次进入记账页的耗时被这个固定开销决定，而用户可能只想看流水。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>1.6 全部 8 个面板都是「长列表 + 无分组」</h2>
+      <p class="sub">移动端只有单列，列表长度直接等于滑动距离</p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>分类 / 预算 / 分期 / 自动记账都是单一 <code>ListView</code></b><span>没有分组、没有折叠区、没有「按类型分组」。分类页在种子数据下就是 20+ 个分类卡纵向堆叠，每个卡里还带一排子分类 chips；预算页 4-6 张卡每张 9 层。手机上找一项要滑很久。</span></div></li>
+        <li><span class="idx">2</span><div><b>没有搜索</b><span>除了流水页与交易表单，其余面板都没有搜索框。「我那个「健身」子分类在哪个分类下面」在 20+ 张卡里只能靠肉眼扫。</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <h2 class="section-title">二 · 功能缺口（6 组 / 7 条，全部阻塞）</h2>
+  <p class="section-sub">这些是「用户做不到某件事」，不是好不好用的问题，建议优先修</p>
+  <section class="analysis" style="margin-top:0">
+    <div class="panel span-6">
+      <h2>2.1 分类：有分类之后，就再也新增不了分类<span class="tag-must">阻塞</span></h2>
+      <p class="sub"><code>money_categories_section.dart:80-118</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>「新增分类」按钮只存在于空态里</b><span><code>_buildCatalog</code> 在 <code>categories.isEmpty</code> 时返回带 action 的 <code>AppEmptyState</code>，非空分支只有 <code>ListView</code>，没有任何新增入口。</span></div></li>
+        <li><span class="idx">2</span><div><b>而默认种子总有分类</b><span><code>money_seed_data.dart</code> 里有整套餐饮/交通/购物…分类，所以空态<b>永远不会出现</b>。</span></div></li>
+        <li><span class="idx">3</span><div><b>全仓只有一个调用点</b><span><code>createCategory</code> 的调用方就是那个空态按钮，也没有快捷动作入口。结论：<b>用户永远无法新增分类</b>（子分类可以，因为父级行上有「＋」）。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>2.2 预算：有预算之后，新增按钮消失<span class="tag-must">阻塞</span></h2>
+      <p class="sub"><code>money_budgets_section.dart:75-135</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>非空分支只有筛选触发器和列表</b><span><code>budgets.isEmpty</code> 时走 <code>_EmptyBudgetsPanel</code>（带「＋」），有数据后整行按钮消失，只能去全局 FAB 的九宫格找「预算」。</span></div></li>
+        <li><span class="idx">2</span><div><b>筛选没有生效提示</b><span><code>AppFilterSheetTrigger</code> 没有传 <code>hasActiveFilters</code>（账户页与流水页都传了），也没有结果计数，筛完不知道筛没筛。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>2.3 分期：<code>onCreate</code> 是死参数<span class="tag-must">阻塞</span></h2>
+      <p class="sub"><code>money_installments_section.dart:59, 200-208</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>声明了却从没用过</b><span><code>_MoneyInstallmentsContent</code> 接收 <code>required this.onCreate</code>，但 <code>build</code> 里从未引用（grep 全文件只有构造与赋值两处）。页面顶部只有一个右对齐的占位，实际没有按钮。</span></div></li>
+        <li><span class="idx">2</span><div><b>三个空态都没有动作</b><span>「没有可用信用账户」「没有支出分类」「没有分期计划」三个 <code>AppEmptyState</code> 都没传 <code>action</code>，而第一个本该直接引导去「新增信用账户」。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>2.4 账单提醒：功能完全没有入口<span class="tag-must">阻塞</span></h2>
+      <p class="sub"><code>money_bill_reminders_section.dart</code> 无引用 · <code>money_reminder_center_section.dart</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>提醒中心不能新建，只能处理</b><span>它只有「完成 / 延后一天 / 忽略」三个动作，数据来自预算、信用卡账单、分期、周期支出、账单提醒五个来源——但<b>账单提醒这个来源没有任何地方能创建</b>。</span></div></li>
+        <li><span class="idx">2</span><div><b>下游已有依赖</b><span>统计页「待付账单」卡（<code>money_upcoming_bills_card.dart</code>）、首页紧急提醒、本地通知服务（<code>money_bill_reminder_notification_service.dart</code>）都在消费这份数据，空转。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>2.5 分类图标渲染成英文单词<span class="tag-must">阻塞</span></h2>
+      <p class="sub"><code>category_selector.dart:150-190</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>把图标名当文本画出来了</b><span><code>_SelectorItem</code> 里 <code>iconText == null ? Icon(fallback) : Text(iconText)</code>，而库里 <code>icon</code> 字段存的是 Material 图标名（<code>restaurant</code> / <code>breakfast_dining</code> / <code>category</code> / <code>emoji_events</code>）。于是分类/子分类下拉菜单每一项前面都出现 <code>restaurant</code>、<code>breakfast_dining</code> 这样的英文单词。</span></div></li>
+        <li><span class="idx">2</span><div><b>入口没有图标可用</b><span>分类卡自身固定用 <code>Icons.category_rounded</code>，颜色是唯一区分维度；新建分类时 <code>icon</code> 被硬编码成 <code>'category'</code>。修法见预览 4：用「颜色圆点 + 可选 emoji」两轨道。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>2.6 流水汇总条右侧的「筛选」是空按钮<span class="tag-must">阻塞</span></h2>
+      <p class="sub"><code>money_transactions_section.dart</code> · <code>_TransactionSummaryBar</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b><code>onPressed: () {}</code></b><span>按钮在「有筛选条件」时出现，文案是「筛选」，但点了完全没有反应。要么改成「清除筛选」（真正有用），要么删掉。</span></div></li>
+        <li><span class="idx">2</span><div><b>搜索提示与实际能力不符</b><span>输入框提示「搜索分类、商户、备注…」，而仓储层 keyword 只 <code>LIKE description | notes</code>（<code>transactions.dart:1509-1515</code>）。按商户名搜不到，商户搜索在抽屉里是另一个输入框。</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <h2 class="section-title">三 · 交互与效率（6）</h2>
+  <p class="section-sub">功能都在，但每一步都比同类产品多一次点击</p>
+  <section class="analysis" style="margin-top:0">
+    <div class="panel span-6">
+      <h2>3.1 统计页：5 个分页只有圆点</h2>
+      <p class="sub"><code>money_statistics_section.dart:1070-1120</code> · <code>_PageDots</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>不知道后面还有什么</b><span>5 页分别是 概览 / 消费 / 渠道 / 预算 / 账户，全部只显示圆点。分页里一多半卡片（渠道、预算趋势、净资产趋势、待付账单、未来现金流、成员参与、月度报表）用户根本不知道存在。</span></div></li>
+        <li><span class="idx">2</span><div><b>筛选没有状态、没有重置</b><span><code>_StatisticsFilterStrip</code> 没有重置按钮（预算页有），<code>AppFilterSheetTrigger</code> 也没传 <code>hasActiveFilters</code>。「账户=招行 + 渠道=支付宝」和「无筛选」在界面上长得一模一样。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>3.2 记一笔：分类要两级下拉，金额用系统键盘</h2>
+      <p class="sub"><code>transaction_form_dialog.dart</code> · <code>category_selector.dart</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>分类是「分类 → 子分类」两个下拉</b><span>记账软件最高频的动作是「餐饮 / 午餐」，现在是两次展开 + 两次搜索列表。没有图标网格、没有常用置顶、没有最近使用。</span></div></li>
+        <li><span class="idx">2</span><div><b>没有自定义数字键盘</b><span><code>AppAmountField</code> 用系统键盘（<code>numberWithOptions</code>）。没有「+ −」连算、没有「再记一笔」；表单底部只有「取消 / 创建」。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>3.3 流水卡不用分类颜色与图标</h2>
+      <p class="sub"><code>transaction_card.dart</code> · <code>_icon</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>图标只区分收/支/转账</b><span>分类退化成标题文字，颜色也没有用到（分类表里本来就有 <code>color</code> 字段）。一屏流水里找「餐饮」和「交通」全靠读字，扫读性差。</span></div></li>
+        <li><span class="idx">2</span><div><b>当天只有支出/收入，没有净额</b><span><code>_DayGroupHeader</code> 显示「支出 ¥x 收入 ¥y」，没有当日净额；也没用「本周合计」之类的周维度。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>3.4 预算卡 9 层信息，缺决策数字</h2>
+      <p class="sub"><code>budget_card.dart</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>一屏只能看 2 张</b><span>名称 / 范围 / 周期 / 账本徽章 / 进度条 / 已用 / 剩余 / 目标 / 分配概览（4 个子项）/ 阈值提示。</span></div></li>
+        <li><span class="idx">2</span><div><b>缺「日均可用」与「距超支还剩几天」</b><span>用户真正要的是「这个月每天还能花多少」。数据都在（<code>periodEnd</code>、<code>remainingAmountMinor</code>），只是没算没显示。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>3.5 提醒中心不分组、不能批量</h2>
+      <p class="sub"><code>money_reminder_center_section.dart:80-100</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>逾期和「下个月」混在一条列表里</b><span>卡片内用颜色区分优先级，但顺序不变、也不分组。逾期 3 笔被埋在 20 条里。</span></div></li>
+        <li><span class="idx">2</span><div><b>操作只有左滑</b><span>完成 / 延后 / 忽略都挂在 <code>AppSwipeActionTile</code> 上，没有行内按钮，也没有多选批量「全部忽略本月订阅类提醒」。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>3.6 分期与自动记账缺少时间语义</h2>
+      <p class="sub"><code>money_installments_section.dart</code> · <code>money_auto_postings_section.dart</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>分期「下一期」只给日期</b><span>显示 <code>11-15</code>，不给「还剩 3 天」，用户要自己算；也没有「提前还清 / 一次性结清」入口，只能一期一期点入账。</span></div></li>
+        <li><span class="idx">2</span><div><b>自动记账没有「下次执行」</b><span>卡片上是「从 2024-01-01 起 · 每月 5 日 08:00」，要自己推算下一次；运行历史占 2 行，比「下次执行」次要。</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <h2 class="section-title">四 · 一致性与工程债（5）</h2>
+  <p class="section-sub">同类交互在四个页面有四种做法，长期维护成本高</p>
+  <section class="analysis" style="margin-top:0">
+    <div class="panel span-6">
+      <h2>4.1 四套筛选交互</h2>
+      <table class="map-table small">
+        <thead><tr><th style="width:90px">页面</th><th style="width:150px">形态</th><th>生效提示 / 重置</th></tr></thead>
+        <tbody>
+          <tr><td>账户</td><td>header chips + 抽屉</td><td>有 <code>hasActiveFilters</code>；重置在抽屉里</td></tr>
+          <tr><td>流水</td><td>常驻搜索 + 分段 + 日期胶囊 + 抽屉</td><td>有角标；重置按钮是空的</td></tr>
+          <tr><td>统计</td><td>只有抽屉</td><td><b>无</b>提示、<b>无</b>重置</td></tr>
+          <tr><td>预算</td><td>只有抽屉</td><td><b>无</b>提示；重置在抽屉里</td></tr>
+          <tr><td>提醒中心</td><td><code>AppFilterStrip</code> chips</td><td>无（历史筛选）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel span-6">
+      <h2>4.2 新增入口位置不统一</h2>
+      <ul class="issue-list">
+        <li><span class="idx n">位</span><div><b>账户页</b><span>header 行尾「＋」（filled 圆形图标按钮）</span></div></li>
+        <li><span class="idx n">位</span><div><b>自动记账 / 账单提醒（旧）</b><span>内容区右上角右对齐单独一行</span></div></li>
+        <li><span class="idx n">位</span><div><b>预算 / 分类 / 分期</b><span>没有（只在空态里）</span></div></li>
+        <li><span class="idx q">?</span><div><b>建议</b><span>统一为「页面级工具条右侧＋」，与 <code>AppPageToolbar</code> 对齐；空态额外再给一个带文案的主按钮。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>4.3 空态不统一</h2>
+      <ul class="issue-list">
+        <li><span class="idx ok">有</span><div><b>账户 / 流水 / 预算 / 自动记账 / 分类（空）/ 统计（无数据）</b><span>带 message + action 或只有标题。</span></div></li>
+        <li><span class="idx">无</span><div><b>分期三个空态、提醒中心两个空态</b><span>只有标题，没有下一步动作，也不知道该去哪。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>4.4 币种与金额格式</h2>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>日期分组头硬编码 CNY</b><span><code>_DayGroupHeader</code> 里 <code>formatMoneyMinor(expenseMinor, 'CNY')</code>，多币种用户的日元流水会被标成 ¥ 人民币符号。</span></div></li>
+        <li><span class="idx">2</span><div><b>待付账单卡也用全局默认币种</b><span><code>_Bucket</code> 用 <code>defaultMoneyCurrencyCode</code> 而不是账单自己的 <code>currencyCode</code>。</span></div></li>
+        <li><span class="idx">3</span><div><b>JPY/KRW 永远两位小数</b><span><code>formatMoneyMinor</code> 固定 <code>decimalDigits: 2</code>，¥1,200.00 日元在中文语境里是错的。</span></div></li>
+      </ul>
+    </div>
+
+    <div class="panel span-6">
+      <h2>4.5 待付账单两处口径不一致</h2>
+      <p class="sub"><code>money_upcoming_bills_card.dart:36-56</code></p>
+      <ul class="issue-list">
+        <li><span class="idx">1</span><div><b>用原始 <code>dueDate</code> 而不是生效日期</b><span>提醒中心与通知服务都走 <code>_effectiveDueDate</code>（处理按周/月/年重复），统计卡直接用 <code>dueDate</code>，重复提醒会算错窗口。</span></div></li>
+        <li><span class="idx">2</span><div><b>「最近待付」没有过滤已逾期</b><span>排序取前 5 时不过滤 <code>dueDate &lt; now</code>，一条两个月前的旧提醒会一直占据首位并显示「今天」。</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== 预览 ===================== -->
+  <h2 class="section-title">五 · 改版预览</h2>
+  <p class="section-sub">7 张可滚动的手机稿：导航 / 分期 / 统计 / 分类 / 预算 / 提醒中心 / 记一笔。点击任意区块看设计说明。所有稿子复用现有设计 token（<code>#E45F4F</code> 主色、20px 圆角、<code>moneyColors</code> 收支色）。</p>
+
+  <div class="previews" style="margin-top:22px">
+
+    <!-- ============ 1. 导航 ============ -->
+    <div class="preview-col">
+      <div class="preview-label"><span class="dot new"></span>1 · 记账页导航（建议）</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="topbar">
+            <div class="mark">米</div>
+            <div class="chip">日常账本 ▾</div>
+            <div class="spacer"></div>
+            <div class="icon-btn">👁</div>
+            <div class="avatar">明</div>
+          </div>
+
+          <div class="tabs" data-note="一级导航从「8 个纯图标横条」改成「4 个主 tab + 更多」，每个 tab 带文字。流水/账户/预算/统计是四个「看数据」的常驻工作面；分类、分期、自动记账、提醒中心是「管配置」，收进「更多」。首页已经承担了「总览」职责，所以记账页不再需要总览面板。任何一个 tab 都会写回 ?section=，这样系统返回键能回到上一个面板而不是退出记账模块。">
+            <div class="tab"><i>🧾</i>流水</div>
+            <div class="tab"><i>💴</i>账户</div>
+            <div class="tab"><i>⚑</i>预算</div>
+            <div class="tab"><i>📈</i>统计</div>
+            <div class="tab on"><i>⋯</i>更多</div>
+          </div>
+
+          <div class="body-pad">
+            <div class="more-grid" data-note="「更多」半屏面板：分类 / 分期 / 自动记账 / 提醒中心。每个格子右上角可以带角标（待处理提醒 3、超支预算 2），把「二级页面里的待办」提到一级导航上，用户不用逐个点开才知道有事。">
+              <div class="mi"><div class="ic" style="background:var(--primary-soft);color:var(--primary)">🏷</div><div class="t">分类</div></div>
+              <div class="mi"><div class="ic" style="background:var(--tertiary-soft);color:var(--tertiary)">📅</div><div class="t">分期 · 2</div></div>
+              <div class="mi"><div class="ic" style="background:var(--focus-soft);color:var(--focus)">🔁</div><div class="t">自动记账</div></div>
+              <div class="mi bad"><div class="ic" style="background:var(--expense-soft);color:var(--expense)">🔔</div><div class="t">提醒 · 3</div></div>
+              <div class="mi"><div class="ic" style="background:var(--secondary-soft);color:var(--secondary)">🔄</div><div class="t">结转</div></div>
+              <div class="mi"><div class="ic" style="background:var(--surface-2);color:var(--text-2)">📑</div><div class="t">报表</div></div>
+              <div class="mi"><div class="ic" style="background:var(--surface-2);color:var(--text-2)">👥</div><div class="t">家庭成员</div></div>
+              <div class="mi"><div class="ic" style="background:var(--surface-2);color:var(--text-2)">⚙️</div><div class="t">记账设置</div></div>
+            </div>
+
+            <div class="card" data-note="备选方案（改动更小）：保留现有 8 段分段控件，但把 showLabels 打开、minSegmentWidth 降到 68、允许换行成两行 4 段。代价是首屏高度多约 40px，收益是所有模块名一直可见。如果不想动导航结构，这是最小改动版本。">
+              <div class="card-head"><span class="t">备选：两行分段（改动最小）</span></div>
+              <div class="panels" style="padding:0;border:0;flex-wrap:wrap;background:transparent">
+                <span class="on">💴 账户</span><span>🧾 流水</span><span>📈 统计</span><span>🏷 分类</span>
+              </div>
+              <div class="panels" style="padding:0;border:0;flex-wrap:wrap;background:transparent;margin-top:6px">
+                <span>⚑ 预算</span><span>📅 分期</span><span>🔁 自动</span><span>🔔 提醒</span>
+              </div>
+            </div>
+
+            <div class="card" data-note="无论选哪种导航，都必须把面板写回 URL：_selectPanel 里 context.go('/app/bookkeeping?section=budgets')。移动端收益：系统返回键能回到上一个面板而不是直接退出记账模块；从首页/通知带 ?section= 跳进来后返回栈正确。代码里已经支持读取 ?section=，只差写回。">
+              <div class="card-head"><span class="t">导航行为</span></div>
+              <div class="card" style="padding:10px 11px;background:var(--surface-2);box-shadow:none">
+                <div style="font-family:ui-monospace,monospace;font-size:11.5px;color:var(--text-2)">/app/bookkeeping?section=budgets</div>
+                <div style="font-family:ui-monospace,monospace;font-size:11.5px;color:var(--text-2);margin-top:4px">/app/bookkeeping?section=transactions&amp;budgetId=bg_12</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 2. 分期 ============ -->
+    <div class="preview-col">
+      <div class="preview-label"><span class="dot"></span>2 · 分期页（补入口 + 倒计时 + 结清）</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="topbar"><div class="mark">米</div><div class="chip">日常账本 ▾</div><div class="spacer"></div><div class="avatar">明</div></div>
+          <div class="tabs">
+            <div class="tab"><i>🧾</i>流水</div>
+            <div class="tab"><i>💴</i>账户</div>
+            <div class="tab"><i>⚑</i>预算</div>
+            <div class="tab"><i>📈</i>统计</div>
+            <div class="tab on"><i>⋯</i>更多</div>
+          </div>
+          <div class="body-pad tight">
+            <div class="toolbar">
+              <div class="stat-tabs" style="flex:1">
+                <div class="st on">进行中 3</div>
+                <div class="st">已完成 5</div>
+                <div class="st">已取消</div>
+              </div>
+              <div class="tool sq acc" data-note="分期页目前完全没有新增入口：_MoneyInstallmentsContent 声明了 required onCreate，但 build 里从未引用（全文件只有构造与赋值两处），三个空态也都没传 action，新建只能靠全局 FAB 的九宫格。这里把 onCreate 用起来，并加一个状态分段把进行中/已完成/已取消分开——现在三种状态混在一个 ListView 里。">＋</div>
+            </div>
+
+            <div class="sum-bar" data-note="分期汇总：每月还款合计 / 剩余期数 / 最早到期。分期是「固定负债」，用户真正想知道的是「我每个月要为分期还多少、最早一笔什么时候到期」。现在这些数字分散在每张卡的「每期 ¥416」「剩余 9 期」里，要自己加。">
+              <div class="m"><div class="k">每月还款</div><div class="v num">¥1,204</div></div>
+              <div class="m"><div class="k">剩余期数</div><div class="v num">27 期</div></div>
+              <div class="m"><div class="k">最近到期</div><div class="v num" style="color:var(--warning)">10-20</div></div>
+            </div>
+
+            <div class="bg-row" data-note="分期卡重排：主行放名称 + 账户/分类，进度条给出「已入账 3/12 期」，金额行只保留三个决策数字（每期 / 剩余 / 总应还）。关键改动是「下一期」从裸日期 11-15 改成「还剩 2 天」——用户要的是紧迫感而不是日期；现有卡片在非终态时给出的是 _dateText(nextDetail.dueDate)。">
+              <div class="bg-top">
+                <div class="ic" style="background:var(--tertiary-soft);color:var(--tertiary)">📅</div>
+                <div class="mid"><div class="n">iPhone 15 Pro</div><div class="m">招行信用卡 · 数码 / 手机 · 12 期</div></div>
+                <div class="v num">¥416<span style="font-size:11px;font-weight:700;color:var(--text-3)">/期</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px">
+                <span style="font-size:11.5px;font-weight:700;color:var(--text-3)">已入账 3/12 期</span>
+                <span class="spacer" style="flex:1"></span>
+                <span style="font-size:11.5px;font-weight:800;color:var(--primary)">25%</span>
+              </div>
+              <div class="bg-track"><i style="width:25%;background:var(--tertiary)"></i></div>
+              <div class="bg-foot"><span class="num">总应还 ¥4,992</span><span class="sp"></span><span class="hot">下一期 10-20 · 还剩 2 天</span></div>
+              <div class="bg-foot" style="padding-top:9px;border-top:1px solid var(--line-soft)">
+                <span>提前结清</span><span class="sp"></span><span style="color:var(--primary);font-weight:800">还剩 ¥3,744 ›</span>
+              </div>
+            </div>
+
+            <div class="bg-row">
+              <div class="bg-top">
+                <div class="ic" style="background:var(--primary-soft);color:var(--primary)">📅</div>
+                <div class="mid"><div class="n">MacBook Air</div><div class="m">花呗 · 数码 / 电脑 · 6 期</div></div>
+                <div class="v num">¥788<span style="font-size:11px;font-weight:700;color:var(--text-3)">/期</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px">
+                <span style="font-size:11.5px;font-weight:700;color:var(--text-3)">已入账 6/6 期</span>
+                <span class="spacer" style="flex:1"></span>
+                <span style="font-size:11.5px;font-weight:800;color:var(--tertiary)">已完成</span>
+              </div>
+              <div class="bg-track"><i style="width:100%;background:var(--tertiary)"></i></div>
+              <div class="bg-foot"><span class="num">总应还 ¥4,728 · 利息 ¥0</span><span class="sp"></span><span>2026-04 结清</span></div>
+            </div>
+
+            <div class="card" data-note="空态必须给动作。现有三个空态（无信用账户 / 无支出分类 / 无分期计划）都只有标题和一句说明，没有按钮，用户不知道该去哪。第一个应该直接引到「新建信用账户」，这也是分期功能的前置条件。">
+              <div class="card-head"><span class="t">空态补动作</span></div>
+              <div class="rem" style="box-shadow:none;border:0;padding:8px 0"><div class="ic" style="background:var(--surface-2);color:var(--text-2)">💳</div><div class="mid"><div class="t">还没有可用信用账户</div><div class="m">分期只能挂在信用卡 / 花呗 / 白条上</div></div><div class="v" style="color:var(--primary);font-size:12px">去新建 ›</div></div>
+              <div class="rem" style="box-shadow:none;border:0;padding:8px 0"><div class="ic" style="background:var(--surface-2);color:var(--text-2)">📅</div><div class="mid"><div class="t">还没有分期计划</div><div class="m">新增后会冻结信用账户本金</div></div><div class="v" style="color:var(--primary);font-size:12px">＋ 新增 ›</div></div>
+            </div>
+
+            <div class="card" data-note="「提前结清」需要新能力：现在只能一期一期点「入账」（postDetail），没有一次性结清并释放剩余冻结额度的接口。仓储层已有冻结额度（frozenCreditMinor）与取消分期（cancelInstallmentPlan）的逻辑，理论上可以在此基础上做，但要新增一个一次性入账 N 期的用例——这条需要你先确认要不要做。">
+              <div class="card-head"><span class="t">需确认：提前结清</span></div>
+              <div class="sheet" style="padding:0;box-shadow:none;border:0">
+                <div class="rows">
+                  <div class="row"><span class="k">现状</span><span class="v">逐期 postInstallmentDetail</span></div>
+                  <div class="row"><span class="k">期望</span><span class="v">一次结清 + 释放剩余冻结额度</span></div>
+                  <div class="row"><span class="k">代价</span><span class="v">仓储层新增用例 + 迁移无需改动</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 3. 统计 ============ -->
+    <div class="preview-col">
+      <div class="preview-label"><span class="dot"></span>3 · 统计页（分页改标签 + 筛选状态）</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="topbar"><div class="mark">米</div><div class="chip">日常账本 ▾</div><div class="spacer"></div><div class="avatar">明</div></div>
+          <div class="tabs"><div class="tab"><i>🧾</i>流水</div><div class="tab"><i>💴</i>账户</div><div class="tab"><i>⚑</i>预算</div><div class="tab on"><i>📈</i>统计</div><div class="tab"><i>⋯</i>更多</div></div>
+          <div class="body-pad tight">
+            <div class="card" style="padding:12px">
+              <div class="card-head" style="margin-bottom:8px"><span class="t">统计</span><span class="sp"></span><span class="s">日常账本 · 本月</span><span class="a">⚙ 筛选</span></div>
+
+              <div class="stat-tabs" data-note="5 个分页从「圆点」改成可点可滑的文字标签。目前 5 页共 18 类图表卡：概览(收支趋势/消费变化)、消费(分类占比/二级分类/商家/标签)、渠道(支付渠道/账户渠道/时段/来源)、预算(预算执行/预算趋势)、账户(账户分布/账户类型/信用使用率/净资产趋势/待付账单/未来现金流/成员参与/月度报表)。没有标签，用户永远发现不了「渠道 / 预算 / 账户」这三页的全部内容。">
+                <div class="st on">概览</div>
+                <div class="st">消费</div>
+                <div class="st">渠道</div>
+                <div class="st">预算</div>
+                <div class="st">账户</div>
+              </div>
+
+              <div class="filter-bar" style="margin-top:8px" data-note="筛选状态条：把当前生效的条件显示成可点掉的胶囊，末尾是「重置」。统计页原先没有任何生效提示，也没有重置按钮——用户切了账户+渠道之后回到概览，看不出数字为什么变了。">
+                <div class="fchip">本月 ✕</div>
+                <div class="fchip">招行信用卡 ✕</div>
+                <div class="fchip">支付宝 ✕</div>
+                <div class="fchip reset">重置</div>
+              </div>
+            </div>
+
+            <div class="card" data-note="收支总览保留现有 _StatisticsTotals 的双卡 + 净余额结构（这是已经做得好的部分），只把「较前期/同比」两个胶囊合并到标题行右侧，省一行高度。">
+              <div class="card-head"><span class="t">本月收支</span><span class="sp"></span><span class="s">较上月 ↓12%</span></div>
+              <div style="display:flex;gap:10px">
+                <div class="tile up" style="flex:1;background:var(--income-soft);border-color:rgba(22,138,91,.2)"><div class="k">收入</div><div class="v num">¥12,000.00</div><div class="d">1 笔 · 均 ¥12,000</div></div>
+                <div class="tile down" style="flex:1;background:var(--expense-soft);border-color:rgba(212,77,110,.2)"><div class="k">支出</div><div class="v num">¥4,140.00</div><div class="d">32 笔 · 均 ¥129</div></div>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft)">
+                <span style="font-size:13px;font-weight:800">净余额</span><span class="spacer"></span>
+                <span class="num" style="font-size:20px;font-weight:900">¥7,860.00</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><span class="t">收支趋势</span><span class="sp"></span><span class="s">收支 · 按日</span></div>
+              <div style="display:flex;align-items:flex-end;gap:3px;height:110px">
+                <div style="flex:1;height:38%;background:var(--surface-2);border-radius:4px"></div>
+                <div style="flex:1;height:62%;background:var(--primary);border-radius:4px"></div>
+                <div style="flex:1;height:30%;background:var(--surface-2);border-radius:4px"></div>
+                <div style="flex:1;height:78%;background:var(--primary);border-radius:4px"></div>
+                <div style="flex:1;height:46%;background:var(--surface-2);border-radius:4px"></div>
+                <div style="flex:1;height:56%;background:var(--primary);border-radius:4px"></div>
+                <div style="flex:1;height:22%;background:var(--surface-2);border-radius:4px"></div>
+              </div>
+              <div style="display:flex;gap:14px;margin-top:10px;font-size:11px;font-weight:700;color:var(--text-3)">
+                <span>▮ 支出</span><span>▯ 收入</span><span class="spacer"></span><span class="num">日均支出 ¥138</span>
+              </div>
+            </div>
+
+            <div class="card" data-note="消费变化卡（异常检测）保留。建议把「阈值」按钮换成一行可读的说明：「金额 ≥ ¥50 且环比 ≥ 20%」——现在的按钮只写「阈值」，用户不知道点开会改什么。">
+              <div class="card-head"><span class="t">消费变化</span><span class="sp"></span><span class="a">阈值</span></div>
+              <div class="rem" style="box-shadow:none;border:0;padding:8px 0"><div class="ic" style="background:var(--warning-soft);color:var(--warning)">📈</div><div class="mid"><div class="t">餐饮 · 环比 +86%</div><div class="m">本月 ¥1,240 · 上月 ¥667</div></div><div class="v num" style="color:var(--warning)">+¥573</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 4. 分类 ============ -->
+    <div class="preview-col">
+      <div class="preview-label"><span class="dot"></span>4 · 分类页（补入口 + 用量 + 修图标）</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="topbar"><div class="mark">米</div><div class="chip">日常账本 ▾</div><div class="spacer"></div><div class="avatar">明</div></div>
+          <div class="tabs"><div class="tab"><i>🧾</i>流水</div><div class="tab"><i>💴</i>账户</div><div class="tab"><i>⚑</i>预算</div><div class="tab"><i>📈</i>统计</div><div class="tab on"><i>⋯</i>更多</div></div>
+          <div class="body-pad tight">
+            <div class="toolbar">
+              <div class="search" style="flex:1"><span>🔍</span><span class="ph">搜索分类 / 子分类</span></div>
+              <div class="tool sq acc" data-note="关键修复：把「新增分类」从空态里搬出来，放到工具条右侧常驻。现在的代码在 categories 非空时没有任何新增入口，而默认种子总让 categories 非空 → 用户永远无法新增分类。这个按钮是本次最重要的一个改动。">＋</div>
+            </div>
+
+            <div class="stat-tabs">
+              <div class="st on">支出</div>
+              <div class="st">收入</div>
+              <div class="st" style="margin-left:auto;background:transparent;border:0;color:var(--text-3)">按用量 ⇅</div>
+            </div>
+
+            <div class="cat-row" data-note="分类行加入「本月支出 + 占比条」。现在分类页只有一个名字和 N 个子分类，是纯配置页；加上用量之后它同时是「我的钱花在哪」的第二入口，也让「要不要停用这个分类」变得有依据。金额需要新增一个按分类聚合的 provider。">
+              <div class="cat-top">
+                <div class="cat-ic" style="background:rgba(249,115,22,.14);color:#F97316">🍜</div>
+                <div class="cat-mid"><div class="n">餐饮</div><div class="m">8 个子分类 · 32 笔</div></div>
+                <div class="cat-amt"><div class="v num">¥1,240</div><div class="p">30.0%</div></div>
+                <div class="more">⋯</div>
+              </div>
+              <div class="cat-bar"><i style="width:30%;background:#F97316"></i></div>
+              <div class="cat-chips">
+                <div class="cc">早餐</div><div class="cc">午餐</div><div class="cc">晚餐</div><div class="cc">咖啡</div><div class="cc">外卖</div><div class="cc add">＋ 子分类</div>
+              </div>
+            </div>
+
+            <div class="cat-row" data-note="图标轨道二选一：(a) 修掉既有 bug——把 icon 字段（Material 图标名）通过映射表转成 IconData；(b) 更简单也更贴近中文记账习惯——改成「颜色圆点 + 可选 emoji」，把 'restaurant' 这类字符串作为 key 查一张 emoji 表，查不到就退回彩色圆点。当前 _SelectorItem 是把 'restaurant' 当文本画出来，分类下拉里会看到英文单词。">
+              <div class="cat-top">
+                <div class="cat-ic" style="background:rgba(79,125,217,.14);color:#4F7DD9">🚇</div>
+                <div class="cat-mid"><div class="n">交通</div><div class="m">6 个子分类 · 18 笔</div></div>
+                <div class="cat-amt"><div class="v num">¥420</div><div class="p">10.1%</div></div>
+                <div class="more">⋯</div>
+              </div>
+              <div class="cat-bar"><i style="width:10.1%;background:#4F7DD9"></i></div>
+              <div class="cat-chips">
+                <div class="cc">地铁</div><div class="cc">打车</div><div class="cc">加油</div><div class="cc add">＋ 子分类</div>
+              </div>
+            </div>
+
+            <div class="cat-row hot" style="border-color:rgba(212,77,110,.3)">
+              <div class="cat-top">
+                <div class="cat-ic" style="background:rgba(212,77,110,.14);color:#D44D6E">🛒</div>
+                <div class="cat-mid"><div class="n">购物</div><div class="m">5 个子分类 · 7 笔</div></div>
+                <div class="cat-amt"><div class="v num" style="color:var(--expense)">¥1,980</div><div class="p">47.8%</div></div>
+                <div class="more">⋯</div>
+              </div>
+              <div class="cat-bar"><i style="width:47.8%;background:#D44D6E"></i></div>
+              <div class="cat-chips">
+                <div class="cc">服饰</div><div class="cc">日用品</div><div class="cc">数码</div><div class="cc add">＋ 子分类</div>
+              </div>
+            </div>
+
+            <div class="lbl" style="margin-top:6px">已停用（2）</div>
+            <div class="cat-row" style="opacity:.62">
+              <div class="cat-top">
+                <div class="cat-ic" style="background:var(--surface-2);color:var(--text-3)">👛</div>
+                <div class="cat-mid"><div class="n">烟酒</div><div class="m">已停用 · 不影响已有流水</div></div>
+                <div class="cat-amt"><div class="p">恢复</div></div>
+              </div>
+            </div>
+
+            <div class="card" data-note="行尾 ⋯ 菜单：编辑 / 停用 / 复制 / 移动到其他分类。停用与恢复是已有能力（软删除），只是现在藏在行内小图标里，一列 3 个图标按钮在 360dp 上很挤（新增子分类 / 编辑 / 停用）。">
+              <div class="card-head"><span class="t">⋯ 行内菜单</span></div>
+              <div class="sheet" style="padding:0;box-shadow:none;border:0">
+                <div class="rows">
+                  <div class="row"><span class="k">编辑分类</span><span class="v">名称 · 颜色 · 图标</span></div>
+                  <div class="row"><span class="k">停用分类</span><span class="v">保留历史流水</span></div>
+                  <div class="row"><span class="k">查看该分类流水</span><span class="v">跳流水页并带上筛选</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 5. 预算 ============ -->
+    <div class="preview-col">
+      <div class="preview-label"><span class="dot"></span>5 · 预算页（汇总 + 新增 + 日均可用）</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="topbar"><div class="mark">米</div><div class="chip">日常账本 ▾</div><div class="spacer"></div><div class="avatar">明</div></div>
+          <div class="tabs"><div class="tab"><i>🧾</i>流水</div><div class="tab"><i>💴</i>账户</div><div class="tab on"><i>⚑</i>预算</div><div class="tab"><i>📈</i>统计</div><div class="tab"><i>⋯</i>更多</div></div>
+          <div class="body-pad tight">
+            <div class="sum-bar" data-note="预算汇总条：合计 / 已用 / 剩余 / 超支数量。现在预算页没有任何汇总——4 个预算各看各的进度条，用户无法回答「这个月总共还能花多少」。同时把「＋ 新建预算」放回工具条（现在只有空态里有）。">
+              <div class="m"><div class="k">预算合计</div><div class="v num">¥8,000</div></div>
+              <div class="m"><div class="k">已用</div><div class="v num" style="color:var(--expense)">¥4,140</div></div>
+              <div class="m"><div class="k">剩余</div><div class="v num" style="color:var(--income)">¥3,860</div></div>
+              <div class="x">＋ 新建</div>
+            </div>
+
+            <div class="filter-bar" data-note="筛选从抽屉里提出来做成 chips：全部 / 超支 / 接近阈值 / 正常。预算是一个「要看异常」的页面，把状态筛选放在首屏比放在抽屉里合理。原实现的状态筛选藏在抽屉，且没有 hasActiveFilters 角标。">
+              <div class="fchip plain">全部 4</div>
+              <div class="fchip">超支 1</div>
+              <div class="fchip plain">接近 1</div>
+              <div class="fchip plain">正常 2</div>
+              <div class="fchip reset">⚙ 更多</div>
+            </div>
+
+            <div class="bg-row hot" data-note="预算卡重排：把「已用/剩余/目标」三个金额压成进度条两端的一个数字 + 一个「日均可用」，把范围/周期/账本徽章合并成一行次要信息，删掉单独的分配概览块（挪进详情）。卡片从 9 层降到 5 层，一屏从 2 张到 3-4 张。">
+              <div class="bg-top">
+                <div class="ic" style="background:var(--expense-soft);color:var(--expense)">⚑</div>
+                <div class="mid"><div class="n">餐饮月度预算</div><div class="m">分类 · 每月 · 10-01 → 10-31 · 日常账本</div></div>
+                <div class="more">⋯</div>
+              </div>
+              <div class="bg-track"><i style="width:100%;background:var(--expense)"></i></div>
+              <div class="bg-foot"><span class="num">已用 ¥1,240 / ¥1,000</span><span class="sp"></span><span class="hot">超支 ¥240 · 仅剩 3 天</span></div>
+            </div>
+
+            <div class="bg-row" data-note="正常预算给出决策数字：「日均可用 ¥71」。现有卡片只给「剩余 ¥464」，用户还要自己除以剩余天数。数据齐备（periodEnd + remainingAmountMinor），纯展示层可算。">
+              <div class="bg-top">
+                <div class="ic" style="background:var(--primary-soft);color:var(--primary)">🍜</div>
+                <div class="mid"><div class="n">本月生活费</div><div class="m">分类 · 每月 · 10-01 → 10-31</div></div>
+                <div class="more">⋯</div>
+              </div>
+              <div class="bg-track"><i style="width:62%;background:var(--primary)"></i></div>
+              <div class="bg-foot"><span class="num">已用 ¥2,480 / ¥4,000</span><span class="sp"></span><span class="day">日均可用 ¥71 · 还剩 12 天</span></div>
+            </div>
+
+            <div class="bg-row">
+              <div class="bg-top">
+                <div class="ic" style="background:var(--secondary-soft);color:var(--secondary)">🎯</div>
+                <div class="mid"><div class="n">收入目标</div><div class="m">全部范围 · 每年 · 2026</div></div>
+                <div class="more">⋯</div>
+              </div>
+              <div class="bg-track"><i style="width:80%;background:var(--secondary)"></i></div>
+              <div class="bg-foot"><span class="num">已赚 ¥120,000 / ¥150,000</span><span class="sp"></span><span class="day">还差 ¥30,000</span></div>
+            </div>
+
+            <div class="card" data-note="子分配（BudgetAllocationDialog）保留在详情里，不在列表卡片上展开。现在卡片上会显示「3 项分配 · 已分配 ¥600 · 未分配 ¥400」一整行 —— 属于二级信息，进详情看更合适。">
+              <div class="card-head"><span class="t">卡片上保留 vs 移入详情</span></div>
+              <div class="sheet" style="padding:0;box-shadow:none;border:0">
+                <div class="rows">
+                  <div class="row"><span class="k">保留</span><span class="v">名称 · 作用域 · 周期 · 进度 · 剩余 · 日均可用</span></div>
+                  <div class="row"><span class="k">移入详情</span><span class="v">子分配明细 · 预算历史 · 结转设置 · 单独提醒阈值</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 6. 提醒中心 ============ -->
+    <div class="preview-col">
+      <div class="preview-label"><span class="dot"></span>6 · 提醒中心（分组 + 新建 + 批量）</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="topbar"><div class="mark">米</div><div class="chip">日常账本 ▾</div><div class="spacer"></div><div class="avatar">明</div></div>
+          <div class="tabs"><div class="tab"><i>🧾</i>流水</div><div class="tab"><i>💴</i>账户</div><div class="tab"><i>⚑</i>预算</div><div class="tab"><i>📈</i>统计</div><div class="tab on"><i>⋯</i>更多</div></div>
+          <div class="body-pad tight">
+            <div class="toolbar">
+              <div class="stat-tabs" style="flex:1">
+                <div class="st on">待处理 5</div>
+                <div class="st">处理历史</div>
+              </div>
+              <div class="tool sq acc" data-note="提醒中心必须能新建。目前唯一能创建账单提醒的界面（money_bill_reminders_section.dart，803 行）是死代码，而提醒中心只有「完成/延后/忽略」。这里补一个「＋」，直接复用旧的 _ReminderFormDialog。">＋</div>
+            </div>
+
+            <div class="rg" data-note="按紧急度分四组：已逾期 / 今天 / 3 天内 / 以后。现在只有一个平铺列表，卡片内用颜色区分优先级，但顺序不变——逾期的 3 条会被埋在 20 条里。分组头给出数量，扫一眼就知道今天要处理什么。">
+              <div class="rg-head od">已逾期<span class="c">2</span></div>
+              <div class="rem od">
+                <div class="ic" style="background:var(--expense-soft);color:var(--expense)">💳</div>
+                <div class="mid"><div class="t">招行信用卡还款</div><div class="m">已逾期 3 天 · 10-15 应还</div></div>
+                <div class="v num" style="color:var(--expense)">¥2,860</div>
+              </div>
+              <div class="rem od">
+                <div class="ic" style="background:var(--expense-soft);color:var(--expense)">🎬</div>
+                <div class="mid"><div class="t">视频会员续费</div><div class="m">已逾期 1 天 · 10-17 应还</div></div>
+                <div class="v num" style="color:var(--expense)">¥25</div>
+              </div>
+
+              <div class="rg-head td">今天<span class="c">1</span></div>
+              <div class="rem">
+                <div class="ic" style="background:var(--warning-soft);color:var(--warning)">🏠</div>
+                <div class="mid"><div class="t">房租</div><div class="m">今天到期 · 自动记账已开启</div></div>
+                <div class="v num">¥3,200</div>
+              </div>
+
+              <div class="rg-head">3 天内<span class="c">2</span></div>
+              <div class="rem">
+                <div class="ic" style="background:var(--primary-soft);color:var(--primary)">⚑</div>
+                <div class="mid"><div class="t">餐饮预算已超支</div><div class="m">3 天内进入新周期</div></div>
+                <div class="v num">¥1,240</div>
+              </div>
+              <div class="rem">
+                <div class="ic" style="background:var(--tertiary-soft);color:var(--tertiary)">📅</div>
+                <div class="mid"><div class="t">iPhone 分期 3/12</div><div class="m">10-20 到期 · 还剩 3 天</div></div>
+                <div class="v num">¥416</div>
+              </div>
+            </div>
+
+            <div class="selbar" data-note="多选批量：长按任意行进入多选，底部出现批量操作条。「本月到期的订阅类提醒全部延后 7 天」是一次点击能完成的动作，现在是逐条左滑三次。">
+              <span>已选 2 项</span><span class="sp"></span>
+              <span class="btn">延后</span><span class="btn">完成</span><span class="btn">忽略</span>
+            </div>
+
+            <div class="card" data-note="行内动作：把「完成」提到行尾（点一下就完成，这是最高频的动作），「延后/忽略」留在左滑与长按菜单里。现在三个动作全部只在左滑，没有任何视觉提示。">
+              <div class="card-head"><span class="t">行内动作建议</span></div>
+              <div class="rem" style="box-shadow:none">
+                <div class="ic" style="background:var(--secondary-soft);color:var(--secondary)">✓</div>
+                <div class="mid"><div class="t">点右侧圆圈直接完成</div><div class="m">左滑保留「延后 / 忽略」</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 7. 记一笔 ============ -->
+    <div class="preview-col">
+      <div class="preview-label"><span class="dot"></span>7 · 记一笔（分类网格 + 键盘）</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="topbar"><div class="mark">米</div><div class="chip">日常账本 ▾</div><div class="spacer"></div><div class="avatar">明</div></div>
+          <div class="body-pad tight">
+            <div class="card" style="padding:12px">
+              <div class="card-head" style="margin-bottom:10px"><span class="t">记支出</span><span class="sp"></span><span class="s">取消</span></div>
+              <div class="amount-big"><span class="cur">CNY</span><span class="val num">38.00</span></div>
+            </div>
+
+            <div data-note="分类从「两级下拉」改成图标网格：第一屏是「最近使用」+ 常用分类，第二屏是全部；选中父分类后下方 chips 展开子分类。餐饮/午餐 从「两次展开+两次搜索」变成一次点击。数据层不用改，MoneyCategoryCatalog 已经同时提供 categories 与 subCategoriesFor。">
+              <div class="lbl">最近使用</div>
+              <div class="cat-pick" style="margin-top:6px">
+                <div class="cp on"><div class="ic" style="background:var(--primary-soft);color:var(--primary)">🍜</div><div class="t">餐饮</div></div>
+                <div class="cp"><div class="ic" style="background:var(--transfer-soft);color:var(--transfer)">🚇</div><div class="t">交通</div></div>
+                <div class="cp"><div class="ic" style="background:var(--expense-soft);color:var(--expense)">🛒</div><div class="t">购物</div></div>
+                <div class="cp"><div class="ic" style="background:var(--tertiary-soft);color:var(--tertiary)">🎬</div><div class="t">娱乐</div></div>
+                <div class="cp"><div class="ic" style="background:var(--surface-2);color:var(--text-2)">＋</div><div class="t">更多</div></div>
+              </div>
+              <div class="cat-pick" style="margin-top:7px">
+                <div class="cp on"><div class="ic" style="background:var(--primary-soft);color:var(--primary)">🍳</div><div class="t">午餐</div></div>
+                <div class="cp"><div class="ic" style="background:var(--primary-soft);color:var(--primary)">🥐</div><div class="t">早餐</div></div>
+                <div class="cp"><div class="ic" style="background:var(--primary-soft);color:var(--primary)">🍲</div><div class="t">晚餐</div></div>
+                <div class="cp"><div class="ic" style="background:var(--primary-soft);color:var(--primary)">☕</div><div class="t">咖啡</div></div>
+                <div class="cp"><div class="ic" style="background:var(--primary-soft);color:var(--primary)">🥡</div><div class="t">外卖</div></div>
+              </div>
+            </div>
+
+            <div class="card" style="padding:12px">
+              <div class="sheet" style="padding:0;box-shadow:none;border:0">
+                <div class="rows">
+                  <div class="row"><span class="k">账户</span><span class="v">支付宝 ›</span></div>
+                  <div class="row"><span class="k">日期</span><span class="v">今天 12:20 ›</span></div>
+                  <div class="row"><span class="k">标签 / 商家 / 备注</span><span class="v">更多信息 ›</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="keypad" data-note="自定义数字键盘：固定在对话框底部（和系统键盘一样，不随内容滚动），金额大字就在键盘上方，边输边看得见；+ − 连算覆盖「38+12」这种一单多笔的场景。由 MoneyAmountInput 统一封装，记一笔/转账/账单提醒/预算/自动记账五个表单共用；操作行「取消 / 保存并继续 / 创建」在键盘下方。备注/商家/标签拉起系统键盘时自带键盘自动让位。">
+              <div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key fn">⌫</div>
+              <div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key fn">＋</div>
+              <div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key fn">−</div>
+              <div class="key">.</div><div class="key">0</div><div class="key fn">今天</div><div class="key acc">保存</div>
+            </div>
+
+            <div class="card" data-note="表单其余部分保持不变：他人代付、家庭账本、分摊、转为分期、支付方式联动、默认值记忆这些都是已经做好的能力，本次只改「选分类」和「输入金额」两个最重的环节。">
+              <div class="card-head"><span class="t">保留不动</span></div>
+              <div class="sheet" style="padding:0;box-shadow:none;border:0">
+                <div class="rows">
+                  <div class="row"><span class="k">他人代付</span><span class="v">复选框 + 内部账户</span></div>
+                  <div class="row"><span class="k">分摊设置</span><span class="v">家庭账本 + ≥2 成员</span></div>
+                  <div class="row"><span class="k">转为分期</span><span class="v">金额 &gt; 0 且信用账户</span></div>
+                  <div class="row"><span class="k">默认值记忆</span><span class="v">按账本 + 类型</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 映射表 ===================== -->
+  <h2 class="section-title">六 · 改动映射表</h2>
+  <p class="section-sub">优先级：<span class="tag-must">必须</span> 是本次范围（含阻塞修复），<span class="tag-nice">高</span> 强烈建议同批，<span class="tag-new">中</span> 可下一轮，<span class="tag-drop">低</span> 视情况</p>
+  <section class="analysis" style="margin-top:0">
+    <div class="panel span-12">
+      <table class="map-table">
+        <thead><tr><th style="width:120px">优先级</th><th style="width:300px">改动</th><th style="width:340px">落点</th><th>说明 / 代价</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag-must">必须</span> 分类新增入口</td><td>工具条右侧常驻「＋ 新增分类」</td><td><code>money_categories_section.dart</code></td><td>纯展示层，把空态里的 action 提出来复用。<b>修的是一个永久性功能缺失</b>。</td></tr>
+          <tr><td><span class="tag-must">必须</span> 分类图标渲染</td><td>icon 字符串 → IconData/emoji；修 <code>_SelectorItem</code></td><td><code>category_selector.dart</code>、<code>money_seed_data.dart</code></td><td>需要一张 name→IconData 映射表（或 emoji 表）。影响所有下拉菜单。</td></tr>
+          <tr><td><span class="tag-must">必须</span> 预算新增入口</td><td>非空时工具条右侧「＋ 新建预算」</td><td><code>money_budgets_section.dart</code></td><td>纯展示层。</td></tr>
+          <tr><td><span class="tag-must">必须</span> 分期新增入口</td><td>用起 <code>onCreate</code>；三个空态补 action</td><td><code>money_installments_section.dart</code></td><td>纯展示层。第一个空态应引导去新建信用账户。</td></tr>
+          <tr><td><span class="tag-must">必须</span> 账单提醒入口</td><td>提醒中心加「＋」，复用旧 <code>_ReminderFormDialog</code></td><td><code>money_reminder_center_section.dart</code> + 复活 <code>money_bill_reminders_section.dart</code></td><td>建议把 803 行里的表单部分抽成 <code>bill_reminder_form_dialog.dart</code>，列表部分丢弃（提醒中心已替代）。</td></tr>
+          <tr><td><span class="tag-must">必须</span> 流水汇总条空按钮</td><td>「筛选」→「清除筛选」并接上 <code>_resetFilters</code></td><td><code>money_transactions_section.dart</code></td><td>一行改动。或直接删掉按钮。</td></tr>
+          <tr><td><span class="tag-must">必须</span> 搜索范围与提示一致</td><td>keyword 加 merchant 字段，或改提示文案</td><td><code>data/parts/transactions.dart:1509</code></td><td>加 merchant 只是一次 <code>or</code>，但会影响查询计划；改文案成本为零。</td></tr>
+          <tr><td><span class="tag-nice">高</span> 统计页分页标签</td><td>圆点 → 可点文字标签（保留横滑）</td><td><code>money_statistics_section.dart</code> · <code>_PageDots</code></td><td>纯展示层。有测试引用 <code>statistics-dot-N</code> key，需同步改测试。</td></tr>
+          <tr><td><span class="tag-nice">高</span> 统计/预算筛选状态</td><td>传 <code>hasActiveFilters</code> + 状态条 + 重置</td><td><code>money_statistics_section.dart</code>（加 <code>reset()</code> to controller）、<code>money_budgets_section.dart</code></td><td>统计的 filter controller 需要补一个 <code>reset()</code>。</td></tr>
+          <tr><td><span class="tag-nice">高</span> 预算汇总条 + 日均可用</td><td>合计/已用/剩余/超支 + 「日均可用 · 还剩 N 天」</td><td><code>money_budgets_section.dart</code>、<code>budget_card.dart</code></td><td>纯展示层，数据齐备。</td></tr>
+          <tr><td><span class="tag-must">必须</span> 首页净资产 tile 死链</td><td><code>?section=overview</code> → <code>accounts</code>（或去掉参数）</td><td><code>home_page.dart:491-498</code></td><td>一行改动。不改的话，未来真加了 <code>overview</code> 分支时会静默改变行为。</td></tr>
+          <tr><td><span class="tag-nice">高</span> 删除旧概览组件</td><td>删除 <code>BookkeepingOverviewSection</code>（702 行）</td><td><code>overview/bookkeeping_overview_section.dart</code></td><td>首页已覆盖其职责；删掉前确认无人引用（已确认）。</td></tr>
+          <tr><td><span class="tag-nice">高</span> 导航写回 URL</td><td><code>_selectPanel</code> → <code>context.go</code></td><td><code>bookkeeping_page.dart</code></td><td>注意与 <code>_KeepAlivePanel</code> 的配合：重建页面会丢失面板保活状态，需要把选中态提到 provider 里。</td></tr>
+          <tr><td><span class="tag-new">中</span> 提醒分组 + 行内完成</td><td>逾期/今天/3 天/以后分组 + 行尾圆圈</td><td><code>money_reminder_center_section.dart</code></td><td>纯展示层。批量多选是更大的改动，可单独一轮。</td></tr>
+          <tr><td><span class="tag-new">中</span> 流水卡用分类颜色</td><td>图标/底色取 <code>category.color</code></td><td><code>transaction_card.dart</code></td><td>需把 catalog 传到卡片（已经传了），纯展示层。</td></tr>
+          <tr><td><span class="tag-new">中</span> 记一笔分类网格</td><td>两级下拉 → 图标网格 + 子分类 chips</td><td><code>transaction_form_dialog.dart</code>、新增 <code>category_grid_selector.dart</code></td><td>需要「最近使用」的本地统计（可复用 <code>transaction_entry_defaults_store</code> 的存储方式）。</td></tr>
+          <tr><td><span class="tag-new">中</span> 自定义数字键盘</td><td>连算 + 保存并继续</td><td>新增 <code>money_keypad.dart</code></td><td>表达式求值需要前端实现；「保存并继续」要改表单的提交契约（目前是 <code>Navigator.pop</code> 返回结果）。</td></tr>
+          <tr><td><span class="tag-new">中</span> 币种修复</td><td>日期分组头/待付账单卡用真实币种；JPY/KRW 0 位小数</td><td><code>money_transactions_section.dart</code>、<code>money_upcoming_bills_card.dart</code>、<code>money_amount_formatter.dart</code></td><td>日期分组头是按天聚合的，跨币种求和本身语义不清——建议只在单币种时显示。</td></tr>
+          <tr><td><span class="tag-new">中</span> 待付账单口径统一</td><td>改用 <code>_effectiveDueDate</code>；过滤已逾期</td><td><code>money_upcoming_bills_card.dart</code></td><td>把通知服务里的生效日期算法抽成 domain 层纯函数，三处共用。</td></tr>
+          <tr><td><span class="tag-drop">低</span> 预读收敛</td><td>按选中面板懒预读</td><td><code>_BookkeepingDataPreloader</code></td><td>等导航/默认落点定下来之后再评估，避免为了优化而优化。</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== 确认 ===================== -->
+  <h2 class="section-title">七 · 需要你确认的 6 点</h2>
+  <p class="section-sub">这些会直接影响实现方式，确认后再开工</p>
+  <section class="analysis" style="margin-top:0">
+    <div class="panel span-6">
+      <h2>Q1 · 导航用哪种方案</h2>
+      <ul class="issue-list">
+        <li><span class="idx q">A</span><div><b>4 主 tab + 更多</b><span>结构最清晰，视觉最现代；但要动 <code>BookkeepingPage</code> 的分段控件与状态管理，改动中等。</span></div></li>
+        <li><span class="idx q">B</span><div><b>保留 8 段，改两行 + 加文字</b><span>改动最小（只改一个 <code>Wrap</code> 和 <code>showLabels</code>），代价是首屏多 40px。</span></div></li>
+        <li><span class="idx q">C</span><div><b>4 主 tab + 底部抽屉「更多」</b><span>把「更多」做成从底部弹出的全屏网格（而不是顶部展开区），一级导航高度不变；代价是多一次点击。</span></div></li>
+      </ul>
+    </div>
+    <div class="panel span-6">
+      <h2>Q2 · 记账页默认落在哪个面板</h2>
+      <ul class="issue-list">
+        <li><span class="idx q">A</span><div><b>保持账户页</b><span>现状行为（<code>_panelFromSection(null) =&gt; accounts</code>）。账户卡上有余额与额度进度，进来先看钱对不对得上。</span></div></li>
+        <li><span class="idx q">B</span><div><b>改成流水页</b><span>流水是记账模块真正的「工作台」（搜索、筛选、汇总、详情都在这里），且首页的「查看全部 / 最近流水」已经指向它。既然首页负责「看」，记账页负责「做」，那默认就该落在流水。</span></div></li>
+        <li><span class="idx q">C</span><div><b>记住上次的面板</b><span>把选中面板写进 <code>user_preferences</code>，下次进来回到上次的位置。与「导航写回 URL」是同一件事的两个层面。</span></div></li>
+      </ul>
+    </div>
+    <div class="panel span-6">
+      <h2>Q3 · 分类图标走哪条路</h2>
+      <ul class="issue-list">
+        <li><span class="idx q">A</span><div><b>映射 Material 图标名</b><span>尊重现有数据，但要用 <code>Icons</code> 里上百个名字建表，且新增分类时没有图标选择器（现在硬编码 <code>'category'</code>）。</span></div></li>
+        <li><span class="idx q">B</span><div><b>改成 emoji + 颜色</b><span>中文记账产品的主流做法，新建时给一个 emoji 选择器，旧数据用映射表兜底（<code>restaurant → 🍜</code>）。<b>我倾向 B。</b></span></div></li>
+      </ul>
+    </div>
+    <div class="panel span-6">
+      <h2>Q4 · 账单提醒：迁移还是并存</h2>
+      <ul class="issue-list">
+        <li><span class="idx q">A</span><div><b>只把表单搬进提醒中心</b><span>提醒中心成为唯一入口，旧列表页删除。<b>我倾向 A</b>，避免两套列表并存。</span></div></li>
+        <li><span class="idx q">B</span><div><b>恢复成独立面板</b><span>面板从 8 个变 9 个，与「收敛导航」的方向相反。</span></div></li>
+      </ul>
+    </div>
+    <div class="panel span-6">
+      <h2>Q5 · 分类用量统计要不要做</h2>
+      <ul class="issue-list">
+        <li><span class="idx q">?</span><div><b>要新增聚合查询</b><span>需要「按分类统计指定时间范围的金额 + 笔数」的 provider（统计页有类似能力，但口径是 ledger+日期，分类页需要「本月 + 当前账本」的轻量版）。如果不做，分类页就只能加搜索/新增/菜单。</span></div></li>
+      </ul>
+    </div>
+    <div class="panel span-6">
+      <h2>Q6 · 本轮范围到哪</h2>
+      <ul class="issue-list">
+        <li><span class="idx q">?</span><div><b>建议第 1 轮只做「必须」7 项</b><span>全部是纯展示层或一行逻辑改动，不动数据层、不动测试结构，风险最低且立刻消除所有「用户做不到」的问题。</span></div></li>
+        <li><span class="idx q">?</span><div><b>第 2 轮做「高」6 项</b><span>统计标签、筛选状态、预算汇总、删除旧概览、URL 写回、首页死链。其中 URL 写回要动 <code>BookkeepingPage</code> 的状态管理，建议单独一轮并补测试。</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== 顺序 ===================== -->
+  <h2 class="section-title">八 · 建议实施顺序</h2>
+  <p class="section-sub">第一阶段不碰数据层，全部是「让已有能力可见」，可以一次提交完</p>
+  <section class="analysis" style="margin-top:0">
+    <div class="panel span-8">
+      <table class="map-table">
+        <thead><tr><th style="width:60px">顺序</th><th style="width:330px">改动</th><th>为什么先做这个</th></tr></thead>
+        <tbody>
+          <tr><td>①</td><td>分类/预算/分期补新增入口</td><td>纯展示层。分类那条是永久性功能缺失，优先级最高。</td></tr>
+          <tr><td>②</td><td>提醒中心补「＋」，抽出账单提醒表单</td><td>让一个已实现但不可达的功能重新可用；旧文件的列表部分直接丢弃，净减代码。</td></tr>
+          <tr><td>③</td><td>流水汇总条「筛选」→「清除筛选」；搜索提示对齐</td><td>一行改动，消除一个「点了没反应」。</td></tr>
+          <tr><td>④</td><td>分类图标渲染修复（映射或 emoji）</td><td>影响所有下拉菜单，属于可见的观感 bug，越早越好。</td></tr>
+          <tr><td>⑤</td><td>统计页分页标签 + 统计/预算筛选状态</td><td>纯展示层，但能让「渠道 / 预算 / 账户」三页重新被发现——投入产出比最高的一项。</td></tr>
+          <tr><td>⑥</td><td>预算汇总条 + 日均可用；流水卡分类颜色</td><td>纯展示层，把已有数据算成决策信息。</td></tr>
+          <tr><td>⑦</td><td>首页净资产 tile 死链修复 + 默认落点</td><td>一行死链修复 + 一个默认值决定；放在纯展示改动之后。</td></tr>
+          <tr><td>⑧</td><td>导航写回 URL / 导航结构</td><td>动 <code>BookkeepingPage</code> 核心，单独一轮 + 补测试。</td></tr>
+          <tr><td>⑨</td><td>记一笔：分类网格 + 数字键盘</td><td>改动最大（新组件 + 表单提交契约），建议与表单相关测试一起做。</td></tr>
+          <tr><td>⑩</td><td>币种显示 / 待付账单口径统一</td><td>收益明确但只在多币种 / 重复提醒场景暴露，最后做。</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel span-4">
+      <h2>测试影响</h2>
+      <ul class="issue-list">
+        <li><span class="idx ok">✓</span><div><b>需要同步改的测试</b><span><code>money_statistics_pager_test.dart</code> 引用了 <code>ValueKey('statistics-dot-N')</code>，分页圆点改标签时 key 不能变（建议保留 key，只换视觉）。</span></div></li>
+        <li><span class="idx ok">✓</span><div><b>建议新增的测试</b><span>分类页「有分类时仍有新增入口」、预算页同理、分期页 <code>onCreate</code> 可达、流水汇总条清除筛选、日均可用计算（纯函数）。</span></div></li>
+        <li><span class="idx q">?</span><div><b>已知失败用例</b><span>与本次无关：<code>drift_health_repository_test.dart</code>（11）、<code>legacy_money_import_service_test.dart</code>（1）在改动前就是失败的。</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <h2 class="section-title">九 · 本次不建议改的部分</h2>
+  <p class="section-sub">这些设计是对的，实现时别误删</p>
+  <section class="analysis" style="margin-top:0">
+    <div class="panel span-12">
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi" style="background:var(--surface)"><div class="k" style="color:var(--secondary);font-size:12px">✓ 保留</div><div class="d" style="font-size:12.5px;color:var(--text-2)"><b>账户页净资产 Hero 与卡片结构</b><br>已经从 8 层压到 3 行，额度进度条、<code>⋯</code> 菜单都是正确的，不要再动。</div></div>
+        <div class="kpi" style="background:var(--surface)"><div class="k" style="color:var(--secondary);font-size:12px">✓ 保留</div><div class="d" style="font-size:12.5px;color:var(--text-2)"><b>流水页常驻搜索 + 类型分段 + 日期胶囊</b><br>三个「把抽屉能力搬上台面」的改动都成立了，保持。</div></div>
+        <div class="kpi" style="background:var(--surface)"><div class="k" style="color:var(--secondary);font-size:12px">✓ 保留</div><div class="d" style="font-size:12.5px;color:var(--text-2)"><b>预算的 5 种作用域 + 子分配 + 结转</b><br>能力密度是这个模块的优势，只是入口和展示要理顺，能力本身别简化。</div></div>
+        <div class="kpi" style="background:var(--surface)"><div class="k" style="color:var(--secondary);font-size:12px">✓ 保留</div><div class="d" style="font-size:12.5px;color:var(--text-2)"><b>流水详情五段结构</b><br>核心信息 / 备注 / 关联 / 账本归属 / 分摊，分区与信息密度都合适。</div></div>
+        <div class="kpi" style="background:var(--surface)"><div class="k" style="color:var(--secondary);font-size:12px">✓ 保留</div><div class="d" style="font-size:12.5px;color:var(--text-2)"><b>交易表单的校验与默认值记忆</b><br>余额校验、信用额度校验、按账本+类型记忆账户/分类/支付方式，这些是真正的差异化能力。</div></div>
+        <div class="kpi" style="background:var(--surface)"><div class="k" style="color:var(--secondary);font-size:12px">✓ 保留</div><div class="d" style="font-size:12.5px;color:var(--text-2)"><b>首页（总览）整体结构</b><br>本月还可花 Hero + 快捷记账 + 洞察条 + 提醒 + 净资产 tile + 周趋势 + 分类结构 + 最近流水。<b>不要往记账页搬一份</b>，只修 <code>section=overview</code> 那条死链。</div></div>
+        <div class="kpi" style="background:var(--surface)"><div class="k" style="color:var(--secondary);font-size:12px">✓ 保留</div><div class="d" style="font-size:12.5px;color:var(--text-2)"><b>账本选择器与成员/账户管理</b><br>紧凑态 + 底部抽屉 + 四个管理动作，已经很好。</div></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="note" id="note"><div class="k">区块说明</div><div class="b"></div></div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  document.querySelectorAll('[data-theme-btn]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      root.setAttribute('data-theme', btn.getAttribute('data-theme-btn'));
+      document.querySelectorAll('[data-theme-btn]').forEach(function(b){
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+    });
+  });
+  var note = document.getElementById('note');
+  var noteBody = note.querySelector('.b');
+  var current = null;
+  document.querySelectorAll('[data-note]').forEach(function(el){
+    el.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      if (current === el) { hide(); return; }
+      current = el;
+      noteBody.textContent = el.getAttribute('data-note');
+      note.classList.add('on');
+    });
+  });
+  function hide(){ current = null; note.classList.remove('on'); }
+  document.addEventListener('click', hide);
+  note.addEventListener('click', function(e){ e.stopPropagation(); });
+})();
+</script>
+</body>
+</html>

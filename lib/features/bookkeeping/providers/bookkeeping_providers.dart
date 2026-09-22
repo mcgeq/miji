@@ -20,12 +20,12 @@ import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_bill_view.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_ledger_scope.dart';
-import 'package:miji/features/bookkeeping/domain/money_overview_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
@@ -289,40 +289,6 @@ final currentUserCreditCardBillViewProvider = FutureProvider.autoDispose
       return repository.getCurrentCreditCardBillViewForAccount(
         userId,
         accountId,
-      );
-    });
-final currentUserBookkeepingOverviewProvider =
-    FutureProvider<MoneyOverviewEntity>((ref) async {
-      _watchMoneyDataRefresh(ref);
-      final session = ref.watch(authSessionControllerProvider);
-      if (!session.isUnlocked || session.userId == null) {
-        return const MoneyOverviewEntity.empty();
-      }
-
-      final repository = ref.watch(moneyRepositoryProvider);
-      final userId = session.userId!;
-      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
-      if (ledger == null) {
-        return const MoneyOverviewEntity.empty();
-      }
-
-      final accountsFuture = repository
-          .watchVisibleAccountsForUser(userId)
-          .first;
-      final accountSummariesFuture = repository
-          .getAccountMonthlySummariesForUser(userId, ledgerId: ledger.id);
-      final budgetsFuture = repository
-          .watchBudgetsForUser(userId, ledgerId: ledger.id)
-          .first;
-      final recentTransactionsFuture = repository
-          .watchRecentTransactionsForUser(userId, limit: 5, ledgerId: ledger.id)
-          .first;
-
-      return MoneyOverviewEntity.fromSources(
-        accounts: await accountsFuture,
-        accountSummaries: await accountSummariesFuture,
-        budgets: await budgetsFuture,
-        recentTransactions: await recentTransactionsFuture,
       );
     });
 
@@ -616,6 +582,14 @@ class MoneyStatisticsFilterState {
   final int anomalyMinAmountMinor;
   final double anomalyMinGrowthPercent;
 
+  /// 除了「周期 / 类型」这两个总是有值的选择外的主动筛选。
+  bool get hasAnyFilter =>
+      accountId != null ||
+      accountType != null ||
+      paymentMethod != null ||
+      typeFocus != MoneyStatisticsTypeFocus.balance ||
+      periodPreset != MoneyStatisticsPeriodPreset.thisMonth;
+
   MoneyStatisticsFilterState copyWith({
     MoneyStatisticsPeriodPreset? periodPreset,
     String? accountId,
@@ -675,6 +649,15 @@ class MoneyStatisticsFilterController
         clearPaymentMethod: true,
       );
     }
+  }
+
+  /// 一键重置全部筛选（保留用户自己设的「消费变化」阈值）。
+  void resetFilters() {
+    final current = state;
+    state = MoneyStatisticsFilterState(
+      anomalyMinAmountMinor: current.anomalyMinAmountMinor,
+      anomalyMinGrowthPercent: current.anomalyMinGrowthPercent,
+    );
   }
 
   void setPeriod(MoneyStatisticsPeriodPreset value) {
@@ -791,6 +774,64 @@ final moneyStatisticsProvider = FutureProvider.autoDispose
       return ref
           .watch(moneyRepositoryProvider)
           .getStatisticsForUser(request.userId, request.query);
+    });
+
+/// 本月 = 每个分类的金额与占比。
+///
+/// 分类管理页需要「这个分类本月花了多少」才能判断要不要停用/调整。
+/// 这里复用 [moneyStatisticsProvider] 的同一个请求（本月份 + 当前账本 + 无筛选），
+/// 所以**不会**多出一次查询：统计页已经用过这个 key 时会直接命中缓存，
+/// 也保证了两个页面的数字完全一致。
+/// 分类 / 子分类的「常用」数据：历史次数 + 最近使用时间。
+///
+/// 排序用这个，不用「本月金额」——月初或某分类本月刚好没用过时会全部归零，
+/// 把真正常用的项挤出常用格。展示「本月花了多少」仍走
+/// [currentUserMonthCategoryUsageProvider]。
+final currentUserCategoryUsageStatsProvider =
+    FutureProvider.autoDispose<MoneyCategoryUsage>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const MoneyCategoryUsage.empty();
+      }
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getCategoryUsageStatsForUser(session.userId!);
+    });
+
+final currentUserMonthCategoryUsageProvider = FutureProvider.autoDispose
+    .family<MoneyCategoryUsage, MoneyCategoryKind>((ref, kind) async {
+      final context = await ref.watch(moneyStatisticsContextProvider.future);
+      if (!context.isReady) {
+        return const MoneyCategoryUsage.empty();
+      }
+
+      final range = MoneyStatisticsDateRange.resolve(
+        MoneyStatisticsPeriodPreset.thisMonth,
+        DateTime.now(),
+      );
+      final summary = await ref.watch(
+        moneyStatisticsProvider(
+          MoneyStatisticsRequest(
+            userId: context.userId!,
+            query: MoneyStatisticsQuery(
+              dateStart: range.start,
+              dateEndExclusive: range.endExclusive,
+              groupBy: range.groupBy,
+              ledgerId: context.ledger!.id,
+            ),
+          ),
+        ).future,
+      );
+
+      final isIncome = kind == MoneyCategoryKind.income;
+      return MoneyCategoryUsage.fromSlices(
+        slices: isIncome ? summary.incomeCategories : summary.expenseCategories,
+        subSlices: isIncome
+            ? summary.incomeSubCategories
+            : summary.expenseSubCategories,
+        currencyCode: summary.currencyCode,
+      );
     });
 
 class MoneyStatisticsRequest {

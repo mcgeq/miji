@@ -1052,7 +1052,7 @@ class _AccountsHeader extends StatelessWidget {
         ),
         filterTrigger,
         AppIconActionButton(
-          tooltip: '新建账户',
+          tooltip: '新增账户',
           onPressed: onCreate,
           icon: Icons.add_rounded,
           iconSize: 19,

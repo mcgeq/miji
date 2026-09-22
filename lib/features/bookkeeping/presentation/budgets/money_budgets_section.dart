@@ -7,8 +7,10 @@ import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_filter_sheet.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
+import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
+import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -41,6 +43,12 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
   MoneyBudgetPeriodType? _periodTypeFilter;
   _BudgetScopeFilter _scopeFilter = _BudgetScopeFilter.all;
   _BudgetStatusFilter _statusFilter = _BudgetStatusFilter.all;
+
+  bool get _hasActiveFilters =>
+      _trackingTypeFilter != null ||
+      _periodTypeFilter != null ||
+      _scopeFilter != _BudgetScopeFilter.all ||
+      _statusFilter != _BudgetStatusFilter.all;
 
   @override
   Widget build(BuildContext context) {
@@ -79,32 +87,50 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              AppFilterSheetTrigger(
-                                title: '筛选预算',
+                              _BudgetSummaryBar(budgets: filteredBudgets),
+                              const SizedBox(height: 10),
+                              Row(
                                 children: [
-                                  _BudgetFilterFields(
-                                    trackingType: _trackingTypeFilter,
-                                    periodType: _periodTypeFilter,
-                                    scopeFilter: _scopeFilter,
-                                    statusFilter: _statusFilter,
-                                    onTrackingTypeChanged: (value) =>
-                                        _updateFilters(() {
-                                          _trackingTypeFilter = value;
-                                        }),
-                                    onPeriodTypeChanged: (value) =>
-                                        _updateFilters(() {
-                                          _periodTypeFilter = value;
-                                        }),
-                                    onScopeChanged: (value) =>
-                                        _updateFilters(() {
-                                          _scopeFilter = value;
-                                        }),
-                                    onStatusChanged: (value) =>
-                                        _updateFilters(() {
-                                          _statusFilter = value;
-                                        }),
-                                    onReset: () =>
-                                        _updateFilters(_resetFilters),
+                                  AppFilterSheetTrigger(
+                                    title: '筛选预算',
+                                    hasActiveFilters: _hasActiveFilters,
+                                    children: [
+                                      _BudgetFilterFields(
+                                        trackingType: _trackingTypeFilter,
+                                        periodType: _periodTypeFilter,
+                                        scopeFilter: _scopeFilter,
+                                        statusFilter: _statusFilter,
+                                        onTrackingTypeChanged: (value) =>
+                                            _updateFilters(() {
+                                              _trackingTypeFilter = value;
+                                            }),
+                                        onPeriodTypeChanged: (value) =>
+                                            _updateFilters(() {
+                                              _periodTypeFilter = value;
+                                            }),
+                                        onScopeChanged: (value) =>
+                                            _updateFilters(() {
+                                              _scopeFilter = value;
+                                            }),
+                                        onStatusChanged: (value) =>
+                                            _updateFilters(() {
+                                              _statusFilter = value;
+                                            }),
+                                        onReset: () =>
+                                            _updateFilters(_resetFilters),
+                                      ),
+                                    ],
+                                  ),
+                                  const Spacer(),
+                                  // 常驻新增入口。
+                                  //
+                                  // 原来只有 budgets 为空时才有「＋」按钮，
+                                  // 有预算后只能去全局 FAB 的九宫格找「预算」。
+                                  AppIconActionButton(
+                                    tooltip: '新增预算',
+                                    onPressed: () => _openBudgetDialog(),
+                                    icon: Icons.add_rounded,
+                                    variant: AppIconActionVariant.filled,
                                   ),
                                 ],
                               ),
@@ -382,6 +408,138 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
       };
     }
     return '操作失败';
+  }
+}
+
+class _BudgetSummaryBar extends StatelessWidget {
+  const _BudgetSummaryBar({required this.budgets});
+
+  final List<MoneyBudgetEntity> budgets;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // 多币种下求和没有意义，直接不展示。
+    final currencies = budgets.map((budget) => budget.currencyCode).toSet();
+    if (budgets.isEmpty || currencies.length != 1) {
+      return const SizedBox.shrink();
+    }
+
+    final currencyCode = currencies.first;
+    var totalMinor = 0;
+    var usedMinor = 0;
+    var remainingMinor = 0;
+    var overspentCount = 0;
+    var alertingCount = 0;
+    for (final budget in budgets) {
+      totalMinor += budget.amountMinor;
+      usedMinor += budget.usedAmountMinor;
+      remainingMinor += budget.remainingAmountMinor;
+      if (budget.isOverspent) {
+        overspentCount += 1;
+      } else if (budget.shouldAlert) {
+        alertingCount += 1;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+        border: Border.all(
+          color: overspentCount > 0
+              ? colorScheme.error.withValues(alpha: 0.28)
+              : colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+        color: overspentCount > 0
+            ? colorScheme.errorContainer.withValues(alpha: 0.18)
+            : colorScheme.surfaceContainerLowest,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _summaryMetric(
+              theme,
+              '合计',
+              formatMoneyMinor(totalMinor, currencyCode),
+              colorScheme.onSurface,
+            ),
+          ),
+          Expanded(
+            child: _summaryMetric(
+              theme,
+              '已用',
+              formatMoneyMinor(usedMinor, currencyCode),
+              theme.moneyColors.expense,
+            ),
+          ),
+          Expanded(
+            child: _summaryMetric(
+              theme,
+              remainingMinor >= 0 ? '剩余' : '超出',
+              formatMoneyMinor(remainingMinor.abs(), currencyCode),
+              remainingMinor >= 0
+                  ? theme.moneyColors.income
+                  : colorScheme.error,
+            ),
+          ),
+          if (overspentCount > 0 || alertingCount > 0)
+            Text(
+              [
+                if (overspentCount > 0) '超支 $overspentCount',
+                if (alertingCount > 0) '接近 $alertingCount',
+              ].join(' · '),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: overspentCount > 0
+                    ? colorScheme.error
+                    : theme.moneyColors.warning,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryMetric(
+    ThemeData theme,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0,
+          ),
+        ),
+        const SizedBox(height: 1),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

@@ -1508,10 +1508,14 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
     }
     final keyword = query.keyword?.trim();
     if (keyword != null && keyword.isNotEmpty) {
+      // 顶部搜索框的提示是「搜索备注、商家」，这里必须真的把 merchant 算进去，
+      // 否则按商家名搜不到（之前只 LIKE description / notes）。
       final pattern = '%$keyword%';
       predicate =
           predicate &
-          (table.description.like(pattern) | table.notes.like(pattern));
+          (table.description.like(pattern) |
+              table.notes.like(pattern) |
+              table.merchant.like(pattern));
     }
 
     return predicate;

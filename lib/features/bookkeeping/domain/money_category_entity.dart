@@ -25,6 +25,7 @@ class MoneyCategoryEntity {
     required this.color,
     required this.icon,
     required this.isSystem,
+    this.sortOrder = 0,
     this.isDeleted = false,
     this.deletedAt,
   });
@@ -36,6 +37,9 @@ class MoneyCategoryEntity {
   final String? color;
   final String? icon;
   final bool isSystem;
+
+  /// 业务顺序；0 = 未设置（排最后）。
+  final int sortOrder;
   final bool isDeleted;
   final DateTime? deletedAt;
 }
@@ -50,6 +54,7 @@ class MoneySubCategoryEntity {
     required this.color,
     required this.icon,
     required this.isSystem,
+    this.sortOrder = 0,
     this.isDeleted = false,
     this.deletedAt,
   });
@@ -62,6 +67,9 @@ class MoneySubCategoryEntity {
   final String? color;
   final String? icon;
   final bool isSystem;
+
+  /// 业务顺序；0 = 未设置（排最后）。
+  final int sortOrder;
   final bool isDeleted;
   final DateTime? deletedAt;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:miji/core/presentation/app_color_utils.dart';
 import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/core/presentation/components/money_amount_text.dart';
@@ -9,6 +10,7 @@ import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/categories/category_icon.dart';
 
 class TransactionCard extends StatelessWidget {
   const TransactionCard({
@@ -47,6 +49,8 @@ class TransactionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final amountColor = _amountColor(theme);
+    final iconColor = _iconColor(theme) ?? amountColor;
+    final iconData = _iconData ?? _typeIcon;
     final actions = <AppSwipeAction>[
       if (onEdit != null)
         AppSwipeAction(
@@ -110,7 +114,7 @@ class TransactionCard extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppListItemIcon(icon: _icon, color: amountColor, size: 28),
+                  AppListItemIcon(icon: iconData, color: iconColor, size: 28),
                   const SizedBox(width: 12),
                   content,
                 ],
@@ -119,7 +123,7 @@ class TransactionCard extends StatelessWidget {
 
             return Row(
               children: [
-                AppListItemIcon(icon: _icon, color: amountColor),
+                AppListItemIcon(icon: iconData, color: iconColor),
                 const SizedBox(width: 12),
                 content,
               ],
@@ -130,7 +134,35 @@ class TransactionCard extends StatelessWidget {
     );
   }
 
-  IconData get _icon {
+  /// 分类自己的图标；没有则用收支类型图标。
+  IconData? get _iconData {
+    final category = _category;
+    if (category == null) {
+      return null;
+    }
+    return materialIconForCategoryIcon(category.icon);
+  }
+
+  /// 分类自己的颜色。
+  ///
+  /// 卡片原来只按收/支/转账上色，一屏流水里找「餐饮」和「交通」只能读字。
+  /// 分类表里本来就有 `color` 字段，直接用上。
+  Color? _iconColor(ThemeData theme) {
+    final hex = _category?.color;
+    if (hex == null || hex.trim().isEmpty) {
+      return null;
+    }
+    return appColorFromHex(hex);
+  }
+
+  MoneyCategoryEntity? get _category {
+    final catalog = transaction.type == MoneyTransactionType.income
+        ? incomeCatalog
+        : expenseCatalog;
+    return catalog.categoryById(transaction.categoryId);
+  }
+
+  IconData get _typeIcon {
     return switch (transaction.type) {
       MoneyTransactionType.income => Icons.trending_up_rounded,
       MoneyTransactionType.expense => Icons.trending_down_rounded,

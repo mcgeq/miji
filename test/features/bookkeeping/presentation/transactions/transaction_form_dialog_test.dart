@@ -58,13 +58,11 @@ void main() {
     await tester.tap(find.textContaining(_sharedCashAccount.name).last);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('分类'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.textContaining(_foodCategory.name).last);
-    await tester.pumpAndSettle();
+    // 分类现在是叶子直选（没有「分类」下拉）。
+    await _tapLeaf(tester, _foodCategory.name);
 
     expect(find.textContaining(_sharedCashAccount.name), findsNWidgets(2));
-    expect(find.textContaining(_foodCategory.name), findsOneWidget);
+    expect(find.textContaining(_foodCategory.name), findsWidgets);
 
     await tester.tap(find.text(_familyLedgerA.name));
     await tester.pumpAndSettle();
@@ -72,7 +70,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining(_sharedCashAccount.name), findsNWidgets(2));
-    expect(find.textContaining(_foodCategory.name), findsOneWidget);
+    expect(find.textContaining(_foodCategory.name), findsWidgets);
   });
 
   testWidgets('paid-by-others checkbox hides account selector and submits '
@@ -142,11 +140,8 @@ void main() {
     expect(find.text('账户'), findsNothing);
     expect(find.text('他人代付：保存后将自动记入系统内部账户'), findsOneWidget);
 
-    // 选择分类。
-    await tester.tap(find.text('分类'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.textContaining(_foodCategory.name).last);
-    await tester.pumpAndSettle();
+    // 选择分类（叶子直选）。
+    await _tapLeaf(tester, _foodCategory.name);
 
     // 提交。
     await tester.tap(find.byTooltip('创建'));
@@ -380,3 +375,12 @@ const _expenseCatalog = MoneyCategoryCatalog(
   categories: [_foodCategory],
   subCategories: [],
 );
+
+/// 点叶子分类：需要先滚到可见（分类在表单中部）。
+Future<void> _tapLeaf(WidgetTester tester, String name) async {
+  final finder = find.text(name).first;
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}

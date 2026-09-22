@@ -6,6 +6,7 @@ import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_bill_view.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
@@ -75,6 +76,12 @@ abstract class MoneyRepository {
     MoneyCategoryKind kind, {
     bool includeDeleted = false,
   });
+
+  /// 分类 / 子分类的历史用量（次数 + 最近使用时间，覆盖全时段）。
+  ///
+  /// 用于「常用」排序：窗口口径（本月金额）会在月初或某分类本月未用时归零，
+  /// 把真正常用的项挤掉。
+  Future<MoneyCategoryUsage> getCategoryUsageStatsForUser(String userId);
 
   Future<Map<MoneyPaymentMethod, int>> getPaymentMethodUsageRanksForUser(
     String userId,

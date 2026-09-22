@@ -9,10 +9,13 @@ import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
+import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/features/bookkeeping/presentation/categories/category_icon.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
@@ -28,39 +31,106 @@ class MoneyCategoriesSection extends ConsumerStatefulWidget {
 class _MoneyCategoriesSectionState
     extends ConsumerState<MoneyCategoriesSection> {
   MoneyCategoryKind _kind = MoneyCategoryKind.expense;
+  final _searchController = TextEditingController();
+  String _keyword = '';
+  bool _sortByUsage = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final catalog = ref.watch(
       currentUserCategoryManagementCatalogProvider(_kind),
     );
+    final usage = ref
+        .watch(currentUserMonthCategoryUsageProvider(_kind))
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const MoneyCategoryUsage.empty(),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Center(
-          child: AppSlidingSegmentedControl<MoneyCategoryKind>(
-            minSegmentWidth: 72,
-            value: _kind,
-            onChanged: (value) => setState(() => _kind = value),
-            segments: const [
-              AppSlidingSegment(
-                value: MoneyCategoryKind.expense,
-                icon: Icons.trending_down_rounded,
-                label: '支出',
+        Row(
+          children: [
+            // 左侧留白与右侧按钮等宽，保证分段控件在视觉上仍然居中。
+            const SizedBox(width: 40),
+            Expanded(
+              child: Center(
+                child: AppSlidingSegmentedControl<MoneyCategoryKind>(
+                  minSegmentWidth: 72,
+                  value: _kind,
+                  onChanged: (value) => setState(() => _kind = value),
+                  segments: const [
+                    AppSlidingSegment(
+                      value: MoneyCategoryKind.expense,
+                      icon: Icons.trending_down_rounded,
+                      label: '支出',
+                    ),
+                    AppSlidingSegment(
+                      value: MoneyCategoryKind.income,
+                      icon: Icons.trending_up_rounded,
+                      label: '收入',
+                    ),
+                  ],
+                ),
               ),
-              AppSlidingSegment(
-                value: MoneyCategoryKind.income,
-                icon: Icons.trending_up_rounded,
-                label: '收入',
-              ),
-            ],
-          ),
+            ),
+            // 常驻新增入口。
+            //
+            // 原来的「新增分类」只存在于 categories 为空的 AppEmptyState 里，
+            // 而种子数据总有分类，空态永远不会出现——用户因此永远无法新增分类。
+            AppIconActionButton(
+              tooltip: '新增分类',
+              onPressed: () => _openCategoryDialog(context),
+              icon: Icons.add_rounded,
+              variant: AppIconActionVariant.filled,
+            ),
+          ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: AppTextField(
+                controller: _searchController,
+                hintText: '搜索分类 / 子分类',
+                prefixIcon: const Icon(Icons.search_rounded, size: 19),
+                onChanged: (value) =>
+                    setState(() => _keyword = value.trim().toLowerCase()),
+                suffixIcon: _keyword.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: '清除搜索',
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _keyword = '');
+                        },
+                      ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // 按用量排序：把「花得最多的分类」排到前面。
+            AppIconActionButton(
+              tooltip: _sortByUsage ? '按默认顺序' : '按本月用量排序',
+              onPressed: () => setState(() => _sortByUsage = !_sortByUsage),
+              icon: Icons.swap_vert_rounded,
+              variant: _sortByUsage
+                  ? AppIconActionVariant.filledTonal
+                  : AppIconActionVariant.outlined,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         Expanded(
           child: catalog.when(
-            data: (catalog) => _buildCatalog(context, catalog),
+            data: (catalog) => _buildCatalog(context, catalog, usage),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stackTrace) => AppErrorState(
               title: '读取分类失败',
@@ -74,7 +144,11 @@ class _MoneyCategoriesSectionState
     );
   }
 
-  Widget _buildCatalog(BuildContext context, MoneyCategoryCatalog catalog) {
+  Widget _buildCatalog(
+    BuildContext context,
+    MoneyCategoryCatalog catalog,
+    MoneyCategoryUsage usage,
+  ) {
     if (catalog.categories.isEmpty) {
       return AppEmptyState(
         title: '暂无分类',
@@ -90,15 +164,38 @@ class _MoneyCategoriesSectionState
       );
     }
 
+    final visible = _visibleCategories(catalog, usage);
+    if (visible.isEmpty) {
+      return AppEmptyState(
+        title: '没有匹配的分类',
+        message: '试试换个关键词。',
+        icon: Icons.search_off_rounded,
+        padding: EdgeInsets.zero,
+        action: AppIconActionButton(
+          tooltip: '清除搜索',
+          onPressed: () {
+            _searchController.clear();
+            setState(() => _keyword = '');
+          },
+          icon: Icons.refresh_rounded,
+          variant: AppIconActionVariant.outlined,
+        ),
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 18),
-      itemCount: catalog.categories.length,
+      itemCount: visible.length,
       separatorBuilder: (context, index) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        final category = catalog.categories[index];
+        final category = visible[index];
         return _CategoryTile(
           category: category,
           subCategories: catalog.subCategoriesFor(category.id),
+          usageMinor: usage.amountFor(category.id),
+          usageShare: usage.shareFor(category.id),
+          currencyCode: usage.currencyCode,
+          showUsage: !usage.isEmpty,
           onAddSubCategory: category.isDeleted
               ? null
               : () => _openSubCategoryDialog(context, category),
@@ -125,6 +222,38 @@ class _MoneyCategoriesSectionState
         );
       },
     );
+  }
+
+  /// 搜索 + 排序后的可见分类。
+  ///
+  /// 搜索同时匹配分类名与子分类名（「我那个『健身』子分类在哪个分类下面」
+  /// 是真实场景）；排序打开时按本月用量从高到低，金额相同再按名称。
+  List<MoneyCategoryEntity> _visibleCategories(
+    MoneyCategoryCatalog catalog,
+    MoneyCategoryUsage usage,
+  ) {
+    final keyword = _keyword;
+    final result = keyword.isEmpty
+        ? List<MoneyCategoryEntity>.of(catalog.categories)
+        : catalog.categories.where((category) {
+            if (category.name.toLowerCase().contains(keyword)) {
+              return true;
+            }
+            return catalog
+                .subCategoriesFor(category.id)
+                .any(
+                  (subCategory) =>
+                      subCategory.name.toLowerCase().contains(keyword),
+                );
+          }).toList();
+
+    if (_sortByUsage) {
+      result.sort((a, b) {
+        final byAmount = usage.amountFor(b.id).compareTo(usage.amountFor(a.id));
+        return byAmount != 0 ? byAmount : a.name.compareTo(b.name);
+      });
+    }
+    return result;
   }
 
   Future<void> _openCategoryDialog(
@@ -273,7 +402,7 @@ class _MoneyCategoriesSectionState
         ? MoneyTransactionType.income
         : MoneyTransactionType.expense;
     final ledger = ref.read(currentUserEffectiveTransactionLedgerValueProvider);
-    final result = await showAppResponsiveDialog<Object>(
+    await showAppResponsiveDialog<Object>(
       context: context,
       expandCompactSheet: true,
       builder: (context) => TransactionFormDialog(
@@ -282,12 +411,19 @@ class _MoneyCategoriesSectionState
         categoryId: category.id,
         subCategoryId: subCategory.id,
         showCategorySelector: false,
+        onSubmit: (result) => _createFromCategoryForm(type, result),
       ),
     );
-    if (!mounted || result is! TransactionCreateFormResult) {
-      return;
-    }
+  }
 
+  /// 返回错误文案（null = 成功）。
+  Future<String?> _createFromCategoryForm(
+    MoneyTransactionType type,
+    Object result,
+  ) async {
+    if (result is! TransactionCreateFormResult) {
+      return null;
+    }
     try {
       final splitConfig = result.splitConfig;
       if (splitConfig == null) {
@@ -300,8 +436,9 @@ class _MoneyCategoriesSectionState
             .createTransactionWithSplit(result.draft, splitConfig);
       }
       _showMessage('已记录');
+      return null;
     } on MoneyRepositoryException {
-      _showMessage('记录失败');
+      return '记录失败';
     }
   }
 
@@ -353,6 +490,10 @@ class _CategoryTile extends StatelessWidget {
     required this.onEditSubCategory,
     required this.onDeleteSubCategory,
     required this.onRestoreSubCategory,
+    this.usageMinor = 0,
+    this.usageShare = 0,
+    this.currencyCode = 'CNY',
+    this.showUsage = false,
   });
 
   final MoneyCategoryEntity category;
@@ -365,6 +506,26 @@ class _CategoryTile extends StatelessWidget {
   final ValueChanged<MoneySubCategoryEntity> onEditSubCategory;
   final ValueChanged<MoneySubCategoryEntity> onDeleteSubCategory;
   final ValueChanged<MoneySubCategoryEntity> onRestoreSubCategory;
+
+  /// 本月用量（来自统计模块的分类聚合）。
+  final int usageMinor;
+  final double usageShare;
+  final String currencyCode;
+  final bool showUsage;
+
+  /// 「8 个子分类 · 本月 ¥1,240 · 30.0%」。
+  String get _metaText {
+    final parts = <String>[
+      '${subCategories.where((item) => !item.isDeleted).length} 个子分类',
+    ];
+    if (showUsage) {
+      parts.add('本月 ${formatMoneyMinor(usageMinor, currencyCode)}');
+      if (usageMinor > 0) {
+        parts.add('${(usageShare * 100).toStringAsFixed(1)}%');
+      }
+    }
+    return parts.join(' · ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -382,7 +543,12 @@ class _CategoryTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                AppListItemIcon(icon: Icons.category_rounded, color: color),
+                AppListItemIcon(
+                  icon:
+                      materialIconForCategoryIcon(category.icon) ??
+                      Icons.category_rounded,
+                  color: color,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -410,12 +576,26 @@ class _CategoryTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${subCategories.where((item) => !item.isDeleted).length} 个子分类',
+                        _metaText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                           letterSpacing: 0,
                         ),
                       ),
+                      if (showUsage) ...[
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            value: usageShare.clamp(0.0, 1.0),
+                            minHeight: 5,
+                            color: color,
+                            backgroundColor: color.withValues(alpha: 0.14),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -523,7 +703,12 @@ class _SubCategoryChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.label_rounded, size: 15, color: color),
+              CategoryIconWidget(
+                subCategory.icon,
+                size: 15,
+                color: color,
+                fallback: Icons.label_rounded,
+              ),
               const SizedBox(width: 5),
               Text(
                 subCategory.name,

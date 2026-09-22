@@ -6,8 +6,8 @@ import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
-import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
+import 'package:miji/shared/widgets/money_amount_input.dart';
 import 'package:miji/shared/widgets/app_switch_field.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
@@ -36,7 +36,9 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
-  late final TextEditingController _amountController;
+
+  /// 移动端用底部停靠的数字键盘，宽屏用系统键盘。
+  final MoneyAmountInput _amount = MoneyAmountInput();
   late final TextEditingController _alertThresholdController;
   late final TextEditingController _tagController;
   MoneyBudgetTrackingType _trackingType = MoneyBudgetTrackingType.expenseLimit;
@@ -46,6 +48,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
   String? _categoryId;
   String? _subCategoryId;
   String? _accountId;
+  String? _amountErrorText;
   String? _categoryErrorText;
   String? _scopeErrorText;
   String? _periodErrorText;
@@ -65,9 +68,9 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     _descriptionController = TextEditingController(
       text: budget?.description ?? '',
     );
-    _amountController = TextEditingController(
-      text: budget == null ? '' : (budget.amountMinor / 100).toStringAsFixed(2),
-    );
+    if (budget != null) {
+      _amount.seed(budget.amountMinor);
+    }
     _alertThresholdController = TextEditingController(
       text: budget?.alertThresholdPercent?.toString() ?? '80',
     );
@@ -111,7 +114,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _amountController.dispose();
+    _amount.dispose();
     _alertThresholdController.dispose();
     _tagController.dispose();
     super.dispose();
@@ -172,11 +175,19 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     final canChangeLedger =
         !_isEditing || (widget.budget?.usedAmountMinor ?? 0) <= 0;
 
+    final showKeypad = _amount.shouldDock(context);
+
     return AppDialogScaffold(
       title: _isEditing ? '编辑预算' : '新增预算',
       maxWidth: 460,
       titleTextAlign: TextAlign.center,
       actionsAlignment: WrapAlignment.center,
+      bottomDock: showKeypad
+          ? _amount.buildDock(
+              context,
+              onChanged: () => setState(() => _amountErrorText = null),
+            )
+          : null,
       body: Form(
         key: _formKey,
         child: AppFormColumn(
@@ -206,6 +217,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                       _categoryId = null;
                       _subCategoryId = null;
                       _accountId = null;
+                      _amountErrorText = null;
                       _categoryErrorText = null;
                       _scopeErrorText = null;
                       if (_periodType == MoneyBudgetPeriodType.billingCycle) {
@@ -470,11 +482,13 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                   icon: Icons.warning_amber_rounded,
                 ),
             ],
-            AppAmountField(
-              controller: _amountController,
-              labelText: amountLabel,
-              validator: _validateAmount,
-            ),
+            if (!showKeypad)
+              _amount.buildField(prominent: false, labelText: amountLabel),
+            if (showKeypad && _amountErrorText != null)
+              AppFormHint(
+                text: _amountErrorText!,
+                icon: Icons.warning_amber_rounded,
+              ),
             if (_categoryErrorText != null)
               Text(
                 _categoryErrorText!,
@@ -542,6 +556,11 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    // 键盘模式没有 validator，金额在这里统一兜底。
+    if (_budgetAmountMinor <= 0) {
+      setState(() => _amountErrorText = '预算金额必须大于0');
+      return;
+    }
     final scopeErrorText = switch (_scopeType) {
       MoneyBudgetScopeType.all => null,
       MoneyBudgetScopeType.category => _categoryId == null ? '请选择分类' : null,
@@ -597,7 +616,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
 
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();
-    final amountMinor = parseMoneyAmountToMinor(_amountController.text);
+    final amountMinor = _budgetAmountMinor;
     final alertThreshold = _alertEnabled
         ? int.parse(_alertThresholdController.text.trim())
         : null;
@@ -695,15 +714,12 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     return null;
   }
 
-  String? _validateAmount(String? value) {
+  /// 预算金额（分）。两种输入方式共用同一份校验。
+  int get _budgetAmountMinor {
     try {
-      final amountMinor = parseMoneyAmountToMinor(value ?? '');
-      if (amountMinor <= 0) {
-        return '预算金额必须大于0';
-      }
-      return null;
-    } catch (_) {
-      return '请输入有效金额';
+      return parseMoneyAmountToMinor(_amount.controller.text);
+    } on MoneyAmountParseException {
+      return 0;
     }
   }
 

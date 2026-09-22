@@ -97,6 +97,7 @@ class AppSwipeActionTile extends StatefulWidget {
     required this.child,
     this.actions = const <AppSwipeAction>[],
     this.onTap,
+    this.onLongPress,
     this.closeSignal,
     this.borderRadius = 8,
     this.actionPaneWidth = 58,
@@ -106,6 +107,9 @@ class AppSwipeActionTile extends StatefulWidget {
   final Widget child;
   final List<AppSwipeAction> actions;
   final VoidCallback? onTap;
+
+  /// 长按（例如进入多选模式）。
+  final VoidCallback? onLongPress;
   final Object? closeSignal;
   final double borderRadius;
   final double actionPaneWidth;
@@ -138,6 +142,7 @@ class _AppSwipeActionTileState extends State<AppSwipeActionTile> {
       return GestureDetector(
         behavior: HitTestBehavior.deferToChild,
         onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
         child: widget.child,
       );
     }
@@ -167,6 +172,7 @@ class _AppSwipeActionTileState extends State<AppSwipeActionTile> {
           GestureDetector(
             behavior: HitTestBehavior.deferToChild,
             onTap: _isOpen ? _closeIfOpen : widget.onTap,
+            onLongPress: widget.onLongPress,
             onHorizontalDragUpdate: _handleHorizontalDragUpdate,
             onHorizontalDragEnd: _handleHorizontalDragEnd,
             child: AnimatedContainer(

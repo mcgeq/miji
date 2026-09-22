@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
+import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/app_toast.dart';
@@ -10,6 +12,7 @@ import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/core/presentation/components/money_amount_text.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
+import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
@@ -19,6 +22,7 @@ import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/account_form_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
@@ -57,6 +61,8 @@ class _MoneyInstallmentsSectionState
             accounts: accountRows,
             categoryCatalog: categoryCatalog,
             onCreate: _showCreateDialog,
+            onCreateAccount: _createCreditAccount,
+            onManageCategories: _openCategoriesPanel,
             onCancel: _cancelPlan,
             onPostDetail: _postDetail,
           ),
@@ -142,6 +148,48 @@ class _MoneyInstallmentsSectionState
     }
   }
 
+  /// 从「没有可用信用账户」空态直接新建一个信用账户。
+  Future<void> _createCreditAccount() async {
+    final defaultCurrencyCode = ref
+        .read(currentUserPreferencesProvider)
+        .maybeWhen(
+          data: (preferences) => preferences?.currencyCode,
+          orElse: () => null,
+        );
+    final result = await showAppResponsiveDialog<AccountFormResult>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => AccountFormDialog(
+        defaultCurrencyCode: defaultCurrencyCode,
+        initialType: MoneyAccountType.creditCard,
+      ),
+    );
+    if (!mounted || result?.draft == null) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyAccountActionsProvider)
+          .createAccount(result!.draft!);
+      if (!mounted) return;
+      AppToast.success(_ensureToast(), context, '信用账户已创建');
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, '创建信用账户失败');
+    }
+  }
+
+  /// 没有支出分类时，直接带用户去分类面板。
+  void _openCategoriesPanel() {
+    context.go(
+      Uri(
+        path: AppRoutes.bookkeeping,
+        queryParameters: const {'section': 'categories'},
+      ).toString(),
+    );
+  }
+
   Future<void> _postDetail(MoneyInstallmentDetailEntity detail) async {
     final confirmed = await showAppConfirmDialog(
       context: context,
@@ -198,6 +246,8 @@ class _MoneyInstallmentsContent extends StatelessWidget {
     required this.accounts,
     required this.categoryCatalog,
     required this.onCreate,
+    required this.onCreateAccount,
+    required this.onManageCategories,
     required this.onCancel,
     required this.onPostDetail,
   });
@@ -206,6 +256,8 @@ class _MoneyInstallmentsContent extends StatelessWidget {
   final List<MoneyAccountEntity> accounts;
   final MoneyCategoryCatalog categoryCatalog;
   final void Function(List<MoneyAccountEntity>, MoneyCategoryCatalog) onCreate;
+  final VoidCallback onCreateAccount;
+  final VoidCallback onManageCategories;
   final ValueChanged<MoneyInstallmentPlanEntity> onCancel;
   final ValueChanged<MoneyInstallmentDetailEntity> onPostDetail;
 
@@ -214,33 +266,71 @@ class _MoneyInstallmentsContent extends StatelessWidget {
     final creditAccounts = accounts
         .where((account) => account.isActive && account.type.isCreditLike)
         .toList();
+    final canCreate =
+        creditAccounts.isNotEmpty && categoryCatalog.categories.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 6),
+        // 常驻新增入口。
+        //
+        // 原来 _MoneyInstallmentsContent 声明了 required onCreate，
+        // 但 build 里从未引用，页面实际没有任何新增入口。
+        Row(
+          children: [
+            const Spacer(),
+            AppIconActionButton(
+              tooltip: canCreate ? '新增分期' : '需要先有信用账户和支出分类',
+              onPressed: canCreate
+                  ? () => onCreate(accounts, categoryCatalog)
+                  : null,
+              icon: Icons.add_rounded,
+              variant: AppIconActionVariant.filled,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
         if (creditAccounts.isEmpty)
-          const Expanded(
+          Expanded(
             child: AppEmptyState(
               title: '还没有可用信用账户',
-              message: '请先创建信用卡、花呗、白条等信用账户',
+              message: '分期只能挂在信用卡、花呗、白条等信用账户上',
               icon: Icons.credit_card_rounded,
+              action: AppIconActionButton(
+                tooltip: '新建信用账户',
+                onPressed: onCreateAccount,
+                icon: Icons.add_card_rounded,
+                variant: AppIconActionVariant.filled,
+              ),
             ),
           )
         else if (categoryCatalog.categories.isEmpty)
-          const Expanded(
+          Expanded(
             child: AppEmptyState(
               title: '还没有支出分类',
-              message: '请先初始化或创建支出分类',
+              message: '先创建支出分类，再回来设置分期',
               icon: Icons.category_rounded,
+              action: AppIconActionButton(
+                tooltip: '去管理分类',
+                onPressed: onManageCategories,
+                icon: Icons.arrow_forward_rounded,
+                variant: AppIconActionVariant.outlined,
+              ),
             ),
           )
         else if (plans.isEmpty)
-          const Expanded(
+          Expanded(
             child: AppEmptyState(
               title: '还没有分期计划',
-              message: '新增分期后会冻结信用账户本金',
+              message: '新增分期后会冻结信用账户本金，并按期生成支出',
               icon: Icons.calendar_month_rounded,
+              action: AppIconActionButton(
+                tooltip: '新增分期',
+                onPressed: () => onCreate(accounts, categoryCatalog),
+                icon: Icons.add_rounded,
+                variant: AppIconActionVariant.filled,
+              ),
             ),
           )
         else
@@ -612,7 +702,7 @@ class _InstallmentPlanSummary extends StatelessWidget {
                             label: '下一期',
                             text: nextDetail == null
                                 ? status.label
-                                : _dateText(nextDetail.dueDate),
+                                : _nextDueText(nextDetail.dueDate),
                           ),
                         ),
                         SizedBox(width: metricGap),
@@ -658,7 +748,7 @@ class _InstallmentPlanSummary extends StatelessWidget {
                       label: '下一期',
                       text: nextDetail == null
                           ? status.label
-                          : _dateText(nextDetail.dueDate),
+                          : _nextDueText(nextDetail.dueDate),
                       width: 132,
                     ),
                     _InstallmentSummaryMetric(
@@ -1449,6 +1539,23 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
       return '请输入有效金额';
     }
   }
+}
+
+/// 「下一期 10-20 · 还剩 2 天」。
+///
+/// 只给裸日期用户还要自己算，这里把紧迫感直接写出来。
+String _nextDueText(DateTime dueDate) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
+  final daysLeft = due.difference(today).inDays;
+  if (daysLeft < 0) {
+    return '${_dateText(dueDate)} · 已逾期';
+  }
+  if (daysLeft == 0) {
+    return '${_dateText(dueDate)} · 今天';
+  }
+  return '${_dateText(dueDate)} · 还剩 $daysLeft 天';
 }
 
 String _dateText(DateTime date) {

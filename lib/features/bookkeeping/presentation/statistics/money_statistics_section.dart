@@ -138,6 +138,7 @@ class MoneyStatisticsSection extends ConsumerWidget {
             const SizedBox(width: 8),
             AppFilterSheetTrigger(
               title: '筛选统计',
+              hasActiveFilters: filter.hasAnyFilter,
               children: [
                 _StatisticsFilterStrip(
                   filter: filter,
@@ -182,6 +183,34 @@ class MoneyStatisticsSection extends ConsumerWidget {
             ),
           ],
         ),
+        if (filter.hasAnyFilter) ...[
+          const SizedBox(height: 8),
+          _StatisticsActiveFilterStrip(
+            filter: filter,
+            periodLabel: periodLabel,
+            accountName: contextValue?.accounts
+                .where((account) => account.id == filter.accountId)
+                .map((account) => account.name)
+                .firstOrNull,
+            onReset: () =>
+                ref.read(moneyStatisticsFilterProvider.notifier).resetFilters(),
+            onClearAccount: () => ref
+                .read(moneyStatisticsFilterProvider.notifier)
+                .setAccountId(null),
+            onClearAccountType: () => ref
+                .read(moneyStatisticsFilterProvider.notifier)
+                .setAccountType(null),
+            onClearPaymentMethod: () => ref
+                .read(moneyStatisticsFilterProvider.notifier)
+                .setPaymentMethod(null),
+            onResetPeriod: () => ref
+                .read(moneyStatisticsFilterProvider.notifier)
+                .setPeriod(MoneyStatisticsPeriodPreset.thisMonth),
+            onResetTypeFocus: () => ref
+                .read(moneyStatisticsFilterProvider.notifier)
+                .setTypeFocus(MoneyStatisticsTypeFocus.balance),
+          ),
+        ],
         const SizedBox(height: 8),
         Expanded(
           child: _StatisticsAsyncBody(
@@ -413,6 +442,126 @@ class _StatisticsAsyncBody extends ConsumerWidget {
               minimumAmountMinor: amountMinor,
               minimumGrowthPercent: growthPercent,
             ),
+      ),
+    );
+  }
+}
+
+class _StatisticsActiveFilterStrip extends StatelessWidget {
+  const _StatisticsActiveFilterStrip({
+    required this.filter,
+    required this.periodLabel,
+    required this.onReset,
+    required this.onClearAccount,
+    required this.onClearAccountType,
+    required this.onClearPaymentMethod,
+    required this.onResetPeriod,
+    required this.onResetTypeFocus,
+    this.accountName,
+  });
+
+  final MoneyStatisticsFilterState filter;
+  final String periodLabel;
+  final String? accountName;
+  final VoidCallback onReset;
+  final VoidCallback onClearAccount;
+  final VoidCallback onClearAccountType;
+  final VoidCallback onClearPaymentMethod;
+  final VoidCallback onResetPeriod;
+  final VoidCallback onResetTypeFocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return SizedBox(
+      height: 30,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children:
+            [
+                  if (filter.periodPreset !=
+                      MoneyStatisticsPeriodPreset.thisMonth)
+                    _chip(theme, label: periodLabel, onClear: onResetPeriod),
+                  if (filter.typeFocus != MoneyStatisticsTypeFocus.balance)
+                    _chip(
+                      theme,
+                      label: filter.typeFocus.label,
+                      onClear: onResetTypeFocus,
+                    ),
+                  if (filter.accountId != null)
+                    _chip(
+                      theme,
+                      label: accountName ?? '已选账户',
+                      onClear: onClearAccount,
+                    ),
+                  if (filter.accountType != null)
+                    _chip(
+                      theme,
+                      label: filter.accountType!.label,
+                      onClear: onClearAccountType,
+                    ),
+                  if (filter.paymentMethod != null)
+                    _chip(
+                      theme,
+                      label: filter.paymentMethod!.label,
+                      onClear: onClearPaymentMethod,
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: TextButton(
+                      onPressed: onReset,
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        foregroundColor: colorScheme.onSurfaceVariant,
+                      ),
+                      child: const Text('重置'),
+                    ),
+                  ),
+                ]
+                .map(
+                  (widget) => Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: widget,
+                  ),
+                )
+                .toList(),
+      ),
+    );
+  }
+
+  Widget _chip(
+    ThemeData theme, {
+    required String label,
+    required VoidCallback onClear,
+  }) {
+    final colorScheme = theme.colorScheme;
+    return Material(
+      color: colorScheme.primaryContainer.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onClear,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 11),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Icon(Icons.close_rounded, size: 13, color: colorScheme.primary),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1047,7 +1196,7 @@ class _StatisticsPagerState extends State<_StatisticsPager> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _PageDots(
+        _StatisticsPageTabs(
           count: widget.pageCount,
           current: _currentPage,
           onTap: _goToPage,
@@ -1107,8 +1256,12 @@ class _KeepAliveStatisticsPageState extends State<_KeepAliveStatisticsPage>
   }
 }
 
-class _PageDots extends StatelessWidget {
-  const _PageDots({
+/// 分页标签。
+///
+/// 原来是 5 个没有文字的小圆点，用户不知道后面还有「渠道 / 预算 / 账户」三页
+/// 共 18 类图表卡。这里换成带文字的可点标签，可横向滑动。
+class _StatisticsPageTabs extends StatelessWidget {
+  const _StatisticsPageTabs({
     required this.count,
     required this.current,
     required this.onTap,
@@ -1118,34 +1271,58 @@ class _PageDots extends StatelessWidget {
   final int current;
   final ValueChanged<int> onTap;
 
+  /// 与 [_StatisticsBody._buildPageContent] 的分支顺序一一对应。
+  static const _labels = <String>['概览', '消费', '渠道', '预算', '账户'];
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (var index = 0; index < count; index += 1)
-          GestureDetector(
+    final colorScheme = theme.colorScheme;
+
+    return SizedBox(
+      height: 32,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        itemCount: count,
+        separatorBuilder: (context, index) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final selected = index == current;
+          return Material(
             key: ValueKey<String>('statistics-dot-$index'),
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onTap(index),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                width: index == current ? 18 : 8,
-                height: 8,
+            color: selected
+                ? colorScheme.primary
+                : colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(999),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () => onTap(index),
+              child: Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: index == current
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: selected
+                        ? Colors.transparent
+                        : colorScheme.outlineVariant.withValues(alpha: 0.7),
+                  ),
+                ),
+                child: Text(
+                  index < _labels.length ? _labels[index] : '${index + 1}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: selected
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
+          );
+        },
+      ),
     );
   }
 }

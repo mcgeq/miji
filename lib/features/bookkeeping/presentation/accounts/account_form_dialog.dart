@@ -21,10 +21,18 @@ class AccountFormResult {
 }
 
 class AccountFormDialog extends StatefulWidget {
-  const AccountFormDialog({super.key, this.account, this.defaultCurrencyCode});
+  const AccountFormDialog({
+    super.key,
+    this.account,
+    this.defaultCurrencyCode,
+    this.initialType,
+  });
 
   final MoneyAccountEntity? account;
   final String? defaultCurrencyCode;
+
+  /// 新建时的初始账户类型（例如从「分期」空态直接新建信用账户）。
+  final MoneyAccountType? initialType;
 
   @override
   State<AccountFormDialog> createState() => _AccountFormDialogState();
@@ -64,7 +72,7 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
     );
     _type = account?.type == MoneyAccountType.internal
         ? MoneyAccountType.cash
-        : account?.type ?? MoneyAccountType.cash;
+        : account?.type ?? widget.initialType ?? MoneyAccountType.cash;
     _currencyCode = account?.currencyCode ?? _normalizedDefaultCurrencyCode;
     _selectedColor = account?.color ?? defaultAccountColorForType(_type);
     _statementDay = account?.statementDay ?? 1;

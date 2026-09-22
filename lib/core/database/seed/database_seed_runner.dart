@@ -33,7 +33,8 @@ class DatabaseSeedRunner {
             );
       }
 
-      for (final category in defaultMoneyCategorySeeds) {
+      for (var index = 0; index < defaultMoneyCategorySeeds.length; index++) {
+        final category = defaultMoneyCategorySeeds[index];
         await database
             .into(database.moneyCategories)
             .insert(
@@ -45,6 +46,8 @@ class DatabaseSeedRunner {
                 color: Value(category.color),
                 icon: Value(category.icon),
                 isSystem: const Value(true),
+                // 业务顺序 = 种子声明顺序（餐饮/交通/购物…）。
+                sortOrder: Value(index + 1),
                 isDeleted: const Value(false),
                 deletedAt: const Value<DateTime?>(null),
                 createdAt: now,
@@ -53,7 +56,12 @@ class DatabaseSeedRunner {
               mode: InsertMode.insertOrIgnore,
             );
 
-        for (final subCategory in category.subCategories) {
+        for (
+          var subIndex = 0;
+          subIndex < category.subCategories.length;
+          subIndex++
+        ) {
+          final subCategory = category.subCategories[subIndex];
           await database
               .into(database.moneySubCategories)
               .insert(
@@ -66,6 +74,7 @@ class DatabaseSeedRunner {
                   color: Value(subCategory.color),
                   icon: Value(subCategory.icon),
                   isSystem: const Value(true),
+                  sortOrder: Value(subIndex + 1),
                   isDeleted: const Value(false),
                   deletedAt: const Value<DateTime?>(null),
                   createdAt: now,

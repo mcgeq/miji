@@ -4,14 +4,15 @@ import 'package:miji/core/presentation/components/app_form_hint.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
-import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
+import 'package:miji/shared/widgets/money_amount_input.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
-import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
+import 'package:miji/features/bookkeeping/presentation/categories/components/category_leaf_selector.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
@@ -39,7 +40,10 @@ class TransferFormDialog extends ConsumerStatefulWidget {
 class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
   static const _transferCategoryId = 'system_transfer';
 
-  final _amountController = TextEditingController();
+  /// 移动端用底部停靠的数字键盘，宽屏用系统键盘。
+  final MoneyAmountInput _amount = MoneyAmountInput(
+    currencyCode: defaultMoneyCurrencyCode,
+  );
   final _notesController = TextEditingController();
   DateTime _transactionAt = DateTime.now();
   String? _fromAccountId;
@@ -56,14 +60,14 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
     if (transaction == null) {
       final initialAmountMinor = widget.initialAmountMinor;
       if (initialAmountMinor != null && initialAmountMinor > 0) {
-        _amountController.text = (initialAmountMinor / 100).toStringAsFixed(2);
+        _amount.seed(initialAmountMinor);
       }
       _notesController.text = widget.initialNotes ?? '';
       _toAccountId = widget.initialToAccountId;
       return;
     }
 
-    _amountController.text = (transaction.amountMinor / 100).toStringAsFixed(2);
+    _amount.seed(transaction.amountMinor);
     _notesController.text = transaction.notes ?? '';
     _transactionAt = transaction.transactionAt.toLocal();
     _fromAccountId = _initialFromAccountId;
@@ -73,7 +77,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
 
   @override
   void dispose() {
-    _amountController.dispose();
+    _amount.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -89,22 +93,24 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
     final catalog = ref.watch(
       currentUserCategoryCatalogProvider(MoneyCategoryKind.expense),
     );
+    final showKeypad = _amount.shouldDock(context);
 
     return AppDialogScaffold(
       title: _isEditing ? '编辑转账' : '转账',
       maxWidth: 460,
       titleTextAlign: TextAlign.center,
       actionsAlignment: WrapAlignment.center,
+      bottomDock: showKeypad
+          ? _amount.buildDock(
+              context,
+              onChanged: () => setState(() => _errorText = null),
+            )
+          : null,
       body: AppFormColumn(
         gap: 12,
         children: [
-          AppAmountField(
-            controller: _amountController,
-            labelText: '金额',
-            currencyCode: defaultMoneyCurrencyCode,
-            prominent: true,
-            onChanged: (_) => setState(() {}),
-          ),
+          if (!showKeypad)
+            _amount.buildField(onChanged: (_) => setState(() {})),
           accounts.when(
             data: (value) {
               final activeAccounts = value
@@ -210,7 +216,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
 
   void _submit() {
     try {
-      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
+      final amountMinor = parseMoneyAmountToMinor(_amount.controller.text);
       if (amountMinor <= 0) {
         setState(() => _errorText = '请输入大于 0 的金额');
         return;
@@ -315,80 +321,28 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
         : transaction.toAccountId;
   }
 
+  /// 转账的分类固定为「转账」，所以直接把它的叶子摊出来（账户间转账 /
+  /// 亲友转账 / 信用卡还款），不再展示一格只读的父分类下拉。
+  ///
+  /// 「常用」排序与记账表单共用同一份数据，避免同一个组件两种口径。
   Widget _buildTransferCategoryFields(MoneyCategoryCatalog catalog) {
-    final transferCategory = catalog.categoryById(_transferCategoryId);
-    final subCategories = transferCategory == null
-        ? const <MoneySubCategoryEntity>[]
-        : catalog.subCategoriesFor(transferCategory.id);
-    final selectedSubCategory = _selectedSubCategory(
-      subCategories,
-      _subCategoryId,
+    final usage = ref
+        .watch(currentUserCategoryUsageStatsProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const MoneyCategoryUsage.empty(),
+        );
+    return CategoryLeafSelector(
+      catalog: catalog,
+      usage: usage,
+      selectedCategoryId: _transferCategoryId,
+      selectedSubCategoryId: _subCategoryId,
+      fixedCategoryId: _transferCategoryId,
+      frequentCount: 3,
+      onChanged: (categoryId, subCategoryId) {
+        setState(() => _subCategoryId = subCategoryId);
+      },
     );
-
-    return AppFormColumn(
-      gap: 12,
-      children: [
-        FormDropdown<String>(
-          initialSelection: transferCategory?.id,
-          onSelected: (_) {},
-          label: '分类',
-          leadingIcon: const Icon(Icons.swap_horiz_rounded),
-          enabled: false,
-          entries: [
-            DropdownMenuEntry<String>(
-              value: transferCategory?.id ?? _transferCategoryId,
-              label: transferCategory?.name ?? '转账',
-            ),
-          ],
-        ),
-        FormDropdown<String>(
-          initialSelection: selectedSubCategory?.id ?? '',
-          label: '子分类',
-          helperText: transferCategory == null
-              ? '未找到转账分类'
-              : subCategories.isEmpty
-              ? '暂无转账子分类'
-              : null,
-          leadingIcon: const Icon(Icons.sell_rounded),
-          enabled: transferCategory != null && subCategories.isNotEmpty,
-          enableFilter: true,
-          onSelected: (subCategoryId) {
-            setState(() {
-              _subCategoryId = subCategoryId == null || subCategoryId.isEmpty
-                  ? null
-                  : subCategoryId;
-            });
-          },
-          entries: [
-            const DropdownMenuEntry<String>(value: '', label: '不选择子分类'),
-            ...subCategories.map(
-              (subCategory) => DropdownMenuEntry<String>(
-                value: subCategory.id,
-                label: subCategory.name,
-                labelWidget: _TransferSubCategoryMenuItem(
-                  subCategory: subCategory,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  MoneySubCategoryEntity? _selectedSubCategory(
-    List<MoneySubCategoryEntity> subCategories,
-    String? subCategoryId,
-  ) {
-    if (subCategoryId == null) {
-      return null;
-    }
-    for (final subCategory in subCategories) {
-      if (subCategory.id == subCategoryId) {
-        return subCategory;
-      }
-    }
-    return null;
   }
 
   MoneyAccountEntity? _accountById(
@@ -489,7 +443,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
       return null;
     }
     try {
-      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
+      final amountMinor = parseMoneyAmountToMinor(_amount.controller.text);
       final remaining = fromAccount.balanceMinor - amountMinor;
       return '转出后余额 ${formatMoneyMinor(remaining, fromAccount.currencyCode)}';
     } on MoneyAmountParseException {
@@ -527,45 +481,5 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
       return '转账会从转出账户扣减余额，并增加到转入账户';
     }
     return '信用账户不能作为转出账户，可作为转入账户还款';
-  }
-}
-
-class _TransferSubCategoryMenuItem extends StatelessWidget {
-  const _TransferSubCategoryMenuItem({required this.subCategory});
-
-  final MoneySubCategoryEntity subCategory;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final iconText = subCategory.icon?.trim();
-
-    return Row(
-      children: [
-        SizedBox(
-          width: 24,
-          child: Center(
-            child: iconText == null || iconText.isEmpty
-                ? Icon(Icons.sell_rounded, size: 18, color: colorScheme.primary)
-                : Text(
-                    iconText,
-                    overflow: TextOverflow.clip,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      letterSpacing: 0,
-                    ),
-                  ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            subCategory.name,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(letterSpacing: 0),
-          ),
-        ),
-      ],
-    );
   }
 }

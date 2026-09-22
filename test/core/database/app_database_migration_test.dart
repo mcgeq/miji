@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,6 +12,17 @@ import 'package:miji/core/database/app_database.dart';
 /// The old database is simulated by creating the current schema, dropping the
 /// todo tables (which did not exist at v15) or the V1.1 columns (v16), then
 /// rewinding `user_version`.
+
+/// V1.5 给分类表加了业务顺序列。伪造 v21 及更早版本时同样要先删掉，
+/// 否则 `addColumn` 会因重复列失败。
+Future<void> _dropV15SortOrderColumns(AppDatabase db) async {
+  await db.customStatement(
+    'ALTER TABLE money_categories DROP COLUMN sort_order',
+  );
+  await db.customStatement(
+    'ALTER TABLE money_sub_categories DROP COLUMN sort_order',
+  );
+}
 
 /// V1.4 给 `user_preferences` 增加了两列。迁移测试通过「建当前 schema →
 /// 删列 → 回退 user_version」来伪造旧库，所以伪造 v20 及更早版本时
@@ -64,6 +76,7 @@ void main() {
       'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
     );
     await _dropV14PreferenceColumns(v18db);
+    await _dropV15SortOrderColumns(v18db);
     await v18db.customStatement('PRAGMA user_version = 15');
     await v18db.close();
 
@@ -131,6 +144,7 @@ void main() {
       'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
     );
     await _dropV14PreferenceColumns(v18db);
+    await _dropV15SortOrderColumns(v18db);
     await v18db.customStatement('DROP TABLE IF EXISTS todo_task_tags');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_tags');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_recurrence_rules');
@@ -182,6 +196,7 @@ void main() {
       'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
     );
     await _dropV14PreferenceColumns(v18db);
+    await _dropV15SortOrderColumns(v18db);
     await v18db.customStatement('PRAGMA user_version = 17');
     await v18db.close();
 
@@ -238,6 +253,7 @@ void main() {
         'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
       );
       await _dropV14PreferenceColumns(v19db);
+      await _dropV15SortOrderColumns(v19db);
       await v19db.customStatement('PRAGMA user_version = 18');
       await v19db.close();
 
@@ -255,6 +271,84 @@ void main() {
       final preferences = await (db.select(db.userPreferences)).getSingle();
       expect(preferences.userId, 'user-1');
       expect(preferences.showHomeTodayAction, isTrue);
+      await db.close();
+    },
+  );
+
+  test(
+    'v21 -> v22 upgrade adds category sort_order and backfills the seed order',
+    () async {
+      final now = DateTime.now().toUtc();
+
+      final v21db = AppDatabase(NativeDatabase(dbFile));
+      await v21db
+          .into(v21db.users)
+          .insert(
+            UsersCompanion.insert(
+              id: 'user-1',
+              username: 'demo',
+              email: 'demo@example.com',
+              displayName: 'Demo',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      // 一个内置分类 + 一个用户自建分类。
+      await v21db
+          .into(v21db.moneyCategories)
+          .insert(
+            MoneyCategoriesCompanion.insert(
+              id: 'expense_food',
+              name: '餐饮',
+              kind: 'expense',
+              isSystem: const Value(true),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await v21db
+          .into(v21db.moneyCategories)
+          .insert(
+            MoneyCategoriesCompanion.insert(
+              id: 'custom-1',
+              userId: const Value<String?>('user-1'),
+              name: '我的分类',
+              kind: 'expense',
+              isSystem: const Value(false),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      // Simulate a v21 release: no sort_order columns.
+      await _dropV15SortOrderColumns(v21db);
+      await v21db.customStatement('PRAGMA user_version = 21');
+      await v21db.close();
+
+      // Reopen with the current schema: this runs the 21 -> 22 migration.
+      final db = AppDatabase(NativeDatabase(dbFile));
+      await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+      final categoryColumns = await db
+          .customSelect('PRAGMA table_info(money_categories)')
+          .get()
+          .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+      expect(categoryColumns, contains('sort_order'));
+
+      final subCategoryColumns = await db
+          .customSelect('PRAGMA table_info(money_sub_categories)')
+          .get()
+          .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+      expect(subCategoryColumns, contains('sort_order'));
+
+      final rows = await (db.select(db.moneyCategories)).get();
+      final byId = {for (final row in rows) row.id: row};
+      // 内置分类按种子声明顺序回填（餐饮是第 1 个）。
+      expect(byId['expense_food']!.sortOrder, 1);
+      expect(byId['expense_food']!.name, '餐饮');
+      // 用户自建分类保持 0：排序时视为最后，不会插到内置分类前面。
+      expect(byId['custom-1']!.sortOrder, 0);
+
       await db.close();
     },
   );
@@ -290,6 +384,7 @@ void main() {
 
       // Simulate a v20 release: drop the V1.4 columns that v20 lacked.
       await _dropV14PreferenceColumns(v20db);
+      await _dropV15SortOrderColumns(v20db);
       await v20db.customStatement('PRAGMA user_version = 20');
       await v20db.close();
 

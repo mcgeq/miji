@@ -114,6 +114,7 @@ class _MoneyTransactionsSectionState
       _categoryIdFilter != null ||
       _subCategoryIdFilter != null ||
       _paymentMethodFilter != null ||
+      _customPaymentMethodNameFilter != null ||
       _merchantFilter != null ||
       _dateStartFilter != null ||
       _keywordFilter != null;
@@ -221,7 +222,7 @@ class _MoneyTransactionsSectionState
         // 常驻搜索：原来关键词搜索在筛选抽屉第 8 位，要四步才能开始打字。
         AppTextField(
           controller: _keywordController,
-          hintText: '搜索分类、商户、备注…',
+          hintText: '搜索备注、商家',
           prefixIcon: const Icon(Icons.search_rounded, size: 19),
           onChanged: _setKeywordFilterDebounced,
           suffixIcon: (_keywordFilter ?? '').isEmpty
@@ -327,7 +328,7 @@ class _MoneyTransactionsSectionState
           onSelectPreset: _applyDatePreset,
         ),
         const SizedBox(height: 10),
-        _TransactionSummaryBar(query: _summaryQuery),
+        _TransactionSummaryBar(query: _summaryQuery, onClear: _clearAllFilters),
         if (widget.filterContext?.account != null) ...[
           _AccountTransactionSummaryPanel(
             account: widget.filterContext!.account!,
@@ -398,6 +399,7 @@ class _MoneyTransactionsSectionState
                   date: transaction.transactionAt,
                   expenseMinor: _dayExpenseMinorFor(transaction.transactionAt),
                   incomeMinor: _dayIncomeMinorFor(transaction.transactionAt),
+                  currencyCode: _dayCurrencyFor(transaction.transactionAt),
                 ),
               TransactionCard(
                 key: ValueKey(transaction.id),
@@ -604,6 +606,24 @@ class _MoneyTransactionsSectionState
       }
     }
     return total;
+  }
+
+  /// 当天已完成流水的币种。
+  ///
+  /// 原来日期头把币种硬编码成 CNY，多币种用户的日元流水会被标上「¥ 人民币」。
+  /// 跨币种求和本身没有意义，这里返回 null，让日期头只显示日期。
+  String? _dayCurrencyFor(DateTime date) {
+    String? currency;
+    for (final t in _transactions) {
+      if (!sameDayKey(t.transactionAt, date)) continue;
+      if (t.status != MoneyTransactionStatus.completed) continue;
+      if (currency == null) {
+        currency = t.currencyCode;
+      } else if (currency != t.currencyCode) {
+        return null;
+      }
+    }
+    return currency;
   }
 
   int _dayIncomeMinorFor(DateTime date) {
@@ -940,6 +960,44 @@ class _MoneyTransactionsSectionState
     _refreshFromFilterChange();
   }
 
+  /// 汇总条右侧的「清除筛选」。
+  ///
+  /// 原实现的按钮是 `onPressed: () {}`——点了完全没反应。这里接上真正的
+  /// 清除逻辑；被上下文锁定的条件（从预算/账户点进来）保留。
+  void _clearAllFilters() {
+    _keywordDebounce?.cancel();
+    _merchantDebounce?.cancel();
+    _keywordController.clear();
+    _merchantController.clear();
+    // 预算筛选会带着类型/账户/分类/日期一起进来，先还原快照再清其余条件。
+    if (_budgetIdFilter != null) {
+      _setBudgetFilter(null, const <MoneyBudgetEntity>[]);
+    }
+    setState(() {
+      if (!_isTypeLocked) {
+        _typeFilter = null;
+        _budgetIdFilter = null;
+        _budgetAppliedFilterSnapshot = null;
+      }
+      if (!_isAccountLocked) {
+        _accountIdFilter = null;
+      }
+      if (!_isCategoryLocked) {
+        _categoryIdFilter = null;
+        _subCategoryIdFilter = null;
+      }
+      if (!_isDateLocked) {
+        _dateStartFilter = null;
+        _dateEndFilter = null;
+      }
+      _paymentMethodFilter = null;
+      _customPaymentMethodNameFilter = null;
+      _merchantFilter = null;
+      _keywordFilter = null;
+    });
+    _refreshFromFilterChange();
+  }
+
   void _setKeywordFilterDebounced(String value) {
     _keywordDebounce?.cancel();
     _keywordDebounce = Timer(const Duration(milliseconds: 320), () {
@@ -1002,15 +1060,27 @@ class _MoneyTransactionsSectionState
   Future<void> _openTransactionDialog(MoneyTransactionType type) async {
     final ledger = ref.read(currentUserEffectiveTransactionLedgerValueProvider);
 
-    final result = await showAppResponsiveDialog<Object>(
+    await showAppResponsiveDialog<Object>(
       context: context,
       expandCompactSheet: true,
-      builder: (context) => TransactionFormDialog(type: type, ledger: ledger),
+      builder: (context) => TransactionFormDialog(
+        type: type,
+        ledger: ledger,
+        // 表单自己调用写入，才能支持「保存并继续」
+        // （保持表单打开、只清金额），并在失败时就地回显错误。
+        onSubmit: (result) => _createFromForm(type, result),
+      ),
     );
-    if (!mounted || result is! TransactionCreateFormResult) {
-      return;
-    }
+  }
 
+  /// 返回错误文案（null = 成功）。
+  Future<String?> _createFromForm(
+    MoneyTransactionType type,
+    Object result,
+  ) async {
+    if (result is! TransactionCreateFormResult) {
+      return null;
+    }
     try {
       final splitConfig = result.splitConfig;
       if (splitConfig == null) {
@@ -1022,11 +1092,12 @@ class _MoneyTransactionsSectionState
             .read(currentUserMoneyTransactionActionsProvider)
             .createTransactionWithSplit(result.draft, splitConfig);
       }
-      if (!mounted) return;
-      AppToast.success(_ensureToast(), context, '${type.label}已记录');
+      if (mounted) {
+        AppToast.success(_ensureToast(), context, '${type.label}已记录');
+      }
+      return null;
     } catch (error) {
-      if (!mounted) return;
-      AppToast.error(_ensureToast(), context, _errorText(error));
+      return _errorText(error);
     }
   }
 
@@ -2213,9 +2284,10 @@ class _TransactionDateChips extends StatelessWidget {
 /// 「这段时间一共花了多少」这个最核心的问题没有答案。这里走一次全量聚合，
 /// 不受列表分页影响。
 class _TransactionSummaryBar extends ConsumerWidget {
-  const _TransactionSummaryBar({required this.query});
+  const _TransactionSummaryBar({required this.query, this.onClear});
 
   final MoneyTransactionQuery query;
+  final VoidCallback? onClear;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -2280,14 +2352,14 @@ class _TransactionSummaryBar extends ConsumerWidget {
                   : theme.moneyColors.expense,
             ),
           ),
-          if (hasFilter)
+          if (hasFilter && onClear != null)
             TextButton(
-              onPressed: () {},
+              onPressed: onClear,
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 6),
               ),
-              child: const Text('筛选'),
+              child: const Text('清除筛选'),
             ),
         ],
       ),
@@ -2333,6 +2405,7 @@ class _TransactionSummaryBar extends ConsumerWidget {
         query.categoryId != null ||
         query.subCategoryId != null ||
         query.paymentMethod != null ||
+        (query.customPaymentMethodName?.trim().isNotEmpty ?? false) ||
         query.dateStart != null ||
         query.dateEnd != null ||
         (query.keyword?.trim().isNotEmpty ?? false) ||
@@ -2386,11 +2459,15 @@ class _DayGroupHeader extends StatelessWidget {
     required this.date,
     required this.expenseMinor,
     required this.incomeMinor,
+    this.currencyCode,
   });
 
   final DateTime date;
   final int expenseMinor;
   final int incomeMinor;
+
+  /// 当天单一币种；多币种为 null，此时不显示合计。
+  final String? currencyCode;
 
   @override
   Widget build(BuildContext context) {
@@ -2410,24 +2487,26 @@ class _DayGroupHeader extends StatelessWidget {
               letterSpacing: 0,
             ),
           ),
-          const SizedBox(width: 8),
-          if (expenseMinor > 0)
-            Text(
-              '支出 ${formatMoneyMinor(expenseMinor, 'CNY')}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.moneyColors.expense,
-                letterSpacing: 0,
+          if (currencyCode != null) ...[
+            const SizedBox(width: 8),
+            if (expenseMinor > 0)
+              Text(
+                '支出 ${formatMoneyMinor(expenseMinor, currencyCode!)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.moneyColors.expense,
+                  letterSpacing: 0,
+                ),
               ),
-            ),
-          if (expenseMinor > 0 && incomeMinor > 0) const SizedBox(width: 10),
-          if (incomeMinor > 0)
-            Text(
-              '收入 ${formatMoneyMinor(incomeMinor, 'CNY')}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.moneyColors.income,
-                letterSpacing: 0,
+            if (expenseMinor > 0 && incomeMinor > 0) const SizedBox(width: 10),
+            if (incomeMinor > 0)
+              Text(
+                '收入 ${formatMoneyMinor(incomeMinor, currencyCode!)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.moneyColors.income,
+                  letterSpacing: 0,
+                ),
               ),
-            ),
+          ],
           const Spacer(),
           Text(
             _weekdayLabel(local),

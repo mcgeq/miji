@@ -23,6 +23,7 @@ import 'package:miji/core/database/tables/sync/sync_change_log_table.dart';
 import 'package:miji/core/database/tables/sync/sync_conflict_table.dart';
 import 'package:miji/core/database/tables/user_preferences_table.dart';
 import 'package:miji/core/database/tables/users_table.dart';
+import 'package:miji/core/database/seed/money_seed_data.dart';
 
 part 'app_database.g.dart';
 
@@ -98,7 +99,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration {
@@ -249,6 +250,36 @@ class AppDatabase extends _$AppDatabase {
             userPreferences,
             userPreferences.showHomeHealthStrip,
           );
+        }
+        if (from < 22) {
+          // V1.5: 分类业务顺序。内置分类按种子声明顺序回填，
+          // 用户自建分类保持 0（排序时视为最后），避免插到内置分类前面。
+          await migrator.addColumn(moneyCategories, moneyCategories.sortOrder);
+          await migrator.addColumn(
+            moneySubCategories,
+            moneySubCategories.sortOrder,
+          );
+          for (
+            var index = 0;
+            index < defaultMoneyCategorySeeds.length;
+            index++
+          ) {
+            final category = defaultMoneyCategorySeeds[index];
+            await customStatement(
+              'UPDATE money_categories SET sort_order = ? WHERE id = ?',
+              [index + 1, category.id],
+            );
+            for (
+              var subIndex = 0;
+              subIndex < category.subCategories.length;
+              subIndex++
+            ) {
+              await customStatement(
+                'UPDATE money_sub_categories SET sort_order = ? WHERE id = ?',
+                [subIndex + 1, category.subCategories[subIndex].id],
+              );
+            }
+          }
         }
       },
     );

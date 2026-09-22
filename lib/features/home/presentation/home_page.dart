@@ -489,12 +489,9 @@ class _HomeDashboard extends ConsumerWidget {
   }
 
   void _openOverview(BuildContext context) {
-    context.go(
-      Uri(
-        path: AppRoutes.bookkeeping,
-        queryParameters: {'section': 'overview'},
-      ).toString(),
-    );
+    // 记账页已经没有 overview 面板（职责已整体上收到首页），之前这里拼的
+    // `?section=overview` 会静静地回落到账户页。直接指向账户面板。
+    _openBookkeepingSection(context, 'accounts');
   }
 
   Future<void> _openTransactionDetail(

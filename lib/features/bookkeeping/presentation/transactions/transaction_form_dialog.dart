@@ -9,16 +9,17 @@ import 'package:miji/core/presentation/components/app_form_hint.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
-import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
+import 'package:miji/shared/widgets/money_amount_input.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
 import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
@@ -26,10 +27,13 @@ import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
-import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/categories/components/category_leaf_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/suggestion_autocomplete_field.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_split_dialog.dart';
+
+/// 表单提交回调：返回错误文案（null = 成功）。
+typedef TransactionFormSubmit = Future<String?> Function(Object result);
 
 class TransactionCreateFormResult {
   const TransactionCreateFormResult({required this.draft, this.splitConfig});
@@ -47,6 +51,7 @@ class TransactionFormDialog extends ConsumerStatefulWidget {
     this.categoryId,
     this.subCategoryId,
     this.showCategorySelector = true,
+    this.onSubmit,
   });
 
   final MoneyTransactionType type;
@@ -56,13 +61,19 @@ class TransactionFormDialog extends ConsumerStatefulWidget {
   final String? subCategoryId;
   final bool showCategorySelector;
 
+  /// 提交回调。
+  ///
+  /// 传入时表单不再把结果 pop 给调用方，而是自己调用 [onSubmit] 完成写入：
+  /// 成功则关闭（或「保存并继续」保持打开），失败把错误文案回显在表单上。
+  /// 返回 null 表示成功。
+  final TransactionFormSubmit? onSubmit;
+
   @override
   ConsumerState<TransactionFormDialog> createState() =>
       _TransactionFormDialogState();
 }
 
 class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
-  final _amountController = TextEditingController();
   final _merchantController = TextEditingController();
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
@@ -82,6 +93,14 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
   bool _defaultsLoaded = false;
   bool _advancedExpanded = false;
 
+  bool _submitting = false;
+
+  /// 金额输入：移动端用底部停靠的数字键盘（含连算），宽屏用系统键盘。
+  late final MoneyAmountInput _amount = MoneyAmountInput(
+    initialAmountMinor: widget.transaction?.amountMinor,
+    currencyCode: defaultMoneyCurrencyCode,
+  );
+
   bool get _isEditing => widget.transaction != null;
 
   bool _canConfigureSplit(int ledgerMemberCount) {
@@ -95,7 +114,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       return false;
     }
     try {
-      return parseMoneyAmountToMinor(_amountController.text) !=
+      return parseMoneyAmountToMinor(_amount.controller.text) !=
           _splitConfigAmountMinor;
     } on MoneyAmountParseException {
       return true;
@@ -116,7 +135,6 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       return;
     }
 
-    _amountController.text = (transaction.amountMinor / 100).toStringAsFixed(2);
     _merchantController.text = transaction.merchant ?? '';
     _locationController.text = transaction.location ?? '';
     _notesController.text = transaction.notes ?? '';
@@ -137,7 +155,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
 
   @override
   void dispose() {
-    _amountController.dispose();
+    _amount.dispose();
     _merchantController.dispose();
     _locationController.dispose();
     _notesController.dispose();
@@ -245,6 +263,8 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         .maybeWhen(data: (value) => value, orElse: () => const <String>[]);
     final hasMultipleLegacyTags =
         _isEditing && (widget.transaction?.tags.length ?? 0) > 1;
+    // 其他输入框（备注/商家/标签）会拉起系统键盘，此时让位给系统键盘。
+    final showKeypad = _amount.shouldDock(context);
     final installmentAmountMinor = _installmentEntryAmountMinor;
     final showInstallmentEntry =
         installmentAmountMinor != null &&
@@ -257,6 +277,14 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       maxWidth: 460,
       titleTextAlign: TextAlign.center,
       actionsAlignment: WrapAlignment.center,
+      // 自带键盘像系统键盘那样停在底部，不跟着内容滚。
+      bottomDock: showKeypad
+          ? _amount.buildDock(
+              context,
+              enabled: !_submitting,
+              onChanged: () => setState(() => _errorText = null),
+            )
+          : null,
       body: AppFormColumn(
         gap: 12,
         children: [
@@ -292,18 +320,16 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               loading: () => const AppFormHint(text: '家庭账本加载中...'),
               error: (error, stackTrace) => const Text('家庭账本读取失败'),
             ),
-          AppAmountField(
-            controller: _amountController,
-            labelText: '金额',
-            currencyCode: defaultMoneyCurrencyCode,
-            autofocus: !_isEditing,
-            prominent: true,
-            onChanged: _isEditing
-                ? null
-                : (_) {
-                    setState(() {});
-                  },
-          ),
+          // 让位给系统键盘 / 宽屏时，金额回到普通输入框。
+          if (!showKeypad)
+            _amount.buildField(
+              autofocus: !_isEditing,
+              onChanged: _isEditing
+                  ? null
+                  : (_) {
+                      setState(() {});
+                    },
+            ),
           if (widget.type == MoneyTransactionType.expense)
             AppSurface(
               tone: AppSurfaceTone.subtle,
@@ -386,21 +412,19 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
             ),
           catalog.when(
             data: (value) => widget.showCategorySelector
-                ? CategorySelector(
+                ? CategoryLeafSelector(
                     catalog: value,
                     selectedCategoryId: _categoryId,
                     selectedSubCategoryId: _subCategoryId,
-                    onChanged: (selection) {
-                      final nextCategoryId = selection.category?.id;
-                      final nextSubCategoryId = selection.subCategory?.id;
-                      setState(() {
-                        _categoryId = nextCategoryId;
-                        _subCategoryId = nextSubCategoryId;
-                      });
-                      if (nextCategoryId != null && nextSubCategoryId == null) {
-                        unawaited(_fillRememberedSubCategory(nextCategoryId));
-                      }
-                    },
+                    usage: _categoryUsage,
+                    enabled: !_submitting,
+                    onChanged: (categoryId, subCategoryId) =>
+                        _onCategoryChanged(
+                          MoneyCategorySelection(
+                            category: value.categoryById(categoryId),
+                            subCategory: value.subCategoryById(subCategoryId),
+                          ),
+                        ),
                   )
                 : _CategorySelectionSummary(
                     catalog: value,
@@ -488,12 +512,61 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         ],
       ),
       errorText: _errorText,
-      actions: appDialogIconActions(
-        onCancel: () => Navigator.of(context).pop(),
-        onConfirm: _submit,
-        confirmTooltip: _isEditing ? '保存' : '创建',
-      ),
+      actions: [
+        ...appDialogIconActions(
+          onCancel: () => Navigator.of(context).pop(),
+          onConfirm: _submitting ? null : () => _submit(),
+          confirmTooltip: _isEditing ? '保存' : '创建',
+        ),
+        if (widget.onSubmit != null && !_isEditing)
+          AppIconActionButton(
+            tooltip: '保存并继续',
+            onPressed: _submitting ? null : () => _submit(keepOpen: true),
+            icon: Icons.playlist_add_rounded,
+            variant: AppIconActionVariant.filledTonal,
+          ),
+      ],
     );
+  }
+
+  /// 网格选分类后回填，并在只选了父分类时补上「记住的子分类」。
+  void _onCategoryChanged(MoneyCategorySelection selection) {
+    final nextCategoryId = selection.category?.id;
+    final nextSubCategoryId = selection.subCategory?.id;
+    setState(() {
+      _categoryId = nextCategoryId;
+      _subCategoryId = nextSubCategoryId;
+    });
+    if (nextCategoryId != null && nextSubCategoryId == null) {
+      unawaited(_fillRememberedSubCategory(nextCategoryId));
+    }
+  }
+
+  /// 「常用」排序数据：历史次数 + 最近使用时间（覆盖全时段）。
+  ///
+  /// 不用「本月金额」排序：月初或某个分类本月刚好没用过时会全部归零，
+  /// 把真正常用的项挤出常用格。
+  MoneyCategoryUsage get _categoryUsage {
+    return ref
+        .watch(currentUserCategoryUsageStatsProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const MoneyCategoryUsage.empty(),
+        );
+  }
+
+  /// 提交成功后重置表单，用于「保存并继续」。
+  void _resetAfterSubmit() {
+    setState(() {
+      _amount.clear();
+      _merchantController.clear();
+      _locationController.clear();
+      _notesController.clear();
+      _tagController.clear();
+      _splitConfig = null;
+      _splitConfigAmountMinor = null;
+      _errorText = null;
+    });
   }
 
   String get _dialogTitle {
@@ -506,7 +579,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       return null;
     }
     try {
-      return parseMoneyAmountToMinor(_amountController.text);
+      return parseMoneyAmountToMinor(_amount.controller.text);
     } on MoneyAmountParseException {
       return null;
     }
@@ -651,12 +724,49 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     });
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit({bool keepOpen = false}) async {
+    final result = _buildResult();
+    if (result == null) {
+      return;
+    }
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      // 未提供回调：保持原有「把结果 pop 给调用方」的契约。
+      Navigator.of(context).pop(result);
+      return;
+    }
+
+    setState(() => _submitting = true);
+    String? error;
     try {
-      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
+      error = await submit(result);
+    } catch (_) {
+      error = '保存失败，请稍后重试';
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _submitting = false;
+      _errorText = error;
+    });
+    if (error != null) {
+      return;
+    }
+    if (keepOpen) {
+      _resetAfterSubmit();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  /// 校验并组装 draft / update。校验失败返回 null 并把错误写进 [_errorText]。
+  Object? _buildResult() {
+    try {
+      final amountMinor = parseMoneyAmountToMinor(_amount.controller.text);
       if (amountMinor <= 0) {
         setState(() => _errorText = '请输入大于 0 的金额');
-        return;
+        return null;
       }
       final transaction = widget.transaction;
       final ledger = transaction == null ? _selectedLedgerForSubmit() : null;
@@ -676,7 +786,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           : _accountId;
       if (effectiveAccountId == null) {
         setState(() => _errorText = _paidByOthers ? '内部账户不可用，请稍后重试' : '请选择账户');
-        return;
+        return null;
       }
       final selectedAccount = _selectedAccountFrom(
         _selectableAccountsForType([
@@ -695,7 +805,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               ? '收入不能选择信用账户'
               : '请选择可用账户',
         );
-        return;
+        return null;
       }
       final ruleError = _transactionRuleError(
         account: selectedAccount,
@@ -703,12 +813,12 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       );
       if (ruleError != null) {
         setState(() => _errorText = ruleError);
-        return;
+        return null;
       }
       final categoryId = _categoryId;
       if (categoryId == null) {
         setState(() => _errorText = '请选择分类');
-        return;
+        return null;
       }
 
       final notes = _notesController.text.trim();
@@ -721,44 +831,19 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       );
       if (_isSplitConfigStale) {
         setState(() => _errorText = '金额变化后请重新设置分摊');
-        return;
+        return null;
       }
       if (!mounted) {
-        return;
+        return null;
       }
-      Navigator.of(context).pop(
-        transaction == null
-            ? TransactionCreateFormResult(
-                draft: MoneyTransactionDraft(
-                  type: widget.type,
-                  transactionAt: _transactionAt,
-                  amountMinor: amountMinor,
-                  currencyCode: selectedAccount.currencyCode,
-                  description: widget.type.label,
-                  notes: notes,
-                  merchant: merchant,
-                  location: location,
-                  accountId: effectiveAccountId,
-                  categoryId: categoryId,
-                  subCategoryId: _subCategoryId,
-                  paymentMethod: effectivePaymentMethod,
-                  customPaymentMethodName:
-                      _customPaymentNameCtrl.text.trim().isEmpty
-                      ? null
-                      : _customPaymentNameCtrl.text.trim(),
-                  tags: tags,
-                  ledgerId: ledger?.id,
-                ),
-                splitConfig: widget.type == MoneyTransactionType.expense
-                    ? _splitConfig
-                    : null,
-              )
-            : MoneyTransactionUpdate(
-                id: transaction.id,
+      return transaction == null
+          ? TransactionCreateFormResult(
+              draft: MoneyTransactionDraft(
                 type: widget.type,
                 transactionAt: _transactionAt,
                 amountMinor: amountMinor,
-                currencyCode: transaction.currencyCode,
+                currencyCode: selectedAccount.currencyCode,
+                description: widget.type.label,
                 notes: notes,
                 merchant: merchant,
                 location: location,
@@ -771,10 +856,34 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                     ? null
                     : _customPaymentNameCtrl.text.trim(),
                 tags: tags,
+                ledgerId: ledger?.id,
               ),
-      );
+              splitConfig: widget.type == MoneyTransactionType.expense
+                  ? _splitConfig
+                  : null,
+            )
+          : MoneyTransactionUpdate(
+              id: transaction.id,
+              type: widget.type,
+              transactionAt: _transactionAt,
+              amountMinor: amountMinor,
+              currencyCode: transaction.currencyCode,
+              notes: notes,
+              merchant: merchant,
+              location: location,
+              accountId: effectiveAccountId,
+              categoryId: categoryId,
+              subCategoryId: _subCategoryId,
+              paymentMethod: effectivePaymentMethod,
+              customPaymentMethodName:
+                  _customPaymentNameCtrl.text.trim().isEmpty
+                  ? null
+                  : _customPaymentNameCtrl.text.trim(),
+              tags: tags,
+            );
     } on MoneyAmountParseException {
       setState(() => _errorText = '金额格式不正确');
+      return null;
     }
   }
 
@@ -952,7 +1061,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         setState(() => _errorText = '请先选择家庭账本');
         return;
       }
-      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
+      final amountMinor = parseMoneyAmountToMinor(_amount.controller.text);
       if (amountMinor <= 0) {
         setState(() => _errorText = '请先输入大于 0 的金额');
         return;

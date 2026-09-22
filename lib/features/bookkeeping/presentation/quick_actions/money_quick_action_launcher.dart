@@ -132,15 +132,25 @@ class MoneyQuickActionLauncher {
   Future<void> _openTransactionDialog(MoneyTransactionType type) async {
     final ledger = ref.read(currentUserEffectiveTransactionLedgerValueProvider);
 
-    final result = await showAppResponsiveDialog<Object>(
+    await showAppResponsiveDialog<Object>(
       context: context,
       expandCompactSheet: true,
-      builder: (context) => TransactionFormDialog(type: type, ledger: ledger),
+      builder: (context) => TransactionFormDialog(
+        type: type,
+        ledger: ledger,
+        onSubmit: (result) => _createFromForm(type, result),
+      ),
     );
-    if (!context.mounted || result is! TransactionCreateFormResult) {
-      return;
-    }
+  }
 
+  /// 返回错误文案（null = 成功）。
+  Future<String?> _createFromForm(
+    MoneyTransactionType type,
+    Object result,
+  ) async {
+    if (result is! TransactionCreateFormResult) {
+      return null;
+    }
     try {
       final splitConfig = result.splitConfig;
       if (splitConfig == null) {
@@ -152,11 +162,11 @@ class MoneyQuickActionLauncher {
             .read(currentUserMoneyTransactionActionsProvider)
             .createTransactionWithSplit(result.draft, splitConfig);
       }
-      if (!context.mounted) return;
+      if (!context.mounted) return null;
       AppToast.success(ensureToast(), context, '${type.label}已记录');
+      return null;
     } catch (error) {
-      if (!context.mounted) return;
-      AppToast.error(ensureToast(), context, _errorText(error, '记录失败'));
+      return _errorText(error, '记录失败');
     }
   }
 
