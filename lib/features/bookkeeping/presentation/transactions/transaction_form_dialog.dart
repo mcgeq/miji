@@ -13,7 +13,7 @@ import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
-import 'package:miji/shared/widgets/money_amount_input.dart';
+import 'package:miji/shared/widgets/app_amount_field.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
@@ -95,11 +95,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
 
   bool _submitting = false;
 
-  /// 金额输入：移动端用底部停靠的数字键盘（含连算），宽屏用系统键盘。
-  late final MoneyAmountInput _amount = MoneyAmountInput(
-    initialAmountMinor: widget.transaction?.amountMinor,
-    currencyCode: defaultMoneyCurrencyCode,
-  );
+  final _amountController = TextEditingController();
 
   bool get _isEditing => widget.transaction != null;
 
@@ -114,7 +110,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       return false;
     }
     try {
-      return parseMoneyAmountToMinor(_amount.controller.text) !=
+      return parseMoneyAmountToMinor(_amountController.text) !=
           _splitConfigAmountMinor;
     } on MoneyAmountParseException {
       return true;
@@ -135,6 +131,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       return;
     }
 
+    _amountController.text = (transaction.amountMinor / 100).toStringAsFixed(2);
     _merchantController.text = transaction.merchant ?? '';
     _locationController.text = transaction.location ?? '';
     _notesController.text = transaction.notes ?? '';
@@ -155,7 +152,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
 
   @override
   void dispose() {
-    _amount.dispose();
+    _amountController.dispose();
     _merchantController.dispose();
     _locationController.dispose();
     _notesController.dispose();
@@ -263,8 +260,6 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         .maybeWhen(data: (value) => value, orElse: () => const <String>[]);
     final hasMultipleLegacyTags =
         _isEditing && (widget.transaction?.tags.length ?? 0) > 1;
-    // 其他输入框（备注/商家/标签）会拉起系统键盘，此时让位给系统键盘。
-    final showKeypad = _amount.shouldDock(context);
     final installmentAmountMinor = _installmentEntryAmountMinor;
     final showInstallmentEntry =
         installmentAmountMinor != null &&
@@ -277,14 +272,6 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       maxWidth: 460,
       titleTextAlign: TextAlign.center,
       actionsAlignment: WrapAlignment.center,
-      // 自带键盘像系统键盘那样停在底部，不跟着内容滚。
-      bottomDock: showKeypad
-          ? _amount.buildDock(
-              context,
-              enabled: !_submitting,
-              onChanged: () => setState(() => _errorText = null),
-            )
-          : null,
       body: AppFormColumn(
         gap: 12,
         children: [
@@ -320,16 +307,18 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               loading: () => const AppFormHint(text: '家庭账本加载中...'),
               error: (error, stackTrace) => const Text('家庭账本读取失败'),
             ),
-          // 让位给系统键盘 / 宽屏时，金额回到普通输入框。
-          if (!showKeypad)
-            _amount.buildField(
-              autofocus: !_isEditing,
-              onChanged: _isEditing
-                  ? null
-                  : (_) {
-                      setState(() {});
-                    },
-            ),
+          AppAmountField(
+            controller: _amountController,
+            labelText: '金额',
+            currencyCode: defaultMoneyCurrencyCode,
+            autofocus: !_isEditing,
+            prominent: true,
+            onChanged: _isEditing
+                ? null
+                : (_) {
+                    setState(() {});
+                  },
+          ),
           if (widget.type == MoneyTransactionType.expense)
             AppSurface(
               tone: AppSurfaceTone.subtle,
@@ -558,7 +547,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
   /// 提交成功后重置表单，用于「保存并继续」。
   void _resetAfterSubmit() {
     setState(() {
-      _amount.clear();
+      _amountController.clear();
       _merchantController.clear();
       _locationController.clear();
       _notesController.clear();
@@ -579,7 +568,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       return null;
     }
     try {
-      return parseMoneyAmountToMinor(_amount.controller.text);
+      return parseMoneyAmountToMinor(_amountController.text);
     } on MoneyAmountParseException {
       return null;
     }
@@ -763,7 +752,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
   /// 校验并组装 draft / update。校验失败返回 null 并把错误写进 [_errorText]。
   Object? _buildResult() {
     try {
-      final amountMinor = parseMoneyAmountToMinor(_amount.controller.text);
+      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
       if (amountMinor <= 0) {
         setState(() => _errorText = '请输入大于 0 的金额');
         return null;
@@ -1061,7 +1050,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         setState(() => _errorText = '请先选择家庭账本');
         return;
       }
-      final amountMinor = parseMoneyAmountToMinor(_amount.controller.text);
+      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
       if (amountMinor <= 0) {
         setState(() => _errorText = '请先输入大于 0 的金额');
         return;

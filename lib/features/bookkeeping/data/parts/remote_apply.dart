@@ -1876,6 +1876,7 @@ mixin _RemoteApply on _DriftMoneyRepositoryBase {
             color: Value<String?>(_remoteNullableString(fields, 'color')),
             icon: Value<String?>(_remoteNullableString(fields, 'icon')),
             isSystem: Value(_remoteBool(fields, 'is_system', fallback: false)),
+            sortOrder: Value(_remoteIntOr(fields, 'sort_order', 0)),
             deviceId: Value<String?>(
               _remoteNullableString(fields, 'device_id'),
             ),
@@ -1970,6 +1971,7 @@ mixin _RemoteApply on _DriftMoneyRepositoryBase {
             color: Value<String?>(_remoteNullableString(fields, 'color')),
             icon: Value<String?>(_remoteNullableString(fields, 'icon')),
             isSystem: Value(_remoteBool(fields, 'is_system', fallback: false)),
+            sortOrder: Value(_remoteIntOr(fields, 'sort_order', 0)),
             deviceId: Value<String?>(
               _remoteNullableString(fields, 'device_id'),
             ),

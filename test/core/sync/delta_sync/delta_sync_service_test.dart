@@ -147,6 +147,7 @@ void main() {
             color: const Value('#22C55E'),
             icon: const Value('pets'),
             isSystem: const Value(false),
+            sortOrder: const Value(7),
             version: const Value(2),
             createdAt: createdAt,
             updatedAt: changedAt,
@@ -191,6 +192,8 @@ void main() {
     expect(change.recordSnapshot['kind'], 'expense');
     expect(change.recordSnapshot['color'], '#22C55E');
     expect(change.recordSnapshot['is_system'], isFalse);
+    // 排序要跟着记录一起走，否则接收端拿不到业务顺序。
+    expect(change.recordSnapshot['sort_order'], 7);
     expect(change.recordSnapshot['version'], 2);
     expect(change.recordSnapshot['updated_at'], changedAt.toIso8601String());
   });

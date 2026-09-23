@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:miji/core/database/app_database.dart';
 import 'package:miji/core/database/seed/database_seed_runner.dart';
+import 'package:miji/core/database/seed/money_seed_data.dart';
 import 'package:miji/core/sync/delta_sync/delta_conflict_models.dart';
 import 'package:miji/core/sync/delta_sync/delta_package_models.dart';
 import 'package:miji/core/sync/delta_sync/sync_change_logger.dart';

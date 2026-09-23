@@ -272,6 +272,59 @@ void main() {
       );
     });
   });
+
+  testWidgets('keeps the search field and results above the keyboard', (
+    tester,
+  ) async {
+    const screenHeight = 844.0;
+    const keyboardInset = 320.0;
+    tester.view.physicalSize = const Size(390 * 3, screenHeight * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    // 模拟系统键盘弹起。
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(viewInsets: const EdgeInsets.only(bottom: keyboardInset)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () => showCategoryLeafSheet(
+                  context: context,
+                  leaves: buildCategoryLeaves(_catalog),
+                ),
+                child: const Text('打开'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('打开'));
+    await tester.pumpAndSettle();
+
+    final keyboardTop = screenHeight - keyboardInset;
+
+    // 搜索框整体在键盘上方。
+    final searchField = find.byType(TextField).first;
+    expect(tester.getRect(searchField).bottom, lessThanOrEqualTo(keyboardTop));
+
+    // 搜索结果（叶子行）也在键盘上方，没有被盖住。
+    final dinnerRow = find.text('晚餐').last;
+    expect(tester.getRect(dinnerRow).bottom, lessThanOrEqualTo(keyboardTop));
+
+    // 面板底部同样不越过键盘。
+    final sheetBottom = tester.getRect(find.byType(Material).last).bottom;
+    expect(sheetBottom, lessThanOrEqualTo(keyboardTop));
+  });
 }
 
 const _catalog = MoneyCategoryCatalog(

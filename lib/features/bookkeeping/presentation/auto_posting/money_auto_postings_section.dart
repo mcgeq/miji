@@ -21,7 +21,7 @@ import 'package:miji/features/bookkeeping/presentation/accounts/components/accou
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
-import 'package:miji/shared/widgets/money_amount_input.dart';
+import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
@@ -594,8 +594,7 @@ class _AutoPostingFormDialogState
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
 
-  /// 移动端用底部停靠的数字键盘，宽屏用系统键盘。
-  final MoneyAmountInput _amount = MoneyAmountInput();
+  late final TextEditingController _amountController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _merchantController;
   late final TextEditingController _notesController;
@@ -616,15 +615,6 @@ class _AutoPostingFormDialogState
 
   bool get _editing => widget.template != null;
 
-  /// 金额（分）。键盘模式下没有 validator，这里统一兜底。
-  int get _templateAmountMinor {
-    try {
-      return parseMoneyAmountToMinor(_amount.controller.text);
-    } on MoneyAmountParseException {
-      return 0;
-    }
-  }
-
   MoneyCategoryKind get _categoryKind {
     return _type == MoneyTransactionType.income
         ? MoneyCategoryKind.income
@@ -636,9 +626,11 @@ class _AutoPostingFormDialogState
     super.initState();
     final template = widget.template;
     _nameController = TextEditingController(text: template?.name ?? '');
-    if (template != null) {
-      _amount.seed(template.amountMinor);
-    }
+    _amountController = TextEditingController(
+      text: template == null
+          ? ''
+          : (template.amountMinor / 100).toStringAsFixed(2),
+    );
     _descriptionController = TextEditingController(
       text: template?.description ?? '',
     );
@@ -665,7 +657,7 @@ class _AutoPostingFormDialogState
   @override
   void dispose() {
     _nameController.dispose();
-    _amount.dispose();
+    _amountController.dispose();
     _descriptionController.dispose();
     _merchantController.dispose();
     _notesController.dispose();
@@ -685,15 +677,10 @@ class _AutoPostingFormDialogState
       currentUserCategoryCatalogProvider(_categoryKind),
     );
 
-    final showKeypad = _amount.shouldDock(context);
-
     return AppDialogScaffold(
       title: _editing ? '编辑自动记账' : '新增自动记账',
       titleTextAlign: TextAlign.center,
       maxWidth: 560,
-      bottomDock: showKeypad
-          ? _amount.buildDock(context, onChanged: () => setState(() {}))
-          : null,
       body: Form(
         key: _formKey,
         child: AppFormColumn(
@@ -733,7 +720,18 @@ class _AutoPostingFormDialogState
                 ),
               ],
             ),
-            if (!showKeypad) _amount.buildField(),
+            AppAmountField(
+              controller: _amountController,
+              labelText: '金额',
+              validator: (value) {
+                final normalized = value?.trim().replaceAll(',', '') ?? '';
+                final amount = double.tryParse(normalized);
+                if (amount == null || amount <= 0) {
+                  return '请输入有效金额';
+                }
+                return null;
+              },
+            ),
             AppTextFormField(
               controller: _descriptionController,
               labelText: '流水描述',
@@ -960,11 +958,6 @@ class _AutoPostingFormDialogState
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    // 键盘模式下金额不在 FormField 里，这里兜底校验。
-    if (_templateAmountMinor <= 0) {
-      setState(() => _formError = '请输入有效金额');
-      return;
-    }
     if (_accountId == null) {
       setState(() => _formError = '请选择账户');
       return;
@@ -997,7 +990,7 @@ class _AutoPostingFormDialogState
       _AutoPostingFormResult(
         name: _nameController.text.trim(),
         type: _type,
-        amountMinor: _templateAmountMinor,
+        amountMinor: parseMoneyAmountToMinor(_amountController.text),
         currencyCode: currencyCode,
         description: _descriptionController.text.trim(),
         notes: _blankToNull(_notesController.text),

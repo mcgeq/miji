@@ -164,7 +164,6 @@ class AppDialogScaffold extends StatelessWidget {
     this.titleTextAlign = TextAlign.start,
     this.actionsAlignment = WrapAlignment.end,
     this.errorText,
-    this.bottomDock,
   });
 
   final String title;
@@ -175,13 +174,6 @@ class AppDialogScaffold extends StatelessWidget {
   final TextAlign titleTextAlign;
   final WrapAlignment actionsAlignment;
   final String? errorText;
-
-  /// 固定停在底部的面板（例如自带的金额键盘）。
-  ///
-  /// 与系统键盘一样，它**不随内容滚动**：内容区变成它的上方可滚动区域。
-  /// 传入后对话框改用「头部 / 可滚动内容 / 错误 / 停靠面板 / 操作行」的
-  /// 列式布局，不再需要为悬浮 footer 预留高度。
-  final Widget? bottomDock;
 
   @override
   Widget build(BuildContext context) {
@@ -279,33 +271,8 @@ class AppDialogScaffold extends StatelessWidget {
       child: body,
     );
 
-    final dock = bottomDock;
-    final scrollBody = SingleChildScrollView(
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.symmetric(horizontal: spacing.cardPadding),
-      child: body,
-    );
-
     final Widget child;
-    if (dock != null) {
-      // 停靠面板模式：键盘固定在最底部，content 变成它上方的滚动区。
-      child = Column(
-        mainAxisSize: expandedCompactSheet
-            ? MainAxisSize.max
-            : MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          header,
-          if (expandedCompactSheet)
-            Expanded(child: scrollBody)
-          else
-            Flexible(child: scrollBody),
-          error,
-          dock,
-          actionsFooter,
-        ],
-      );
-    } else if (expandedCompactSheet) {
+    if (expandedCompactSheet) {
       child = Column(
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.stretch,

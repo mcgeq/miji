@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:miji/core/presentation/app_color_utils.dart';
+import 'package:miji/core/presentation/components/app_bottom_sheet_keyboard_inset.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
@@ -413,11 +414,16 @@ Future<CategoryLeaf?> showCategoryLeafSheet({
     useSafeArea: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (sheetContext) => _CategoryLeafSheet(
-      leaves: leaves,
-      usage: usage,
-      selectedKey: selectedKey,
-      showParent: showParent,
+    // 键盘避让交给共享组件：面板会整体上移，高度也会压到键盘上方，
+    // 否则搜索框与搜索结果会被键盘盖住。
+    builder: (sheetContext) => AppBottomSheetKeyboardInset(
+      maxHeight: 560,
+      child: _CategoryLeafSheet(
+        leaves: leaves,
+        usage: usage,
+        selectedKey: selectedKey,
+        showParent: showParent,
+      ),
     ),
   );
 }

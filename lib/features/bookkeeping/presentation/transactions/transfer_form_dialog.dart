@@ -5,7 +5,7 @@ import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
-import 'package:miji/shared/widgets/money_amount_input.dart';
+import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 
@@ -40,10 +40,7 @@ class TransferFormDialog extends ConsumerStatefulWidget {
 class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
   static const _transferCategoryId = 'system_transfer';
 
-  /// 移动端用底部停靠的数字键盘，宽屏用系统键盘。
-  final MoneyAmountInput _amount = MoneyAmountInput(
-    currencyCode: defaultMoneyCurrencyCode,
-  );
+  final _amountController = TextEditingController();
   final _notesController = TextEditingController();
   DateTime _transactionAt = DateTime.now();
   String? _fromAccountId;
@@ -60,14 +57,14 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
     if (transaction == null) {
       final initialAmountMinor = widget.initialAmountMinor;
       if (initialAmountMinor != null && initialAmountMinor > 0) {
-        _amount.seed(initialAmountMinor);
+        _amountController.text = (initialAmountMinor / 100).toStringAsFixed(2);
       }
       _notesController.text = widget.initialNotes ?? '';
       _toAccountId = widget.initialToAccountId;
       return;
     }
 
-    _amount.seed(transaction.amountMinor);
+    _amountController.text = (transaction.amountMinor / 100).toStringAsFixed(2);
     _notesController.text = transaction.notes ?? '';
     _transactionAt = transaction.transactionAt.toLocal();
     _fromAccountId = _initialFromAccountId;
@@ -77,7 +74,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
 
   @override
   void dispose() {
-    _amount.dispose();
+    _amountController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -93,24 +90,21 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
     final catalog = ref.watch(
       currentUserCategoryCatalogProvider(MoneyCategoryKind.expense),
     );
-    final showKeypad = _amount.shouldDock(context);
-
     return AppDialogScaffold(
       title: _isEditing ? '编辑转账' : '转账',
       maxWidth: 460,
       titleTextAlign: TextAlign.center,
       actionsAlignment: WrapAlignment.center,
-      bottomDock: showKeypad
-          ? _amount.buildDock(
-              context,
-              onChanged: () => setState(() => _errorText = null),
-            )
-          : null,
       body: AppFormColumn(
         gap: 12,
         children: [
-          if (!showKeypad)
-            _amount.buildField(onChanged: (_) => setState(() {})),
+          AppAmountField(
+            controller: _amountController,
+            labelText: '金额',
+            currencyCode: defaultMoneyCurrencyCode,
+            prominent: true,
+            onChanged: (_) => setState(() {}),
+          ),
           accounts.when(
             data: (value) {
               final activeAccounts = value
@@ -216,7 +210,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
 
   void _submit() {
     try {
-      final amountMinor = parseMoneyAmountToMinor(_amount.controller.text);
+      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
       if (amountMinor <= 0) {
         setState(() => _errorText = '请输入大于 0 的金额');
         return;
@@ -443,7 +437,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
       return null;
     }
     try {
-      final amountMinor = parseMoneyAmountToMinor(_amount.controller.text);
+      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
       final remaining = fromAccount.balanceMinor - amountMinor;
       return '转出后余额 ${formatMoneyMinor(remaining, fromAccount.currencyCode)}';
     } on MoneyAmountParseException {

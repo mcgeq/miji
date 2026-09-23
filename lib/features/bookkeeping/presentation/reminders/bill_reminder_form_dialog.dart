@@ -12,7 +12,7 @@ import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
-import 'package:miji/shared/widgets/money_amount_input.dart';
+import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
@@ -35,8 +35,7 @@ class _BillReminderFormDialogState
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
 
-  /// 移动端用底部停靠的数字键盘，宽屏用系统键盘。
-  final MoneyAmountInput _amount = MoneyAmountInput();
+  late final TextEditingController _amountController;
   late final TextEditingController _remindBeforeController;
   late final TextEditingController _repeatIntervalController;
   late final TextEditingController _notesController;
@@ -44,16 +43,17 @@ class _BillReminderFormDialogState
   String? _accountId;
   String? _categoryId;
   MoneyBillReminderRepeatPeriodType? _repeatPeriodType;
-  String? _errorText;
 
   @override
   void initState() {
     super.initState();
     final reminder = widget.reminder;
     _nameController = TextEditingController(text: reminder?.name ?? '');
-    if (reminder != null) {
-      _amount.seed(reminder.amountMinor);
-    }
+    _amountController = TextEditingController(
+      text: reminder == null
+          ? ''
+          : (reminder.amountMinor / 100).toStringAsFixed(2),
+    );
     _remindBeforeController = TextEditingController(
       text: (reminder?.remindBeforeDays ?? 1).toString(),
     );
@@ -70,7 +70,7 @@ class _BillReminderFormDialogState
   @override
   void dispose() {
     _nameController.dispose();
-    _amount.dispose();
+    _amountController.dispose();
     _remindBeforeController.dispose();
     _repeatIntervalController.dispose();
     _notesController.dispose();
@@ -90,16 +90,10 @@ class _BillReminderFormDialogState
       currentUserCategoryCatalogProvider(MoneyCategoryKind.expense),
     );
 
-    final showKeypad = _amount.shouldDock(context);
-
     return AppDialogScaffold(
       title: editing ? '编辑提醒' : '新增提醒',
-      bottomDock: showKeypad
-          ? _amount.buildDock(context, onChanged: () => setState(() {}))
-          : null,
       titleTextAlign: TextAlign.center,
       maxWidth: 520,
-      errorText: _errorText,
       body: Form(
         key: _formKey,
         child: AppFormColumn(
@@ -111,7 +105,18 @@ class _BillReminderFormDialogState
               validator: (value) =>
                   value == null || value.trim().isEmpty ? '请输入提醒名称' : null,
             ),
-            if (!showKeypad) _amount.buildField(),
+            AppAmountField(
+              controller: _amountController,
+              labelText: '金额',
+              validator: (value) {
+                final normalized = value?.trim().replaceAll(',', '') ?? '';
+                final amount = double.tryParse(normalized);
+                if (amount == null || amount <= 0) {
+                  return '请输入有效金额';
+                }
+                return null;
+              },
+            ),
             _DatePickerField(
               label: '到期日期',
               date: _dueDate,
@@ -226,27 +231,14 @@ class _BillReminderFormDialogState
     );
   }
 
-  /// 金额（分）。键盘模式下没有 validator，这里统一兜底校验。
-  int get _amountAmountMinor {
-    try {
-      return parseMoneyAmountToMinor(_amount.controller.text);
-    } on MoneyAmountParseException {
-      return 0;
-    }
-  }
-
   void _submit() {
-    if (_amountAmountMinor <= 0) {
-      setState(() => _errorText = '请输入有效金额');
-      return;
-    }
     if (!_formKey.currentState!.validate()) {
       return;
     }
     Navigator.of(context).pop(
       BillReminderFormResult(
         name: _nameController.text.trim(),
-        amountMinor: _amountAmountMinor,
+        amountMinor: parseMoneyAmountToMinor(_amountController.text),
         dueDate: _dueDate,
         remindBeforeDays: int.parse(_remindBeforeController.text.trim()),
         repeatPeriodType: _repeatPeriodType,

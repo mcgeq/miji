@@ -77,6 +77,31 @@ abstract class MoneyRepository {
     bool includeDeleted = false,
   });
 
+  /// 按给定顺序重排分类的业务顺序（`sort_order` = 下标 + 1）。
+  ///
+  /// * 只写真正变化的行（避免无意义的 version 增长与同步记录）；
+  /// * **内置分类也允许重排**：它们的行是 `user_id IS NULL` 的设备共享行，
+  ///   现有 `updateCategory` 的 `is_system = 0` 约束写不进去，所以需要这条专用路径；
+  /// * 内置分类只改本地（不同步，见实现注释），自建分类会把 sort_order 同步出去。
+  Future<void> reorderCategories(
+    String userId,
+    MoneyCategoryKind kind,
+    List<String> orderedIds,
+  );
+
+  /// 同一父分类下的子分类重排，语义同 [reorderCategories]。
+  Future<void> reorderSubCategories(
+    String userId,
+    String categoryId,
+    List<String> orderedIds,
+  );
+
+  /// 把分类顺序恢复成默认：内置分类按种子声明顺序，自建分类按创建时间排在后面。
+  Future<void> resetCategoryOrder(String userId, MoneyCategoryKind kind);
+
+  /// 同一父分类下的子分类恢复默认顺序（种子声明顺序，自建排后面）。
+  Future<void> resetSubCategoryOrder(String userId, String categoryId);
+
   /// 分类 / 子分类的历史用量（次数 + 最近使用时间，覆盖全时段）。
   ///
   /// 用于「常用」排序：窗口口径（本月金额）会在月初或某分类本月未用时归零，

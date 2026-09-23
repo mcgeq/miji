@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
+import 'package:miji/core/presentation/app_color_utils.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_color_picker.dart';
@@ -33,7 +34,18 @@ class _MoneyCategoriesSectionState
   MoneyCategoryKind _kind = MoneyCategoryKind.expense;
   final _searchController = TextEditingController();
   String _keyword = '';
-  bool _sortByUsage = false;
+
+  /// 排序模式：列表变成可拖拽，顺序完全由用户决定。
+  ///
+  /// 管理页按 `sort_order` 显示（拖拽说了算）；记账表单里的叶子选择器仍然
+  /// 按「常用」浮动（最近使用 → 次数 → 金额）。两个场景目的不同：
+  /// 这里是「整理」，那里是「快选」。
+  bool _reorderMode = false;
+  bool _showDeleted = false;
+  bool _savingOrder = false;
+
+  /// 排序模式下的本地顺序（拖完立即生效，不等数据库流回传）。
+  List<String>? _draftOrder;
 
   @override
   void dispose() {
@@ -81,6 +93,16 @@ class _MoneyCategoriesSectionState
                 ),
               ),
             ),
+            // 排序模式开关（拖拽调整顺序）。
+            AppIconActionButton(
+              tooltip: _reorderMode ? '退出排序' : '排序',
+              onPressed: _reorderMode ? _exitReorderMode : _enterReorderMode,
+              icon: Icons.swap_vert_rounded,
+              variant: _reorderMode
+                  ? AppIconActionVariant.filledTonal
+                  : AppIconActionVariant.outlined,
+            ),
+            const SizedBox(width: 8),
             // 常驻新增入口。
             //
             // 原来的「新增分类」只存在于 categories 为空的 AppEmptyState 里，
@@ -94,39 +116,26 @@ class _MoneyCategoriesSectionState
           ],
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: AppTextField(
-                controller: _searchController,
-                hintText: '搜索分类 / 子分类',
-                prefixIcon: const Icon(Icons.search_rounded, size: 19),
-                onChanged: (value) =>
-                    setState(() => _keyword = value.trim().toLowerCase()),
-                suffixIcon: _keyword.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: '清除搜索',
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _keyword = '');
-                        },
-                      ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // 按用量排序：把「花得最多的分类」排到前面。
-            AppIconActionButton(
-              tooltip: _sortByUsage ? '按默认顺序' : '按本月用量排序',
-              onPressed: () => setState(() => _sortByUsage = !_sortByUsage),
-              icon: Icons.swap_vert_rounded,
-              variant: _sortByUsage
-                  ? AppIconActionVariant.filledTonal
-                  : AppIconActionVariant.outlined,
-            ),
-          ],
-        ),
+        if (_reorderMode)
+          _ReorderHint(showDeletedCount: 0)
+        else
+          AppTextField(
+            controller: _searchController,
+            hintText: '搜索分类 / 子分类',
+            prefixIcon: const Icon(Icons.search_rounded, size: 19),
+            onChanged: (value) =>
+                setState(() => _keyword = value.trim().toLowerCase()),
+            suffixIcon: _keyword.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: '清除搜索',
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _keyword = '');
+                    },
+                  ),
+          ),
         const SizedBox(height: 12),
         Expanded(
           child: catalog.when(
@@ -183,51 +192,213 @@ class _MoneyCategoriesSectionState
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.only(bottom: 18),
-      itemCount: visible.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 10),
-      itemBuilder: (context, index) {
-        final category = visible[index];
-        return _CategoryTile(
-          category: category,
-          subCategories: catalog.subCategoriesFor(category.id),
-          usageMinor: usage.amountFor(category.id),
-          usageShare: usage.shareFor(category.id),
-          currencyCode: usage.currencyCode,
-          showUsage: !usage.isEmpty,
-          onAddSubCategory: category.isDeleted
-              ? null
-              : () => _openSubCategoryDialog(context, category),
-          onEditCategory: category.isSystem || category.isDeleted
-              ? null
-              : () => _openCategoryDialog(context, category: category),
-          onDeleteCategory: category.isSystem || category.isDeleted
-              ? null
-              : () => _setCategoryDeleted(context, category, true),
-          onRestoreCategory: category.isSystem || !category.isDeleted
-              ? null
-              : () => _setCategoryDeleted(context, category, false),
-          onTapSubCategory: (subCategory) =>
-              _openSubCategoryTransaction(context, category, subCategory),
-          onEditSubCategory: (subCategory) => _openSubCategoryDialog(
-            context,
-            category,
-            subCategory: subCategory,
+    final active = _orderedActive(visible);
+    final deleted = visible.where((category) => category.isDeleted).toList();
+
+    Widget buildTile(MoneyCategoryEntity category, {Widget? handle}) {
+      return _CategoryTile(
+        key: ValueKey<String>(category.id),
+        category: category,
+        subCategories: catalog.subCategoriesFor(category.id),
+        usageMinor: usage.amountFor(category.id),
+        usageShare: usage.shareFor(category.id),
+        currencyCode: usage.currencyCode,
+        showUsage: !usage.isEmpty,
+        dragHandle: handle,
+        onShowSubCategoryOrder: _activeSubCategoryCount(catalog, category) < 2
+            ? null
+            : () => _openSubCategoryOrderSheet(context, catalog, category),
+        onAddSubCategory: category.isDeleted
+            ? null
+            : () => _openSubCategoryDialog(context, category),
+        onEditCategory: category.isSystem || category.isDeleted
+            ? null
+            : () => _openCategoryDialog(context, category: category),
+        onDeleteCategory: category.isSystem || category.isDeleted
+            ? null
+            : () => _setCategoryDeleted(context, category, true),
+        onRestoreCategory: category.isSystem || !category.isDeleted
+            ? null
+            : () => _setCategoryDeleted(context, category, false),
+        onTapSubCategory: (subCategory) =>
+            _openSubCategoryTransaction(context, category, subCategory),
+        onEditSubCategory: (subCategory) =>
+            _openSubCategoryDialog(context, category, subCategory: subCategory),
+        onDeleteSubCategory: (subCategory) =>
+            _setSubCategoryDeleted(context, subCategory, true),
+        onRestoreSubCategory: (subCategory) =>
+            _setSubCategoryDeleted(context, subCategory, false),
+      );
+    }
+
+    if (_reorderMode) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ReorderableListView.builder(
+              padding: const EdgeInsets.only(bottom: 12),
+              buildDefaultDragHandles: false,
+              itemCount: active.length,
+              // onReorderItem 已经替我们修正过 newIndex（旧 onReorder 需要
+              // 自己在新旧位置之间做 +-1）。
+              onReorderItem: (oldIndex, newIndex) =>
+                  _onReorder(active, oldIndex, newIndex),
+              itemBuilder: (context, index) {
+                final category = active[index];
+                return Padding(
+                  key: ValueKey<String>(category.id),
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: buildTile(
+                    category,
+                    handle: ReorderableDragStartListener(
+                      index: index,
+                      child: const Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Icon(Icons.drag_indicator_rounded, size: 20),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-          onDeleteSubCategory: (subCategory) =>
-              _setSubCategoryDeleted(context, subCategory, true),
-          onRestoreSubCategory: (subCategory) =>
-              _setSubCategoryDeleted(context, subCategory, false),
-        );
-      },
+          _ReorderActions(
+            busy: _savingOrder,
+            onReset: () => _resetOrder(),
+            onDone: _exitReorderMode,
+          ),
+        ],
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 18),
+      children: [
+        for (final category in active) ...[
+          buildTile(category),
+          const SizedBox(height: 10),
+        ],
+        if (deleted.isNotEmpty) ...[
+          _DeletedSectionHeader(
+            count: deleted.length,
+            expanded: _showDeleted,
+            onToggle: () => setState(() => _showDeleted = !_showDeleted),
+          ),
+          if (_showDeleted)
+            for (final category in deleted) ...[
+              const SizedBox(height: 10),
+              buildTile(category),
+            ],
+        ],
+      ],
     );
   }
 
-  /// 搜索 + 排序后的可见分类。
+  int _activeSubCategoryCount(
+    MoneyCategoryCatalog catalog,
+    MoneyCategoryEntity category,
+  ) {
+    return catalog
+        .subCategoriesFor(category.id)
+        .where((subCategory) => !subCategory.isDeleted)
+        .length;
+  }
+
+  /// 在用分类，按 `sort_order`（拖拽模式下来自本地草稿顺序）。
+  List<MoneyCategoryEntity> _orderedActive(List<MoneyCategoryEntity> visible) {
+    final active = visible
+        .where((category) => !category.isDeleted)
+        .toList(growable: false);
+    final draft = _draftOrder;
+    if (!_reorderMode || draft == null) {
+      return active;
+    }
+    final byId = {for (final category in active) category.id: category};
+    final ordered = <MoneyCategoryEntity>[];
+    for (final id in draft) {
+      final category = byId.remove(id);
+      if (category != null) {
+        ordered.add(category);
+      }
+    }
+    ordered.addAll(byId.values);
+    return ordered;
+  }
+
+  void _enterReorderMode() {
+    _searchController.clear();
+    setState(() {
+      _reorderMode = true;
+      _keyword = '';
+      _draftOrder = null;
+      _showDeleted = false;
+    });
+  }
+
+  void _exitReorderMode() {
+    setState(() {
+      _reorderMode = false;
+      _draftOrder = null;
+    });
+  }
+
+  Future<void> _onReorder(
+    List<MoneyCategoryEntity> active,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final ids = active.map((category) => category.id).toList();
+    final moved = ids.removeAt(oldIndex);
+    ids.insert(newIndex, moved);
+    setState(() => _draftOrder = ids);
+
+    final userId = _currentUserId();
+    if (userId == null) {
+      _showMessage('请先登录');
+      return;
+    }
+    setState(() => _savingOrder = true);
+    try {
+      await ref
+          .read(moneyRepositoryProvider)
+          .reorderCategories(userId, _kind, ids);
+    } on MoneyRepositoryException {
+      _showMessage('保存顺序失败');
+      setState(() => _draftOrder = null);
+    } finally {
+      if (mounted) {
+        setState(() => _savingOrder = false);
+      }
+    }
+  }
+
+  Future<void> _resetOrder() async {
+    final userId = _currentUserId();
+    if (userId == null) {
+      _showMessage('请先登录');
+      return;
+    }
+    setState(() => _savingOrder = true);
+    try {
+      await ref.read(moneyRepositoryProvider).resetCategoryOrder(userId, _kind);
+      if (mounted) {
+        setState(() => _draftOrder = null);
+      }
+    } on MoneyRepositoryException {
+      _showMessage('恢复默认顺序失败');
+    } finally {
+      if (mounted) {
+        setState(() => _savingOrder = false);
+      }
+    }
+  }
+
+  /// 搜索后的可见分类。
   ///
   /// 搜索同时匹配分类名与子分类名（「我那个『健身』子分类在哪个分类下面」
-  /// 是真实场景）；排序打开时按本月用量从高到低，金额相同再按名称。
+  /// 是真实场景）。顺序 = 仓储顺序（用量 → sort_order → name），管理页在
+  /// 拖拽模式下由用户完全掌控。
   List<MoneyCategoryEntity> _visibleCategories(
     MoneyCategoryCatalog catalog,
     MoneyCategoryUsage usage,
@@ -247,12 +418,6 @@ class _MoneyCategoriesSectionState
                 );
           }).toList();
 
-    if (_sortByUsage) {
-      result.sort((a, b) {
-        final byAmount = usage.amountFor(b.id).compareTo(usage.amountFor(a.id));
-        return byAmount != 0 ? byAmount : a.name.compareTo(b.name);
-      });
-    }
     return result;
   }
 
@@ -465,6 +630,50 @@ class _MoneyCategoriesSectionState
     }
   }
 
+  /// 子分类排序面板。
+  ///
+  /// 子分类在主列表里是 Wrap 里的 chip，而「点 chip」= 快速记一笔，
+  /// 长按拖动会与它抢手势；所以排序放到这个独立面板里用一列拖动，
+  /// 命中区域更大、也不用引入 ReorderableWrap 依赖。
+  Future<void> _openSubCategoryOrderSheet(
+    BuildContext context,
+    MoneyCategoryCatalog catalog,
+    MoneyCategoryEntity category,
+  ) async {
+    final subCategories = catalog
+        .subCategoriesFor(category.id)
+        .where((subCategory) => !subCategory.isDeleted)
+        .toList();
+    final userId = _currentUserId();
+    if (userId == null) {
+      _showMessage('请先登录');
+      return;
+    }
+
+    final changed = await showAppResponsiveDialog<bool>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => _SubCategoryOrderDialog(
+        title: category.name,
+        subCategories: subCategories,
+      ),
+    );
+    if (changed != true || !mounted) {
+      return;
+    }
+
+    final orderedIds = await ref
+        .read(_subCategoryOrderDraftProvider.notifier)
+        .read();
+    try {
+      await ref
+          .read(moneyRepositoryProvider)
+          .reorderSubCategories(userId, category.id, orderedIds);
+    } on MoneyRepositoryException {
+      _showMessage('保存子分类顺序失败');
+    }
+  }
+
   String? _currentUserId() {
     final session = ref.read(authSessionControllerProvider);
     return session.isUnlocked ? session.userId : null;
@@ -478,8 +687,119 @@ class _MoneyCategoriesSectionState
   }
 }
 
+/// 子分类排序面板里的临时顺序（弹窗与页面之间传递，避免把状态塞进弹窗的
+/// Navigator 返回值里）。
+final _subCategoryOrderDraftProvider =
+    NotifierProvider<_SubCategoryOrderDraft, List<String>>(
+      _SubCategoryOrderDraft.new,
+    );
+
+class _SubCategoryOrderDraft extends Notifier<List<String>> {
+  @override
+  List<String> build() => const <String>[];
+
+  Future<List<String>> read() async => state;
+
+  void set(List<String> ids) => state = ids;
+}
+
+class _SubCategoryOrderDialog extends ConsumerStatefulWidget {
+  const _SubCategoryOrderDialog({
+    required this.title,
+    required this.subCategories,
+  });
+
+  final String title;
+  final List<MoneySubCategoryEntity> subCategories;
+
+  @override
+  ConsumerState<_SubCategoryOrderDialog> createState() =>
+      _SubCategoryOrderDialogState();
+}
+
+class _SubCategoryOrderDialogState
+    extends ConsumerState<_SubCategoryOrderDialog> {
+  late List<MoneySubCategoryEntity> _ordered;
+
+  @override
+  void initState() {
+    super.initState();
+    _ordered = List<MoneySubCategoryEntity>.of(widget.subCategories);
+    ref
+        .read(_subCategoryOrderDraftProvider.notifier)
+        .set(_ordered.map((item) => item.id).toList());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return AppDialogScaffold(
+      title: '${widget.title} · 子分类顺序',
+      subtitle: '按住手柄拖动',
+      maxWidth: 460,
+      titleTextAlign: TextAlign.center,
+      actionsAlignment: WrapAlignment.center,
+      body: SizedBox(
+        height: 320,
+        child: ReorderableListView.builder(
+          buildDefaultDragHandles: false,
+          itemCount: _ordered.length,
+          onReorderItem: (oldIndex, newIndex) {
+            setState(() {
+              final moved = _ordered.removeAt(oldIndex);
+              _ordered.insert(newIndex, moved);
+            });
+            ref
+                .read(_subCategoryOrderDraftProvider.notifier)
+                .set(_ordered.map((item) => item.id).toList());
+          },
+          itemBuilder: (context, index) {
+            final subCategory = _ordered[index];
+            final color = appColorFromHex(
+              subCategory.color,
+              fallback: colorScheme.primary,
+            );
+            return ListTile(
+              key: ValueKey<String>(subCategory.id),
+              dense: true,
+              contentPadding: const EdgeInsets.only(left: 4),
+              leading: CategoryIconWidget(
+                subCategory.icon,
+                size: 18,
+                color: color,
+              ),
+              title: Text(
+                subCategory.name,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                ),
+              ),
+              trailing: ReorderableDragStartListener(
+                index: index,
+                child: const Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Icon(Icons.drag_indicator_rounded, size: 20),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      actions: appDialogIconActions(
+        onCancel: () => Navigator.of(context).pop(false),
+        onConfirm: () => Navigator.of(context).pop(true),
+        confirmTooltip: '保存顺序',
+      ),
+    );
+  }
+}
+
 class _CategoryTile extends StatelessWidget {
   const _CategoryTile({
+    super.key,
     required this.category,
     required this.subCategories,
     required this.onAddSubCategory,
@@ -494,7 +814,15 @@ class _CategoryTile extends StatelessWidget {
     this.usageShare = 0,
     this.currencyCode = 'CNY',
     this.showUsage = false,
+    this.dragHandle,
+    this.onShowSubCategoryOrder,
   });
+
+  /// 排序模式下的拖拽手柄（显示在行首）。
+  final Widget? dragHandle;
+
+  /// 打开「子分类排序」面板。
+  final VoidCallback? onShowSubCategoryOrder;
 
   final MoneyCategoryEntity category;
   final List<MoneySubCategoryEntity> subCategories;
@@ -543,6 +871,10 @@ class _CategoryTile extends StatelessWidget {
           children: [
             Row(
               children: [
+                if (dragHandle != null) ...[
+                  dragHandle!,
+                  const SizedBox(width: 2),
+                ],
                 AppListItemIcon(
                   icon:
                       materialIconForCategoryIcon(category.icon) ??
@@ -599,6 +931,13 @@ class _CategoryTile extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (onShowSubCategoryOrder != null)
+                  AppIconActionButton(
+                    tooltip: '子分类排序',
+                    onPressed: onShowSubCategoryOrder,
+                    icon: Icons.reorder_rounded,
+                    variant: AppIconActionVariant.outlined,
+                  ),
                 AppIconActionButton(
                   tooltip: '新增子分类',
                   onPressed: onAddSubCategory,
@@ -655,6 +994,150 @@ class _CategoryTile extends StatelessWidget {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 排序模式提示：顺序只影响管理页，记账表单仍把常用的排前面。
+class _ReorderHint extends StatelessWidget {
+  const _ReorderHint({required this.showDeletedCount});
+
+  final int showDeletedCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withValues(alpha: 0.36),
+        borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.pan_tool_alt_rounded,
+            size: 16,
+            color: colorScheme.primary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '按住右侧手柄拖动调整顺序。这是你整理出的顺序；记账页仍会把常用的分类排前面。',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 排序模式的底部操作条。
+class _ReorderActions extends StatelessWidget {
+  const _ReorderActions({
+    required this.busy,
+    required this.onReset,
+    required this.onDone,
+  });
+
+  final bool busy;
+  final VoidCallback onReset;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10, bottom: 4),
+      child: Row(
+        children: [
+          TextButton.icon(
+            onPressed: busy ? null : onReset,
+            icon: const Icon(Icons.restart_alt_rounded, size: 17),
+            label: const Text('恢复默认顺序'),
+          ),
+          const Spacer(),
+          if (busy)
+            const Padding(
+              padding: EdgeInsets.only(right: 10),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          FilledButton(
+            onPressed: busy ? null : onDone,
+            child: const Text('完成'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 「已停用 N 个」折叠区头。停用分类不参与拖拽排序，语义最简单。
+class _DeletedSectionHeader extends StatelessWidget {
+  const _DeletedSectionHeader({
+    required this.count,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final int count;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Material(
+      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.42),
+      borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
+        onTap: onToggle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                Icons.visibility_off_rounded,
+                size: 17,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '已停用 $count 个',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+              Icon(
+                expanded
+                    ? Icons.expand_less_rounded
+                    : Icons.expand_more_rounded,
+                size: 20,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );
