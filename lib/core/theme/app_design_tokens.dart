@@ -144,6 +144,7 @@ class AppSpacingTokens extends ThemeExtension<AppSpacingTokens> {
     required this.sectionGap,
     required this.cardPadding,
     required this.fieldGap,
+    this.listItemPadding = 14,
   });
 
   final double pageCompact;
@@ -152,6 +153,9 @@ class AppSpacingTokens extends ThemeExtension<AppSpacingTokens> {
   final double cardPadding;
   final double fieldGap;
 
+  /// 列表行内边距：比卡片略紧，是刻意的两档，不再是各处硬编码。
+  final double listItemPadding;
+
   @override
   AppSpacingTokens copyWith({
     double? pageCompact,
@@ -159,6 +163,7 @@ class AppSpacingTokens extends ThemeExtension<AppSpacingTokens> {
     double? sectionGap,
     double? cardPadding,
     double? fieldGap,
+    double? listItemPadding,
   }) {
     return AppSpacingTokens(
       pageCompact: pageCompact ?? this.pageCompact,
@@ -166,6 +171,7 @@ class AppSpacingTokens extends ThemeExtension<AppSpacingTokens> {
       sectionGap: sectionGap ?? this.sectionGap,
       cardPadding: cardPadding ?? this.cardPadding,
       fieldGap: fieldGap ?? this.fieldGap,
+      listItemPadding: listItemPadding ?? this.listItemPadding,
     );
   }
 
@@ -178,6 +184,9 @@ class AppSpacingTokens extends ThemeExtension<AppSpacingTokens> {
       sectionGap: lerpDouble(sectionGap, other.sectionGap, t) ?? sectionGap,
       cardPadding: lerpDouble(cardPadding, other.cardPadding, t) ?? cardPadding,
       fieldGap: lerpDouble(fieldGap, other.fieldGap, t) ?? fieldGap,
+      listItemPadding:
+          lerpDouble(listItemPadding, other.listItemPadding, t) ??
+          listItemPadding,
     );
   }
 }
@@ -189,6 +198,7 @@ class AppRadiusTokens extends ThemeExtension<AppRadiusTokens> {
     required this.md,
     required this.lg,
     required this.pill,
+    this.card = 16,
   });
 
   final double sm;
@@ -196,13 +206,26 @@ class AppRadiusTokens extends ThemeExtension<AppRadiusTokens> {
   final double lg;
   final double pill;
 
+  /// 内容卡片专用圆角。
+  ///
+  /// 不复用 [md]（10）：`md` 同时被输入框、图标底、色块使用，把卡片提到 16
+  /// 会让输入框一起变「胖」。卡片圆角是现代感最直观的一层，单独给一个 token。
+  final double card;
+
   @override
-  AppRadiusTokens copyWith({double? sm, double? md, double? lg, double? pill}) {
+  AppRadiusTokens copyWith({
+    double? sm,
+    double? md,
+    double? lg,
+    double? pill,
+    double? card,
+  }) {
     return AppRadiusTokens(
       sm: sm ?? this.sm,
       md: md ?? this.md,
       lg: lg ?? this.lg,
       pill: pill ?? this.pill,
+      card: card ?? this.card,
     );
   }
 
@@ -214,6 +237,7 @@ class AppRadiusTokens extends ThemeExtension<AppRadiusTokens> {
       md: lerpDouble(md, other.md, t) ?? md,
       lg: lerpDouble(lg, other.lg, t) ?? lg,
       pill: lerpDouble(pill, other.pill, t) ?? pill,
+      card: lerpDouble(card, other.card, t) ?? card,
     );
   }
 }

@@ -6,6 +6,10 @@ import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/budgets/money_budgets_section.dart';
+import 'package:miji/core/auth/domain/sensitive_access_ttl_option.dart';
+import 'package:miji/core/preferences/domain/user_preferences_entity.dart';
+import 'package:miji/core/preferences/providers/preferences_providers.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 void main() {
   testWidgets('shows summary bar and a create entry point when budgets exist', (
@@ -49,6 +53,36 @@ void main() {
 
     expect(find.text('还没有预算'), findsOneWidget);
     expect(find.byTooltip('新增预算'), findsWidgets);
+  });
+
+  testWidgets('masks every amount when the global privacy switch is on', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _wrapWithPreferences([_expenseBudget], masked: true),
+    );
+    await tester.pumpAndSettle();
+
+    // 汇总条与卡片金额全部变成占位符。
+    expect(find.text('••••'), findsWidgets);
+    expect(find.textContaining('¥500'), findsNothing);
+    expect(find.textContaining('¥1,000'), findsNothing);
+    // 结构信息（标题、百分比之外的文字）不受影响。
+    expect(find.text('餐饮预算'), findsOneWidget);
+  });
+
+  testWidgets('shows amounts when the privacy switch is off', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(_wrapWithPreferences([_expenseBudget]));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('¥500'), findsWidgets);
+    expect(find.text('••••'), findsNothing);
   });
 }
 
@@ -112,3 +146,44 @@ const _category = MoneyCategoryEntity(
   icon: 'restaurant',
   isSystem: true,
 );
+
+/// 带偏好覆盖的 harness：用于验证全局金额遮罩。
+Widget _wrapWithPreferences(
+  List<MoneyBudgetEntity> budgets, {
+  bool masked = false,
+}) {
+  return ProviderScope(
+    overrides: [
+      currentUserBudgetsProvider.overrideWith((ref) => Stream.value(budgets)),
+      currentUserCategoryCatalogProvider.overrideWith(
+        (ref, kind) => Stream.value(
+          const MoneyCategoryCatalog(
+            categories: [_category],
+            subCategories: [],
+          ),
+        ),
+      ),
+      currentUserBudgetAllocationsProvider.overrideWith(
+        (ref, budgetId) => Stream.value(const <MoneyBudgetAllocationEntity>[]),
+      ),
+      currentUserPreferencesProvider.overrideWith(
+        (ref) async => UserPreferencesEntity(
+          userId: 'user-1',
+          themeMode: AppThemeModePreference.system,
+          themeSeedColor: 0xFFE45F4F,
+          sensitiveAccessTtl: SensitiveAccessTtlOption.defaultOption,
+          currencyCode: 'CNY',
+          maskMoneyAmounts: masked,
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        ),
+      ),
+    ],
+    child: MaterialApp(
+      theme: AppTheme.light(),
+      home: const Scaffold(
+        body: MoneyPrivacyScope(child: MoneyBudgetsSection()),
+      ),
+    ),
+  );
+}

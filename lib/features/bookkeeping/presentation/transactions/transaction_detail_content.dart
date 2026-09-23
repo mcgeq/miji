@@ -17,6 +17,7 @@ import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class TransactionDetailContent extends ConsumerWidget {
   const TransactionDetailContent({
@@ -94,8 +95,10 @@ class TransactionDetailContent extends ConsumerWidget {
           typeLabel: _typeLabel,
           statusLabel: _statusLabel,
           dateTimeText: _dateTimeText(transaction.transactionAt),
-          amountText:
-              '$_amountPrefix${formatMoneyMinor(_displayAmountMinor, transaction.currencyCode)}',
+          amountText: maskedMoneyOr(
+            '$_amountPrefix${formatMoneyMinor(_displayAmountMinor, transaction.currencyCode)}',
+            MoneyPrivacy.of(context),
+          ),
           amountColor: amountColor,
           onEdit: isReadOnly ? null : onEdit,
           onDelete: isReadOnly ? null : onDelete,
@@ -192,25 +195,34 @@ class TransactionDetailContent extends ConsumerWidget {
               if (transaction.refundAmountMinor > 0)
                 _DetailLine(
                   label: '原金额',
-                  value: formatMoneyMinor(
-                    transaction.amountMinor,
-                    transaction.currencyCode,
+                  value: maskedMoneyOr(
+                    formatMoneyMinor(
+                      transaction.amountMinor,
+                      transaction.currencyCode,
+                    ),
+                    MoneyPrivacy.of(context),
                   ),
                 ),
               if (transaction.refundAmountMinor > 0)
                 _DetailLine(
                   label: '已退款',
-                  value: formatMoneyMinor(
-                    transaction.refundAmountMinor,
-                    transaction.currencyCode,
+                  value: maskedMoneyOr(
+                    formatMoneyMinor(
+                      transaction.refundAmountMinor,
+                      transaction.currencyCode,
+                    ),
+                    MoneyPrivacy.of(context),
                   ),
                 ),
               if (transaction.refundAmountMinor > 0)
                 _DetailLine(
                   label: '实际支出',
-                  value: formatMoneyMinor(
-                    _displayAmountMinor,
-                    transaction.currencyCode,
+                  value: maskedMoneyOr(
+                    formatMoneyMinor(
+                      _displayAmountMinor,
+                      transaction.currencyCode,
+                    ),
+                    MoneyPrivacy.of(context),
                   ),
                 ),
             ],
@@ -1109,7 +1121,10 @@ class _SplitDetailRow extends StatelessWidget {
           ],
           const SizedBox(width: 10),
           Text(
-            formatMoneyMinor(detail.amountMinor, currencyCode),
+            maskedMoneyOr(
+              formatMoneyMinor(detail.amountMinor, currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             style: theme.textTheme.labelLarge?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w800,

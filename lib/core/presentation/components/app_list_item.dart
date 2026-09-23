@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
+/// 列表行内边距（与 [AppSpacingTokens.listItemPadding] 对齐）。
+const double _listItemPadding = 14;
+
 class AppListItemPanel extends StatelessWidget {
   const AppListItemPanel({
     super.key,
     required this.child,
     this.onTap,
     this.selected = false,
-    this.padding = const EdgeInsets.all(14),
+    this.padding = const EdgeInsets.all(_listItemPadding),
     this.bordered = true,
     this.backgroundColor,
     this.borderColor,
@@ -40,7 +43,8 @@ class AppListItemPanel extends StatelessWidget {
           borderColor ??
           (selected
               ? colorScheme.primary.withValues(alpha: 0.42)
-              : colorScheme.outlineVariant.withValues(alpha: 0.48)),
+              // 与 AppSurface 默认边框保持一致（原来这里是 0.48，视觉上更重）。
+              : colorScheme.outlineVariant.withValues(alpha: 0.42)),
       child: child,
     );
   }

@@ -132,7 +132,7 @@ class AppSkeletonPanel extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(theme.radiusTokens.lg),
+        borderRadius: BorderRadius.circular(theme.radiusTokens.card),
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),

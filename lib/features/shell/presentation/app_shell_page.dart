@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/app_initial_avatar.dart';
 import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/core/user/providers/user_providers.dart';
@@ -35,45 +36,47 @@ class AppShellPage extends ConsumerWidget {
         );
         final useRail = responsive.prefersRailNavigation;
 
-        return Scaffold(
-          body: SafeArea(
-            bottom: false,
-            child: useRail
-                ? Row(
-                    children: [
-                      _AppNavigationRail(selectedIndex: selectedIndex),
-                      Expanded(child: child),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      _MobileShellTopBar(path: path),
-                      Divider(
-                        height: 1,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.outlineVariant.withValues(alpha: 0.62),
-                      ),
-                      Expanded(child: child),
-                    ],
+        return MoneyPrivacyScope(
+          child: Scaffold(
+            body: SafeArea(
+              bottom: false,
+              child: useRail
+                  ? Row(
+                      children: [
+                        _AppNavigationRail(selectedIndex: selectedIndex),
+                        Expanded(child: child),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _MobileShellTopBar(path: path),
+                        Divider(
+                          height: 1,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outlineVariant.withValues(alpha: 0.62),
+                        ),
+                        Expanded(child: child),
+                      ],
+                    ),
+            ),
+            bottomNavigationBar: useRail
+                ? null
+                : _MobileShellBottomBar(
+                    selectedIndex: mobileSelectedIndex,
+                    onDestinationSelected: (index) {
+                      context.go(_mobileNavigationItems[index].path);
+                    },
                   ),
+            floatingActionButton: MoneyQuickActionFab(
+              placement: useRail
+                  ? MoneyQuickActionFabPlacement.bottomRight
+                  : MoneyQuickActionFabPlacement.centerDocked,
+            ),
+            floatingActionButtonLocation: useRail
+                ? FloatingActionButtonLocation.endFloat
+                : const _MobileCenterDockedFabLocation(),
           ),
-          bottomNavigationBar: useRail
-              ? null
-              : _MobileShellBottomBar(
-                  selectedIndex: mobileSelectedIndex,
-                  onDestinationSelected: (index) {
-                    context.go(_mobileNavigationItems[index].path);
-                  },
-                ),
-          floatingActionButton: MoneyQuickActionFab(
-            placement: useRail
-                ? MoneyQuickActionFabPlacement.bottomRight
-                : MoneyQuickActionFabPlacement.centerDocked,
-          ),
-          floatingActionButtonLocation: useRail
-              ? FloatingActionButtonLocation.endFloat
-              : const _MobileCenterDockedFabLocation(),
         );
       },
     );

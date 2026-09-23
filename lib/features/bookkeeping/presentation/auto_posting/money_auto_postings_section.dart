@@ -10,6 +10,7 @@ import 'package:miji/core/presentation/components/app_field_style.dart';
 import 'package:miji/core/presentation/components/app_form_hint.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
@@ -38,6 +39,14 @@ class MoneyAutoPostingsSection extends ConsumerStatefulWidget {
 class _MoneyAutoPostingsSectionState
     extends ConsumerState<MoneyAutoPostingsSection> {
   FToast? _toast;
+  final _searchController = TextEditingController();
+  String _keyword = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +73,24 @@ class _MoneyAutoPostingsSectionState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 6),
+        AppTextField(
+          controller: _searchController,
+          hintText: '搜索模板名称 / 描述',
+          prefixIcon: const Icon(Icons.search_rounded, size: 19),
+          onChanged: (value) =>
+              setState(() => _keyword = value.trim().toLowerCase()),
+          suffixIcon: _keyword.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: '清除搜索',
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _keyword = '');
+                  },
+                ),
+        ),
+        const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerRight,
           child: AppIconActionButton(
@@ -100,16 +127,30 @@ class _MoneyAutoPostingsSectionState
                 );
               }
 
+              final visibleItems = _keyword.isEmpty
+                  ? items
+                  : items.where((item) {
+                      final haystack = [
+                        item.name,
+                        item.description,
+                        item.merchant,
+                        item.notes,
+                      ].join(' ').toLowerCase();
+                      return haystack.contains(_keyword);
+                    }).toList();
+              if (visibleItems.isEmpty) {
+                return const AppEmptyState(title: '没有匹配的模板');
+              }
               return RefreshIndicator(
                 onRefresh: () => refreshMoneyData(ref),
                 child: ListView.separated(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 12),
-                  itemCount: items.length,
+                  itemCount: visibleItems.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 10),
                   itemBuilder: (context, index) {
-                    final template = items[index];
+                    final template = visibleItems[index];
                     return _AutoPostingTemplateCard(
                       template: template,
                       account: _accountById(accountRows, template.accountId),
@@ -328,9 +369,9 @@ class _AutoPostingTemplateCardContent extends StatelessWidget {
               ? colorScheme.tertiary
               : colorScheme.primary
         : colorScheme.onSurfaceVariant;
-    final amountText = formatMoneyMinor(
-      template.amountMinor,
-      template.currencyCode,
+    final amountText = maskedMoneyOr(
+      formatMoneyMinor(template.amountMinor, template.currencyCode),
+      MoneyPrivacy.of(context),
     );
     final subtitle = [
       _scheduleText(template),

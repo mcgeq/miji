@@ -8,6 +8,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyReportCard extends StatelessWidget {
   const MoneyReportCard({
@@ -153,27 +154,30 @@ class _ReportSummary extends StatelessWidget {
             children: [
               _MetricChip(
                 label: '收入',
-                value: formatMoneyMinor(
-                  snapshot.incomeMinor,
-                  snapshot.currencyCode,
+                value: maskedMoneyOr(
+                  formatMoneyMinor(snapshot.incomeMinor, snapshot.currencyCode),
+                  MoneyPrivacy.of(context),
                 ),
                 color: moneyColors.income,
               ),
               const SizedBox(width: 10),
               _MetricChip(
                 label: '支出',
-                value: formatMoneyMinor(
-                  snapshot.expenseMinor,
-                  snapshot.currencyCode,
+                value: maskedMoneyOr(
+                  formatMoneyMinor(
+                    snapshot.expenseMinor,
+                    snapshot.currencyCode,
+                  ),
+                  MoneyPrivacy.of(context),
                 ),
                 color: moneyColors.expense,
               ),
               const SizedBox(width: 10),
               _MetricChip(
                 label: '净额',
-                value: formatMoneyMinor(
-                  snapshot.netMinor,
-                  snapshot.currencyCode,
+                value: maskedMoneyOr(
+                  formatMoneyMinor(snapshot.netMinor, snapshot.currencyCode),
+                  MoneyPrivacy.of(context),
                 ),
                 color: snapshot.netMinor >= 0
                     ? moneyColors.success
@@ -208,7 +212,13 @@ class _ReportSummary extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      formatMoneyMinor(cat.amountMinor, snapshot.currencyCode),
+                      maskedMoneyOr(
+                        formatMoneyMinor(
+                          cat.amountMinor,
+                          snapshot.currencyCode,
+                        ),
+                        MoneyPrivacy.of(context),
+                      ),
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0,

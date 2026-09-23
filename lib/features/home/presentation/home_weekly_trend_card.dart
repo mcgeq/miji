@@ -2,18 +2,19 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:miji/core/presentation/components/app_content_panel.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 import 'package:miji/features/home/application/home_money_dashboard_providers.dart';
+import 'package:miji/features/home/presentation/home_overview_card.dart';
 
-/// 周支出趋势。
+/// 周支出趋势（tab 卡的第 2 个视图，不自带卡片外壳）。
 ///
 /// 用可点击的周切换条替代原来的「左右滑动 + 底部小圆点」隐藏手势，
 /// 滑动只能靠猜，而周切换是高频操作。
-class HomeWeeklyTrendCard extends StatelessWidget {
-  const HomeWeeklyTrendCard({
+class HomeTrendView extends StatelessWidget {
+  const HomeTrendView({
     super.key,
     required this.points,
     required this.window,
@@ -41,42 +42,51 @@ class HomeWeeklyTrendCard extends StatelessWidget {
     final weekTotal = points.fold<int>(0, (sum, p) => sum + p.expenseMinor);
     final weekCount = points.fold<int>(0, (sum, p) => sum + p.transactionCount);
 
-    return AppContentPanel(
-      title: '支出趋势',
-      leadingIcon: Icons.bar_chart_rounded,
-      // 日期区间跟标题同一行、靠右、字号更小。
-      keepTrailingInlineOnCompact: true,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _rangeLabel(),
-            maxLines: 1,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0,
-            ),
-          ),
-          if (isLoading) ...[
-            const SizedBox(width: 8),
-            const SizedBox(
-              width: 40,
-              child: LinearProgressIndicator(minHeight: 3),
-            ),
-          ],
-        ],
-      ),
+    return HomeOverviewPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 顶部一行只放「当前区间」与加载指示：标题由 tab 条承担，不再重复。
+          Row(
+            children: [
+              Icon(
+                Icons.bar_chart_rounded,
+                size: 15,
+                color: colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _rangeLabel(),
+                maxLines: 1,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
+              const Spacer(),
+              if (isLoading)
+                const SizedBox(
+                  width: 40,
+                  child: LinearProgressIndicator(minHeight: 3),
+                ),
+            ],
+          ),
           if (window.blockCount > 1) ...[
-            _WeekSelector(
-              labels: window.blockLabels,
-              activeIndex: window.offset,
+            const SizedBox(height: 12),
+            // 与统计页/分类页统一用同一个分段控件（原来这里是自绘 chips）。
+            AppSlidingSegmentedControl<int>(
+              value: window.offset,
+              minSegmentWidth: 64,
+              segments: [
+                for (var index = 0; index < window.blockCount; index++)
+                  AppSlidingSegment(
+                    value: index,
+                    label: window.blockLabels[index],
+                  ),
+              ],
               onChanged: onWeekChanged,
             ),
-            const SizedBox(height: 12),
           ],
           SizedBox(
             height: 132,
@@ -165,61 +175,6 @@ class HomeWeeklyTrendCard extends StatelessWidget {
     final last = points.last.date;
     return '${DateFormat('M/d').format(first)} - '
         '${DateFormat('M/d').format(last)}';
-  }
-}
-
-class _WeekSelector extends StatelessWidget {
-  const _WeekSelector({
-    required this.labels,
-    required this.activeIndex,
-    required this.onChanged,
-  });
-
-  final List<String> labels;
-  final int activeIndex;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return SizedBox(
-      height: 32,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: labels.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 6),
-        itemBuilder: (context, index) {
-          final selected = index == activeIndex;
-          return Material(
-            color: selected
-                ? colorScheme.primary
-                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(999),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(999),
-              onTap: () => onChanged(index),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Center(
-                  child: Text(
-                    labels[index],
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: selected
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 }
 

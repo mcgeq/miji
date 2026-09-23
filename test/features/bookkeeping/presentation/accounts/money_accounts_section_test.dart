@@ -8,6 +8,10 @@ import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_ent
 import 'package:miji/features/bookkeeping/domain/money_net_worth_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/money_accounts_section.dart';
+import 'package:miji/core/auth/domain/sensitive_access_ttl_option.dart';
+import 'package:miji/core/preferences/domain/user_preferences_entity.dart';
+import 'package:miji/core/preferences/providers/preferences_providers.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 void main() {
   testWidgets('switches display groups and shows credit usage details', (
@@ -118,6 +122,98 @@ void main() {
     expect(find.text('停用账户'), findsOneWidget);
     expect(find.text('删除账户'), findsOneWidget);
   });
+
+  group('全局金额遮罩', () {
+    testWidgets('masks net worth and account balances when enabled', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(_maskedHarness(masked: true));
+      await tester.pumpAndSettle();
+
+      // 净资产 Hero 与账户余额都遮住。
+      expect(find.text('¥2,000.00'), findsNothing);
+      expect(find.text('••••'), findsWidgets);
+    });
+
+    /// 回归：全局开关用的是 ref.read，已挂载的账户面板不会重建，
+    /// 导致「在设置里打开遮罩 → 回到账户页金额依旧明文」。
+    testWidgets('applies immediately when the global switch flips', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      var masked = false;
+      final container = ProviderContainer(
+        overrides: [
+          currentUserVisibleAccountsProvider.overrideWith(
+            (ref) => Stream.value([_assetAccount]),
+          ),
+          currentUserAccountMonthlySummariesProvider.overrideWith(
+            (ref) async => const <String, MoneyAccountMonthlySummary>{},
+          ),
+          currentUserNetWorthSummaryProvider.overrideWith(
+            (ref) async => const MoneyNetWorthSummary(
+              currencyCode: 'CNY',
+              assetMinor: 200000,
+              liabilityMinor: 100000,
+            ),
+          ),
+          currentUserPreferencesProvider.overrideWith(
+            (ref) async => _preferences(maskMoneyAmounts: masked),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            home: const Scaffold(
+              body: MoneyPrivacyScope(child: MoneyAccountsSection()),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('¥2,000.00'), findsOneWidget);
+
+      // 模拟「在设置页打开隐藏金额」。
+      masked = true;
+      container.invalidate(currentUserPreferencesProvider);
+      await tester.pumpAndSettle();
+
+      expect(find.text('¥2,000.00'), findsNothing);
+      expect(find.text('••••'), findsWidgets);
+    });
+
+    /// 回归：全局遮罩打开时，逐账户菜单必须仍然可用
+    /// （原来金额是隐藏的，但菜单却显示「隐藏金额」，点了没反应）。
+    testWidgets('per-account menu can reveal a single account', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(_maskedHarness(masked: true));
+      await tester.pumpAndSettle();
+      expect(find.text('¥2,000.00'), findsNothing);
+
+      // 打开第一个账户的 ⋯ 菜单：应该提供「显示金额」。
+      await tester.tap(find.byTooltip('更多操作').first);
+      await tester.pumpAndSettle();
+      expect(find.text('显示金额'), findsOneWidget);
+
+      await tester.tap(find.text('显示金额'));
+      await tester.pumpAndSettle();
+
+      // 该账户的金额恢复展示（净资产 Hero 仍按生效状态遮住）。
+      expect(find.text('¥2,000.00'), findsOneWidget);
+    });
+  });
 }
 
 final _now = DateTime(2026, 7, 20, 12);
@@ -205,3 +301,46 @@ final _bill = MoneyCreditCardBillView(
   postedDebtMinor: 120000,
   state: MoneyCreditCardStatementState.dueSoon,
 );
+
+Widget _maskedHarness({required bool masked}) {
+  return ProviderScope(
+    overrides: [
+      currentUserVisibleAccountsProvider.overrideWith(
+        (ref) => Stream.value([_assetAccount]),
+      ),
+      currentUserAccountMonthlySummariesProvider.overrideWith(
+        (ref) async => const <String, MoneyAccountMonthlySummary>{},
+      ),
+      currentUserNetWorthSummaryProvider.overrideWith(
+        (ref) async => const MoneyNetWorthSummary(
+          currencyCode: 'CNY',
+          assetMinor: 200000,
+          liabilityMinor: 100000,
+        ),
+      ),
+      currentUserPreferencesProvider.overrideWith(
+        (ref) async => _preferences(maskMoneyAmounts: masked),
+      ),
+    ],
+    child: MaterialApp(
+      theme: AppTheme.light(),
+      home: const Scaffold(
+        body: MoneyPrivacyScope(child: MoneyAccountsSection()),
+      ),
+    ),
+  );
+}
+
+UserPreferencesEntity _preferences({required bool maskMoneyAmounts}) {
+  final now = DateTime(2026, 1, 1);
+  return UserPreferencesEntity(
+    userId: 'user-1',
+    themeMode: AppThemeModePreference.system,
+    themeSeedColor: 0xFFE45F4F,
+    sensitiveAccessTtl: SensitiveAccessTtlOption.defaultOption,
+    currencyCode: 'CNY',
+    maskMoneyAmounts: maskMoneyAmounts,
+    createdAt: now,
+    updatedAt: now,
+  );
+}

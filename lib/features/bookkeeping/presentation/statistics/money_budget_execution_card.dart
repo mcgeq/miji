@@ -5,6 +5,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyBudgetExecutionCard extends StatelessWidget {
   const MoneyBudgetExecutionCard({super.key, required this.budgets});
@@ -205,7 +206,10 @@ class _BudgetRow extends StatelessWidget {
               SizedBox(
                 width: 120,
                 child: Text(
-                  '${formatMoneyMinor(used, budget.currencyCode)} / ${formatMoneyMinor(limit, budget.currencyCode)}',
+                  maskedMoneyOr(
+                    '${formatMoneyMinor(used, budget.currencyCode)} / ${formatMoneyMinor(limit, budget.currencyCode)}',
+                    MoneyPrivacy.of(context),
+                  ),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     letterSpacing: 0,
@@ -228,7 +232,10 @@ class _BudgetRow extends StatelessWidget {
               SizedBox(
                 width: 72,
                 child: Text(
-                  '$tagLabel ${formatMoneyMinor(tagAmount, budget.currencyCode)}',
+                  maskedMoneyOr(
+                    '$tagLabel ${formatMoneyMinor(tagAmount, budget.currencyCode)}',
+                    MoneyPrivacy.of(context),
+                  ),
                   textAlign: TextAlign.end,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: tagColor,

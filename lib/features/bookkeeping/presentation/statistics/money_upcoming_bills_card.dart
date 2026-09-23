@@ -5,6 +5,7 @@ import 'package:miji/core/presentation/components/app_content_panel.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 /// 未来 7 / 30 / 90 天待付金额。
 ///
@@ -172,7 +173,10 @@ class _Bucket extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              formatMoneyMinor(amountMinor, currencyCode),
+              maskedMoneyOr(
+                formatMoneyMinor(amountMinor, currencyCode),
+                MoneyPrivacy.of(context),
+              ),
               style: theme.textTheme.titleSmall?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w900,
@@ -243,7 +247,10 @@ class _BillRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            formatMoneyMinor(item.amountMinor, item.bill.currencyCode),
+            maskedMoneyOr(
+              formatMoneyMinor(item.amountMinor, item.bill.currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w800,

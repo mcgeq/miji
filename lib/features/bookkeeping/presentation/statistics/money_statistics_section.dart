@@ -12,6 +12,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_spending_analysis_entity.dart';
@@ -39,6 +40,8 @@ import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.da
 import 'package:miji/features/bookkeeping/presentation/statistics/money_report_card.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_net_worth_trend_card.dart';
 import 'package:flutter/services.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
+import 'package:miji/features/bookkeeping/application/money_statistics_verdict.dart';
 
 final _reportGeneratingProvider =
     NotifierProvider<_ReportGeneratingNotifier, bool>(
@@ -124,11 +127,9 @@ class MoneyStatisticsSection extends ConsumerWidget {
           children: [
             Expanded(
               child: Text(
-                [
-                  if (ledgerName != null && ledgerName.trim().isNotEmpty)
-                    ledgerName,
-                  periodLabel,
-                ].join(' · '),
+                ledgerName != null && ledgerName.trim().isNotEmpty
+                    ? ledgerName
+                    : '统计',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -184,6 +185,17 @@ class MoneyStatisticsSection extends ConsumerWidget {
               ],
             ),
           ],
+        ),
+        _StatisticsPeriodChips(
+          preset: filter.periodPreset,
+          periodLabel: periodLabel,
+          onPresetChanged: (value) =>
+              ref.read(moneyStatisticsFilterProvider.notifier).setPeriod(value),
+          onCustomRangePicked: (range) => ref
+              .read(moneyStatisticsFilterProvider.notifier)
+              .setCustomRange(range.$1, range.$2),
+          customStart: filter.customStart,
+          customEnd: filter.customEnd,
         ),
         if (filter.hasAnyFilter) ...[
           const SizedBox(height: 8),
@@ -369,82 +381,100 @@ class _StatisticsAsyncBody extends ConsumerWidget {
           },
         ),
       ),
-      data: (summary) => _StatisticsBody(
-        summary: summary,
-        filter: filter,
-        groupBy: groupBy,
-        ledgerId: contextValue?.ledger?.id,
-        budgets: ref
-            .watch(currentUserBudgetsProvider)
-            .maybeWhen(
-              data: (value) => value,
-              orElse: () => const <MoneyBudgetEntity>[],
+      data: (summary) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _StatisticsVerdictCard(
+            summary: summary,
+            typeFocus: filter.typeFocus,
+            anomalyCount: spendingAnalysis.maybeWhen(
+              data: (value) => value.anomalies.length,
+              orElse: () => 0,
             ),
-        spendingAnalysis: spendingAnalysis.maybeWhen(
-          data: (value) => value,
-          orElse: () => const MoneySpendingAnalysis.empty(),
-        ),
-        insights: insights.maybeWhen(
-          data: (value) => value,
-          orElse: () => const MoneyStatisticsInsights.empty(),
-        ),
-        budgetHistoryTrend: budgetHistoryTrend.maybeWhen(
-          data: (value) => value,
-          orElse: () => const <MoneyBudgetHistoryTrendPoint>[],
-        ),
-        billReminders: billReminders.maybeWhen(
-          data: (value) => value,
-          orElse: () => const <MoneyBillReminderEntity>[],
-        ),
-        accountsById: {
-          for (final account
-              in contextValue?.accounts ?? const <MoneyAccountEntity>[])
-            account.id: account,
-        },
-        upcomingCashFlow: upcomingCashFlow.maybeWhen(
-          data: (value) => value,
-          orElse: () => const MoneyUpcomingCashFlowSummary.empty(),
-        ),
-        latestReport: latestReport.maybeWhen(
-          data: (value) => value,
-          orElse: () => null,
-        ),
-        isGenerating: isGenerating,
-        netWorthTrend: netWorthTrend.maybeWhen(
-          data: (value) => value,
-          orElse: () => const <MoneyNetWorthTrendPoint>[],
-        ),
-        onGenerateReport: () async {
-          final id = ledgerId;
-          if (id == null || readyContext == null) return;
-          ref.read(_reportGeneratingProvider.notifier).start();
-          try {
-            final now = DateTime.now();
-            final repository = ref.read(moneyRepositoryProvider);
-            await repository.generateReportForUser(
-              readyContext.userId!,
-              MoneyAnalysisReportRequest(
-                ledgerId: id,
-                reportPeriod: 'monthly',
-                periodStart: DateTime(now.year, now.month, 1),
-                periodEnd: DateTime(now.year, now.month + 1, 1),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: _StatisticsBody(
+              summary: summary,
+              filter: filter,
+              groupBy: groupBy,
+              ledgerId: contextValue?.ledger?.id,
+              budgets: ref
+                  .watch(currentUserBudgetsProvider)
+                  .maybeWhen(
+                    data: (value) => value,
+                    orElse: () => const <MoneyBudgetEntity>[],
+                  ),
+              spendingAnalysis: spendingAnalysis.maybeWhen(
+                data: (value) => value,
+                orElse: () => const MoneySpendingAnalysis.empty(),
               ),
-            );
-          } catch (_) {
-            // 失败状态已写入数据库，invalidate 后报表卡会展示失败态与重试入口。
-          } finally {
-            ref.invalidate(currentUserLatestReportProvider((id, 'monthly')));
-            ref.read(_reportGeneratingProvider.notifier).done();
-          }
-        },
-        onOpenTransactions: onOpenTransactions,
-        onAnomalyThresholdChanged: (amountMinor, growthPercent) => ref
-            .read(moneyStatisticsFilterProvider.notifier)
-            .setAnomalyThresholds(
-              minimumAmountMinor: amountMinor,
-              minimumGrowthPercent: growthPercent,
+              insights: insights.maybeWhen(
+                data: (value) => value,
+                orElse: () => const MoneyStatisticsInsights.empty(),
+              ),
+              budgetHistoryTrend: budgetHistoryTrend.maybeWhen(
+                data: (value) => value,
+                orElse: () => const <MoneyBudgetHistoryTrendPoint>[],
+              ),
+              billReminders: billReminders.maybeWhen(
+                data: (value) => value,
+                orElse: () => const <MoneyBillReminderEntity>[],
+              ),
+              accountsById: {
+                for (final account
+                    in contextValue?.accounts ?? const <MoneyAccountEntity>[])
+                  account.id: account,
+              },
+              upcomingCashFlow: upcomingCashFlow.maybeWhen(
+                data: (value) => value,
+                orElse: () => const MoneyUpcomingCashFlowSummary.empty(),
+              ),
+              latestReport: latestReport.maybeWhen(
+                data: (value) => value,
+                orElse: () => null,
+              ),
+              isGenerating: isGenerating,
+              netWorthTrend: netWorthTrend.maybeWhen(
+                data: (value) => value,
+                orElse: () => const <MoneyNetWorthTrendPoint>[],
+              ),
+              onGenerateReport: () async {
+                final id = ledgerId;
+                if (id == null || readyContext == null) return;
+                ref.read(_reportGeneratingProvider.notifier).start();
+                try {
+                  final now = DateTime.now();
+                  final repository = ref.read(moneyRepositoryProvider);
+                  await repository.generateReportForUser(
+                    readyContext.userId!,
+                    MoneyAnalysisReportRequest(
+                      ledgerId: id,
+                      reportPeriod: 'monthly',
+                      periodStart: DateTime(now.year, now.month, 1),
+                      periodEnd: DateTime(now.year, now.month + 1, 1),
+                    ),
+                  );
+                } catch (_) {
+                  // 失败状态已写入数据库，invalidate 后报表卡会展示失败态与重试入口。
+                } finally {
+                  ref.invalidate(
+                    currentUserLatestReportProvider((id, 'monthly')),
+                  );
+                  ref.read(_reportGeneratingProvider.notifier).done();
+                }
+              },
+              onOpenTransactions: onOpenTransactions,
+              onAnomalyThresholdChanged: (amountMinor, growthPercent) => ref
+                  .read(moneyStatisticsFilterProvider.notifier)
+                  .setAnomalyThresholds(
+                    minimumAmountMinor: amountMinor,
+                    minimumGrowthPercent: growthPercent,
+                  ),
+              onRefresh: () => refreshMoneyData(ref),
             ),
-        onRefresh: () => refreshMoneyData(ref),
+          ),
+        ],
       ),
     );
   }
@@ -1417,7 +1447,7 @@ class _StatisticsTotals extends StatelessWidget {
               const SizedBox(height: 14),
               Container(height: 1, color: theme.colorScheme.outlineVariant),
               const SizedBox(height: 14),
-              _buildNetSection(theme, moneyColors),
+              _buildNetSection(context, theme, moneyColors),
               if (summary.hasMixedCurrencies) ...[
                 const SizedBox(height: 12),
                 Row(
@@ -1446,7 +1476,11 @@ class _StatisticsTotals extends StatelessWidget {
     );
   }
 
-  Widget _buildNetSection(ThemeData theme, AppMoneyColors moneyColors) {
+  Widget _buildNetSection(
+    BuildContext context,
+    ThemeData theme,
+    AppMoneyColors moneyColors,
+  ) {
     final isPositive = summary.netMinor >= 0;
     final netColor = isPositive
         ? theme.colorScheme.primary
@@ -1466,7 +1500,10 @@ class _StatisticsTotals extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              formatMoneyMinor(summary.netMinor, summary.currencyCode),
+              maskedMoneyOr(
+                formatMoneyMinor(summary.netMinor, summary.currencyCode),
+                MoneyPrivacy.of(context),
+              ),
               style: theme.textTheme.titleLarge?.copyWith(
                 color: netColor,
                 fontWeight: FontWeight.w900,
@@ -1549,7 +1586,10 @@ class _MetricPanel extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            formatMoneyMinor(currentMinor, currencyCode),
+            maskedMoneyOr(
+              formatMoneyMinor(currentMinor, currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.headlineSmall?.copyWith(
@@ -1559,7 +1599,7 @@ class _MetricPanel extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            _countText,
+            _countText(MoneyPrivacy.of(context)),
             style: theme.textTheme.labelSmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -1588,9 +1628,12 @@ class _MetricPanel extends StatelessWidget {
     );
   }
 
-  String get _countText {
+  String _countText(bool masked) {
     if (count == 0) return '0 笔';
-    return '$count 笔 · 均 ${formatMoneyMinor(averageMinor, currencyCode)}';
+    return maskedMoneyOr(
+      '$count 笔 · 均 ${formatMoneyMinor(averageMinor, currencyCode)}',
+      masked,
+    );
   }
 }
 
@@ -1653,6 +1696,226 @@ class _ComparisonChip extends StatelessWidget {
           fontWeight: FontWeight.w800,
           letterSpacing: 0,
         ),
+      ),
+    );
+  }
+}
+
+/// 统计页的周期胶囊。
+///
+/// 原来周期只能从筛选抽屉里改（点筛选 → 展开 → 找下拉 → 选 → 关，四步），
+/// 而流水页早就有日期胶囊。两端统一成同一套交互。
+class _StatisticsPeriodChips extends StatelessWidget {
+  const _StatisticsPeriodChips({
+    required this.preset,
+    required this.periodLabel,
+    required this.onPresetChanged,
+    required this.onCustomRangePicked,
+    this.customStart,
+    this.customEnd,
+  });
+
+  final MoneyStatisticsPeriodPreset preset;
+  final String periodLabel;
+  final ValueChanged<MoneyStatisticsPeriodPreset> onPresetChanged;
+  final ValueChanged<(DateTime, DateTime)> onCustomRangePicked;
+  final DateTime? customStart;
+  final DateTime? customEnd;
+
+  static const _presets = <MoneyStatisticsPeriodPreset>[
+    MoneyStatisticsPeriodPreset.thisMonth,
+    MoneyStatisticsPeriodPreset.thisWeek,
+    MoneyStatisticsPeriodPreset.lastWeek,
+    MoneyStatisticsPeriodPreset.recentThreeMonths,
+    MoneyStatisticsPeriodPreset.thisYear,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    Widget chip({
+      required String label,
+      required bool selected,
+      required VoidCallback onTap,
+      String? trailing,
+      VoidCallback? onTrailingTap,
+    }) {
+      return Material(
+        color: selected
+            ? colorScheme.primary
+            : colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: selected
+                    ? Colors.transparent
+                    : colorScheme.outlineVariant.withValues(alpha: 0.7),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: selected
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: onTrailingTap,
+                    child: Text(
+                      trailing,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onPrimary,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 32,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          for (final value in _presets)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: chip(
+                label: value.label,
+                selected: preset == value,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onPresetChanged(value);
+                },
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: chip(
+              label: preset == MoneyStatisticsPeriodPreset.custom
+                  ? periodLabel
+                  : '自定义…',
+              selected: preset == MoneyStatisticsPeriodPreset.custom,
+              trailing: preset == MoneyStatisticsPeriodPreset.custom
+                  ? '✕'
+                  : null,
+              onTrailingTap: () =>
+                  onPresetChanged(MoneyStatisticsPeriodPreset.thisMonth),
+              onTap: () async {
+                final picked = await showAppDateRangePicker(
+                  context: context,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                  initialDateRange: customStart == null || customEnd == null
+                      ? null
+                      : DateTimeRange(start: customStart!, end: customEnd!),
+                );
+                if (picked == null) {
+                  return;
+                }
+                onCustomRangePicked((picked.start, picked.end));
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 首屏结论条：一句话说清这段时间发生了什么。
+class _StatisticsVerdictCard extends StatelessWidget {
+  const _StatisticsVerdictCard({
+    required this.summary,
+    required this.typeFocus,
+    required this.anomalyCount,
+  });
+
+  final MoneyStatisticsSummary summary;
+  final MoneyStatisticsTypeFocus typeFocus;
+  final int anomalyCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final masked = MoneyPrivacy.of(context);
+    final verdict = buildStatisticsVerdict(
+      summary: summary,
+      typeFocus: typeFocus,
+      anomalyCount: anomalyCount,
+      masked: masked,
+    );
+    if (verdict == null) {
+      return const SizedBox.shrink();
+    }
+
+    final gradient = switch (verdict.tone) {
+      StatisticsTone.positive => theme.heroGradients.netWorth,
+      StatisticsTone.negative => theme.heroGradients.danger,
+      StatisticsTone.neutral => theme.heroGradients.brand,
+    };
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(theme.radiusTokens.card),
+        gradient: gradient.linear,
+        boxShadow: [
+          BoxShadow(
+            color: gradient.shadow.withValues(alpha: 0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+            spreadRadius: -14,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            switch (verdict.tone) {
+              StatisticsTone.positive => Icons.trending_down_rounded,
+              StatisticsTone.negative => Icons.trending_up_rounded,
+              StatisticsTone.neutral => Icons.insights_rounded,
+            },
+            size: 18,
+            color: Colors.white.withValues(alpha: 0.92),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              verdict.text,
+              maxLines: 3,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                height: 1.45,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

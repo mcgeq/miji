@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
-import 'package:miji/features/home/application/home_preference_providers.dart';
 
 /// 首页问候头：左侧问候 + 日期，右侧连续记账天数。
 ///
@@ -102,7 +101,7 @@ class HomeMaskToggle extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final masked = ref.watch(homeMaskMoneyAmountsProvider);
+    final masked = ref.watch(moneyAmountsMaskedProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Tooltip(

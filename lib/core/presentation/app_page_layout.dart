@@ -114,7 +114,7 @@ class AppPlainPanel extends StatelessWidget {
   const AppPlainPanel({
     required this.child,
     super.key,
-    this.padding = const EdgeInsets.all(18),
+    this.padding = const EdgeInsets.all(16), // = spacingTokens.cardPadding
     this.tone = AppSurfaceTone.plain,
     this.bordered = true,
     this.backgroundColor,

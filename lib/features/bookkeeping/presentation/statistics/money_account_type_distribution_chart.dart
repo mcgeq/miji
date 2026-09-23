@@ -8,6 +8,7 @@ import 'package:miji/features/bookkeeping/application/money_amount_formatter.dar
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
 import 'package:flutter/services.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyAccountTypeDistributionChart extends StatefulWidget {
   const MoneyAccountTypeDistributionChart({super.key, required this.slices});
@@ -192,7 +193,10 @@ class _AccountTypeCenter extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            formatMoneyMinor(amount, currencyCode),
+            maskedMoneyOr(
+              formatMoneyMinor(amount, currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             style: theme.textTheme.titleSmall?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w800,
@@ -222,7 +226,10 @@ class _AccountTypeCenter extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          formatMoneyMinor(total, currencyCode),
+          maskedMoneyOr(
+            formatMoneyMinor(total, currencyCode),
+            MoneyPrivacy.of(context),
+          ),
           style: theme.textTheme.titleSmall?.copyWith(
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.w800,
@@ -264,7 +271,10 @@ class _AccountTypeRow extends StatelessWidget {
               label: slice.label,
               subtitle: subtitle,
               trailing: Text(
-                formatMoneyMinor(amount, slice.currencyCode),
+                maskedMoneyOr(
+                  formatMoneyMinor(amount, slice.currencyCode),
+                  MoneyPrivacy.of(context),
+                ),
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w800,

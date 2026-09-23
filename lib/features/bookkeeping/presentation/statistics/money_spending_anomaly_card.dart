@@ -5,6 +5,7 @@ import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_spending_analysis_entity.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneySpendingAnomalyCard extends StatelessWidget {
   const MoneySpendingAnomalyCard({
@@ -27,7 +28,7 @@ class MoneySpendingAnomalyCard extends StatelessWidget {
 
     return AppContentPanel(
       title: '消费变化',
-      subtitle: _comparisonLabel(analysis),
+      subtitle: _comparisonLabel(analysis, MoneyPrivacy.of(context)),
       leadingIcon: Icons.query_stats_rounded,
       leadingColor: expenseColor,
       trailing: TextButton.icon(
@@ -64,13 +65,13 @@ class MoneySpendingAnomalyCard extends StatelessWidget {
     );
   }
 
-  String _comparisonLabel(MoneySpendingAnalysis analysis) {
+  String _comparisonLabel(MoneySpendingAnalysis analysis, bool masked) {
     final window = analysis.windowMonthCount;
     final baseline = analysis.baselineMonthCount;
     final percentText = minimumGrowthPercent.toStringAsFixed(0);
-    final amountText = formatMoneyMinor(
-      minimumAmountMinor,
-      analysis.currencyCode,
+    final amountText = maskedMoneyOr(
+      formatMoneyMinor(minimumAmountMinor, analysis.currencyCode),
+      masked,
     );
     if (window <= 1) {
       return '当前月较前三个月均值增长超过 $percentText% 且金额不低于 $amountText';
@@ -118,7 +119,10 @@ class _ThresholdDialogState extends State<_ThresholdDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '最低金额 ${formatMoneyMinor(_amountMinor, 'CNY')}',
+              maskedMoneyOr(
+                '最低金额 ${formatMoneyMinor(_amountMinor, 'CNY')}',
+                MoneyPrivacy.of(context),
+              ),
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0,
@@ -129,7 +133,10 @@ class _ThresholdDialogState extends State<_ThresholdDialog> {
               min: 500,
               max: 100000,
               divisions: 199,
-              label: formatMoneyMinor(_amountMinor, 'CNY'),
+              label: maskedMoneyOr(
+                formatMoneyMinor(_amountMinor, 'CNY'),
+                MoneyPrivacy.of(context),
+              ),
               onChanged: (value) {
                 setState(() => _amountMinor = (value / 500).round() * 500);
               },
@@ -218,7 +225,10 @@ class _AnomalyRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${_dimensionLabel(anomaly.dimension)} · 均值 ${formatMoneyMinor(anomaly.baselineAverageMinor, currencyCode)}',
+                  maskedMoneyOr(
+                    '${_dimensionLabel(anomaly.dimension)} · 均值 ${formatMoneyMinor(anomaly.baselineAverageMinor, currencyCode)}',
+                    MoneyPrivacy.of(context),
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelSmall?.copyWith(
@@ -234,7 +244,13 @@ class _AnomalyRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                formatMoneyMinor(anomaly.currentAmountMinor, currencyCode),
+                maskedMoneyOr(
+                  maskedMoneyOr(
+                    formatMoneyMinor(anomaly.currentAmountMinor, currencyCode),
+                    MoneyPrivacy.of(context),
+                  ),
+                  MoneyPrivacy.of(context),
+                ),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface,
                   fontWeight: FontWeight.w800,

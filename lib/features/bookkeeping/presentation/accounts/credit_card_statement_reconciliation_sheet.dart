@@ -7,6 +7,7 @@ import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class CreditCardStatementReconciliationSheet extends StatelessWidget {
   const CreditCardStatementReconciliationSheet({
@@ -165,34 +166,46 @@ class _StatementMetrics extends StatelessWidget {
         children: [
           _MetricRow(
             label: '本期消费',
-            value: formatMoneyMinor(
-              statement.purchaseAmountMinor,
-              statement.currencyCode,
+            value: maskedMoneyOr(
+              formatMoneyMinor(
+                statement.purchaseAmountMinor,
+                statement.currencyCode,
+              ),
+              MoneyPrivacy.of(context),
             ),
           ),
           const SizedBox(height: 10),
           _MetricRow(
             label: '已还款',
-            value: formatMoneyMinor(
-              statement.repaymentAmountMinor,
-              statement.currencyCode,
+            value: maskedMoneyOr(
+              formatMoneyMinor(
+                statement.repaymentAmountMinor,
+                statement.currencyCode,
+              ),
+              MoneyPrivacy.of(context),
             ),
           ),
           const SizedBox(height: 10),
           _MetricRow(
             label: '本期应还',
-            value: formatMoneyMinor(
-              statement.amountDueMinor,
-              statement.currencyCode,
+            value: maskedMoneyOr(
+              formatMoneyMinor(
+                statement.amountDueMinor,
+                statement.currencyCode,
+              ),
+              MoneyPrivacy.of(context),
             ),
             emphasized: true,
           ),
           const SizedBox(height: 10),
           _MetricRow(
             label: '可用额度',
-            value: formatMoneyMinor(
-              statement.availableCreditMinor,
-              statement.currencyCode,
+            value: maskedMoneyOr(
+              formatMoneyMinor(
+                statement.availableCreditMinor,
+                statement.currencyCode,
+              ),
+              MoneyPrivacy.of(context),
             ),
           ),
         ],
@@ -282,7 +295,10 @@ class _StatementDifferenceCard extends StatelessWidget {
             ),
           ),
           Text(
-            formatMoneyMinor(amountMinor, currencyCode),
+            maskedMoneyOr(
+              formatMoneyMinor(amountMinor, currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.tertiary,
               fontWeight: FontWeight.w800,
@@ -309,7 +325,10 @@ class _PendingReconciliationList extends StatelessWidget {
           _SimpleLineItem(
             title: item.title,
             subtitle: item.notes,
-            amount: formatMoneyMinor(item.amountMinor, statement.currencyCode),
+            amount: maskedMoneyOr(
+              formatMoneyMinor(item.amountMinor, statement.currencyCode),
+              MoneyPrivacy.of(context),
+            ),
           ),
       ],
     );
@@ -388,8 +407,10 @@ class _TransactionLineItem extends StatelessWidget {
     return _SimpleLineItem(
       title: transaction.description,
       subtitle: subtitle,
-      amount:
-          '$prefix${formatMoneyMinor(transaction.amountMinor, transaction.currencyCode)}',
+      amount: maskedMoneyOr(
+        '$prefix${formatMoneyMinor(transaction.amountMinor, transaction.currencyCode)}',
+        MoneyPrivacy.of(context),
+      ),
     );
   }
 }

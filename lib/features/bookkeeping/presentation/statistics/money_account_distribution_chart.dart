@@ -8,6 +8,7 @@ import 'package:miji/features/bookkeeping/application/money_amount_formatter.dar
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
 import 'package:flutter/services.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyAccountDistributionChart extends StatefulWidget {
   const MoneyAccountDistributionChart({
@@ -231,7 +232,10 @@ class _AccountCenter extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            formatMoneyMinor(amountMinor, currencyCode),
+            maskedMoneyOr(
+              formatMoneyMinor(amountMinor, currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             style: theme.textTheme.titleSmall?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w800,
@@ -261,7 +265,10 @@ class _AccountCenter extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          formatMoneyMinor(netWorthMinor, currencyCode),
+          maskedMoneyOr(
+            formatMoneyMinor(netWorthMinor, currencyCode),
+            MoneyPrivacy.of(context),
+          ),
           style: theme.textTheme.titleSmall?.copyWith(
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.w800,
@@ -295,7 +302,10 @@ class _AccountTotalRow extends StatelessWidget {
         color: color,
         label: label,
         trailing: Text(
-          formatMoneyMinor(amountMinor, currencyCode),
+          maskedMoneyOr(
+            formatMoneyMinor(amountMinor, currencyCode),
+            MoneyPrivacy.of(context),
+          ),
           style: theme.textTheme.labelLarge?.copyWith(
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.w800,
@@ -357,7 +367,10 @@ class _AccountSliceRow extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      formatMoneyMinor(amountMinor, slice.currencyCode),
+                      maskedMoneyOr(
+                        formatMoneyMinor(amountMinor, slice.currencyCode),
+                        MoneyPrivacy.of(context),
+                      ),
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w800,

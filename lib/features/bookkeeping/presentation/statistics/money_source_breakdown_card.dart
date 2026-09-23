@@ -9,6 +9,7 @@ import 'package:miji/features/bookkeeping/application/money_amount_formatter.dar
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneySourceBreakdownCard extends StatelessWidget {
   const MoneySourceBreakdownCard({super.key, required this.insights});
@@ -158,7 +159,13 @@ class _SourceBar extends StatelessWidget {
               SizedBox(
                 width: 100,
                 child: Text(
-                  formatMoneyMinor(slice.amountMinor, currencyCode),
+                  maskedMoneyOr(
+                    maskedMoneyOr(
+                      formatMoneyMinor(slice.amountMinor, currencyCode),
+                      MoneyPrivacy.of(context),
+                    ),
+                    MoneyPrivacy.of(context),
+                  ),
                   textAlign: TextAlign.end,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurface,
@@ -241,7 +248,10 @@ class _SourceTrendChart extends StatelessWidget {
                               ? point.autoPostingMinor
                               : point.otherMinor;
                           return BarTooltipItem(
-                            '$label\n${formatMoneyMinor(amount.toInt(), currencyCode)}',
+                            maskedMoneyOr(
+                              '$label\n${formatMoneyMinor(amount.toInt(), currencyCode)}',
+                              MoneyPrivacy.of(context),
+                            ),
                             theme.textTheme.labelSmall!.copyWith(
                               color: Colors.white,
                               letterSpacing: 0,
@@ -411,7 +421,13 @@ class _RefundSummaryRow extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          formatMoneyMinor(refund.refundAmountMinor, defaultMoneyCurrencyCode),
+          maskedMoneyOr(
+            formatMoneyMinor(
+              refund.refundAmountMinor,
+              defaultMoneyCurrencyCode,
+            ),
+            MoneyPrivacy.of(context),
+          ),
           style: theme.textTheme.labelMedium?.copyWith(
             color: theme.moneyColors.warning,
             fontWeight: FontWeight.w800,

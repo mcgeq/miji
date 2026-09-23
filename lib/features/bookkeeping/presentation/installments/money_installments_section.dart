@@ -4,6 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/app_toast.dart';
@@ -11,7 +12,7 @@ import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_form_hint.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
-import 'package:miji/core/presentation/components/money_amount_text.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/shared/widgets/app_amount_field.dart';
@@ -339,25 +340,13 @@ class _MoneyInstallmentsContent extends StatelessWidget {
           )
         else
           Expanded(
-            child: RefreshIndicator(
+            child: _InstallmentPlanList(
+              plans: plans,
+              accountForPlan: _accountForPlan,
+              categoryText: _categoryText,
+              onPostDetail: onPostDetail,
+              onCancel: onCancel,
               onRefresh: onRefresh,
-              child: ListView.separated(
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: plans.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  return _InstallmentPlanCard(
-                    plan: plans[index],
-                    account: _accountForPlan(plans[index]),
-                    categoryText: _categoryText(plans[index]),
-                    onPostDetail: onPostDetail,
-                    onCancel: plans[index].isActive
-                        ? () => onCancel(plans[index])
-                        : null,
-                  );
-                },
-              ),
             ),
           ),
       ],
@@ -383,6 +372,201 @@ class _MoneyInstallmentsContent extends StatelessWidget {
       return category.name;
     }
     return '${category.name} / ${subCategory.name}';
+  }
+}
+
+/// 分期列表：按状态分段（进行中 / 已结束折叠），避免已完成的老计划一直占首屏。
+class _InstallmentPlanList extends StatefulWidget {
+  const _InstallmentPlanList({
+    required this.plans,
+    required this.accountForPlan,
+    required this.categoryText,
+    required this.onPostDetail,
+    required this.onCancel,
+    required this.onRefresh,
+  });
+
+  final List<MoneyInstallmentPlanEntity> plans;
+  final MoneyAccountEntity? Function(MoneyInstallmentPlanEntity plan)
+  accountForPlan;
+  final String Function(MoneyInstallmentPlanEntity plan) categoryText;
+  final ValueChanged<MoneyInstallmentDetailEntity> onPostDetail;
+  final ValueChanged<MoneyInstallmentPlanEntity> onCancel;
+  final Future<void> Function() onRefresh;
+
+  @override
+  State<_InstallmentPlanList> createState() => _InstallmentPlanListState();
+}
+
+class _InstallmentPlanListState extends State<_InstallmentPlanList> {
+  bool _showFinished = false;
+  final _searchController = TextEditingController();
+  String _keyword = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final keyword = _keyword;
+    final visible = keyword.isEmpty
+        ? widget.plans
+        : widget.plans.where((plan) {
+            final haystack = [
+              plan.name,
+              widget.categoryText(plan),
+              widget.accountForPlan(plan)?.name ?? '',
+            ].join(' ').toLowerCase();
+            return haystack.contains(keyword);
+          }).toList();
+    final active = visible.where((plan) => plan.isActive).toList();
+    final finished = visible.where((plan) => !plan.isActive).toList();
+
+    Widget card(MoneyInstallmentPlanEntity plan) {
+      return _InstallmentPlanCard(
+        plan: plan,
+        account: widget.accountForPlan(plan),
+        categoryText: widget.categoryText(plan),
+        onPostDetail: widget.onPostDetail,
+        onCancel: plan.isActive ? () => widget.onCancel(plan) : null,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 12),
+        children: [
+          AppTextField(
+            controller: _searchController,
+            hintText: '搜索分期名称 / 分类 / 账户',
+            prefixIcon: const Icon(Icons.search_rounded, size: 19),
+            onChanged: (value) =>
+                setState(() => _keyword = value.trim().toLowerCase()),
+            suffixIcon: _keyword.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: '清除搜索',
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _keyword = '');
+                    },
+                  ),
+          ),
+          const SizedBox(height: 12),
+          if (visible.isEmpty)
+            const AppEmptyState(title: '没有匹配的分期计划')
+          else if (active.isNotEmpty)
+            _PlanSectionHeader(label: '进行中', count: active.length),
+          for (final plan in active) ...[
+            const SizedBox(height: 10),
+            card(plan),
+          ],
+          if (finished.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Material(
+              color: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.42,
+              ),
+              borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
+                onTap: () => setState(() => _showFinished = !_showFinished),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.task_alt_rounded,
+                        size: 17,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '已结束 ${finished.length} 个',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        _showFinished
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        size: 20,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (_showFinished)
+              for (final plan in finished) ...[
+                const SizedBox(height: 10),
+                card(plan),
+              ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanSectionHeader extends StatelessWidget {
+  const _PlanSectionHeader({required this.label, required this.count});
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 2, bottom: 2),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '$count',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -777,6 +961,99 @@ class _InstallmentPlanSummary extends StatelessWidget {
   }
 }
 
+/// 时间轴外壳：左侧一条轨道（圆点 + 连线），右侧是原本的明细行。
+class _InstallmentTimelineItem extends StatelessWidget {
+  const _InstallmentTimelineItem({
+    required this.child,
+    required this.isFirst,
+    required this.isLast,
+    required this.isCurrent,
+    required this.isPosted,
+  });
+
+  final Widget child;
+  final bool isFirst;
+  final bool isLast;
+  final bool isCurrent;
+  final bool isPosted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final dotColor = isCurrent
+        ? colorScheme.primary
+        : isPosted
+        ? theme.moneyColors.income
+        : colorScheme.outlineVariant;
+
+    // IntrinsicHeight：让轨道能随右侧内容高度拉伸，又不依赖父级给固定高度
+    // （弹窗里是 Column，高度不固定；直接用 stretch + Expanded 会触发约束断言）。
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 22,
+            child: Column(
+              children: [
+                // 首项上方不画线，末项下方不画线。
+                SizedBox(
+                  height: 14,
+                  child: isFirst
+                      ? null
+                      : Center(
+                          child: Container(
+                            width: 2,
+                            color: colorScheme.outlineVariant,
+                          ),
+                        ),
+                ),
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dotColor,
+                    boxShadow: isCurrent
+                        ? [
+                            BoxShadow(
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.24,
+                              ),
+                              blurRadius: 0,
+                              spreadRadius: 4,
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
+                Expanded(
+                  child: isLast
+                      ? const SizedBox.shrink()
+                      : Center(
+                          child: Container(
+                            width: 2,
+                            color: colorScheme.outlineVariant,
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: child,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _InstallmentSummaryMetric extends StatelessWidget {
   const _InstallmentSummaryMetric({
     required this.label,
@@ -835,7 +1112,7 @@ class _InstallmentSummaryMetric extends StatelessWidget {
                   ),
                 )
               else
-                MoneyAmountText(
+                MoneyText(
                   amountMinor: amountMinor!,
                   currencyCode: currencyCode,
                   tone: tone,
@@ -924,24 +1201,36 @@ class InstallmentDetailsDialog extends ConsumerWidget {
               icon: Icons.format_list_bulleted_rounded,
             );
           }
+          // 时间轴：把「已入账 / 当前 / 未来」画出来，用户一眼看出还多久还完
+          // （原来是一列同构的行，只能靠状态文字自己读）。
+          final currentIndex = rows.indexWhere(
+            (row) => row.status == MoneyInstallmentDetailStatus.pending,
+          );
           return Column(
             children: [
               for (var index = 0; index < rows.length; index++) ...[
-                if (index > 0) const SizedBox(height: 8),
-                _InstallmentDetailRow(
-                  detail: rows[index],
-                  currencyCode: plan.currencyCode,
-                  onPost: onPostDetail == null
-                      ? null
-                      : _effectivePlanStatus(plan, rows) ==
-                                MoneyInstallmentPlanStatus.active &&
-                            rows[index].status ==
-                                MoneyInstallmentDetailStatus.pending
-                      ? () => onPostDetail!(rows[index])
-                      : null,
-                  onViewTransaction: rows[index].transactionId == null
-                      ? null
-                      : () => _viewPostedTransaction(context, ref, rows[index]),
+                _InstallmentTimelineItem(
+                  isFirst: index == 0,
+                  isLast: index == rows.length - 1,
+                  isCurrent: index == currentIndex,
+                  isPosted:
+                      rows[index].status == MoneyInstallmentDetailStatus.posted,
+                  child: _InstallmentDetailRow(
+                    detail: rows[index],
+                    currencyCode: plan.currencyCode,
+                    onPost: onPostDetail == null
+                        ? null
+                        : _effectivePlanStatus(plan, rows) ==
+                                  MoneyInstallmentPlanStatus.active &&
+                              rows[index].status ==
+                                  MoneyInstallmentDetailStatus.pending
+                        ? () => onPostDetail!(rows[index])
+                        : null,
+                    onViewTransaction: rows[index].transactionId == null
+                        ? null
+                        : () =>
+                              _viewPostedTransaction(context, ref, rows[index]),
+                  ),
                 ),
               ],
             ],
@@ -1218,7 +1507,7 @@ class _InstallmentAmountLine extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        MoneyAmountText(
+        MoneyText(
           amountMinor: amountMinor,
           currencyCode: currencyCode,
           tone: tone,
@@ -1260,7 +1549,7 @@ class _InstallmentInlineAmount extends StatelessWidget {
             letterSpacing: 0,
           ),
         ),
-        MoneyAmountText(
+        MoneyText(
           amountMinor: amountMinor,
           currencyCode: currencyCode,
           tone: tone,

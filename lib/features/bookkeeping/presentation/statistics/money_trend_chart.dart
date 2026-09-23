@@ -10,6 +10,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyTrendChart extends StatelessWidget {
   const MoneyTrendChart({
@@ -178,7 +179,10 @@ class MoneyTrendChart extends StatelessWidget {
                           return LineTooltipItem(
                             [
                               label,
-                              formatMoneyMinor(spot.y.round(), currencyCode),
+                              maskedMoneyOr(
+                                formatMoneyMinor(spot.y.round(), currencyCode),
+                                MoneyPrivacy.of(context),
+                              ),
                             ].where((part) => part.isNotEmpty).join('  '),
                             theme.textTheme.labelSmall?.copyWith(
                                   color: colorScheme.onInverseSurface,

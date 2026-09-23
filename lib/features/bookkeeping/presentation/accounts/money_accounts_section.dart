@@ -138,8 +138,17 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
   MoneyAccountDisplayGroupKind? _selectedGroupKind;
   int _visibleAccountCount = _loadMorePageSize;
   final Set<String> _hiddenAccountIds = <String>{};
+
+  /// 显式「显示」的账户。
+  ///
+  /// 原来只有「显式隐藏」一个集合，于是**全局遮罩打开时逐账户开关会失效**：
+  /// 金额是隐藏的，但菜单里却显示「隐藏金额」，点下去也没有任何变化。
+  /// 加一个显式显示集合，语义变成三态：
+  /// 显式显示 > 显式隐藏 > 全局遮罩。
+  final Set<String> _revealedAccountIds = <String>{};
   static const _loadMorePageSize = 8;
   static const _hiddenIdsPrefKey = 'account_hidden_ids';
+  static const _revealedIdsPrefKey = 'account_revealed_ids';
 
   /// 按用户隔离的存储 key。
   ///
@@ -148,6 +157,9 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
   /// 这里加上 userId 后缀。
   static String _hiddenIdsPrefKeyFor(String userId) =>
       '${_hiddenIdsPrefKey}_$userId';
+
+  static String _revealedIdsPrefKeyFor(String userId) =>
+      '${_revealedIdsPrefKey}_$userId';
 
   /// 已加载过隐藏设置的 userId，避免重复读取覆盖内存状态。
   String? _hiddenIdsLoadedForUserId;
@@ -166,14 +178,19 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
       return;
     }
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_hiddenIdsPrefKeyFor(userId));
+    final rawHidden = prefs.getString(_hiddenIdsPrefKeyFor(userId));
+    final rawRevealed = prefs.getString(_revealedIdsPrefKeyFor(userId));
     if (!mounted || _hiddenIdsLoadedForUserId != userId) {
       return;
     }
     setState(() {
       _hiddenAccountIds.clear();
-      if (raw != null && raw.isNotEmpty) {
-        _hiddenAccountIds.addAll(raw.split(','));
+      if (rawHidden != null && rawHidden.isNotEmpty) {
+        _hiddenAccountIds.addAll(rawHidden.split(','));
+      }
+      _revealedAccountIds.clear();
+      if (rawRevealed != null && rawRevealed.isNotEmpty) {
+        _revealedAccountIds.addAll(rawRevealed.split(','));
       }
     });
   }
@@ -188,6 +205,10 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
       _hiddenIdsPrefKeyFor(userId),
       _hiddenAccountIds.join(','),
     );
+    await prefs.setString(
+      _revealedIdsPrefKeyFor(userId),
+      _revealedAccountIds.join(','),
+    );
   }
 
   /// 用户切换时重新载入对应账号的隐藏设置。
@@ -197,12 +218,15 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
     }
     _hiddenIdsLoadedForUserId = userId;
     _hiddenAccountIds.clear();
+    _revealedAccountIds.clear();
     unawaited(_loadHiddenIds(userId));
   }
 
   @override
   Widget build(BuildContext context) {
     _syncHiddenIdsForUser(ref.watch(authSessionControllerProvider).userId);
+    // 响应式读取（原来是 ref.read，导致切换开关后本页不刷新）。
+    _globalMasked = ref.watch(moneyAmountsMaskedProvider);
     final filteredAccounts = _filteredAndSortedAccounts;
     final displayGroups = buildMoneyAccountDisplayGroups(filteredAccounts);
     final selectedGroup = _selectedDisplayGroup(displayGroups);
@@ -341,7 +365,7 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
                   return _AccountTile(
                     account: account,
                     monthlySummary: widget.monthlySummaries[account.id],
-                    isAmountHidden: _isAmountHidden(account.id),
+                    isAmountHidden: _isEffectivelyHidden(account.id),
                     onToggleAmountHidden: () =>
                         _toggleAccountAmountHidden(account.id),
                     onEdit: () => _openEditDialog(context, ref, account),
@@ -403,15 +427,37 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
     if (values.isEmpty) {
       return null;
     }
+    if (_globalMasked) {
+      return '••••';
+    }
     return values.entries
         .map((entry) => formatMoneyMinor(entry.value, entry.key))
         .join(' / ');
   }
 
+  /// 全局「隐藏金额」开关（设置里）也应该把账户页遮住：账户页自己的逐账户隐藏
+  /// 是进阶能力，全局开关是兜底。
+  /// 全局遮罩开关。
+  ///
+  /// 必须用 `watch`（原来这里是 `ref.read`）——否则在设置/首页切换开关后，
+  /// 已经被保活的账户面板不会重建，遮罩不会立刻生效。
+  /// 见 [build] 里的 `_globalMasked = ...`。
+  bool _globalMasked = false;
+
   bool get _areAllAmountsHidden {
     final accountIds = widget.accounts.map((account) => account.id);
-    return widget.accounts.isNotEmpty &&
-        accountIds.every(_hiddenAccountIds.contains);
+    return widget.accounts.isNotEmpty && accountIds.every(_isEffectivelyHidden);
+  }
+
+  /// 生效的隐藏状态：显式显示 > 显式隐藏 > 全局遮罩。
+  bool _isEffectivelyHidden(String accountId) {
+    if (_revealedAccountIds.contains(accountId)) {
+      return false;
+    }
+    if (_hiddenAccountIds.contains(accountId)) {
+      return true;
+    }
+    return _globalMasked;
   }
 
   List<MoneyAccountEntity> get _filteredAndSortedAccounts {
@@ -458,29 +504,37 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
     _sortAscending = false;
   }
 
-  bool _isAmountHidden(String accountId) {
-    return _hiddenAccountIds.contains(accountId);
-  }
-
   void _toggleAccountAmountHidden(String accountId) {
+    final currentlyHidden = _isEffectivelyHidden(accountId);
     setState(() {
-      if (!_hiddenAccountIds.add(accountId)) {
+      if (currentlyHidden) {
+        // 要「显示」：清掉显式隐藏，并记下显式显示（可以盖过全局遮罩）。
         _hiddenAccountIds.remove(accountId);
+        _revealedAccountIds.add(accountId);
+      } else {
+        _revealedAccountIds.remove(accountId);
+        _hiddenAccountIds.add(accountId);
       }
     });
     _saveHiddenIds();
   }
 
   void _toggleAllAmountsHidden() {
+    final accountIds = widget.accounts.map((account) => account.id).toList();
     setState(() {
       if (_areAllAmountsHidden) {
+        // 「全部显示」：显式显示优先，因此这里同时清掉显式隐藏。
         _hiddenAccountIds.clear();
+        _revealedAccountIds
+          ..clear()
+          ..addAll(accountIds);
         return;
       }
 
+      _revealedAccountIds.clear();
       _hiddenAccountIds
         ..clear()
-        ..addAll(widget.accounts.map((account) => account.id));
+        ..addAll(accountIds);
     });
     _saveHiddenIds();
   }

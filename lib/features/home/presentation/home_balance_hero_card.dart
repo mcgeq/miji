@@ -185,11 +185,14 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = hasBudget ? (paceLabel ?? '') : '本月概览';
+    // 「本月预算」这个胶囊已经去掉了：它现在就是卡上方 tab 的名字，
+    // 卡内再写一遍是同一句话说两次（设计稿里两个胶囊本来是并排靠左的）。
+    // 左槽留给节奏状态，右侧只在加载时出现进度条。
+    final pace = hasBudget && !exceeded ? (paceLabel ?? '') : '';
 
     return Row(
       children: [
-        _HeroChip(text: hasBudget ? '本月预算' : '本月概览'),
+        if (pace.isNotEmpty) _HeroChip(text: pace, dot: true),
         const Spacer(),
         if (isLoading)
           const SizedBox(
@@ -200,10 +203,8 @@ class _Header extends StatelessWidget {
               color: Colors.white,
               backgroundColor: Colors.white24,
             ),
-          )
+          ),
         // 超支时正文已经有「本月已超支」，这里不再重复一遍。
-        else if (hasBudget && label.isNotEmpty && !exceeded)
-          _HeroChip(text: label, dot: true),
       ],
     );
   }

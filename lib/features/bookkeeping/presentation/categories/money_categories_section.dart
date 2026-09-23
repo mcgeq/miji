@@ -8,6 +8,7 @@ import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_color_picker.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
@@ -891,13 +892,21 @@ class _CategoryTileState extends State<_CategoryTile> {
   int get _hiddenSubCategoryCount =>
       _expanded ? 0 : (subCategories.length - _collapsedCount).clamp(0, 999);
 
+  /// 本次构建时读到的隐私开关（_metaText 是 getter，拿不到 context）。
+  bool _masked = false;
+
   /// 「8 个子分类 · 本月 ¥1,240 · 30.0%」。
   String get _metaText {
     final parts = <String>[
       '${subCategories.where((item) => !item.isDeleted).length} 个子分类',
     ];
     if (showUsage) {
-      parts.add('本月 ${formatMoneyMinor(usageMinor, currencyCode)}');
+      parts.add(
+        maskedMoneyOr(
+          '本月 ${formatMoneyMinor(usageMinor, currencyCode)}',
+          _masked,
+        ),
+      );
       if (usageMinor > 0) {
         parts.add('${(usageShare * 100).toStringAsFixed(1)}%');
       }
@@ -911,6 +920,7 @@ class _CategoryTileState extends State<_CategoryTile> {
     final colorScheme = theme.colorScheme;
     final color = _colorFromHex(category.color) ?? colorScheme.primary;
     final opacity = category.isDeleted ? 0.56 : 1.0;
+    _masked = MoneyPrivacy.of(context);
 
     return Opacity(
       opacity: opacity,

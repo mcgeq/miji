@@ -3,6 +3,7 @@ import 'package:miji/core/presentation/app_page_layout.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyStatisticsRankList extends StatelessWidget {
   const MoneyStatisticsRankList({
@@ -129,7 +130,10 @@ class _RankRow extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      formatMoneyMinor(slice.amountMinor, currencyCode),
+                      maskedMoneyOr(
+                        formatMoneyMinor(slice.amountMinor, currencyCode),
+                        MoneyPrivacy.of(context),
+                      ),
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w800,

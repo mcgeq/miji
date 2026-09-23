@@ -62,7 +62,7 @@ Widget _card(
   bool masked = false,
   ValueChanged<int>? onWeekChanged,
 }) {
-  return HomeWeeklyTrendCard(
+  return HomeTrendView(
     points: _week(window.start),
     window: window,
     selectedMonth: DateTime(window.start.year, window.start.month),
@@ -80,7 +80,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(BarChart), findsOneWidget);
-    expect(find.text('支出趋势'), findsOneWidget);
     expect(find.text('本周'), findsOneWidget);
     expect(find.text('上周'), findsOneWidget);
     expect(find.text('2 周前'), findsOneWidget);
@@ -88,7 +87,7 @@ void main() {
     expect(find.textContaining('本周合计'), findsOneWidget);
   });
 
-  testWidgets('puts the date range on the title line, right aligned', (
+  testWidgets('shows the date range of the current window in the header', (
     tester,
   ) async {
     final window = _rollingWindow();
@@ -98,23 +97,16 @@ void main() {
     final start = window.start;
     final end = window.lastDay;
     final rangeLabel = '${start.month}/${start.day} - ${end.month}/${end.day}';
-    final range = find.text(rangeLabel);
-    expect(range, findsOneWidget);
+    expect(find.text(rangeLabel), findsOneWidget);
 
-    final titleRect = tester.getRect(find.text('支出趋势'));
-    final rangeRect = tester.getRect(range);
+    // 标题由 tab 条承担（见 home_overview_card_test），卡内不再重复一遍。
+    expect(find.text('支出趋势'), findsNothing);
+
+    // 区间在柱状图上方，且不再有额外标题行。
     expect(
-      (titleRect.center.dy - rangeRect.center.dy).abs(),
-      lessThan(10),
-      reason: '日期区间应与标题在同一行',
+      tester.getRect(find.text(rangeLabel)).top,
+      lessThan(tester.getRect(find.byType(BarChart)).top),
     );
-    expect(rangeRect.left, greaterThan(titleRect.right));
-
-    final titleSize = tester.widget<Text>(find.text('支出趋势')).style?.fontSize;
-    final rangeSize = tester.widget<Text>(range).style?.fontSize;
-    expect(rangeSize, isNotNull);
-    expect(titleSize, isNotNull);
-    expect(rangeSize!, lessThanOrEqualTo(titleSize! * 0.8));
   });
 
   testWidgets('today sits in the middle of the chart', (tester) async {
@@ -182,7 +174,7 @@ void main() {
     final window = _rollingWindow(blockCount: 5);
     await tester.pumpWidget(
       _host(
-        HomeWeeklyTrendCard(
+        HomeTrendView(
           points: [
             for (var index = 0; index < 7; index++)
               HomeDailySpendingPoint(

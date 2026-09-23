@@ -14,15 +14,18 @@ import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/quick_actions/money_quick_action_launcher.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/money_transaction_actions.dart';
+import 'package:miji/features/home/application/home_preference_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/home/application/home_health_hint_providers.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 import 'package:miji/features/home/application/home_money_dashboard_providers.dart';
-import 'package:miji/features/home/application/home_preference_providers.dart';
+import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/features/home/presentation/home_alerts_strip.dart';
 import 'package:miji/features/home/presentation/home_balance_hero_card.dart';
 import 'package:miji/features/home/presentation/home_category_structure_panel.dart';
+import 'package:miji/features/home/presentation/home_overview_card.dart';
+import 'package:miji/features/home/presentation/home_spending_calendar.dart';
 import 'package:miji/features/home/presentation/home_greeting_header.dart';
 import 'package:miji/features/home/presentation/home_health_strip.dart';
 import 'package:miji/features/home/presentation/home_insight_strip.dart';
@@ -187,7 +190,7 @@ class _HomeDashboard extends ConsumerWidget {
     final healthHint = showHealthStrip
         ? ref.watch(homeHealthHintProvider)
         : const AsyncValue<HomeHealthHint?>.data(null);
-    final masked = ref.watch(homeMaskMoneyAmountsProvider);
+    final masked = ref.watch(moneyAmountsMaskedProvider);
     final showTodayAction = ref.watch(homeShowTodayActionProvider);
     final userDisplayName = ref
         .watch(currentUserProvider)
@@ -274,7 +277,7 @@ class _HomeDashboard extends ConsumerWidget {
       maxItems: 2,
     );
 
-    final weeklyTrend = HomeWeeklyTrendCard(
+    final trendView = HomeTrendView(
       points: weeklyPoints.valueOrNull ?? const [],
       window: trendWindow,
       selectedMonth: selectedMonth,
@@ -284,6 +287,19 @@ class _HomeDashboard extends ConsumerWidget {
       isLoading: weeklyPoints.isLoading,
       masked: masked,
       onWeekChanged: (offset) => _onWeekChanged(ref, offset),
+    );
+
+    // 三个视图合并成一张卡：默认「本月预算」，第二/三个视图分别是趋势与日历。
+    // 合并省掉约 250dp 的纵向占用，趋势不再排在第 8 位（详见 HomeOverviewCard）。
+    final overviewCard = HomeOverviewCard(
+      budgetView: hero,
+      trendView: trendView,
+      calendarView: HomeSpendingCalendar(
+        month: selectedMonth,
+        onMonthChanged: (delta) => _onMonthChanged(ref, delta),
+        onOpenTransactions: () => _openTransactionsPage(context),
+        onAddTransaction: () => launcher.run(MoneyQuickAction.expense),
+      ),
     );
 
     final categoryPanel = HomeCategoryStructurePanel(
@@ -345,7 +361,7 @@ class _HomeDashboard extends ConsumerWidget {
               children: [
                 _section(0, greeting),
                 _gap,
-                _section(1, hero),
+                _section(1, overviewCard),
                 _gap,
                 _section(2, quickActions),
                 _gap,
@@ -365,11 +381,9 @@ class _HomeDashboard extends ConsumerWidget {
                 ),
                 if (healthStrip != null) ...[_gap, _section(6, healthStrip)],
                 _gap,
-                _section(7, weeklyTrend),
+                _section(7, categoryPanel),
                 _gap,
-                _section(8, categoryPanel),
-                _gap,
-                _section(9, recentPanel),
+                _section(8, recentPanel),
                 const SizedBox(height: 8),
                 quote,
               ],
@@ -389,15 +403,13 @@ class _HomeDashboard extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _section(1, hero),
+                        _section(1, overviewCard),
                         _gap,
                         _section(2, quickActions),
                         _gap,
                         _section(3, insightStrip),
                         _gap,
-                        _section(4, weeklyTrend),
-                        _gap,
-                        _section(5, recentPanel),
+                        _section(4, recentPanel),
                       ],
                     ),
                   ),
@@ -440,6 +452,20 @@ class _HomeDashboard extends ConsumerWidget {
       delay: Duration(milliseconds: 40 + index * 15),
       child: child,
     );
+  }
+
+  /// 切换月份：日历的 ‹ › 与顶栏月份选择器是同一个状态。
+  ///
+  /// 改了月份会连带触发 `homeMonthTransactionsProvider` 重新查库，
+  /// 日聚合（日历格子）也就跟着重算；切 0 表示回到本月。
+  void _onMonthChanged(WidgetRef ref, int delta) {
+    final controller = ref.read(homeMoneySelectedMonthProvider.notifier);
+    if (delta == 0) {
+      final now = DateTime.now();
+      controller.set(DateTime(now.year, now.month));
+      return;
+    }
+    controller.move(delta);
   }
 
   /// 切换选中的周。

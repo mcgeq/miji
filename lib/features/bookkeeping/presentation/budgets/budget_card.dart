@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:miji/core/presentation/app_color_utils.dart';
 import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
-import 'package:miji/core/presentation/components/money_amount_text.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
@@ -98,9 +98,17 @@ class BudgetCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppListItemIcon(icon: _icon, color: accent, size: 42),
-                const SizedBox(width: 12),
+                // 环形进度替代原来的细进度条：一屏能看更多张，且百分比更醒目。
+                _BudgetProgressRing(
+                  progress: progress,
+                  percentLabel:
+                      '${(budget.progress * 100).clamp(0, 999).round()}%',
+                  color: budget.isOverspent ? colorScheme.error : accent,
+                  trackColor: colorScheme.surfaceContainerHighest,
+                ),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,21 +123,43 @@ class BudgetCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _scopeLabel,
+                        '$_scopeLabel · $_periodLabel',
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.labelSmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
                           letterSpacing: 0,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _periodLabel,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          letterSpacing: 0,
-                        ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 14,
+                        runSpacing: 6,
+                        children: [
+                          _AmountText(
+                            label: usedLabel,
+                            amountMinor: budget.usedAmountMinor,
+                            currencyCode: budget.currencyCode,
+                            tone: budget.isIncomeTarget
+                                ? MoneyAmountTone.income
+                                : MoneyAmountTone.expense,
+                          ),
+                          _AmountText(
+                            label: totalLabel,
+                            amountMinor: budget.amountMinor,
+                            currencyCode: budget.currencyCode,
+                            tone: MoneyAmountTone.neutral,
+                          ),
+                          _AmountText(
+                            label: remainingLabel,
+                            amountMinor: remaining.abs(),
+                            currencyCode: budget.currencyCode,
+                            tone: remainingColor == null
+                                ? MoneyAmountTone.neutral
+                                : MoneyAmountTone.expense,
+                          ),
+                        ],
                       ),
                       if (ledger != null) ...[
                         const SizedBox(height: 6),
@@ -140,45 +170,8 @@ class BudgetCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(999),
-              color: budget.isOverspent ? colorScheme.error : accent,
-              backgroundColor: colorScheme.surfaceContainerHighest,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              alignment: WrapAlignment.spaceBetween,
-              children: [
-                _AmountText(
-                  label: usedLabel,
-                  amountMinor: budget.usedAmountMinor,
-                  currencyCode: budget.currencyCode,
-                  tone: budget.isIncomeTarget
-                      ? MoneyAmountTone.income
-                      : MoneyAmountTone.expense,
-                ),
-                _AmountText(
-                  label: remainingLabel,
-                  amountMinor: remaining.abs(),
-                  currencyCode: budget.currencyCode,
-                  tone: remainingColor == null
-                      ? MoneyAmountTone.neutral
-                      : MoneyAmountTone.expense,
-                ),
-                _AmountText(
-                  label: totalLabel,
-                  amountMinor: budget.amountMinor,
-                  currencyCode: budget.currencyCode,
-                  tone: MoneyAmountTone.neutral,
-                ),
-              ],
-            ),
-            if (_paceHint(theme) case final hint?) ...[
+            if (_paceHint(theme, MoneyPrivacy.of(context))
+                case final hint?) ...[
               const SizedBox(height: 8),
               Text(
                 hint.$1,
@@ -199,6 +192,96 @@ class BudgetCard extends StatelessWidget {
                 currencyCode: budget.currencyCode,
               ),
             ],
+            const SizedBox(height: 12),
+            Divider(height: 1, color: colorScheme.outlineVariant),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: onViewTransactions,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  child: const Text('查看流水'),
+                ),
+                const Spacer(),
+                if (allocationSummary case final summary?
+                    when summary.hasAllocations)
+                  Text(
+                    '${summary.count} 项子分配',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                const SizedBox(width: 6),
+                // ⋯ 菜单：原来 5 个操作全在左滑里，没有任何视觉提示，
+                // 手机上左滑按钮条一次只能看到 2~3 个。左滑保留为快捷方式。
+                PopupMenuButton<_BudgetMenuAction>(
+                  tooltip: '更多操作',
+                  position: PopupMenuPosition.under,
+                  onSelected: (action) {
+                    switch (action) {
+                      case _BudgetMenuAction.history:
+                        onViewHistory();
+                      case _BudgetMenuAction.allocations:
+                        onManageAllocations();
+                      case _BudgetMenuAction.edit:
+                        onEdit();
+                      case _BudgetMenuAction.delete:
+                        onDelete();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    _menuItem(
+                      context,
+                      _BudgetMenuAction.history,
+                      Icons.history_rounded,
+                      '预算历史',
+                    ),
+                    _menuItem(
+                      context,
+                      _BudgetMenuAction.allocations,
+                      Icons.account_tree_rounded,
+                      '子分配设置',
+                    ),
+                    _menuItem(
+                      context,
+                      _BudgetMenuAction.edit,
+                      Icons.edit_rounded,
+                      '编辑预算',
+                    ),
+                    _menuItem(
+                      context,
+                      _BudgetMenuAction.delete,
+                      Icons.delete_outline_rounded,
+                      '删除预算',
+                      color: colorScheme.error,
+                    ),
+                  ],
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Icon(
+                      Icons.more_horiz_rounded,
+                      size: 17,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             if (budget.shouldAlert) ...[
               const SizedBox(height: 10),
               Row(
@@ -228,17 +311,11 @@ class BudgetCard extends StatelessWidget {
     );
   }
 
-  IconData get _icon {
-    return budget.isIncomeTarget
-        ? Icons.trending_up_rounded
-        : Icons.flag_rounded;
-  }
-
   /// 「日均可用 / 还剩 N 天」这类决策信息。
   ///
   /// 卡片原本只给出「剩余 ¥464」，用户还得自己除以剩余天数。
   /// 这里把它算好；收入目标 / 已完成 / 周期已结束的预算不展示。
-  (String, Color)? _paceHint(ThemeData theme) {
+  (String, Color)? _paceHint(ThemeData theme, bool masked) {
     if (budget.isIncomeTarget || budget.isCompleted) {
       return null;
     }
@@ -252,9 +329,9 @@ class BudgetCard extends StatelessWidget {
     }
     final moneyColors = theme.moneyColors;
     if (budget.isOverspent) {
-      final overspentText = formatMoneyMinor(
-        -budget.remainingAmountMinor,
-        budget.currencyCode,
+      final overspentText = maskedMoneyOr(
+        formatMoneyMinor(-budget.remainingAmountMinor, budget.currencyCode),
+        masked,
       );
       return (
         '已超支 $overspentText${daysLeft > 0 ? ' · 仅剩 $daysLeft 天' : ''}',
@@ -263,13 +340,19 @@ class BudgetCard extends StatelessWidget {
     }
     if (daysLeft == 0) {
       return (
-        '周期最后一天 · 还可花 ${formatMoneyMinor(budget.remainingAmountMinor, budget.currencyCode)}',
+        maskedMoneyOr(
+          '周期最后一天 · 还可花 ${formatMoneyMinor(budget.remainingAmountMinor, budget.currencyCode)}',
+          masked,
+        ),
         moneyColors.warning,
       );
     }
     final perDay = budget.remainingAmountMinor ~/ daysLeft;
     return (
-      '日均可用 ${formatMoneyMinor(perDay, budget.currencyCode)} · 还剩 $daysLeft 天',
+      maskedMoneyOr(
+        '日均可用 ${formatMoneyMinor(perDay, budget.currencyCode)} · 还剩 $daysLeft 天',
+        masked,
+      ),
       moneyColors.success,
     );
   }
@@ -309,6 +392,89 @@ class BudgetCard extends StatelessWidget {
   String _shortDate(DateTime date) {
     return '${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
+  }
+}
+
+enum _BudgetMenuAction { history, allocations, edit, delete }
+
+PopupMenuItem<_BudgetMenuAction> _menuItem(
+  BuildContext context,
+  _BudgetMenuAction action,
+  IconData icon,
+  String label, {
+  Color? color,
+}) {
+  final theme = Theme.of(context);
+  return PopupMenuItem<_BudgetMenuAction>(
+    value: action,
+    child: Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: color ?? theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: color ?? theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// 预算进度环：中心直接给百分比，比细进度条更容易「扫」。
+class _BudgetProgressRing extends StatelessWidget {
+  const _BudgetProgressRing({
+    required this.progress,
+    required this.percentLabel,
+    required this.color,
+    required this.trackColor,
+  });
+
+  final double progress;
+  final String percentLabel;
+  final Color color;
+  final Color trackColor;
+
+  static const size = 58.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: size,
+            height: size,
+            child: CircularProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              strokeWidth: 6,
+              strokeCap: StrokeCap.round,
+              color: color,
+              backgroundColor: trackColor,
+            ),
+          ),
+          Text(
+            percentLabel,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -352,14 +518,20 @@ class _BudgetAllocationOverview extends StatelessWidget {
           ),
           _AllocationMetric(
             label: '已分配',
-            value: formatMoneyMinor(summary.allocatedAmountMinor, currencyCode),
+            value: maskedMoneyOr(
+              formatMoneyMinor(summary.allocatedAmountMinor, currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             color: colorScheme.onSurfaceVariant,
           ),
           _AllocationMetric(
             label: unallocatedLabel,
-            value: formatMoneyMinor(
-              summary.unallocatedAmountMinor.abs(),
-              currencyCode,
+            value: maskedMoneyOr(
+              formatMoneyMinor(
+                summary.unallocatedAmountMinor.abs(),
+                currencyCode,
+              ),
+              MoneyPrivacy.of(context),
             ),
             color: unallocatedColor,
           ),
@@ -475,7 +647,7 @@ class _AmountText extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 96),
+      constraints: const BoxConstraints(minWidth: 72),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -487,7 +659,7 @@ class _AmountText extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          MoneyAmountText(
+          MoneyText(
             amountMinor: amountMinor,
             currencyCode: currencyCode,
             tone: tone,

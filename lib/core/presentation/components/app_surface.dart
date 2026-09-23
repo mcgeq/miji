@@ -31,7 +31,8 @@ class AppSurface extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final radius = theme.radiusTokens;
     final spacing = theme.spacingTokens;
-    final borderRadius = BorderRadius.circular(radius.md);
+    // 卡片统一用 card 圆角（16）：md=10 同时被输入框/图标底复用，不能动。
+    final borderRadius = BorderRadius.circular(radius.card);
 
     final content = Padding(
       padding: padding ?? EdgeInsets.all(spacing.cardPadding),

@@ -261,6 +261,44 @@ void main() {
     expect(find.textContaining('预算 ¥'), findsNothing);
     expect(find.textContaining(' · '), findsNothing);
   });
+  testWidgets('标题行不再重复「本月预算」，只留节奏状态', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 「本月预算」现在是卡上方 tab 的名字，卡内不再写第二遍。
+    expect(find.text('本月预算'), findsNothing);
+    expect(find.text('节奏正常'), findsOneWidget);
+  });
+
+  testWidgets('无预算时也不显示「本月概览」胶囊', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: null,
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('本月概览'), findsNothing);
+    // 空态信息由正文承担：本月结余 + 设置预算入口。
+    expect(find.text('本月结余'), findsOneWidget);
+    expect(find.text('设置本月预算'), findsOneWidget);
+  });
 }
 
 /// 断言主角金额按 displaySmall 渲染，而不是回退到默认正文字号。

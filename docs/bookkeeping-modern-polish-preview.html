@@ -738,6 +738,72 @@ html[data-theme="dark"] .note{background:var(--surface-2);color:var(--text);bord
     </div>
   </section>
 
+  <!-- ===================== 第 2 批 ===================== -->
+  <section class="analysis" style="margin-top:16px">
+    <div class="panel span-12" style="border-color:rgba(33,167,139,.35)">
+      <h2 style="color:var(--secondary)">✓ 第 2 批（地基）已实施</h2>
+      <p class="sub">全局金额遮罩（Q1=A：跟随首页开关）· 金额排版统一到组件 · 容器视觉统一（Q2=A：只统一参数）· tabular 数字按 Q3 决定不做</p>
+      <table class="map-table small">
+        <thead><tr><th style="width:110px">状态</th><th style="width:270px">改动</th><th>实现要点</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag-nice">已实施</span></td><td>全局金额遮罩</td><td>把 <code>maskMoneyAmounts</code> 提升为全局开关，机制用 <b>InheritedWidget（<code>MoneyPrivacy</code> + <code>MoneyPrivacyScope</code>）</b>而不是全局变量：金额组件依赖它，一处开关精确重建，不需要把 provider 传下去。<br>新增 <code>MoneyText</code>（跟随开关的金额文本）与 <code>maskedMoneyOr()</code>（拼接文案用）。<br><b>覆盖范围</b>：流水（卡片/汇总条/日期头/账户汇总面板）、统计（全部 18 类卡片的 52 处金额，含图表提示气泡）、预算（卡片/汇总/日均提示/分配概览）、分期、提醒、自动记账、分类、账户（全局开关并入「全部隐藏」判定）、账户选择器、首页（迁移到共享组件）。<br><span style="color:var(--text-3)">有意排除：表单里的金额（记一笔/转账/分摊/账户表单/预算表单/预算分配/分期表单/自动记账表单）—— 那是用户正在输入或校验的数字，遮掉反而没法用。这是刻意划的边界，不是遗漏。</span></td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>卡片体系视觉统一</td><td>新增 <code>radius.card = 16</code> 卡片专用圆角并让 4 套容器（<code>AppSurface</code> → <code>AppContentPanel</code>/<code>AppListItemPanel</code>/<code>AppPlainPanel</code>）全部使用。<br><b>关键取舍</b>：没有直接改 <code>radius.md</code>(10)，因为输入框、图标底、色块共用它，一起变「胖」会很难看。<br>另外统一：列表行内边距显式化为 token（<code>listItemPadding = 14</code>，与卡片 16 形成刻意的两档）、<code>AppPlainPanel</code> 内边距 18 → 16（= cardPadding）、列表项边框 0.48 → 0.42（与 <code>AppSurface</code> 默认一致）。</td></tr>
+          <tr><td><span class="tag-drop">未做（按 Q3）</span></td><td>tabular figures</td><td>不启用等宽数字。</td></tr>
+          <tr><td><span class="tag-drop">第 3 批</span></td><td>统计页周期胶囊 + 结论条 · 预算卡环形 + ⋯ 菜单 · 分期状态分组 + 时间轴 · 搜索补齐 · 表单收敛 · 统计分区折叠</td><td>信息架构层，改动面较大。</td></tr>
+        </tbody>
+      </table>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
+        <div class="kpi"><div class="v" style="color:var(--secondary)">干净</div><div class="k">flutter analyze</div><div class="d">No issues found</div></div>
+        <div class="kpi"><div class="v">488</div><div class="k">测试通过</div><div class="d">第 2 批新增 6 个（遮罩 4 + 预算页级 2）</div></div>
+        <div class="kpi"><div class="v" style="color:var(--warning)">12</div><div class="k">既有失败（与本轮无关）</div><div class="d">health 11 + legacy import 1</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 第 3 批 ===================== -->
+  <section class="analysis" style="margin-top:16px">
+    <div class="panel span-12" style="border-color:rgba(33,167,139,.35)">
+      <h2 style="color:var(--secondary)">✓ 第 3 批（信息架构）已实施</h2>
+      <p class="sub">统计页周期胶囊 + 结论条（Q4=A，未做分区折叠）· 预算卡环形进度（Q5）+ ⋯ 菜单 · 分期状态分组 + 期次时间轴 · 四个列表补搜索 · 记一笔表单收敛</p>
+      <table class="map-table small">
+        <thead><tr><th style="width:110px">状态</th><th style="width:250px">改动</th><th>实现要点</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag-nice">已实施</span></td><td>统计页：周期胶囊 + 结论条</td><td>周期从抽屉挪到首屏，做成与流水页同款的胶囊（本月/本周/上周/近3个月/今年/自定义…）；原先要「点筛选→展开→找下拉→选→关」四步。<br>结论条新增纯函数 <code>buildStatisticsVerdict()</code>：一句话说清「支出 ¥4,140 · 较上期 ↓12% · 最大头是餐饮（30%）· 2 项异常波动」，并按语义选渐变底色（支出下降/收入上升=正向）。<br><span style="color:var(--text-3)">按 Q4=A 未做「按主题分区折叠」——留作下一轮。</span></td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>预算卡：环形进度 + ⋯ 菜单</td><td>细进度条换成 58px 环形进度（中心直接显示百分比，一屏能看更多张），右侧保留 已用/目标/剩余 三档数字与日均可用；底部新增操作行「查看流水 · N 项子分配 · ⋯」。<br><code>⋯</code> 菜单收编 历史/子分配/编辑/删除 —— 原来这 5 个操作<b>全在左滑里</b>且没有任何视觉提示（<code>budget_card.dart</code> 里 5 个 <code>AppSwipeAction</code>、0 个 <code>PopupMenuButton</code>），左滑保留为快捷方式。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分期：状态分组 + 期次时间轴</td><td>列表按状态分段：<b>进行中</b> + 「已结束 N 个」折叠（原来进行中/已完成/已取消混排，老计划一直占首屏）。<br>明细弹窗里把同构的期次行改成<b>时间轴</b>：左侧轨道（已入账=绿点 / 当前=主色点带光圈 / 未来=灰点 + 连线），一眼看出「还多久还完」。<br><span style="color:var(--text-3)">与原稿的偏差：时间轴放在明细弹窗而不是卡片上——卡片保持紧凑，避免一屏只能看 1 张。</span></td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>四个列表补搜索</td><td>预算（名称/备注/标签）、分期（名称/分类/账户）、自动记账（名称/描述/商户/备注）、提醒中心（标题）。搜索框位置与交互和分类页一致。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>记一笔表单收敛</td><td>「标签」从顶层移入「更多信息」折叠区：顶层区块 14 → 13，常用路径（金额/账户/分类/日期/支付方式）更快到底；历史多标签提示一并迁移。</td></tr>
+          <tr><td><span class="tag-drop">未做</span></td><td>统计分区折叠 · 「更多」面板补入口 · 流水多选批量</td><td>分区折叠按 Q4 决定留后；「更多」面板的 4 个候选入口（账本管理/结转/报表/记账设置）目前只有「记账设置」有干净路由，其余要先补路由，属独立一轮；流水多选批量改动最大，建议最后做。</td></tr>
+        </tbody>
+      </table>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
+        <div class="kpi"><div class="v" style="color:var(--secondary)">干净</div><div class="k">flutter analyze</div><div class="d">No issues found</div></div>
+        <div class="kpi"><div class="v">498</div><div class="k">测试通过</div><div class="d">第 3 批新增 10 个（结论条 7 + 分期分组/搜索/时间轴 3）</div></div>
+        <div class="kpi"><div class="v" style="color:var(--warning)">12</div><div class="k">既有失败（与本轮无关）</div><div class="d">health 11 + legacy import 1</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 遮罩修复 ===================== -->
+  <section class="analysis" style="margin-top:16px">
+    <div class="panel span-12" style="border-color:rgba(212,77,110,.35)">
+      <h2 style="color:var(--expense)">✓ 修复：账户页的金额遮罩（用户反馈）</h2>
+      <p class="sub">反馈：「全局遮罩打开后，在账户界面点击，无法展示遮罩的金额」——两个真实缺陷，都已修</p>
+      <table class="map-table small">
+        <thead><tr><th style="width:110px">状态</th><th style="width:250px">缺陷</th><th>原因与修法</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag-must">已修</span></td><td>逐账户「显示金额」在全局遮罩下失效</td><td><b>状态模型缺一态</b>：原来只有「显式隐藏」（<code>_hiddenAccountIds</code>）。全局遮罩打开时金额是隐藏的，但菜单根据显式集合判断，于是标签显示成<b>「隐藏金额」</b>、点下去也没有任何变化——用户看到的就是「点了没反应」。<br>改成三态：<b>显式显示 &gt; 显式隐藏 &gt; 全局遮罩</b>（新增 <code>_revealedAccountIds</code>，同样按 userId 持久化，key <code>account_revealed_ids_&lt;userId&gt;</code>）。菜单标签与「隐藏全部 / 显示全部」按钮都改成看<b>生效状态</b>，不再是单看显式集合。</td></tr>
+          <tr><td><span class="tag-must">已修</span></td><td>全局开关用的是 <code>ref.read</code></td><td><code>_globalMasked</code> 原来写成 <code>ref.read(moneyAmountsMaskedProvider)</code> —— <b>不建立依赖</b>，账户面板不会因为开关变化而重建（当前只是被别的重建顺带救回来了，属于隐患）。改成在 <code>build</code> 里 <code>ref.watch</code>，语义正确且不依赖外壳是否重建。</td></tr>
+        </tbody>
+      </table>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
+        <div class="kpi"><div class="v" style="color:var(--secondary)">3</div><div class="k">新增回归测试</div><div class="d">遮罩生效 / 开关运行中翻转 / 逐账户单独显示</div></div>
+        <div class="kpi"><div class="v">501</div><div class="k">测试通过</div><div class="d">analyze 干净</div></div>
+        <div class="kpi"><div class="v" style="color:var(--warning)">12</div><div class="k">既有失败（与本轮无关）</div><div class="d">health 11 + legacy import 1</div></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===================== 映射表 ===================== -->
   <h2 class="section-title">六 · 改动映射表</h2>
   <p class="section-sub">按「地基 / 功能 / 观感 / 层级」四档；每项都标了落点与代价</p>

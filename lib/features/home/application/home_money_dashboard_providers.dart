@@ -91,10 +91,6 @@ final homeMonthTransactionsProvider =
       }
 
       final scope = ref.watch(homeMoneyMonthScopeProvider);
-      final repository = ref.watch(moneyRepositoryProvider);
-      final transactions = <MoneyTransactionEntity>[];
-      var pageNumber = 1;
-      const pageSize = 200;
 
       // 多取前后各 7 天：趋势卡片是「以今天为中心」的滚动窗口，
       // 可能跨到上/下个月，这些天也要有数据。
@@ -104,34 +100,57 @@ final homeMonthTransactionsProvider =
         homeTrendFetchPaddingDays,
       );
 
-      while (true) {
-        final page = await repository.listTransactions(
-          session.userId!,
-          MoneyTransactionQuery(
-            page: pageNumber,
-            pageSize: pageSize,
-            dateStart: fetchStart,
-            dateEnd: fetchEndExclusive.subtract(
-              const Duration(microseconds: 1),
-            ),
-            ledgerId: ledger.id,
-          ),
-        );
-        transactions.addAll(page.items);
-        if (!page.hasMore) {
-          break;
-        }
-        pageNumber += 1;
-      }
-
-      return transactions
-          .where(
-            (transaction) =>
-                !transaction.isDeleted &&
-                transaction.status == MoneyTransactionStatus.completed,
-          )
-          .toList(growable: false);
+      return _fetchCompletedTransactions(
+        ref,
+        userId: session.userId!,
+        ledgerId: ledger.id,
+        start: fetchStart,
+        endExclusive: fetchEndExclusive,
+      );
     });
+
+/// 分页取 [start, endExclusive) 区间内「已完成」的交易。
+///
+/// 抽出来是因为日历要按**任意月份**查库（不只是当前选中月），
+/// 两处必须用完全相同的过滤条件（分页大小、软删除、状态）。
+Future<List<MoneyTransactionEntity>> _fetchCompletedTransactions(
+  Ref ref, {
+  required String userId,
+  required String ledgerId,
+  required DateTime start,
+  required DateTime endExclusive,
+}) async {
+  final repository = ref.read(moneyRepositoryProvider);
+  final transactions = <MoneyTransactionEntity>[];
+  var pageNumber = 1;
+  const pageSize = 200;
+
+  while (true) {
+    final page = await repository.listTransactions(
+      userId,
+      MoneyTransactionQuery(
+        page: pageNumber,
+        pageSize: pageSize,
+        dateStart: start,
+        dateEnd: endExclusive.subtract(const Duration(microseconds: 1)),
+        ledgerId: ledgerId,
+      ),
+    );
+    transactions.addAll(page.items);
+    if (!page.hasMore) {
+      break;
+    }
+    pageNumber += 1;
+  }
+
+  return transactions
+      .where(
+        (transaction) =>
+            !transaction.isDeleted &&
+            transaction.status == MoneyTransactionStatus.completed,
+      )
+      .toList(growable: false);
+}
 
 MoneyBudgetEntity? selectHomeMonthlyExpenseBudget(
   List<MoneyBudgetEntity> budgets,
@@ -253,7 +272,7 @@ final homeTodaySpendingSummaryProvider =
           continue;
         }
 
-        final amountMinor = _effectiveAmountMinor(transaction);
+        final amountMinor = effectiveMoneyAmountMinor(transaction);
         if (amountMinor <= 0) {
           continue;
         }
@@ -398,42 +417,224 @@ DateTime homeWeekStartForMonth(DateTime month, int index) {
   return _addDays(_mondayOfWeekContaining(_firstDayOfMonth(month)), index * 7);
 }
 
+/// 某个月的逐日聚合结果。
+///
+/// 日历（月视图）与趋势卡（周窗口）共用这一份聚合：周窗口可能跨月，
+/// 所以 [byDay] 里会包含月份之外的补白天数，两边各取所需。
+class HomeMonthlyDailySpending {
+  const HomeMonthlyDailySpending({
+    required this.month,
+    required this.byDay,
+    required this.expenseMinor,
+    required this.incomeMinor,
+    required this.transactionCount,
+    required this.dailyAverageExpenseMinor,
+    this.transactionsByDay = const <DateTime, List<MoneyTransactionEntity>>{},
+  });
+
+  const HomeMonthlyDailySpending.empty(this.month)
+    : byDay = const <DateTime, HomeDailySpendingPoint>{},
+      transactionsByDay = const <DateTime, List<MoneyTransactionEntity>>{},
+      expenseMinor = 0,
+      incomeMinor = 0,
+      transactionCount = 0,
+      dailyAverageExpenseMinor = 0;
+
+  /// 月份锚点（该月 1 日 0 点）。
+  final DateTime month;
+
+  /// 日期（只保留年月日）→ 当日聚合。
+  final Map<DateTime, HomeDailySpendingPoint> byDay;
+
+  /// 月内（不含补白天数）的支出合计。
+  final int expenseMinor;
+
+  /// 月内（不含补白天数）的收入合计。
+  final int incomeMinor;
+
+  final int transactionCount;
+
+  /// 月内日均支出（当月按「已过天数」摊，历史月按整月摊）。
+  final int dailyAverageExpenseMinor;
+
+  /// 某一天的流水（按时间倒序），供日历的日详情列出明细。
+  final Map<DateTime, List<MoneyTransactionEntity>> transactionsByDay;
+
+  /// 月净额：正数代表这个月净收入。
+  int get netMinor => incomeMinor - expenseMinor;
+
+  /// 某一天的流水（时间倒序）。
+  List<MoneyTransactionEntity> transactionsForDay(int day) {
+    return transactionsByDay[DateTime(month.year, month.month, day)] ??
+        const <MoneyTransactionEntity>[];
+  }
+
+  /// 某一天的聚合（没有记录时返回 0 值点，供日历画空日）。
+  HomeDailySpendingPoint pointForDay(int day) {
+    final date = DateTime(month.year, month.month, day);
+    return byDay[date] ??
+        HomeDailySpendingPoint(
+          date: date,
+          expenseMinor: 0,
+          incomeMinor: 0,
+          transactionCount: 0,
+          isInMonth: true,
+        );
+  }
+}
+
+/// 把交易聚合成「按天」的收支。
+///
+/// 纯函数：不碰 provider、不查库，日历/趋势/测试共用同一套口径，
+/// 避免三处各算一遍算出口径差异（原来的日聚合内联在周 provider 里）。
+HomeMonthlyDailySpending buildMonthlyDailySpending({
+  required DateTime month,
+  required List<MoneyTransactionEntity> transactions,
+  DateTime? today,
+}) {
+  final anchor = DateTime(month.year, month.month);
+  final dailyMap = <DateTime, _DailyAccum>{};
+  final transactionsByDay = <DateTime, List<MoneyTransactionEntity>>{};
+  var monthExpense = 0;
+  var monthIncome = 0;
+  var monthCount = 0;
+
+  for (final txn in transactions) {
+    final amount = effectiveMoneyAmountMinor(txn);
+    if (amount <= 0) {
+      continue;
+    }
+    final date = _dateOnly(txn.transactionAt);
+    final accum = dailyMap.putIfAbsent(date, () => _DailyAccum());
+    transactionsByDay
+        .putIfAbsent(date, () => <MoneyTransactionEntity>[])
+        .add(txn);
+    final inMonth = date.year == anchor.year && date.month == anchor.month;
+    if (txn.type == MoneyTransactionType.expense) {
+      accum.expenseMinor += amount;
+      accum.count += 1;
+      if (inMonth) {
+        monthExpense += amount;
+        monthCount += 1;
+      }
+    } else if (txn.type == MoneyTransactionType.income) {
+      accum.incomeMinor += amount;
+      if (inMonth) {
+        monthIncome += amount;
+        monthCount += 1;
+      }
+    }
+  }
+
+  final byDay = <DateTime, HomeDailySpendingPoint>{
+    for (final entry in dailyMap.entries)
+      entry.key: HomeDailySpendingPoint(
+        date: entry.key,
+        expenseMinor: entry.value.expenseMinor,
+        incomeMinor: entry.value.incomeMinor,
+        transactionCount: entry.value.count,
+        isInMonth:
+            entry.key.year == anchor.year && entry.key.month == anchor.month,
+      ),
+  };
+
+  // 日均：当月按「已经过去的天数」摊平（月初不会因为只过了 3 天就把日均压得很低），
+  // 历史月按整月天数摊平。
+  final now = today ?? DateTime.now();
+  final isCurrentMonth = now.year == anchor.year && now.month == anchor.month;
+  final divisor = isCurrentMonth
+      ? now.day
+      : DateTime(anchor.year, anchor.month + 1, 0).day;
+
+  for (final dayTransactions in transactionsByDay.values) {
+    dayTransactions.sort((a, b) => b.transactionAt.compareTo(a.transactionAt));
+  }
+
+  return HomeMonthlyDailySpending(
+    month: anchor,
+    byDay: byDay,
+    transactionsByDay: transactionsByDay,
+    expenseMinor: monthExpense,
+    incomeMinor: monthIncome,
+    transactionCount: monthCount,
+    dailyAverageExpenseMinor: divisor <= 0
+        ? 0
+        : (monthExpense / divisor).round(),
+  );
+}
+
+/// 指定月份的逐日聚合。
+///
+/// **切月会真的重新查库并重算**：
+/// - 该月正是仪表盘选中月时，直接复用 `homeMonthTransactionsProvider`
+///   已经取回的那一批（它本身覆盖选中月 ±7 天，整月都在里面），避免重复查询；
+/// - 其它月份（用户在日历里往回翻）才按需单独查库。
+final homeMonthDailySpendingProvider =
+    FutureProvider.family<HomeMonthlyDailySpending, DateTime>((
+      ref,
+      month,
+    ) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final anchor = DateTime(month.year, month.month);
+      final selected = ref.watch(homeMoneySelectedMonthProvider);
+      final isSelectedMonth =
+          selected.year == anchor.year && selected.month == anchor.month;
+
+      if (isSelectedMonth) {
+        final transactions = await ref.watch(
+          homeMonthTransactionsProvider.future,
+        );
+        return buildMonthlyDailySpending(
+          month: anchor,
+          transactions: transactions,
+        );
+      }
+
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return HomeMonthlyDailySpending.empty(anchor);
+      }
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        return HomeMonthlyDailySpending.empty(anchor);
+      }
+
+      final start = DateTime(anchor.year, anchor.month);
+      final transactions = await _fetchCompletedTransactions(
+        ref,
+        userId: session.userId!,
+        ledgerId: ledger.id,
+        start: start,
+        endExclusive: DateTime(anchor.year, anchor.month + 1),
+      );
+      return buildMonthlyDailySpending(
+        month: anchor,
+        transactions: transactions,
+      );
+    });
+
 /// 7 daily spending points for the selected trend window.
 final homeWeeklySpendingProvider = FutureProvider<List<HomeDailySpendingPoint>>(
   (ref) async {
-    final transactions = await ref.watch(homeMonthTransactionsProvider.future);
     final scope = ref.watch(homeMoneyMonthScopeProvider);
     final window = ref.watch(homeTrendWindowProvider);
-
-    // 这里按「天」聚合，不再按月份过滤：滚动窗口可能跨到上/下个月。
-    final dailyMap = <DateTime, _DailyAccum>{};
-    for (final txn in transactions) {
-      final amount = _effectiveAmountMinor(txn);
-      if (amount <= 0) {
-        continue;
-      }
-      final date = _dateOnly(txn.transactionAt);
-      final accum = dailyMap.putIfAbsent(date, () => _DailyAccum());
-      if (txn.type == MoneyTransactionType.expense) {
-        accum.expenseMinor += amount;
-        accum.count += 1;
-      } else if (txn.type == MoneyTransactionType.income) {
-        accum.incomeMinor += amount;
-      }
-    }
+    // 走同一个按月聚合入口：周窗口可能跨月，补白天数也在 byDay 里。
+    final monthly = await ref.watch(
+      homeMonthDailySpendingProvider(scope.anchorMonth).future,
+    );
 
     return List.generate(7, (i) {
       final date = _addDays(window.start, i);
-      final data = dailyMap[date];
-      return HomeDailySpendingPoint(
-        date: date,
-        expenseMinor: data?.expenseMinor ?? 0,
-        incomeMinor: data?.incomeMinor ?? 0,
-        transactionCount: data?.count ?? 0,
-        isInMonth:
-            date.month == scope.anchorMonth.month &&
-            date.year == scope.anchorMonth.year,
-      );
+      return monthly.byDay[date] ??
+          HomeDailySpendingPoint(
+            date: date,
+            expenseMinor: 0,
+            incomeMinor: 0,
+            transactionCount: 0,
+            isInMonth:
+                date.month == scope.anchorMonth.month &&
+                date.year == scope.anchorMonth.year,
+          );
     });
   },
 );
@@ -522,7 +723,7 @@ final homeRecentTransactionsProvider =
             final title = transaction.description.trim().isEmpty
                 ? transaction.type.label
                 : transaction.description.trim();
-            final amountMinor = _effectiveAmountMinor(transaction);
+            final amountMinor = effectiveMoneyAmountMinor(transaction);
 
             return HomeRecentTransactionItem(
               id: transaction.id,
@@ -563,7 +764,7 @@ Map<String, ({int count, int meanMinor})> _buildExpenseCategoryStats(
     if (transaction.type != MoneyTransactionType.expense) {
       continue;
     }
-    final amountMinor = _effectiveAmountMinor(transaction);
+    final amountMinor = effectiveMoneyAmountMinor(transaction);
     if (amountMinor <= 0) {
       continue;
     }
@@ -682,7 +883,11 @@ DateTime _dateOnly(DateTime value) {
   return DateTime(value.year, value.month, value.day);
 }
 
-int _effectiveAmountMinor(MoneyTransactionEntity transaction) {
+/// 扣掉退款后的实际金额（下限 0）。
+///
+/// 原来叫 `_effectiveAmountMinor`，日历的「当日流水」也要用同一口径，
+/// 所以提升为公开函数，避免两处各写一遍。
+int effectiveMoneyAmountMinor(MoneyTransactionEntity transaction) {
   final amount = transaction.amountMinor - transaction.refundAmountMinor;
   return amount < 0 ? 0 : amount;
 }
@@ -732,7 +937,7 @@ final homeCategorySpendingProvider =
         if (date.isBefore(scope.start) || !date.isBefore(scope.endExclusive)) {
           continue;
         }
-        final amountMinor = _effectiveAmountMinor(transaction);
+        final amountMinor = effectiveMoneyAmountMinor(transaction);
         if (amountMinor <= 0) {
           continue;
         }

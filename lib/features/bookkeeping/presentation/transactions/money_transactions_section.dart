@@ -12,6 +12,7 @@ import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/paged_load_more_list.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
@@ -1600,53 +1601,54 @@ class _AccountTransactionSummaryPanel extends StatelessWidget {
             children: [
               _SummaryMetric(
                 label: account.type.isCreditLike ? '可用额度' : '当前余额',
-                value: formatMoneyMinor(
-                  account.displayBalanceMinor,
-                  account.currencyCode,
-                ),
+                amountMinor: account.displayBalanceMinor,
+                currencyCode: account.currencyCode,
                 valueColor: colorScheme.primary,
               ),
               _SummaryMetric(
                 label: account.type.isCreditLike ? '信用额度' : '初始余额',
-                value: formatMoneyMinor(
-                  account.type.isCreditLike
-                      ? account.effectiveCreditLimitMinor
-                      : account.initialBalanceMinor,
-                  account.currencyCode,
-                ),
+                amountMinor: account.type.isCreditLike
+                    ? account.effectiveCreditLimitMinor
+                    : account.initialBalanceMinor,
+                currencyCode: account.currencyCode,
               ),
               if (account.type.isCreditLike) ...[
                 _SummaryMetric(
                   label: '已入账负债',
-                  value: formatMoneyMinor(
-                    account.effectivePostedDebtMinor,
-                    account.currencyCode,
-                  ),
+                  amountMinor: account.effectivePostedDebtMinor,
+                  currencyCode: account.currencyCode,
                   valueColor: colorScheme.error,
                 ),
                 _SummaryMetric(
                   label: '冻结额度',
-                  value: formatMoneyMinor(
-                    account.effectiveFrozenCreditMinor,
-                    account.currencyCode,
-                  ),
+                  amountMinor: account.effectiveFrozenCreditMinor,
+                  currencyCode: account.currencyCode,
                 ),
               ],
               _SummaryMetric(
                 label: '本月收入',
-                value: formatMoneyMinor(currentIncome, account.currencyCode),
+                amountMinor: currentIncome,
+                currencyCode: account.currencyCode,
                 valueColor: moneyColors.income,
               ),
               _SummaryMetric(
                 label: '本月支出',
-                value: formatMoneyMinor(currentExpense, account.currencyCode),
+                amountMinor: currentExpense,
+                currencyCode: account.currencyCode,
                 valueColor: colorScheme.error,
               ),
               _SummaryMetric(
                 label: currentNet >= 0 ? '本月净胜' : '本月净支出',
-                value: formatMoneyMinor(currentNet.abs(), account.currencyCode),
+                amountMinor: currentNet.abs(),
+                currencyCode: account.currencyCode,
               ),
-              _SummaryMetric(label: '支出对比', value: _expenseChangeText),
+              _SummaryMetric(
+                label: '支出对比',
+                value: maskedMoneyOr(
+                  _expenseChangeText,
+                  MoneyPrivacy.of(context),
+                ),
+              ),
             ],
           ),
         ],
@@ -1667,6 +1669,7 @@ class _AccountTransactionSummaryPanel extends StatelessWidget {
       summary.expenseChangeMinor.abs(),
       account.currencyCode,
     );
+    // 由调用方套 maskedMoneyOr（见 _SummaryMetric 的 masked 参数）。
     return '较上月$label $value';
   }
 }
@@ -1674,12 +1677,16 @@ class _AccountTransactionSummaryPanel extends StatelessWidget {
 class _SummaryMetric extends StatelessWidget {
   const _SummaryMetric({
     required this.label,
-    required this.value,
+    this.value,
+    this.amountMinor,
+    this.currencyCode = 'CNY',
     this.valueColor,
-  });
+  }) : assert(value != null || amountMinor != null);
 
   final String label;
-  final String value;
+  final String? value;
+  final int? amountMinor;
+  final String currencyCode;
   final Color? valueColor;
 
   @override
@@ -1700,15 +1707,27 @@ class _SummaryMetric extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 3),
-          Text(
-            value,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: valueColor ?? colorScheme.onSurface,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0,
+          if (amountMinor != null)
+            MoneyText(
+              amountMinor: amountMinor!,
+              currencyCode: currencyCode,
+              color: valueColor,
+              textStyle: theme.textTheme.titleSmall?.copyWith(
+                color: valueColor ?? colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            )
+          else
+            Text(
+              value!,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: valueColor ?? colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -2310,6 +2329,7 @@ class _TransactionSummaryBar extends ConsumerWidget {
         'CNY';
 
     final hasFilter = _hasAnyFilter(query);
+    final masked = MoneyPrivacy.of(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -2330,7 +2350,10 @@ class _TransactionSummaryBar extends ConsumerWidget {
             child: _metric(
               theme,
               '共 ${summary.count} 笔',
-              '支出 ${formatMoneyMinor(summary.expenseMinor, currencyCode)}',
+              maskedMoneyOr(
+                '支出 ${formatMoneyMinor(summary.expenseMinor, currencyCode)}',
+                masked,
+              ),
               theme.moneyColors.expense,
             ),
           ),
@@ -2338,7 +2361,10 @@ class _TransactionSummaryBar extends ConsumerWidget {
             child: _metric(
               theme,
               '收入',
-              formatMoneyMinor(summary.incomeMinor, currencyCode),
+              maskedMoneyOr(
+                formatMoneyMinor(summary.incomeMinor, currencyCode),
+                masked,
+              ),
               theme.moneyColors.income,
             ),
           ),
@@ -2346,8 +2372,10 @@ class _TransactionSummaryBar extends ConsumerWidget {
             child: _metric(
               theme,
               '净',
-              '${summary.netMinor >= 0 ? '+' : '-'}'
-                  '${formatMoneyMinor(summary.netMinor.abs(), currencyCode)}',
+              masked
+                  ? '••••'
+                  : '${summary.netMinor >= 0 ? '+' : '-'}'
+                        '${formatMoneyMinor(summary.netMinor.abs(), currencyCode)}',
               summary.netMinor >= 0
                   ? theme.moneyColors.income
                   : theme.moneyColors.expense,
@@ -2492,7 +2520,10 @@ class _DayGroupHeader extends StatelessWidget {
             const SizedBox(width: 8),
             if (expenseMinor > 0)
               Text(
-                '支出 ${formatMoneyMinor(expenseMinor, currencyCode!)}',
+                maskedMoneyOr(
+                  '支出 ${formatMoneyMinor(expenseMinor, currencyCode!)}',
+                  MoneyPrivacy.of(context),
+                ),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.moneyColors.expense,
                   letterSpacing: 0,
@@ -2501,7 +2532,10 @@ class _DayGroupHeader extends StatelessWidget {
             if (expenseMinor > 0 && incomeMinor > 0) const SizedBox(width: 10),
             if (incomeMinor > 0)
               Text(
-                '收入 ${formatMoneyMinor(incomeMinor, currencyCode!)}',
+                maskedMoneyOr(
+                  '收入 ${formatMoneyMinor(incomeMinor, currencyCode!)}',
+                  MoneyPrivacy.of(context),
+                ),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.moneyColors.income,
                   letterSpacing: 0,

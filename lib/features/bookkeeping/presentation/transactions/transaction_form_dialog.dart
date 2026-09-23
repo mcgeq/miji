@@ -458,25 +458,15 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               prefixIcon: const Icon(Icons.payment_rounded),
               textInputAction: TextInputAction.done,
             ),
-          SuggestionAutocompleteField(
-            controller: _tagController,
-            suggestions: tagCandidates,
-            labelText: '标签',
-            hintText: '可选，如：南京旅游（建预算后自动计入对应标签预算）',
-            prefixIcon: const Icon(Icons.local_offer_rounded),
-            textInputAction: TextInputAction.done,
-          ),
-          if (hasMultipleLegacyTags)
-            const AppFormHint(
-              text: '该笔历史交易含多个标签，保存后将仅保留一个',
-              icon: Icons.info_outline_rounded,
-            ),
           _AdvancedTransactionFields(
             initiallyExpanded: _advancedExpanded,
             merchantController: _merchantController,
             merchantSuggestions: entrySuggestions.merchants,
             locationController: _locationController,
             notesController: _notesController,
+            tagController: _tagController,
+            tagSuggestions: tagCandidates,
+            legacyTagHint: hasMultipleLegacyTags,
             onExpansionChanged: (value) {
               setState(() {
                 _advancedExpanded = value;
@@ -1116,6 +1106,9 @@ class _AdvancedTransactionFields extends StatelessWidget {
     this.merchantSuggestions = const <String>[],
     required this.locationController,
     required this.notesController,
+    required this.tagController,
+    this.tagSuggestions = const <String>[],
+    this.legacyTagHint = false,
     required this.onExpansionChanged,
   });
 
@@ -1124,6 +1117,12 @@ class _AdvancedTransactionFields extends StatelessWidget {
   final List<String> merchantSuggestions;
   final TextEditingController locationController;
   final TextEditingController notesController;
+
+  /// 标签从顶层搬进「更多信息」：顶层区块从 14 个收到 13 个，
+  /// 常用路径（金额/账户/分类/日期/支付方式）更快看到底。
+  final TextEditingController tagController;
+  final List<String> tagSuggestions;
+  final bool legacyTagHint;
   final ValueChanged<bool> onExpansionChanged;
 
   @override
@@ -1169,6 +1168,22 @@ class _AdvancedTransactionFields extends StatelessWidget {
               labelText: '备注',
               prefixIcon: const Icon(Icons.notes_rounded),
             ),
+            const SizedBox(height: 12),
+            SuggestionAutocompleteField(
+              controller: tagController,
+              suggestions: tagSuggestions,
+              labelText: '标签',
+              hintText: '可选，如：南京旅游（建预算后自动计入对应标签预算）',
+              prefixIcon: const Icon(Icons.local_offer_rounded),
+              textInputAction: TextInputAction.done,
+            ),
+            if (legacyTagHint) ...[
+              const SizedBox(height: 8),
+              const AppFormHint(
+                text: '该笔历史交易含多个标签，保存后将仅保留一个',
+                icon: Icons.info_outline_rounded,
+              ),
+            ],
           ],
         ),
       ),

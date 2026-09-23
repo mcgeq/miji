@@ -9,6 +9,8 @@ import 'package:miji/core/theme/app_theme.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/home/presentation/home_page.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:miji/features/home/presentation/home_overview_card.dart';
 
 /// 首页在没有登录会话 / 没有任何数据时也必须能渲染，
 /// 并且走「首次使用」引导而不是一屏 0。
@@ -144,6 +146,58 @@ void main() {
     expect(find.text('今日行动'), findsOneWidget);
     // 空数据提示。
     expect(find.text('这个月还没有账单'), findsOneWidget);
+  });
+  testWidgets('手机端把预算/趋势/日历合成一张卡，并且趋势不用滚动就能看到', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final now = DateTime.utc(2026, 7, 18, 8);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        currentUserVisibleAccountsProvider.overrideWith(
+          (ref) => Stream.value([_cashAccount(now)]),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const Scaffold(body: HomePage()),
+        ),
+      ),
+    );
+    for (var index = 0; index < 12; index++) {
+      await tester.pump(const Duration(milliseconds: 150));
+    }
+    expect(tester.takeException(), isNull);
+
+    // 三个视图共享一张卡：卡内只出现一次 tab 条。
+    expect(find.text('本月预算'), findsOneWidget);
+    expect(find.text('支出趋势'), findsOneWidget);
+    expect(find.text('日历'), findsOneWidget);
+
+    // 合并后整卡高度（含 tab 条）应当只占一屏的三分之一左右，
+    // 而不是原来 Hero + 趋势卡两张算起来 ≈580dp。
+    final cardRect = tester.getRect(find.byType(HomeOverviewCard));
+    expect(cardRect.height, lessThan(400), reason: '实际 ${cardRect.height}');
+
+    // 合并的收益：切到趋势后，图表仍在首屏（844 高的手机屏）之内。
+    await tester.tap(find.text('支出趋势'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BarChart), findsOneWidget);
+    final chartRect = tester.getRect(find.byType(BarChart));
+    expect(chartRect.bottom, lessThan(844), reason: '趋势图应该在首屏内，不需要滚动');
   });
 }
 

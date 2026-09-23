@@ -12,6 +12,7 @@ import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class BudgetHistorySheet extends ConsumerWidget {
   const BudgetHistorySheet({super.key, required this.budget});
@@ -146,14 +147,17 @@ class _BudgetSummaryCard extends StatelessWidget {
           ),
           _SummaryItem(
             label: '预算',
-            value: formatMoneyMinor(budget.amountMinor, budget.currencyCode),
+            value: maskedMoneyOr(
+              formatMoneyMinor(budget.amountMinor, budget.currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             color: colorScheme.onSurface,
           ),
           _SummaryItem(
             label: budget.isIncomeTarget ? '已赚' : '已用',
-            value: formatMoneyMinor(
-              budget.usedAmountMinor,
-              budget.currencyCode,
+            value: maskedMoneyOr(
+              formatMoneyMinor(budget.usedAmountMinor, budget.currencyCode),
+              MoneyPrivacy.of(context),
             ),
             color: budget.isIncomeTarget
                 ? colorScheme.primary
@@ -163,9 +167,12 @@ class _BudgetSummaryCard extends StatelessWidget {
             label: budget.isIncomeTarget
                 ? (budget.isCompleted ? '超额' : '剩余')
                 : (budget.isOverspent ? '超支' : '剩余'),
-            value: formatMoneyMinor(
-              budget.remainingAmountMinor.abs(),
-              budget.currencyCode,
+            value: maskedMoneyOr(
+              formatMoneyMinor(
+                budget.remainingAmountMinor.abs(),
+                budget.currencyCode,
+              ),
+              MoneyPrivacy.of(context),
             ),
             color: budget.isExpenseLimit && budget.isOverspent
                 ? colorScheme.error
@@ -412,7 +419,10 @@ class _AllocationSnapshotLine extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              '已用 ${formatMoneyMinor(allocation.usedAmountMinor, allocation.currencyCode)} / ${formatMoneyMinor(allocation.allocatedAmountMinor, allocation.currencyCode)}',
+              maskedMoneyOr(
+                '已用 ${formatMoneyMinor(allocation.usedAmountMinor, allocation.currencyCode)} / ${formatMoneyMinor(allocation.allocatedAmountMinor, allocation.currencyCode)}',
+                MoneyPrivacy.of(context),
+              ),
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(
@@ -478,7 +488,10 @@ class _SnapshotAmountRow extends StatelessWidget {
         ),
         Expanded(
           child: Text(
-            formatMoneyMinor(amountMinor, currencyCode),
+            maskedMoneyOr(
+              formatMoneyMinor(amountMinor, currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             textAlign: TextAlign.right,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodyMedium?.copyWith(

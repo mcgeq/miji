@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:miji/core/presentation/app_color_utils.dart';
 import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
-import 'package:miji/core/presentation/components/money_amount_text.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
@@ -87,7 +87,7 @@ class TransactionCard extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 420;
-            final amount = MoneyAmountText(
+            final amount = MoneyText(
               amountMinor: _signedDisplayAmountMinor,
               currencyCode: transaction.currencyCode,
               tone: _amountTone,

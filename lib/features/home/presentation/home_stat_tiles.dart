@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
-import 'package:miji/features/home/presentation/home_money_text.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
 
@@ -183,7 +183,7 @@ class HomeNetAssetTile extends StatelessWidget {
           if (isLoading)
             SizedBox(height: theme.textTheme.headlineSmall?.fontSize)
           else
-            HomeMoneyText(
+            MoneyText(
               amountMinor: value.netAssetMinor,
               currencyCode: value.currencyCode,
               textStyle: theme.textTheme.headlineSmall,
@@ -263,7 +263,7 @@ class _Breakdown extends StatelessWidget {
             letterSpacing: 0,
           ),
         ),
-        HomeMoneyText(
+        MoneyText(
           amountMinor: amountMinor,
           currencyCode: currencyCode,
           color: color,

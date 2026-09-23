@@ -14,6 +14,7 @@ class MoneyAmountText extends StatelessWidget {
     this.textStyle,
     this.color,
     this.showSign = false,
+    this.textAlign,
   });
 
   final int amountMinor;
@@ -23,6 +24,7 @@ class MoneyAmountText extends StatelessWidget {
   final TextStyle? textStyle;
   final Color? color;
   final bool showSign;
+  final TextAlign? textAlign;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +39,7 @@ class MoneyAmountText extends StatelessWidget {
       text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+      textAlign: textAlign,
       style: (textStyle ?? theme.textTheme.titleMedium)?.copyWith(
         color: resolvedColor,
         fontWeight: FontWeight.w800,

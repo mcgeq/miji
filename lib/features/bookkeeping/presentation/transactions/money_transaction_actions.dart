@@ -11,6 +11,7 @@ import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transfer_form_dialog.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyTransactionActions {
   const MoneyTransactionActions({
@@ -215,8 +216,10 @@ class _TransactionRefundDialogState extends State<_TransactionRefundDialog> {
     final spacing = theme.spacingTokens;
     return AppDialogScaffold(
       title: '记录退款',
-      subtitle:
-          '最多可退 ${formatMoneyMinor(widget.maxAmountMinor, widget.currencyCode)}',
+      subtitle: maskedMoneyOr(
+        '最多可退 ${formatMoneyMinor(widget.maxAmountMinor, widget.currencyCode)}',
+        MoneyPrivacy.of(context),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -303,17 +306,26 @@ class _RefundAmountSummary extends StatelessWidget {
           children: [
             _SummaryItem(
               label: '原金额',
-              value: formatMoneyMinor(totalAmountMinor, currencyCode),
+              value: maskedMoneyOr(
+                formatMoneyMinor(totalAmountMinor, currencyCode),
+                MoneyPrivacy.of(context),
+              ),
             ),
             const SizedBox(width: 12),
             _SummaryItem(
               label: '已退款',
-              value: formatMoneyMinor(refundedAmountMinor, currencyCode),
+              value: maskedMoneyOr(
+                formatMoneyMinor(refundedAmountMinor, currencyCode),
+                MoneyPrivacy.of(context),
+              ),
             ),
             const SizedBox(width: 12),
             _SummaryItem(
               label: '剩余可退',
-              value: formatMoneyMinor(remainingAmountMinor, currencyCode),
+              value: maskedMoneyOr(
+                formatMoneyMinor(remainingAmountMinor, currencyCode),
+                MoneyPrivacy.of(context),
+              ),
               emphasize: true,
             ),
           ],

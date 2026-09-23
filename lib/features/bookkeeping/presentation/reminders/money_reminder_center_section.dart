@@ -11,10 +11,10 @@ import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_filter_strip.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
-import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
@@ -720,11 +720,11 @@ class _ReminderCardContent extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Text(
-          formatMoneyMinor(item.amountMinor, item.currencyCode),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.titleSmall?.copyWith(
+        MoneyText(
+          amountMinor: item.amountMinor,
+          currencyCode: item.currencyCode,
+          color: color,
+          textStyle: theme.textTheme.titleSmall?.copyWith(
             color: color,
             fontWeight: FontWeight.w900,
             letterSpacing: 0,

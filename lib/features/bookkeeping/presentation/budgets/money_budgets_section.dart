@@ -8,7 +8,9 @@ import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_filter_sheet.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
+import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
@@ -44,6 +46,14 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
   MoneyBudgetPeriodType? _periodTypeFilter;
   _BudgetScopeFilter _scopeFilter = _BudgetScopeFilter.all;
   _BudgetStatusFilter _statusFilter = _BudgetStatusFilter.all;
+  final _searchController = TextEditingController();
+  String _keyword = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   bool get _hasActiveFilters =>
       _trackingTypeFilter != null ||
@@ -89,6 +99,31 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               _BudgetSummaryBar(budgets: filteredBudgets),
+                              const SizedBox(height: 10),
+                              AppTextField(
+                                controller: _searchController,
+                                hintText: '搜索预算名称 / 备注',
+                                prefixIcon: const Icon(
+                                  Icons.search_rounded,
+                                  size: 19,
+                                ),
+                                onChanged: (value) => setState(
+                                  () => _keyword = value.trim().toLowerCase(),
+                                ),
+                                suffixIcon: _keyword.isEmpty
+                                    ? null
+                                    : IconButton(
+                                        tooltip: '清除搜索',
+                                        icon: const Icon(
+                                          Icons.close_rounded,
+                                          size: 18,
+                                        ),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() => _keyword = '');
+                                        },
+                                      ),
+                              ),
                               const SizedBox(height: 10),
                               Row(
                                 children: [
@@ -230,6 +265,16 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
 
   List<MoneyBudgetEntity> _filterBudgets(List<MoneyBudgetEntity> budgets) {
     return budgets.where((budget) {
+      if (_keyword.isNotEmpty) {
+        final haystack = [
+          budget.name,
+          budget.description ?? '',
+          budget.tag ?? '',
+        ].join(' ').toLowerCase();
+        if (!haystack.contains(_keyword)) {
+          return false;
+        }
+      }
       final trackingType = _trackingTypeFilter;
       if (trackingType != null && budget.trackingType != trackingType) {
         return false;
@@ -431,6 +476,7 @@ class _BudgetSummaryBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final masked = MoneyPrivacy.of(context);
 
     // 多币种下求和没有意义，直接不展示。
     final currencies = budgets.map((budget) => budget.currencyCode).toSet();
@@ -474,7 +520,7 @@ class _BudgetSummaryBar extends StatelessWidget {
             child: _summaryMetric(
               theme,
               '合计',
-              formatMoneyMinor(totalMinor, currencyCode),
+              maskedMoneyOr(formatMoneyMinor(totalMinor, currencyCode), masked),
               colorScheme.onSurface,
             ),
           ),
@@ -482,7 +528,7 @@ class _BudgetSummaryBar extends StatelessWidget {
             child: _summaryMetric(
               theme,
               '已用',
-              formatMoneyMinor(usedMinor, currencyCode),
+              maskedMoneyOr(formatMoneyMinor(usedMinor, currencyCode), masked),
               theme.moneyColors.expense,
             ),
           ),
@@ -490,7 +536,10 @@ class _BudgetSummaryBar extends StatelessWidget {
             child: _summaryMetric(
               theme,
               remainingMinor >= 0 ? '剩余' : '超出',
-              formatMoneyMinor(remainingMinor.abs(), currencyCode),
+              maskedMoneyOr(
+                formatMoneyMinor(remainingMinor.abs(), currencyCode),
+                masked,
+              ),
               remainingMinor >= 0
                   ? theme.moneyColors.income
                   : colorScheme.error,

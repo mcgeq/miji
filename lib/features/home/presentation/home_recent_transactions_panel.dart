@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:miji/core/presentation/components/app_content_panel.dart';
-import 'package:miji/core/presentation/components/money_amount_text.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
-import 'package:miji/features/home/application/home_preference_providers.dart';
-import 'package:miji/features/home/presentation/home_money_text.dart';
+import 'package:miji/core/preferences/providers/preferences_providers.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 /// 最近账单：按日期分组，整行可点开详情弹窗。
 class HomeRecentTransactionsPanel extends StatelessWidget {
@@ -228,7 +227,7 @@ class _RecentRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            HomeMoneyText(
+            MoneyText(
               amountMinor: item.amountMinor,
               currencyCode: item.currencyCode,
               tone: tone,
@@ -262,7 +261,7 @@ class _UnusualBadge extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 隐私模式下不暴露「异常」判断，避免侧面泄露金额信息。
-    if (ref.watch(homeMaskMoneyAmountsProvider)) {
+    if (ref.watch(moneyAmountsMaskedProvider)) {
       return const SizedBox.shrink();
     }
 

@@ -75,3 +75,18 @@ final effectiveThemeModePreferenceProvider = Provider<AppThemeModePreference>((
           .maybeWhen(data: (themeMode) => themeMode, orElse: () => null) ??
       AppThemeModePreference.system;
 });
+
+/// 全局金额遮罩（设置里的「隐藏金额」）。
+///
+/// 之前只有首页用它（`homeMaskMoneyAmountsProvider`），统计 / 预算 / 分期 /
+/// 提醒 / 流水这些页面全是明文。现在统一成同一个开关，所有金额文本走
+/// [MoneyText]，一处开关全局生效。
+final moneyAmountsMaskedProvider = Provider<bool>((ref) {
+  return ref
+          .watch(currentUserPreferencesProvider)
+          .maybeWhen(
+            data: (preferences) => preferences?.maskMoneyAmounts,
+            orElse: () => null,
+          ) ??
+      false;
+});

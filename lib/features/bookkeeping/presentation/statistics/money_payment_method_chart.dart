@@ -8,6 +8,7 @@ import 'package:miji/features/bookkeeping/application/money_amount_formatter.dar
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
 import 'package:flutter/services.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyPaymentMethodChart extends StatefulWidget {
   const MoneyPaymentMethodChart({
@@ -190,7 +191,10 @@ class _PaymentMethodCenter extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            formatMoneyMinor(selected!.amountMinor, currencyCode),
+            maskedMoneyOr(
+              formatMoneyMinor(selected!.amountMinor, currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             style: theme.textTheme.titleSmall?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w800,
@@ -220,7 +224,10 @@ class _PaymentMethodCenter extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          formatMoneyMinor(total, currencyCode),
+          maskedMoneyOr(
+            formatMoneyMinor(total, currencyCode),
+            MoneyPrivacy.of(context),
+          ),
           style: theme.textTheme.titleSmall?.copyWith(
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.w800,
@@ -264,7 +271,10 @@ class _PaymentMethodRankRow extends StatelessWidget {
               label: slice.label,
               subtitle: '${slice.transactionCount} 笔 · $percentage',
               trailing: Text(
-                formatMoneyMinor(slice.amountMinor, currencyCode),
+                maskedMoneyOr(
+                  formatMoneyMinor(slice.amountMinor, currencyCode),
+                  MoneyPrivacy.of(context),
+                ),
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w800,

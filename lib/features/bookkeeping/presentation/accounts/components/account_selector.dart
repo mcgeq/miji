@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/account_presentation_helpers.dart';
@@ -105,7 +106,9 @@ class AccountSelector extends StatelessWidget {
                 label: account.name,
                 labelWidget: _AccountSelectorItem(
                   account: account,
-                  isAmountHidden: isAmountHidden(account),
+                  // 全局「隐藏金额」优先于逐账户设置。
+                  isAmountHidden:
+                      MoneyPrivacy.of(context) || isAmountHidden(account),
                 ),
               ),
             ),

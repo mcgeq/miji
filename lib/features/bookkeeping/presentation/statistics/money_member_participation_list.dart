@@ -4,6 +4,7 @@ import 'package:miji/core/presentation/components/app_legend_item.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyMemberParticipationList extends StatelessWidget {
   const MoneyMemberParticipationList({
@@ -63,7 +64,13 @@ class _MemberRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              formatMoneyMinor(slice.paidAmountMinor, currencyCode),
+              maskedMoneyOr(
+                maskedMoneyOr(
+                  formatMoneyMinor(slice.paidAmountMinor, currencyCode),
+                  MoneyPrivacy.of(context),
+                ),
+                MoneyPrivacy.of(context),
+              ),
               style: theme.textTheme.labelLarge?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
@@ -72,7 +79,10 @@ class _MemberRow extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              '净额 ${formatMoneyMinor(netMinor, currencyCode)}',
+              maskedMoneyOr(
+                '净额 ${formatMoneyMinor(netMinor, currencyCode)}',
+                MoneyPrivacy.of(context),
+              ),
               style: theme.textTheme.labelSmall?.copyWith(
                 color: netMinor >= 0 ? colorScheme.primary : colorScheme.error,
                 letterSpacing: 0,

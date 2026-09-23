@@ -9,6 +9,7 @@ import 'package:miji/features/bookkeeping/application/money_amount_formatter.dar
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyNetWorthTrendCard extends StatelessWidget {
   const MoneyNetWorthTrendCard({super.key, required this.points});
@@ -68,9 +69,12 @@ class MoneyNetWorthTrendCard extends StatelessWidget {
                       if (idx < 0 || idx >= display.length) return null;
                       final point = display[idx];
                       return LineTooltipItem(
-                        '净资产 ${formatMoneyMinor(point.netMinor, defaultMoneyCurrencyCode)}\n'
-                        '资产 ${formatMoneyMinor(point.assetMinor, defaultMoneyCurrencyCode)}\n'
-                        '负债 ${formatMoneyMinor(point.liabilityMinor, defaultMoneyCurrencyCode)}',
+                        maskedMoneyOr(
+                          '净资产 ${formatMoneyMinor(point.netMinor, defaultMoneyCurrencyCode)}\n'
+                          '资产 ${formatMoneyMinor(point.assetMinor, defaultMoneyCurrencyCode)}\n'
+                          '负债 ${formatMoneyMinor(point.liabilityMinor, defaultMoneyCurrencyCode)}',
+                          MoneyPrivacy.of(context),
+                        ),
                         theme.textTheme.labelSmall!.copyWith(
                           color: Colors.white,
                           letterSpacing: 0,
@@ -282,7 +286,10 @@ class _NetWorthMetric extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              formatMoneyMinor(amountMinor, defaultMoneyCurrencyCode),
+              maskedMoneyOr(
+                formatMoneyMinor(amountMinor, defaultMoneyCurrencyCode),
+                MoneyPrivacy.of(context),
+              ),
               style: theme.textTheme.labelMedium?.copyWith(
                 color: color,
                 fontWeight: FontWeight.w800,

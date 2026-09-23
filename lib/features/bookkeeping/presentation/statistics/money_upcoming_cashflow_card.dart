@@ -7,6 +7,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyUpcomingCashFlowCard extends StatelessWidget {
   const MoneyUpcomingCashFlowCard({super.key, required this.summary});
@@ -103,7 +104,10 @@ class _MetricBucket extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              formatMoneyMinor(amountMinor, defaultMoneyCurrencyCode),
+              maskedMoneyOr(
+                formatMoneyMinor(amountMinor, defaultMoneyCurrencyCode),
+                MoneyPrivacy.of(context),
+              ),
               style: theme.textTheme.titleSmall?.copyWith(
                 color: color,
                 fontWeight: FontWeight.w900,
@@ -204,7 +208,10 @@ class _CashFlowRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            formatMoneyMinor(item.amountMinor, item.currencyCode),
+            maskedMoneyOr(
+              formatMoneyMinor(item.amountMinor, item.currencyCode),
+              MoneyPrivacy.of(context),
+            ),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w800,

@@ -5,6 +5,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyCreditUtilizationCard extends StatelessWidget {
   const MoneyCreditUtilizationCard({super.key, required this.insights});
@@ -68,17 +69,35 @@ class MoneyCreditUtilizationCard extends StatelessWidget {
         children: [
           _SummaryMetric(
             label: '总额度',
-            value: formatMoneyMinor(totalLimitMinor, currencyCode),
+            value: maskedMoneyOr(
+              maskedMoneyOr(
+                formatMoneyMinor(totalLimitMinor, currencyCode),
+                MoneyPrivacy.of(context),
+              ),
+              MoneyPrivacy.of(context),
+            ),
             color: colorScheme.primary,
           ),
           _SummaryMetric(
             label: '已用',
-            value: formatMoneyMinor(totalUsedMinor, currencyCode),
+            value: maskedMoneyOr(
+              maskedMoneyOr(
+                formatMoneyMinor(totalUsedMinor, currencyCode),
+                MoneyPrivacy.of(context),
+              ),
+              MoneyPrivacy.of(context),
+            ),
             color: theme.moneyColors.expense,
           ),
           _SummaryMetric(
             label: '可用',
-            value: formatMoneyMinor(totalAvailableMinor, currencyCode),
+            value: maskedMoneyOr(
+              maskedMoneyOr(
+                formatMoneyMinor(totalAvailableMinor, currencyCode),
+                MoneyPrivacy.of(context),
+              ),
+              MoneyPrivacy.of(context),
+            ),
             color: isWarning ? colorScheme.error : theme.moneyColors.success,
           ),
           const SizedBox(height: 16),
@@ -192,7 +211,13 @@ class _AccountRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              formatMoneyMinor(slice.usedMinor, slice.currencyCode),
+              maskedMoneyOr(
+                maskedMoneyOr(
+                  formatMoneyMinor(slice.usedMinor, slice.currencyCode),
+                  MoneyPrivacy.of(context),
+                ),
+                MoneyPrivacy.of(context),
+              ),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: isWarning ? colorScheme.error : colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
@@ -200,7 +225,10 @@ class _AccountRow extends StatelessWidget {
               ),
             ),
             Text(
-              ' / ${formatMoneyMinor(slice.creditLimitMinor, slice.currencyCode)}',
+              maskedMoneyOr(
+                ' / ${formatMoneyMinor(slice.creditLimitMinor, slice.currencyCode)}',
+                MoneyPrivacy.of(context),
+              ),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 letterSpacing: 0,
@@ -222,7 +250,10 @@ class _AccountRow extends StatelessWidget {
         ),
         const SizedBox(height: 3),
         Text(
-          '可用 ${formatMoneyMinor(slice.availableMinor, slice.currencyCode)} · $pct',
+          maskedMoneyOr(
+            '可用 ${formatMoneyMinor(slice.availableMinor, slice.currencyCode)} · $pct',
+            MoneyPrivacy.of(context),
+          ),
           style: theme.textTheme.labelSmall?.copyWith(
             color: colorScheme.onSurfaceVariant,
             letterSpacing: 0,
