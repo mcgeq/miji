@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_field_style.dart';
@@ -99,29 +100,33 @@ class _MoneyAutoPostingsSectionState
                 );
               }
 
-              return ListView.separated(
-                padding: const EdgeInsets.only(bottom: 12),
-                itemCount: items.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  final template = items[index];
-                  return _AutoPostingTemplateCard(
-                    template: template,
-                    account: _accountById(accountRows, template.accountId),
-                    categoryText: _categoryText(
-                      template,
-                      expenseCategories,
-                      incomeCategories,
-                    ),
-                    onEdit: () => _openTemplateDialog(template),
-                    onDelete: () => _confirmDelete(template),
-                    onRunNow: () => _runTemplateNow(template),
-                  );
-                },
+              return RefreshIndicator(
+                onRefresh: () => refreshMoneyData(ref),
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 12),
+                  itemCount: items.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final template = items[index];
+                    return _AutoPostingTemplateCard(
+                      template: template,
+                      account: _accountById(accountRows, template.accountId),
+                      categoryText: _categoryText(
+                        template,
+                        expenseCategories,
+                        incomeCategories,
+                      ),
+                      onEdit: () => _openTemplateDialog(template),
+                      onDelete: () => _confirmDelete(template),
+                      onRunNow: () => _runTemplateNow(template),
+                    );
+                  },
+                ),
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const AppSkeletonList(),
             error: (error, stackTrace) => AppErrorState(
               title: '读取自动记账失败',
               onRetry: () =>

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_filter_sheet.dart';
@@ -363,7 +364,7 @@ class _MoneyTransactionsSectionState
     required MoneyCategoryCatalog incomeCatalog,
   }) {
     if (_isLoadingInitial) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppSkeletonList();
     }
     if (_loadError != null) {
       return AppErrorState(title: '读取流水失败', onRetry: _refreshTransactions);

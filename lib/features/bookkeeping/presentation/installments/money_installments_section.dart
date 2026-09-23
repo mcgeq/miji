@@ -4,6 +4,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
@@ -63,10 +64,11 @@ class _MoneyInstallmentsSectionState
             onCreate: _showCreateDialog,
             onCreateAccount: _createCreditAccount,
             onManageCategories: _openCategoriesPanel,
+            onRefresh: () => refreshMoneyData(ref),
             onCancel: _cancelPlan,
             onPostDetail: _postDetail,
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const AppSkeletonList(),
           error: (error, stackTrace) => AppErrorState(
             title: '读取分类失败',
             onRetry: () => ref.invalidate(
@@ -74,7 +76,7 @@ class _MoneyInstallmentsSectionState
             ),
           ),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppSkeletonList(),
         error: (error, stackTrace) => AppErrorState(
           title: '读取账户失败',
           onRetry: () {
@@ -87,7 +89,7 @@ class _MoneyInstallmentsSectionState
           },
         ),
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const AppSkeletonList(),
       error: (error, stackTrace) => AppErrorState(
         title: '读取分期失败',
         onRetry: () => ref.invalidate(currentUserInstallmentPlansProvider),
@@ -248,6 +250,7 @@ class _MoneyInstallmentsContent extends StatelessWidget {
     required this.onCreate,
     required this.onCreateAccount,
     required this.onManageCategories,
+    required this.onRefresh,
     required this.onCancel,
     required this.onPostDetail,
   });
@@ -258,6 +261,7 @@ class _MoneyInstallmentsContent extends StatelessWidget {
   final void Function(List<MoneyAccountEntity>, MoneyCategoryCatalog) onCreate;
   final VoidCallback onCreateAccount;
   final VoidCallback onManageCategories;
+  final Future<void> Function() onRefresh;
   final ValueChanged<MoneyInstallmentPlanEntity> onCancel;
   final ValueChanged<MoneyInstallmentDetailEntity> onPostDetail;
 
@@ -335,20 +339,25 @@ class _MoneyInstallmentsContent extends StatelessWidget {
           )
         else
           Expanded(
-            child: ListView.separated(
-              itemCount: plans.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                return _InstallmentPlanCard(
-                  plan: plans[index],
-                  account: _accountForPlan(plans[index]),
-                  categoryText: _categoryText(plans[index]),
-                  onPostDetail: onPostDetail,
-                  onCancel: plans[index].isActive
-                      ? () => onCancel(plans[index])
-                      : null,
-                );
-              },
+            child: RefreshIndicator(
+              onRefresh: onRefresh,
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: plans.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  return _InstallmentPlanCard(
+                    plan: plans[index],
+                    account: _accountForPlan(plans[index]),
+                    categoryText: _categoryText(plans[index]),
+                    onPostDetail: onPostDetail,
+                    onCancel: plans[index].isActive
+                        ? () => onCancel(plans[index])
+                        : null,
+                  );
+                },
+              ),
             ),
           ),
       ],
@@ -939,8 +948,8 @@ class InstallmentDetailsDialog extends ConsumerWidget {
           );
         },
         loading: () => const Padding(
-          padding: EdgeInsets.symmetric(vertical: 24),
-          child: Center(child: CircularProgressIndicator()),
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: AppSkeletonList(rows: 3, padding: EdgeInsets.zero),
         ),
         error: (error, stackTrace) => const AppEmptyState(
           title: '读取明细失败',

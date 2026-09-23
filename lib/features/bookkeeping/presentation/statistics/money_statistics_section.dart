@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/components/app_content_panel.dart';
 import 'package:miji/core/presentation/components/app_filter_sheet.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
@@ -37,6 +38,7 @@ import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart
 import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_report_card.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_net_worth_trend_card.dart';
+import 'package:flutter/services.dart';
 
 final _reportGeneratingProvider =
     NotifierProvider<_ReportGeneratingNotifier, bool>(
@@ -293,7 +295,7 @@ class _StatisticsAsyncBody extends ConsumerWidget {
     );
 
     if (isContextLoading && contextValue == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppSkeletonPanel(lines: 4);
     }
     if (hasContextError && contextValue == null) {
       return AppPlainPanel(
@@ -353,7 +355,7 @@ class _StatisticsAsyncBody extends ConsumerWidget {
           );
 
     return statistics.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const AppSkeletonPanel(lines: 4),
       error: (_, _) => AppPlainPanel(
         child: AppErrorState(
           title: '读取统计失败',
@@ -442,6 +444,7 @@ class _StatisticsAsyncBody extends ConsumerWidget {
               minimumAmountMinor: amountMinor,
               minimumGrowthPercent: growthPercent,
             ),
+        onRefresh: () => refreshMoneyData(ref),
       ),
     );
   }
@@ -794,6 +797,7 @@ class _StatisticsBody extends StatelessWidget {
     required this.onGenerateReport,
     required this.onOpenTransactions,
     required this.onAnomalyThresholdChanged,
+    required this.onRefresh,
   });
 
   final MoneyStatisticsSummary summary;
@@ -820,6 +824,7 @@ class _StatisticsBody extends StatelessWidget {
   onOpenTransactions;
   final void Function(int amountMinor, double growthPercent)
   onAnomalyThresholdChanged;
+  final Future<void> Function() onRefresh;
 
   static List<MoneyStatisticsRankSlice> _toRankSlices(
     List<MoneyStatisticsTagSlice> tagSlices,
@@ -843,6 +848,7 @@ class _StatisticsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return _StatisticsPager(
       pageCount: _pageCount,
+      onRefresh: onRefresh,
       pageBuilder: (context, index) => _buildPageContent(context, index),
     );
   }
@@ -1161,10 +1167,15 @@ class _StatisticsBody extends StatelessWidget {
 }
 
 class _StatisticsPager extends StatefulWidget {
-  const _StatisticsPager({required this.pageCount, required this.pageBuilder});
+  const _StatisticsPager({
+    required this.pageCount,
+    required this.pageBuilder,
+    required this.onRefresh,
+  });
 
   final int pageCount;
   final Widget Function(BuildContext context, int index) pageBuilder;
+  final Future<void> Function() onRefresh;
 
   @override
   State<_StatisticsPager> createState() => _StatisticsPagerState();
@@ -1184,6 +1195,7 @@ class _StatisticsPagerState extends State<_StatisticsPager> {
     if (page == _currentPage) {
       return;
     }
+    HapticFeedback.selectionClick();
     _controller.animateToPage(
       page,
       duration: const Duration(milliseconds: 260),
@@ -1215,14 +1227,17 @@ class _StatisticsPagerState extends State<_StatisticsPager> {
             itemCount: widget.pageCount,
             itemBuilder: (context, index) {
               return _KeepAliveStatisticsPage(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      widget.pageBuilder(context, index),
-                      const SizedBox(height: 12),
-                    ],
+                child: RefreshIndicator(
+                  onRefresh: widget.onRefresh,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        widget.pageBuilder(context, index),
+                        const SizedBox(height: 12),
+                      ],
+                    ),
                   ),
                 ),
               );

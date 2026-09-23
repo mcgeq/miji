@@ -169,16 +169,89 @@ void main() {
 
     expect(repository.resetKind, MoneyCategoryKind.expense);
   });
+
+  testWidgets('collapses long sub category lists behind +N', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _wrap([_category, _transport], subCategories: _manySubCategories),
+    );
+    await tester.pumpAndSettle();
+
+    // 默认只展开 6 个，其余折叠成「+9 个」（共 15 个）。
+    expect(find.text('早餐'), findsOneWidget);
+    expect(find.text('子分类10'), findsNothing);
+    expect(find.text('+9 个'), findsOneWidget);
+
+    await tester.tap(find.text('+9 个'));
+    await tester.pumpAndSettle();
+    expect(find.text('子分类10'), findsOneWidget);
+    expect(find.text('+9 个'), findsNothing);
+    expect(find.text('收起'), findsOneWidget);
+
+    await tester.tap(find.text('收起'));
+    await tester.pumpAndSettle();
+    expect(find.text('+9 个'), findsOneWidget);
+  });
+
+  testWidgets('pull to refresh bumps the global money refresh version', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    // 需要拿到 container 才能断言刷新版本号，所以这里自己建 scope。
+    final container = ProviderContainer(
+      overrides: [
+        currentUserCategoryManagementCatalogProvider.overrideWith(
+          (ref, kind) => Stream.value(
+            const MoneyCategoryCatalog(
+              categories: [_category, _transport],
+              subCategories: [],
+            ),
+          ),
+        ),
+        currentUserMonthCategoryUsageProvider.overrideWith(
+          (ref, kind) async => const MoneyCategoryUsage.empty(),
+        ),
+        authSessionControllerProvider.overrideWith(_UnlockedSession.new),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const Scaffold(body: MoneyCategoriesSection()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final before = container.read(moneyDataRefreshVersionProvider);
+
+    await tester.fling(find.byType(ListView), const Offset(0, 320), 1200);
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(moneyDataRefreshVersionProvider),
+      greaterThan(before),
+    );
+  });
 }
 
 Widget _wrap(
   List<MoneyCategoryEntity> categories, {
   Map<String, int> usageMinor = const {},
   MoneyRepository? repository,
+  List<MoneySubCategoryEntity>? subCategories,
 }) {
   final catalog = MoneyCategoryCatalog(
     categories: categories,
-    subCategories: const [_breakfast],
+    subCategories: subCategories ?? const [_breakfast],
   );
   return ProviderScope(
     overrides: [
@@ -277,3 +350,18 @@ class _UnlockedSession extends AuthSessionController {
   @override
   AuthSession build() => const AuthSession(userId: 'user-1', isUnlocked: true);
 }
+
+final _manySubCategories = <MoneySubCategoryEntity>[
+  _breakfast,
+  for (var index = 2; index <= 15; index++)
+    MoneySubCategoryEntity(
+      id: 'expense_food_sub_$index',
+      categoryId: 'expense_food',
+      userId: 'user-1',
+      name: index == 10 ? '子分类10' : '子分类$index',
+      kind: MoneyCategoryKind.expense,
+      color: '#FDBA74',
+      icon: 'lunch_dining',
+      isSystem: true,
+    ),
+];

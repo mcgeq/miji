@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/presentation/app_color_utils.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_color_picker.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
@@ -20,6 +21,7 @@ import 'package:miji/features/bookkeeping/presentation/categories/category_icon.
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
+import 'package:flutter/services.dart';
 
 class MoneyCategoriesSection extends ConsumerStatefulWidget {
   const MoneyCategoriesSection({super.key});
@@ -140,7 +142,7 @@ class _MoneyCategoriesSectionState
         Expanded(
           child: catalog.when(
             data: (catalog) => _buildCatalog(context, catalog, usage),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const AppSkeletonList(),
             error: (error, stackTrace) => AppErrorState(
               title: '读取分类失败',
               onRetry: () => ref.invalidate(
@@ -272,26 +274,31 @@ class _MoneyCategoriesSectionState
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 18),
-      children: [
-        for (final category in active) ...[
-          buildTile(category),
-          const SizedBox(height: 10),
+    return RefreshIndicator(
+      // 排序模式不做下拉刷新：拖拽与下拉手势会互相干扰。
+      onRefresh: () => refreshMoneyData(ref),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 18),
+        children: [
+          for (final category in active) ...[
+            buildTile(category),
+            const SizedBox(height: 10),
+          ],
+          if (deleted.isNotEmpty) ...[
+            _DeletedSectionHeader(
+              count: deleted.length,
+              expanded: _showDeleted,
+              onToggle: () => setState(() => _showDeleted = !_showDeleted),
+            ),
+            if (_showDeleted)
+              for (final category in deleted) ...[
+                const SizedBox(height: 10),
+                buildTile(category),
+              ],
+          ],
         ],
-        if (deleted.isNotEmpty) ...[
-          _DeletedSectionHeader(
-            count: deleted.length,
-            expanded: _showDeleted,
-            onToggle: () => setState(() => _showDeleted = !_showDeleted),
-          ),
-          if (_showDeleted)
-            for (final category in deleted) ...[
-              const SizedBox(height: 10),
-              buildTile(category),
-            ],
-        ],
-      ],
+      ),
     );
   }
 
@@ -351,6 +358,8 @@ class _MoneyCategoriesSectionState
     final ids = active.map((category) => category.id).toList();
     final moved = ids.removeAt(oldIndex);
     ids.insert(newIndex, moved);
+    // 落位触感：拖拽最需要「松手有反馈」。
+    HapticFeedback.mediumImpact();
     setState(() => _draftOrder = ids);
 
     final userId = _currentUserId();
@@ -797,7 +806,7 @@ class _SubCategoryOrderDialogState
   }
 }
 
-class _CategoryTile extends StatelessWidget {
+class _CategoryTile extends StatefulWidget {
   const _CategoryTile({
     super.key,
     required this.category,
@@ -840,6 +849,47 @@ class _CategoryTile extends StatelessWidget {
   final double usageShare;
   final String currencyCode;
   final bool showUsage;
+
+  @override
+  State<_CategoryTile> createState() => _CategoryTileState();
+}
+
+class _CategoryTileState extends State<_CategoryTile> {
+  /// 子分类默认只显示 6 个：购物有 23 个子分类，整面铺开会让一张卡占掉半屏。
+  static const _collapsedCount = 6;
+  bool _expanded = false;
+
+  MoneyCategoryEntity get category => widget.category;
+  List<MoneySubCategoryEntity> get subCategories => widget.subCategories;
+  int get usageMinor => widget.usageMinor;
+  double get usageShare => widget.usageShare;
+  String get currencyCode => widget.currencyCode;
+  bool get showUsage => widget.showUsage;
+  Widget? get dragHandle => widget.dragHandle;
+  VoidCallback? get onShowSubCategoryOrder => widget.onShowSubCategoryOrder;
+  VoidCallback? get onAddSubCategory => widget.onAddSubCategory;
+  VoidCallback? get onEditCategory => widget.onEditCategory;
+  VoidCallback? get onDeleteCategory => widget.onDeleteCategory;
+  VoidCallback? get onRestoreCategory => widget.onRestoreCategory;
+  ValueChanged<MoneySubCategoryEntity> get onTapSubCategory =>
+      widget.onTapSubCategory;
+  ValueChanged<MoneySubCategoryEntity> get onEditSubCategory =>
+      widget.onEditSubCategory;
+  ValueChanged<MoneySubCategoryEntity> get onDeleteSubCategory =>
+      widget.onDeleteSubCategory;
+  ValueChanged<MoneySubCategoryEntity> get onRestoreSubCategory =>
+      widget.onRestoreSubCategory;
+
+  /// 折叠时只展示前 N 个（重点是别再让「购物 23 个子分类」把页面拉成超长滚动）。
+  List<MoneySubCategoryEntity> get _visibleSubCategories {
+    if (_expanded || subCategories.length <= _collapsedCount) {
+      return subCategories;
+    }
+    return subCategories.take(_collapsedCount).toList();
+  }
+
+  int get _hiddenSubCategoryCount =>
+      _expanded ? 0 : (subCategories.length - _collapsedCount).clamp(0, 999);
 
   /// 「8 个子分类 · 本月 ¥1,240 · 30.0%」。
   String get _metaText {
@@ -973,7 +1023,7 @@ class _CategoryTile extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final subCategory in subCategories)
+                  for (final subCategory in _visibleSubCategories)
                     _SubCategoryChip(
                       subCategory: subCategory,
                       color: _colorFromHex(subCategory.color) ?? color,
@@ -989,6 +1039,20 @@ class _CategoryTile extends StatelessWidget {
                       onRestore: subCategory.isSystem || !subCategory.isDeleted
                           ? null
                           : () => onRestoreSubCategory(subCategory),
+                    ),
+                  if (_hiddenSubCategoryCount > 0)
+                    _SubCategoryMoreChip(
+                      count: _hiddenSubCategoryCount,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _expanded = true);
+                      },
+                    ),
+                  if (_expanded && subCategories.length > _collapsedCount)
+                    _SubCategoryMoreChip(
+                      label: '收起',
+                      count: 0,
+                      onTap: () => setState(() => _expanded = false),
                     ),
                 ],
               ),
@@ -1135,6 +1199,62 @@ class _DeletedSectionHeader extends StatelessWidget {
                     : Icons.expand_more_rounded,
                 size: 20,
                 color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 「+17 个」/「收起」胶囊。
+class _SubCategoryMoreChip extends StatelessWidget {
+  const _SubCategoryMoreChip({
+    required this.count,
+    required this.onTap,
+    this.label,
+  });
+
+  final int count;
+  final VoidCallback onTap;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                label == null ? Icons.add_rounded : Icons.expand_less_rounded,
+                size: 15,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label ?? '+$count 个',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
               ),
             ],
           ),

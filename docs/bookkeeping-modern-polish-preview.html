@@ -712,6 +712,32 @@ html[data-theme="dark"] .note{background:var(--surface-2);color:var(--text);bord
 
   </div>
 
+  <!-- ===================== 实施状态 ===================== -->
+  <section class="analysis" style="margin-top:34px">
+    <div class="panel span-12" style="border-color:rgba(33,167,139,.35)">
+      <h2 style="color:var(--secondary)">✓ 第 1 批（纯展示层）已实施</h2>
+      <p class="sub">按你确认的取舍：Q1/Q2 走推荐方案（全局跟随首页开关 / 只统一视觉）、Q3 不做 tabular 数字、Q4 先只做周期胶囊 + 结论条、Q5 预算卡做环形</p>
+      <table class="map-table small">
+        <thead><tr><th style="width:110px">状态</th><th style="width:260px">改动</th><th>实现要点</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag-nice">已实施</span></td><td>骨架屏组件 + 替换整页转圈</td><td>新增 <code>AppSkeletonBox / List / Panel / Chart</code>（带脉冲动画），首页原来的私有骨架屏改成复用共享组件；把 <b>记账模块 15 处整页/面板级转圈</b>换成骨架（列表页用 <code>AppSkeletonList</code>、统计用 <code>AppSkeletonPanel</code>）。按钮/内联的转圈（生成报表、账本切换、按钮 loading）保留——那里转圈才是对的。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>图表统一语言</td><td>新增 <code>MoneyChartStyle</code> 常量：入场动画 320ms/easeOutCubic、柱状图顶部圆角 + 纵向渐变、折线 <b>渐变面积填充 + 平滑曲线 + 触摸时才显示圆点与虚线指示</b>、饼图统一间距/圆角/起始角。趋势图、预算趋势、净资产趋势、渠道来源柱图、4 个饼图全部接入。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>分类页子分类折叠</td><td>默认只展示 6 个 + 「+N 个」，展开后出现「收起」。购物 23 个子分类时卡片高度降到约 1/3；<code>_CategoryTile</code> 改为 StatefulWidget 承载折叠状态。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>下拉刷新补齐</td><td>新增 <code>refreshMoneyData(ref)</code>（bump 全局刷新版本号），接入 <b>预算 / 分期 / 自动记账 / 提醒中心（待处理+历史）/ 分类 / 统计（每个分页）</b>，并统一加 <code>AlwaysScrollableScrollPhysics</code>（短列表也能下拉）。分类页在排序模式下<strong>不</strong>接刷新，避免与拖拽抢手势。</td></tr>
+          <tr><td><span class="tag-nice">已实施</span></td><td>触感反馈</td><td>接入 6 处：一级导航切换、统计分页切换、4 个饼图切片点击（<code>selectionClick</code>）、分类拖拽落位与 chips 展开（<code>mediumImpact</code>）、提醒批量完成。全仓 <code>HapticFeedback</code> 从 1 处 → 8 处。</td></tr>
+          <tr><td><span class="tag-drop">未做（按你的决定）</span></td><td>tabular figures</td><td>Q3：不启用等宽数字，避免窄屏长金额溢出风险。</td></tr>
+          <tr><td><span class="tag-drop">下一批</span></td><td>第 2 批：全局金额遮罩 + 金额排版统一 + 容器视觉统一</td><td>见下方映射表「地基」档。</td></tr>
+          <tr><td><span class="tag-drop">第 3 批</span></td><td>统计页周期胶囊 + 结论条；预算卡环形 + ⋯ 菜单；分期状态分组 + 时间轴；搜索补齐；表单收敛</td><td>见映射表后几档。</td></tr>
+        </tbody>
+      </table>
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
+        <div class="kpi"><div class="v" style="color:var(--secondary)">干净</div><div class="k">flutter analyze</div><div class="d">No issues found</div></div>
+        <div class="kpi"><div class="v">482</div><div class="k">测试通过</div><div class="d">第 1 批新增 5 个（骨架屏 3 + 折叠/刷新 2）</div></div>
+        <div class="kpi"><div class="v" style="color:var(--warning)">12</div><div class="k">既有失败（与本轮无关）</div><div class="d">health 11 + legacy import 1</div></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===================== 映射表 ===================== -->
   <h2 class="section-title">六 · 改动映射表</h2>
   <p class="section-sub">按「地基 / 功能 / 观感 / 层级」四档；每项都标了落点与代价</p>

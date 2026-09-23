@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:miji/core/presentation/app_color_utils.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
@@ -97,7 +98,7 @@ class BudgetHistorySheet extends ConsumerWidget {
             },
             loading: () => const Padding(
               padding: EdgeInsets.symmetric(vertical: 48),
-              child: Center(child: CircularProgressIndicator()),
+              child: AppSkeletonList(rows: 4),
             ),
             error: (error, stackTrace) =>
                 AppEmptyState(title: '读取预算历史失败', message: error.toString()),

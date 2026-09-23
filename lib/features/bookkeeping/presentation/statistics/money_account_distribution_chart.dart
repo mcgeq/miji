@@ -6,6 +6,8 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
+import 'package:flutter/services.dart';
 
 class MoneyAccountDistributionChart extends StatefulWidget {
   const MoneyAccountDistributionChart({
@@ -60,10 +62,12 @@ class _MoneyAccountDistributionChartState
             alignment: Alignment.center,
             children: [
               PieChart(
+                duration: MoneyChartStyle.animationDuration,
+                curve: MoneyChartStyle.animationCurve,
                 PieChartData(
-                  sectionsSpace: 3,
+                  sectionsSpace: MoneyChartStyle.pieSectionsSpace,
                   centerSpaceRadius: compact ? 46 : 54,
-                  startDegreeOffset: -90,
+                  startDegreeOffset: MoneyChartStyle.pieStartDegreeOffset,
                   pieTouchData: PieTouchData(
                     touchCallback: (event, response) {
                       // 仅在点击抬起时切换一次，避免按下/抬起两次 toggle 相互抵消。
@@ -92,7 +96,7 @@ class _MoneyAccountDistributionChartState
                         color: _sliceColor(context, index),
                         radius: compact ? 18 : 22,
                         showTitle: false,
-                        cornerRadius: 4,
+                        cornerRadius: MoneyChartStyle.pieCornerRadius,
                       ),
                   ],
                 ),
@@ -157,6 +161,7 @@ class _MoneyAccountDistributionChartState
   }
 
   void _handleTap(int index) {
+    HapticFeedback.selectionClick();
     setState(() {
       _selectedIndex = _selectedIndex == index ? null : index;
     });

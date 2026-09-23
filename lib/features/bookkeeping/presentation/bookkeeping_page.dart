@@ -24,6 +24,7 @@ import 'package:miji/features/bookkeeping/presentation/reminders/money_reminder_
 import 'package:miji/features/bookkeeping/presentation/statistics/money_statistics_section.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/money_transactions_section.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:flutter/services.dart';
 
 class BookkeepingPage extends StatefulWidget {
   const BookkeepingPage({
@@ -141,6 +142,8 @@ class _BookkeepingPageState extends State<BookkeepingPage> {
     if (panel == _selectedPanel) {
       return;
     }
+    // 切换一级导航给一次轻微触感，移动端「操作被接住」的感觉主要来自这里。
+    unawaited(HapticFeedback.selectionClick());
     setState(() {
       _selectedPanel = panel;
       _loadedPanels.add(panel);

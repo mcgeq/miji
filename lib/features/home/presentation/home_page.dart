@@ -6,6 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/components/app_section_entrance.dart';
 import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/core/user/providers/user_providers.dart';
@@ -565,52 +566,30 @@ class _HomeSkeleton extends StatelessWidget {
         children: [
           Row(
             children: [
-              _SkeletonBox(width: 168, height: 24),
+              AppSkeletonBox(width: 168, height: 24),
               Spacer(),
-              _SkeletonBox(width: 80, height: 24, radius: 999),
+              AppSkeletonBox(width: 80, height: 24, radius: 999),
             ],
           ),
           SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _SkeletonBox(height: 78)),
+              Expanded(child: AppSkeletonBox(height: 78)),
               SizedBox(width: 8),
-              Expanded(child: _SkeletonBox(height: 78)),
+              Expanded(child: AppSkeletonBox(height: 78)),
               SizedBox(width: 8),
-              Expanded(child: _SkeletonBox(height: 78)),
+              Expanded(child: AppSkeletonBox(height: 78)),
               SizedBox(width: 8),
-              Expanded(child: _SkeletonBox(height: 78)),
+              Expanded(child: AppSkeletonBox(height: 78)),
             ],
           ),
           SizedBox(height: 12),
-          _SkeletonBox(height: 232),
+          AppSkeletonBox(height: 232),
           SizedBox(height: 12),
-          _SkeletonBox(height: 76),
+          AppSkeletonBox(height: 76),
           SizedBox(height: 12),
-          _SkeletonBox(height: 180),
+          AppSkeletonBox(height: 180),
         ],
-      ),
-    );
-  }
-}
-
-class _SkeletonBox extends StatelessWidget {
-  const _SkeletonBox({this.width, required this.height, this.radius = 16});
-
-  final double? width;
-  final double height;
-  final double radius;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(radius),
       ),
     );
   }

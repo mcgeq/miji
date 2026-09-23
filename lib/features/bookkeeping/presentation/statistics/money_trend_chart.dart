@@ -9,6 +9,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
 
 class MoneyTrendChart extends StatelessWidget {
   const MoneyTrendChart({
@@ -57,6 +58,8 @@ class MoneyTrendChart extends StatelessWidget {
             builder: (context, constraints) {
               final chartWidth = constraints.maxWidth;
               return LineChart(
+                duration: MoneyChartStyle.animationDuration,
+                curve: MoneyChartStyle.animationCurve,
                 LineChartData(
                   minX: 0,
                   maxX: (points.length - 1).toDouble(),
@@ -136,14 +139,47 @@ class MoneyTrendChart extends StatelessWidget {
                       ),
                   ],
                   lineTouchData: LineTouchData(
+                    handleBuiltInTouches: true,
+                    getTouchedSpotIndicator: (barData, indexes) {
+                      return indexes
+                          .map(
+                            (index) => TouchedSpotIndicatorData(
+                              FlLine(
+                                color:
+                                    barData.color?.withValues(alpha: 0.35) ??
+                                    colorScheme.outlineVariant,
+                                strokeWidth: 1,
+                                dashArray: [4, 4],
+                              ),
+                              FlDotData(
+                                show: true,
+                                getDotPainter: (spot, percent, bar, i) =>
+                                    FlDotCirclePainter(
+                                      radius: 4,
+                                      color: bar.color ?? colorScheme.primary,
+                                      strokeWidth: 2,
+                                      strokeColor: colorScheme.surface,
+                                    ),
+                              ),
+                            ),
+                          )
+                          .toList();
+                    },
                     touchTooltipData: LineTouchTooltipData(
                       fitInsideHorizontally: true,
                       fitInsideVertically: true,
                       getTooltipColor: (_) => colorScheme.inverseSurface,
                       getTooltipItems: (spots) {
                         return spots.map((spot) {
+                          final index = spot.x.round();
+                          final label = index >= 0 && index < points.length
+                              ? _bucketLabel(points[index].bucketStart)
+                              : '';
                           return LineTooltipItem(
-                            formatMoneyMinor(spot.y.round(), currencyCode),
+                            [
+                              label,
+                              formatMoneyMinor(spot.y.round(), currencyCode),
+                            ].where((part) => part.isNotEmpty).join('  '),
                             theme.textTheme.labelSmall?.copyWith(
                                   color: colorScheme.onInverseSurface,
                                   fontWeight: FontWeight.w700,
@@ -262,13 +298,26 @@ class MoneyTrendChart extends StatelessWidget {
   }) {
     return LineChartBarData(
       isCurved: true,
+      curveSmoothness: 0.28,
       color: color,
-      barWidth: 2.6,
+      barWidth: MoneyChartStyle.lineWidth,
       isStrokeCapRound: true,
-      dotData: const FlDotData(show: false),
+      // 默认不显示圆点，触摸时再出现，避免长周期折线变成一串珠子。
+      dotData: FlDotData(
+        show: false,
+        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+          radius: 3.4,
+          color: color,
+          strokeWidth: 2,
+          strokeColor:
+              ThemeData.estimateBrightnessForColor(color) == Brightness.dark
+              ? Colors.white
+              : Colors.white,
+        ),
+      ),
       belowBarData: BarAreaData(
         show: true,
-        color: color.withValues(alpha: 0.08),
+        gradient: MoneyChartStyle.areaGradient(color),
       ),
       spots: [
         for (var index = 0; index < points.length; index += 1)

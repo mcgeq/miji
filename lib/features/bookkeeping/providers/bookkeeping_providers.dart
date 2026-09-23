@@ -1442,6 +1442,15 @@ class MoneyDataRefreshVersionController extends Notifier<int> {
   }
 }
 
+/// 下拉刷新：bump 一次全局刷新版本号，所有挂在 [_watchMoneyDataRefresh]
+/// 上的 provider 都会重新取数（记账模块的列表页共用这一个入口）。
+///
+/// 末尾的短延时只是为了让刷新指示器有时间转一下，避免「刚出现就消失」。
+Future<void> refreshMoneyData(WidgetRef ref) async {
+  ref.read(moneyDataRefreshVersionProvider.notifier).bump();
+  await Future<void>.delayed(const Duration(milliseconds: 260));
+}
+
 void _watchMoneyDataRefresh(Ref ref) {
   // StreamProvider.autoDispose 的 async* generator 在 dispose 后恢复时会抛异常。
   // Ref 失效时 ref.watch 会抛 Error，用 catch 安全降级。

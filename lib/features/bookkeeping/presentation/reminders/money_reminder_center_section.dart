@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_filter_strip.dart';
@@ -157,6 +159,9 @@ class _MoneyReminderCenterSectionState
     if (!mounted) {
       return;
     }
+    if (failed == 0) {
+      HapticFeedback.mediumImpact();
+    }
     if (failed > 0) {
       AppToast.error(toast, context, '${targets.length} 项中有 $failed 项失败');
     } else {
@@ -205,7 +210,7 @@ class _MoneyReminderCenterSectionState
 
   Widget _buildPending(AsyncValue<List<MoneyReminderCenterItem>> pending) {
     return pending.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const AppSkeletonList(),
       error: (_, _) => AppErrorState(
         title: '读取提醒失败',
         onRetry: () =>
@@ -225,28 +230,32 @@ class _MoneyReminderCenterSectionState
             ),
           );
         }
-        return ListView(
-          padding: const EdgeInsets.only(bottom: 12),
-          children: [
-            for (final group in _groupByUrgency(items, DateTime.now())) ...[
-              _PendingGroupHeader(
-                urgency: group.urgency,
-                count: group.items.length,
-              ),
-              for (final item in group.items) ...[
-                _PendingReminderCard(
-                  item: item,
-                  selected: _selectedKeys.contains(item.itemKey),
-                  selectionMode: _selectionMode,
-                  onToggleSelect: () => _toggleSelection(item.itemKey),
-                  onLongPress: () => _startSelection(item.itemKey),
-                  onEditReminder: _selectionMode ? null : _openReminderForm,
+        return RefreshIndicator(
+          onRefresh: () => refreshMoneyData(ref),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 12),
+            children: [
+              for (final group in _groupByUrgency(items, DateTime.now())) ...[
+                _PendingGroupHeader(
+                  urgency: group.urgency,
+                  count: group.items.length,
                 ),
-                const SizedBox(height: 10),
+                for (final item in group.items) ...[
+                  _PendingReminderCard(
+                    item: item,
+                    selected: _selectedKeys.contains(item.itemKey),
+                    selectionMode: _selectionMode,
+                    onToggleSelect: () => _toggleSelection(item.itemKey),
+                    onLongPress: () => _startSelection(item.itemKey),
+                    onEditReminder: _selectionMode ? null : _openReminderForm,
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                const SizedBox(height: 4),
               ],
-              const SizedBox(height: 4),
             ],
-          ],
+          ),
         );
       },
     );
@@ -286,7 +295,7 @@ class _MoneyReminderCenterSectionState
 
   Widget _buildHistory(AsyncValue<List<MoneyReminderCenterItem>> history) {
     return history.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const AppSkeletonList(),
       error: (_, _) => AppErrorState(
         title: '读取历史失败',
         onRetry: () => ref.invalidate(currentUserReminderCenterHistoryProvider),
@@ -315,19 +324,23 @@ class _MoneyReminderCenterSectionState
             Expanded(
               child: filtered.isEmpty
                   ? const AppEmptyState(title: '暂无处理历史')
-                  : ListView(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      children: [
-                        for (
-                          var index = 0;
-                          index < filtered.length;
-                          index++
-                        ) ...[
-                          _HistoryReminderCard(item: filtered[index]),
-                          if (index != filtered.length - 1)
-                            const SizedBox(height: 10),
+                  : RefreshIndicator(
+                      onRefresh: () => refreshMoneyData(ref),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(bottom: 12),
+                        children: [
+                          for (
+                            var index = 0;
+                            index < filtered.length;
+                            index++
+                          ) ...[
+                            _HistoryReminderCard(item: filtered[index]),
+                            if (index != filtered.length - 1)
+                              const SizedBox(height: 10),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
             ),
           ],

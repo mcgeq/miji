@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_filter_sheet.dart';
@@ -141,74 +142,84 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
                                 )
                               else
                                 Expanded(
-                                  child: ListView.separated(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    itemCount: filteredBudgets.length,
-                                    separatorBuilder: (context, index) =>
-                                        const SizedBox(height: 10),
-                                    itemBuilder: (context, index) {
-                                      final budget = filteredBudgets[index];
-                                      final catalogValue = budget.isIncomeTarget
-                                          ? incomeCatalogValue
-                                          : expenseCatalogValue;
-                                      final allocations = ref.watch(
-                                        currentUserBudgetAllocationsProvider(
-                                          budget.id,
-                                        ),
-                                      );
-                                      final allocationSummary = allocations
-                                          .maybeWhen(
-                                            data: (rows) =>
-                                                BudgetAllocationSummary.fromAllocations(
-                                                  budgetAmountMinor:
-                                                      budget.amountMinor,
-                                                  allocations: rows,
-                                                ),
-                                            orElse: () => null,
-                                          );
-                                      return BudgetCard(
-                                        budget: budget,
-                                        catalog: catalogValue,
-                                        accountsById: accountsById,
-                                        ledger: currentLedger,
-                                        allocationSummary: allocationSummary,
-                                        onViewTransactions:
-                                            widget.onViewTransactions == null
-                                            ? () {}
-                                            : () => widget.onViewTransactions!(
+                                  child: RefreshIndicator(
+                                    onRefresh: () => refreshMoneyData(ref),
+                                    child: ListView.separated(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      itemCount: filteredBudgets.length,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(height: 10),
+                                      itemBuilder: (context, index) {
+                                        final budget = filteredBudgets[index];
+                                        final catalogValue =
+                                            budget.isIncomeTarget
+                                            ? incomeCatalogValue
+                                            : expenseCatalogValue;
+                                        final allocations = ref.watch(
+                                          currentUserBudgetAllocationsProvider(
+                                            budget.id,
+                                          ),
+                                        );
+                                        final allocationSummary = allocations
+                                            .maybeWhen(
+                                              data: (rows) =>
+                                                  BudgetAllocationSummary.fromAllocations(
+                                                    budgetAmountMinor:
+                                                        budget.amountMinor,
+                                                    allocations: rows,
+                                                  ),
+                                              orElse: () => null,
+                                            );
+                                        return BudgetCard(
+                                          budget: budget,
+                                          catalog: catalogValue,
+                                          accountsById: accountsById,
+                                          ledger: currentLedger,
+                                          allocationSummary: allocationSummary,
+                                          onViewTransactions:
+                                              widget.onViewTransactions == null
+                                              ? () {}
+                                              : () =>
+                                                    widget.onViewTransactions!(
+                                                      budget,
+                                                    ),
+                                          onViewHistory: () =>
+                                              _openHistoryDialog(budget),
+                                          onManageAllocations: () =>
+                                              _openAllocationDialog(
                                                 budget,
+                                                catalogValue,
+                                                currentLedger,
                                               ),
-                                        onViewHistory: () =>
-                                            _openHistoryDialog(budget),
-                                        onManageAllocations: () =>
-                                            _openAllocationDialog(
-                                              budget,
-                                              catalogValue,
-                                              currentLedger,
-                                            ),
-                                        onEdit: () => _openBudgetDialog(budget),
-                                        onDelete: () => _confirmDelete(budget),
-                                      );
-                                    },
+                                          onEdit: () =>
+                                              _openBudgetDialog(budget),
+                                          onDelete: () =>
+                                              _confirmDelete(budget),
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ),
                             ],
                           );
                   },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => const AppSkeletonList(),
                   error: (error, stackTrace) =>
                       AppErrorState(title: '读取账户失败', onRetry: _retryLoad),
                 ),
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const AppSkeletonList(),
                 error: (error, stackTrace) =>
                     AppErrorState(title: '读取收入分类失败', onRetry: _retryLoad),
               ),
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const AppSkeletonList(),
               error: (error, stackTrace) =>
                   AppErrorState(title: '读取支出分类失败', onRetry: _retryLoad),
             ),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const AppSkeletonList(),
             error: (error, stackTrace) =>
                 AppErrorState(title: '读取预算失败', onRetry: _retryLoad),
           ),

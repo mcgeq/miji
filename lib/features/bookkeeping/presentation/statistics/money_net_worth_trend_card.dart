@@ -8,6 +8,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
 
 class MoneyNetWorthTrendCard extends StatelessWidget {
   const MoneyNetWorthTrendCard({super.key, required this.points});
@@ -163,13 +164,16 @@ class MoneyNetWorthTrendCard extends StatelessWidget {
                         FlSpot(i.toDouble(), display[i].netMinor.toDouble()),
                     ],
                     isCurved: true,
+                    curveSmoothness: 0.28,
                     color: colorScheme.primary,
-                    barWidth: 2.5,
+                    barWidth: MoneyChartStyle.lineWidth,
                     isStrokeCapRound: true,
                     dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: colorScheme.primary.withValues(alpha: 0.08),
+                      gradient: MoneyChartStyle.areaGradient(
+                        colorScheme.primary,
+                      ),
                     ),
                   ),
                   // Zero reference line
@@ -183,7 +187,8 @@ class MoneyNetWorthTrendCard extends StatelessWidget {
                   ),
                 ],
               ),
-              duration: const Duration(milliseconds: 300),
+              duration: MoneyChartStyle.animationDuration,
+              curve: MoneyChartStyle.animationCurve,
             ),
           ),
           const SizedBox(height: 10),

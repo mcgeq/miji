@@ -7,6 +7,7 @@ import 'package:miji/core/presentation/components/app_content_panel.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
 
 class MoneyBudgetHistoryTrendCard extends StatelessWidget {
   const MoneyBudgetHistoryTrendCard({super.key, required this.points});
@@ -146,25 +147,23 @@ class MoneyBudgetHistoryTrendCard extends StatelessWidget {
                         FlSpot(i.toDouble(), display[i].usageRate),
                     ],
                     isCurved: true,
+                    curveSmoothness: 0.28,
                     color: colorScheme.primary,
-                    barWidth: 2.5,
+                    barWidth: MoneyChartStyle.lineWidth,
                     isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, x, y, color) => FlDotCirclePainter(
-                        radius: 3,
-                        color: colorScheme.primary,
-                        strokeWidth: 0,
-                      ),
-                    ),
+                    // 折线点位多时圆点会连成一串，触摸时再显示（见 getTouchedSpotIndicator）。
+                    dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: colorScheme.primary.withValues(alpha: 0.08),
+                      gradient: MoneyChartStyle.areaGradient(
+                        colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
               ),
-              duration: const Duration(milliseconds: 300),
+              duration: MoneyChartStyle.animationDuration,
+              curve: MoneyChartStyle.animationCurve,
             ),
           ),
           const SizedBox(height: 10),

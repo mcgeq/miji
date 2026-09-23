@@ -8,6 +8,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
 
 class MoneySourceBreakdownCard extends StatelessWidget {
   const MoneySourceBreakdownCard({super.key, required this.insights});
@@ -219,6 +220,8 @@ class _SourceTrendChart extends StatelessWidget {
           child: display.isEmpty
               ? const AppEmptyState(title: '暂无趋势数据')
               : BarChart(
+                  duration: MoneyChartStyle.animationDuration,
+                  curve: MoneyChartStyle.animationCurve,
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
                     maxY: null,
@@ -297,36 +300,32 @@ class _SourceTrendChart extends StatelessWidget {
                           barRods: [
                             BarChartRodData(
                               toY: display[i].installmentMinor.toDouble(),
-                              color: moneyColors.warning,
-                              width: 5,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(2),
-                                topRight: Radius.circular(2),
+                              width: 8,
+                              gradient: MoneyChartStyle.barGradient(
+                                moneyColors.warning,
                               ),
+                              borderRadius: MoneyChartStyle.barRadius,
                             ),
                             BarChartRodData(
                               toY: display[i].autoPostingMinor.toDouble(),
-                              color: moneyColors.success,
-                              width: 5,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(2),
-                                topRight: Radius.circular(2),
+                              width: 8,
+                              gradient: MoneyChartStyle.barGradient(
+                                moneyColors.success,
                               ),
+                              borderRadius: MoneyChartStyle.barRadius,
                             ),
                             BarChartRodData(
                               toY: display[i].otherMinor.toDouble(),
-                              color: colorScheme.primary.withValues(alpha: 0.6),
-                              width: 5,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(2),
-                                topRight: Radius.circular(2),
+                              width: 8,
+                              gradient: MoneyChartStyle.barGradient(
+                                colorScheme.primary.withValues(alpha: 0.6),
                               ),
+                              borderRadius: MoneyChartStyle.barRadius,
                             ),
                           ],
                         ),
                     ],
                   ),
-                  duration: const Duration(milliseconds: 300),
                 ),
         ),
         const SizedBox(height: 4),

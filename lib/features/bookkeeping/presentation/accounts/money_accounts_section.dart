@@ -9,6 +9,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:miji/core/presentation/app_color_utils.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
@@ -93,7 +94,7 @@ class MoneyAccountsSection extends ConsumerWidget {
         ),
         onViewTransactions: onViewTransactions,
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const AppSkeletonList(),
       error: (error, stackTrace) => AppErrorState(
         title: '读取账户失败',
         onRetry: () => ref.invalidate(currentUserVisibleAccountsProvider),
