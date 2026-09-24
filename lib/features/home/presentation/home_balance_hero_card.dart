@@ -328,10 +328,10 @@ class _MainRow extends StatelessWidget {
                 masked: masked,
               ),
               const SizedBox(height: 8),
-              _AmountBreakdown(
-                rows: masked ? const [] : breakdown,
-                masked: masked,
-              ),
+              // 遮罩时也要把同样的明细行传下去（只把金额换成圆点），
+              // 否则 Hero 会矮一截、卡片高度跟着变 —— 就是「点隐藏金额
+              // 间距被拉开」的来源。
+              _AmountBreakdown(rows: breakdown, masked: masked),
             ],
           ),
         ),
@@ -358,16 +358,15 @@ class _AmountBreakdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (masked || rows.isEmpty) {
-      return Text(
-        '金额已隐藏',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: Colors.white.withValues(alpha: 0.82),
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0,
-        ),
-      );
+    if (rows.isEmpty) {
+      return const SizedBox.shrink();
     }
+
+    // 遮罩时**仍然保留同样的行数与行高**，只把金额换成圆点。
+    // 原来是塌成一行「金额已隐藏」：Hero 因此矮 20dp，而整卡高度
+    // 又被锁在最高的视图上 → 一点「隐藏金额」，卡片下方的空白就变大，
+    // 看起来像间距被拉开了。这里保持结构不变，顺带也更清楚地告诉
+    // 用户「哪个指标被隐藏了」。
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -389,7 +388,7 @@ class _AmountBreakdown extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    row.$2,
+                    masked ? '••••' : row.$2,
                     maxLines: 1,
                     textAlign: TextAlign.right,
                     overflow: TextOverflow.ellipsis,

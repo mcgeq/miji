@@ -15,9 +15,10 @@ enum HomeOverviewTab { budget, trend, calendar }
 /// 两个实现要点：
 /// 1. **Tab 条放在卡外**（页面背景上）。卡内 Hero 是品牌渐变、趋势/日历是浅底，
 ///    把图表塞进渐变里对比度会塌；放在外面则两种视图都能用自己合适的底色。
-/// 2. 用 [IndexedStack]（而不是 `if (tab == ...)`）**锁住高度**：
-///    IndexedStack 按最大的子节点定尺寸，且三个子节点都保持状态，
-///    这样切 tab 时下方内容不会上下跳（[AnimatedSize] 兜住高度变化的动画）。
+/// 2. 三个视图都用 [Offstage] 常驻：不重复取数、切换瞬时、状态（如日历选中的那天）
+///    都保留；但**不占布局空间** —— 卡片高度等于当前视图的自然高度，
+///    所以卡底不会出现「锁到最高视图」留下的空白。切 tab 时高度变化由
+///    [AnimatedSize] 平滑处理。
 class HomeOverviewCard extends StatefulWidget {
   const HomeOverviewCard({
     super.key,
@@ -74,13 +75,21 @@ class _HomeOverviewCardState extends State<HomeOverviewCard> {
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
           alignment: Alignment.topCenter,
-          child: IndexedStack(
-            index: _tab.index,
-            sizing: StackFit.loose,
+          // 用 Offstage 而不是 IndexedStack：
+          // IndexedStack 会把整卡高度**锁在最高的那个视图**上（日历 338dp），
+          // 于是本月预算页底部空出 50dp、遮罩后空出 70dp —— 看起来就是
+          // 「卡片离下面的内容间距太大」。
+          // Offstage 子节点照常 build/保持状态（不重复取数、不丢选中日），
+          // 但不占布局空间 → 卡片高度跟着当前视图走，没有空白。
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              widget.budgetView,
-              widget.trendView,
-              widget.calendarView,
+              for (final (index, view) in [
+                widget.budgetView,
+                widget.trendView,
+                widget.calendarView,
+              ].indexed)
+                Offstage(offstage: index != _tab.index, child: view),
             ],
           ),
         ),

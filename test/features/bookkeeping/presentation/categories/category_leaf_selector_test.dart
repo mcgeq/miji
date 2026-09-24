@@ -91,7 +91,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 一次点击就选完「餐饮 · 午餐」。
+    // 一次点击就选完「餐饮·午餐」（父名与子名同一行，省掉一行 13dp）。
     await tester.tap(find.text('午餐'));
     await tester.pumpAndSettle();
 
@@ -324,6 +324,158 @@ void main() {
     // 面板底部同样不越过键盘。
     final sheetBottom = tester.getRect(find.byType(Material).last).bottom;
     expect(sheetBottom, lessThanOrEqualTo(keyboardTop));
+  });
+
+  group('分类格紧凑化', () {
+    Future<void> pump(
+      WidgetTester tester, {
+      required double width,
+      int subCount = 2,
+      double textScale = 1,
+      int frequentCount = 8,
+    }) async {
+      final catalog = MoneyCategoryCatalog(
+        categories: [
+          for (var i = 0; i < 10; i++)
+            MoneyCategoryEntity(
+              id: 'c$i',
+              userId: 'user-1',
+              name: i == 0 ? '餐饮' : '信用卡还款$i',
+              kind: MoneyCategoryKind.expense,
+              color: '#F97316',
+              icon: 'restaurant',
+              isSystem: true,
+            ),
+        ],
+        subCategories: [
+          for (var i = 0; i < 10; i++)
+            for (var j = 0; j < subCount; j++)
+              MoneySubCategoryEntity(
+                id: 'c${i}_s$j',
+                categoryId: 'c$i',
+                userId: 'user-1',
+                name: '餐饮外卖$j',
+                kind: MoneyCategoryKind.expense,
+                color: '#FDBA74',
+                icon: 'label',
+                isSystem: true,
+              ),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          home: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: SizedBox(
+                  width: width,
+                  child: CategoryLeafSelector(
+                    key: UniqueKey(),
+                    catalog: catalog,
+                    selectedCategoryId: null,
+                    selectedSubCategoryId: null,
+                    usage: const MoneyCategoryUsage.empty(),
+                    frequentCount: frequentCount,
+                    onChanged: (categoryId, subCategoryId) {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// 回归：格子高度原来由 childAspectRatio 按**宽度**反推 ——
+    /// 手机 79.5dp、宽弹窗能到 120dp+，而格子里只有图标 + 一行文字。
+    testWidgets('格子高度不再随可用宽度变化', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final heights = <double>[];
+      for (final width in [390.0, 560.0, 820.0]) {
+        await pump(tester, width: width);
+        heights.add(
+          tester
+              .getSize(
+                find
+                    .byWidgetPredicate(
+                      (w) => w.runtimeType.toString() == '_LeafTile',
+                    )
+                    .first,
+              )
+              .height,
+        );
+      }
+
+      expect(heights[0], 76);
+      expect(heights[1], 76);
+      expect(heights[2], 76, reason: '宽度变化不该改变格高');
+    });
+
+    testWidgets('4 列 × 8 个常用位正好两行', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await pump(tester, width: 390);
+      final tiles = find.byWidgetPredicate(
+        (w) => w.runtimeType.toString() == '_LeafTile',
+      );
+      expect(tiles, findsNWidgets(8));
+
+      final grid = tester.getSize(find.byType(GridView));
+      expect(grid.height, 158, reason: '2 行 × 76dp + 6dp 行距');
+      // 一行的前 4 个在同一个 y 上。
+      expect(
+        tester.getTopLeft(tiles.at(0)).dy,
+        tester.getTopLeft(tiles.at(3)).dy,
+      );
+      expect(
+        tester.getTopLeft(tiles.at(4)).dy,
+        greaterThan(tester.getTopLeft(tiles.at(0)).dy),
+      );
+    });
+
+    testWidgets('格子两行：第一行子分类、第二行父分类', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await pump(tester, width: 390);
+
+      // 第一行是子分类名，第二行是父分类名（浅色小字）。
+      final sub = tester.getRect(find.text('餐饮外卖0').first);
+      final parent = tester.getRect(find.text('餐饮').first);
+      expect(sub.top, lessThan(parent.top));
+      expect(sub.center.dx, closeTo(parent.center.dx, 2), reason: '两行在同一列内居中');
+      // 不再出现合并写法。
+      expect(find.text('餐饮·餐饮外卖0'), findsNothing);
+    });
+
+    testWidgets('长名字与放大字体都不会溢出', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await pump(tester, width: 390);
+      expect(tester.takeException(), isNull);
+
+      await pump(tester, width: 390, textScale: 1.5);
+      expect(tester.takeException(), isNull, reason: '字体放大时 FittedBox 整体缩小');
+    });
+
+    testWidgets('转账表单只要 3 个常用格时只占一行', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await pump(tester, width: 390, frequentCount: 3);
+      expect(
+        tester.getSize(find.byType(GridView)).height,
+        76,
+        reason: '3 个格子在 4 列布局下是一行',
+      );
+    });
   });
 }
 

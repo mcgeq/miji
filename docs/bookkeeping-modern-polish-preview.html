@@ -804,6 +804,194 @@ html[data-theme="dark"] .note{background:var(--surface-2);color:var(--text);bord
     </div>
   </section>
 
+  <!-- ===================== 支出弹窗分类格分析（更正） ===================== -->
+  <section class="analysis" style="margin-top:16px">
+    <div class="panel span-12" style="border-color:rgba(224,138,30,.35)">
+      <h2>更正分析：<b>记一笔（支出）弹窗</b>里的「选择分类」格</h2>
+      <p class="sub">上一节分析的是「分类管理页」，选错了界面 —— 已删除 · 本节全部为 390×900 弹窗内实测</p>
+
+      <div style="padding:14px 16px;border:1px solid rgba(224,138,30,.3);border-radius:12px;background:rgba(224,138,30,.08)">
+        <b style="font-size:13.5px;color:var(--warning)">结论：格子里有 3 行内容，比例定死 1.45 → 每格 79.5dp 高；9 个常用格 + 按钮行占掉弹窗可视区的一半。</b>
+        <div style="margin-top:8px;color:var(--text-2);font-size:13px;line-height:1.75">
+          实测：3 列 × 9 个常用，每格 <b>115.3 × 79.5dp</b>，网格 <b>358 × 250.6dp</b>，加「全部分类」按钮行后分类区约 <b>300dp</b>。<br>
+          手机上是 bottom sheet：900 高的屏扣掉键盘（约 300dp）只剩约 600dp 可视 → <b>分类区占了一半</b>，金额/账户/分类之外的内容全被推下去。
+        </div>
+      </div>
+
+      <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:20px">
+        <div style="flex:1;min-width:320px" data-note="现在：3 列 9 格，每格 79.5dp 高。格子内容是三行 —— 图标 26dp + 间距 4dp + 名称 16dp + 父分类名 13dp，加上下内边距共约 71dp；childAspectRatio 1.45 由宽度反推出 79.5dp 高度，几乎没有余量。">
+          <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);font-weight:800;margin-bottom:10px">现在</div>
+          <div style="border:1px solid var(--line);border-radius:20px;background:var(--surface-2);padding:14px">
+            <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">金额 ¥38.50 · 账户 现金</div>
+            <div style="display:grid;grid-template-columns:repeat(3,115px);gap:6px"><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:115px;height:79px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖0</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:115px;height:79px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖1</span><span style="font-size:9px;color:var(--text-3)">餐饮</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:115px;height:79px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖2</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:115px;height:79px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖3</span><span style="font-size:9px;color:var(--text-3)">餐饮</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:115px;height:79px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖4</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:115px;height:79px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖5</span><span style="font-size:9px;color:var(--text-3)">餐饮</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:115px;height:79px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖6</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:115px;height:79px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖7</span><span style="font-size:9px;color:var(--text-3)">餐饮</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:115px;height:79px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖8</span></div></div>
+      <div style="margin-top:6px;font-size:11px;color:var(--text-3)">每格 115.3×79.5dp · 网格 250.6dp</div>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <div style="flex:1;text-align:center;padding:9px 0;border:1px solid var(--line);border-radius:10px;font-size:12px">全部分类（193）</div>
+            </div>
+            <div style="margin-top:10px;padding:8px 10px;border-radius:10px;background:rgba(224,138,30,.12);font-size:11.5px;color:var(--warning);font-weight:700">分类区 ≈ 300dp · 占键盘弹出后可视高度的一半</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:320px" data-note="建议：把「父分类名」并进名称同一行（餐饮·外卖，超长自动省略），三行内容变两行；再改 4 列、常用位 9→8（正好两行）。网格 250.6 → 132dp，分类区 300 → 约 182dp（-40%）。命中率不变：点一下仍是直接选中子分类。">
+          <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--secondary);font-weight:800;margin-bottom:10px">建议（原型已实测不溢出）</div>
+          <div style="border:1px solid var(--line);border-radius:20px;background:var(--surface-2);padding:14px">
+            <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">金额 ¥38.50 · 账户 现金</div>
+            <div style="display:grid;grid-template-columns:repeat(4,85px);gap:6px"><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:85px;height:63px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖0</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:85px;height:63px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖1</span><span style="font-size:9px;color:var(--text-3)">餐饮</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:85px;height:63px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖2</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:85px;height:63px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖3</span><span style="font-size:9px;color:var(--text-3)">餐饮</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:85px;height:63px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖4</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:85px;height:63px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖5</span><span style="font-size:9px;color:var(--text-3)">餐饮</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:85px;height:63px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖6</span></div><div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:85px;height:63px;"><span style="width:20px;height:20px;border-radius:6px;background:rgba(249,115,22,.16);display:grid;place-items:center;font-size:11px">🍜</span><span style="font-size:10.5px;font-weight:700">外卖7</span><span style="font-size:9px;color:var(--text-3)">餐饮</span></div></div>
+      <div style="margin-top:6px;font-size:11px;color:var(--text-3)">每格 85.0×63.0dp · 网格 132dp（4 列 × 2 行）</div>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <div style="flex:1;text-align:center;padding:9px 0;border:1px solid var(--line);border-radius:10px;font-size:12px">全部分类（193）</div>
+            </div>
+            <div style="margin-top:10px;padding:8px 10px;border-radius:10px;background:rgba(33,167,139,.12);font-size:11.5px;color:var(--secondary);font-weight:700">分类区 ≈ 182dp · 省 118dp（-40%）</div>
+          </div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:24px;font-size:14px">为什么不能只把比例调扁（实测硬约束）</h2>
+      <table class="map-table">
+        <thead><tr><th style="width:150px">配置</th><th style="width:130px">每格</th><th style="width:110px">网格高</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td>现在 3 列 / 1.45</td><td>115.3×79.5</td><td>250.6dp</td><td>格子内容自然高 <b>65.5dp</b>，余量只有 2dp。</td></tr>
+          <tr><td>3 列 / 1.55</td><td>115.3×74.4</td><td>235.2dp</td><td>不溢出，<b>这已是只调比例的上限</b>（省 15dp，聊胜于无）。</td></tr>
+          <tr><td>3 列 / 1.65</td><td>115.3×69.9</td><td>221.7dp</td><td><b style="color:var(--expense)">溢出</b>（实测 9 个格子报 RenderFlex overflow）。</td></tr>
+          <tr><td>4 列 / 1.5</td><td>85.0×56.7</td><td>182.0dp</td><td><b style="color:var(--expense)">溢出 17px</b>：列数一多、格宽变窄 → 同样的三行内容塞不下。</td></tr>
+          <tr><td>4 列 / 1.65</td><td>85.0×51.5</td><td>166.5dp</td><td><b style="color:var(--expense)">溢出 22px</b>。</td></tr>
+        </tbody>
+      </table>
+
+      <h2 style="margin-top:22px;font-size:14px">原型实测：把「父分类名」并进名称行（三行 → 两行）</h2>
+      <p class="sub">父名不丢：选中后弹窗顶部本来就有 banner 显示完整路径；「全部分类」表里也按父分类分组</p>
+      <table class="map-table">
+        <thead><tr><th style="width:170px">配置</th><th style="width:130px">每格</th><th style="width:110px">网格高</th><th>vs 现状</th></tr></thead>
+        <tbody>
+          <tr><td>3 列 / 1.7</td><td>115.3×67.8</td><td>215.5dp</td><td>-35.1dp，0 溢出（名称列仍宽 115dp，长名字不易被截断）</td></tr>
+          <tr><td><b>4 列 / 1.35</b></td><td>85.0×63.0</td><td><b>200.9dp</b></td><td><b>-49.7dp</b>，0 溢出（但长名字更容易被省略号截断）</td></tr>
+          <tr><td>4 列 / 1.6</td><td>85.0×53.1</td><td>171.4dp</td><td><b style="color:var(--expense)">溢出</b> 9 处，不可用</td></tr>
+        </tbody>
+      </table>
+
+      <h2 style="margin-top:22px;font-size:14px">方案与收益</h2>
+      <table class="map-table">
+        <thead><tr><th style="width:190px">方案</th><th style="width:290px">做法</th><th>收益（实测/推算）</th></tr></thead>
+        <tbody>
+          <tr><td><b>A</b> 父名并入名称行</td><td><code>餐饮·外卖</code> 单行显示，超长省略。三行内容变两行。</td><td><b>-35dp</b>（3 列 / 1.7，已实测 0 溢出）</td></tr>
+          <tr><td><b>B</b> 列数 3 → 4</td><td>配合 A；格宽 115→85dp，一行多放一个。</td><td><b>-50dp</b>（4 列 / 1.35，已实测 0 溢出）。代价：长名字更早被截断</td></tr>
+          <tr><td><b>C</b> 常用位 9 → 8</td><td>4 列正好两行，不再留一个孤零零的第 9 格。</td><td>网格 200.9 → <b>132dp</b>；分类区 300 → <b>约 182dp（-40%）</b></td></tr>
+          <tr><td><b>D</b> 只调比例 1.45 → 1.55</td><td>改一个数字，不动内容。</td><td><b>-15dp</b>。最保守，但没有解决「三行内容」这个根因</td></tr>
+          <tr><td><b>E</b> 顺带收紧「全部分类」表</td><td>该弹窗每行 48dp、分组标题 52dp、视口 450dp → 一屏 9.4 行；行高收到 44dp。</td><td>一屏多看约 1 行。收益小，可做可不做</td></tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top:16px;padding:14px 16px;border:1px solid rgba(33,167,139,.32);border-radius:12px;background:rgba(33,167,139,.08)">
+        <b style="font-size:13.5px;color:var(--secondary)">推荐：A + B + C</b>
+        <div style="margin-top:8px;color:var(--text-2);font-size:13px;line-height:1.75">
+          分类区 <b>300 → 约 182dp（-40%）</b>，键盘弹出后能给金额/账户/备注留出更多空间；常用位从 9 变 8（少 1 个直达位，其余走「全部分类」）。<br>
+          若你更在意「名称不被截断」，那就 <b>A + C</b>（保持 3 列）：3 列 × 2 行 = 142dp，分类区约 <b>192dp（-36%）</b>，只比 4 列方案多 10dp，但名字完整可读。
+        </div>
+      </div>
+
+      <h2 style="margin-top:24px;font-size:14px;color:var(--secondary)">✓ 已按 A + B + C 实施（实测值）</h2>
+      <table class="map-table">
+        <thead><tr><th style="width:150px">项</th><th style="width:150px">改前</th><th style="width:150px">改后（实测）</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>格子尺寸</td><td>115.3 × 79.5dp</td><td><b>85.0 × 64.0dp</b></td><td>4 列 + 固定行高。</td></tr>
+          <tr><td>常用格数量</td><td>9 个（3 行）</td><td><b>8 个（2 行）</b></td><td>4 列正好两行，不留第 9 个孤格。</td></tr>
+          <tr><td>分类网格高度</td><td>250.6dp</td><td><b>134.0dp</b></td><td><b>-116.6dp（-47%）</b></td></tr>
+          <tr><td>整个分类区<br><span style="font-weight:600;color:var(--text-3)">网格 + 按钮行</span></td><td>≈300dp</td><td><b>≈190dp</b></td><td><b>-110dp（-37%）</b>，弹窗里省出一屏的 1/5。</td></tr>
+          <tr><td>标题行</td><td>「名称」+「父分类名」两行</td><td><b>「餐饮·外卖」一行</b></td><td>父名不丢：选中后顶部横幅显示完整路径；「全部分类」表按父分类分组。</td></tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top:16px;padding:14px 16px;border:1px solid rgba(33,167,139,.3);border-radius:12px;background:rgba(33,167,139,.08)">
+        <b style="font-size:13.5px;color:var(--secondary)">顺带修掉一个更隐蔽的问题：格子高度原来由「可用宽度」决定</b>
+        <div style="margin-top:8px;color:var(--text-2);font-size:13px;line-height:1.75">
+          <code>childAspectRatio</code> 是按<b>格宽</b>反推高度的 → 同一个组件：手机 79.5dp、560dp 宽弹窗 124dp、820dp 平板 224dp（每格！）。<br>
+          改成 <code>mainAxisExtent: 64</code> 后，<b>390 / 560 / 820 三种宽度下格高都是 64dp</b>（已写成测试断言）。<br>
+          同时给格子内容套了 <code>FittedBox(scaleDown)</code>：系统字体放大到 1.5 倍也不溢出，而是整体等比缩小。
+        </div>
+      </div>
+
+      <div style="margin-top:14px;padding:14px 16px;border:1px solid rgba(224,138,30,.3);border-radius:12px;background:rgba(224,138,30,.08)">
+        <b style="font-size:13.5px;color:var(--warning)">这次的取舍（都写在测试里了）</b>
+        <ul class="issue-list" style="margin-top:10px">
+          <li><span class="idx" style="background:var(--warning-soft);color:var(--warning)">1</span><div><b>名字更早被省略号截断</b><span>格宽 115→85dp，「餐饮·信用卡还款」会显示成「餐饮·信用…」。要换回 3 列（分类区约 192dp，只多 10dp）随时说，改两个数字。</span></div></li>
+          <li><span class="idx" style="background:var(--warning-soft);color:var(--warning)">2</span><div><b>常用位 9 → 8</b><span>第 9 个常用分类要多点一次「全部分类」。若你希望保留 9 个，可以改回 9（会变成 3 行 = 198dp，仍比原来省 105dp）。</span></div></li>
+          <li><span class="idx" style="background:var(--warning-soft);color:var(--warning)">3</span><div><b>测试断言跟着改</b><span>格子文字从「午餐」变成「餐饮·午餐」，4 处测试的查找器同步更新（含表单测试里 2 处点击）。</span></div></li>
+        </ul>
+      </div>
+
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-top:16px">
+        <div class="kpi"><div class="v" style="color:var(--secondary)">干净</div><div class="k">flutter analyze</div><div class="d">No issues found</div></div>
+        <div class="kpi"><div class="v">535</div><div class="k">测试通过</div><div class="d">本轮新增 5 个</div></div>
+        <div class="kpi"><div class="v" style="color:var(--warning)">12</div><div class="k">既有失败（与本轮无关）</div><div class="d">health 11 + legacy import 1</div></div>
+        <div class="kpi"><div class="v">-110dp</div><div class="k">分类区实测省下</div><div class="d">300 → 190dp</div></div>
+      </div>
+      <p class="sub" style="margin-top:14px">
+        新增测试：格高不随宽度变化（390/560/820 三档）/ 4 列 8 格正好两行 / 父名与子名同一行 / 长名字与 1.5 倍字体不溢出 / 转账表单 3 个常用格只占一行。
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== 首页卡间距 + 分类格两行 ===================== -->
+  <section class="analysis" style="margin-top:16px">
+    <div class="panel span-12" style="border-color:rgba(33,167,139,.35)">
+      <h2 style="color:var(--secondary)">✓ 已修：首页卡底空白（含「点隐藏金额间距变大」）+ 分类格改回两行</h2>
+      <p class="sub">两个反馈 · 均为 390×844 实测</p>
+
+      <h2 style="margin-top:6px;font-size:14px">问题 1：卡片离下面的快捷操作间距太大，点「隐藏金额」还会更大</h2>
+      <div style="padding:14px 16px;border:1px solid rgba(212,77,110,.3);border-radius:12px;background:rgba(212,77,110,.07);margin-top:10px">
+        <b style="font-size:13.5px">根因（两层，正好对上「点隐藏金额后又变大」）</b>
+        <div style="margin-top:8px;color:var(--text-2);font-size:13px;line-height:1.75">
+          <b>① 整卡高度被锁在最高的视图上。</b><code>IndexedStack</code> 按最大的子节点定尺寸 → 日历 338dp 成了整卡内容区高度，
+          于是「本月预算」视图（Hero 288dp）底部空出 <b>50dp</b>、趋势视图空出 67dp —— 这就是「间距太大」。<br>
+          <b>② 遮罩还会让 Hero 再矮 20dp。</b>Hero 里的「预算 / 已用 / 日均可花」是三行明细，而遮罩时原来的实现把它塌成一行「金额已隐藏」→
+          Hero 288 → 268dp，卡底空白从 50dp 涨到 <b>70dp</b> —— 这就是「点隐藏金额间距又被拉开」。<br>
+          注意：<b>卡到快捷操作的间距其实一直是 12dp</b>，用户看到的是卡<b>内部</b>的空白。
+        </div>
+      </div>
+      <table class="map-table" style="margin-top:16px">
+        <thead><tr><th style="width:190px">状态</th><th style="width:130px">改前卡高</th><th style="width:130px">改后卡高</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>本月预算（未遮罩）</td><td>388.3dp</td><td><b>338.0dp</b></td><td>卡底 50dp 空白消除。</td></tr>
+          <tr><td>本月预算（已遮罩）</td><td>388.3dp<br><span style="color:var(--text-3)">空白涨到 70dp</span></td><td><b>338.0dp</b></td><td>与未遮罩<b>完全一致</b>：明细行保留行数，只把金额换成圆点。</td></tr>
+          <tr><td>支出趋势</td><td>388.3dp</td><td><b>321.0dp</b></td><td>空 67dp 消除。</td></tr>
+          <tr><td>日历</td><td>388.3dp</td><td>388.3dp</td><td>它本来就是最高的，不变。</td></tr>
+        </tbody>
+      </table>
+      <p class="sub" style="margin-top:12px">
+        改法：<b>①</b> 卡片从 <code>IndexedStack</code>（取最高）改成 <b><code>Offstage</code> 常驻</b> ——
+        子视图照常构建、状态保留（日历选中的那天、趋势选的周都不丢，也不重复取数），但不占布局空间，
+        卡片高度 = 当前视图的自然高度；切换时由 <code>AnimatedSize</code> 平滑过渡。<br>
+        <b>②</b> Hero 的明细行在遮罩时保持三行（<code>预算 •••• / 已用 •••• / 日均可花 ••••</code>），
+        不再塌成一行。顺带这个写法比原来更清楚地区分了「哪个指标被隐藏」。
+      </p>
+      <div style="margin-top:12px;padding:12px 14px;border:1px solid rgba(224,138,30,.3);border-radius:12px;background:rgba(224,138,30,.08);font-size:12.5px;color:var(--text-2);line-height:1.7">
+        <b style="color:var(--warning)">代价（需要你知道）</b>：既然不再锁高度，<b>切 tab 时卡片会平滑改变高度</b>
+        （338 ⇄ 321 ⇄ 388dp，220ms），下方内容随之上下移动。若你更喜欢「切 tab 时页面纹丝不动」，
+        那就得回到锁高度，但卡底空白会回来 —— 两者只能选一个。我选了「没有空白」。
+      </div>
+
+      <h2 style="margin-top:26px;font-size:14px">问题 2：分类格改回两行（第一行子分类、第二行分类）</h2>
+      <table class="map-table" style="margin-top:10px">
+        <thead><tr><th style="width:190px">项</th><th style="width:130px">上一版</th><th style="width:130px">现在</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>标签</td><td>单行「餐饮·外卖」</td><td><b>两行：外卖（主）<br>餐饮（父，浅色小字）</b></td><td>按反馈恢复两行，名字不再被合并写法挤掉。</td></tr>
+          <tr><td>格子高度</td><td>64dp</td><td><b>76dp</b></td><td>多一行文字需要 13dp，留了余量；仍由 <code>mainAxisExtent</code> 固定，与屏宽无关。</td></tr>
+          <tr><td>常用格网格</td><td>134dp</td><td><b>158dp</b></td><td>2 行 × 76 + 6 行距。</td></tr>
+          <tr><td>分类区合计</td><td>≈190dp</td><td><b>≈214dp</b></td><td>仍比最初的 ≈300dp 省 <b>≈86dp（-29%）</b>。</td></tr>
+        </tbody>
+      </table>
+      <p class="sub" style="margin-top:12px">
+        保留的改动：4 列、常用位 8 个（两行整齐）、固定行高不再随宽度变化、<code>FittedBox</code> 兜住字体放大。
+      </p>
+
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-top:16px">
+        <div class="kpi"><div class="v" style="color:var(--secondary)">干净</div><div class="k">flutter analyze</div><div class="d">No issues found</div></div>
+        <div class="kpi"><div class="v">535</div><div class="k">测试通过</div><div class="d">相关测试均同步更新</div></div>
+        <div class="kpi"><div class="v" style="color:var(--warning)">12</div><div class="k">既有失败（与本轮无关）</div><div class="d">health 11 + legacy import 1</div></div>
+        <div class="kpi"><div class="v">-50dp</div><div class="k">首页卡底空白</div><div class="d">预算视图实测</div></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===================== 映射表 ===================== -->
   <h2 class="section-title">六 · 改动映射表</h2>
   <p class="section-sub">按「地基 / 功能 / 观感 / 层级」四档；每项都标了落点与代价</p>

@@ -111,7 +111,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('3,420'), findsNothing);
-    expect(find.text('金额已隐藏'), findsOneWidget);
+    // 遮罩时保留同样的明细行（只把金额换成圆点），
+    // 否则 Hero 会矮 20dp、整卡跟着变 → 看起来像间距被拉开。
+    expect(find.text('预算'), findsOneWidget);
+    expect(find.text('已用'), findsOneWidget);
+    expect(find.text('日均可花'), findsOneWidget);
     expect(find.text('••••'), findsWidgets);
   });
 

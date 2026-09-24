@@ -135,7 +135,7 @@ class CategoryLeafSelector extends StatelessWidget {
     required this.onChanged,
     this.usage,
     this.fixedCategoryId,
-    this.frequentCount = 9,
+    this.frequentCount = 8,
     this.enabled = true,
   });
 
@@ -195,13 +195,17 @@ class CategoryLeafSelector extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
+        // 4 列 + **固定行高**：原来用 childAspectRatio 由格宽反推高度，
+        // 结果是「格子越宽越高」——手机 79.5dp、宽弹窗能到 120dp+，
+        // 而格子里其实只有 图标 + 两行文字（约 72dp）。
+        // 改成 mainAxisExtent 后，任何屏宽/弹窗宽度下格高都恒定为 76dp。
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 3,
+          crossAxisCount: 4,
           mainAxisSpacing: 6,
           crossAxisSpacing: 6,
-          childAspectRatio: 1.45,
+          mainAxisExtent: 76,
           children: [
             for (final leaf in frequent)
               _LeafTile(
@@ -351,46 +355,56 @@ class _LeafTile extends StatelessWidget {
                     : colorScheme.outlineVariant.withValues(alpha: 0.56),
               ),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 26,
-                  height: 26,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: CategoryIconWidget(
-                    leaf.iconName,
-                    size: 15,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  leaf.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: selected ? color : colorScheme.onSurface,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    letterSpacing: 0,
-                  ),
-                ),
-                if (showParent)
-                  Text(
-                    leaf.category.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 9.5,
-                      letterSpacing: 0,
+            // 格子高度固定，内容用 FittedBox 兜住（系统字体放大时整体缩小，
+            // 而不是溢出一行）。两行文字：子分类名 + 父分类名。
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 26,
+                      height: 26,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: CategoryIconWidget(
+                        leaf.iconName,
+                        size: 15,
+                        color: color,
+                      ),
                     ),
-                  ),
-              ],
+                    const SizedBox(height: 4),
+                    // 两行：第一行子分类（主），第二行分类（父，浅色小字）。
+                    Text(
+                      leaf.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: selected ? color : colorScheme.onSurface,
+                        fontWeight: selected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    if (showParent)
+                      Text(
+                        leaf.category.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 9.5,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
