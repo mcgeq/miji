@@ -2,6 +2,8 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
+import 'package:miji/core/theme/app_theme_tokens.dart';
+
 @immutable
 class AppMoneyColors extends ThemeExtension<AppMoneyColors> {
   const AppMoneyColors({
@@ -88,6 +90,40 @@ class AppHeroGradient {
   }
 }
 
+/// 数据可视化色板（8 色）。
+///
+/// 之前四张图各自内联了一份调色板（顺序都不一样），并且直接用 Material 原色
+/// （Colors.orange / teal / indigo / pink…）—— 那些颜色不随主题变，深色模式下会过暗。
+/// 现在统一成主题扩展：等感知明度（靠色相区分）、相邻切片色相相距 135°、
+/// 每个色对卡片的对比度 ≥3:1（非文字图形标准）。
+class AppChartPalette extends ThemeExtension<AppChartPalette> {
+  const AppChartPalette({required this.colors});
+
+  final List<Color> colors;
+
+  Color operator [](int index) => colors[index % colors.length];
+
+  int get length => colors.length;
+
+  @override
+  AppChartPalette copyWith({List<Color>? colors}) {
+    return AppChartPalette(colors: colors ?? this.colors);
+  }
+
+  @override
+  AppChartPalette lerp(ThemeExtension<AppChartPalette>? other, double t) {
+    if (other is! AppChartPalette || other.colors.length != colors.length) {
+      return this;
+    }
+    return AppChartPalette(
+      colors: [
+        for (var i = 0; i < colors.length; i++)
+          Color.lerp(colors[i], other.colors[i], t) ?? colors[i],
+      ],
+    );
+  }
+}
+
 /// App 内所有 Hero / 大色块渐变。
 ///
 /// 之前这些颜色是硬编码在各自的组件里的（账户页净资产卡、首页 Hero、
@@ -99,7 +135,14 @@ class AppHeroGradients extends ThemeExtension<AppHeroGradients> {
     required this.netWorth,
     required this.brand,
     required this.danger,
+    this.amber = const Color(0xFFFFE6BC),
   });
+
+  /// Hero 上的次级数字色（净资产卡里的「负债」、分类预算的超支进度条）。
+  ///
+  /// 原来是散在三个文件里的硬编码 `#FFD9A0`：它在净资产渐变右端只有 3.44:1，
+  /// 不满足 4.5:1。现在提成 token，并由求解器保证在每个渐变端点上 ≥4.5:1。
+  final Color amber;
 
   /// 资产 / 净资产：全局唯一的紫→青冷色渐变（色相跨度 90°+）。
   final AppHeroGradient netWorth;
@@ -115,11 +158,13 @@ class AppHeroGradients extends ThemeExtension<AppHeroGradients> {
     AppHeroGradient? netWorth,
     AppHeroGradient? brand,
     AppHeroGradient? danger,
+    Color? amber,
   }) {
     return AppHeroGradients(
       netWorth: netWorth ?? this.netWorth,
       brand: brand ?? this.brand,
       danger: danger ?? this.danger,
+      amber: amber ?? this.amber,
     );
   }
 
@@ -132,6 +177,7 @@ class AppHeroGradients extends ThemeExtension<AppHeroGradients> {
       netWorth: netWorth.lerpTo(other.netWorth, t),
       brand: brand.lerpTo(other.brand, t),
       danger: danger.lerpTo(other.danger, t),
+      amber: Color.lerp(amber, other.amber, t) ?? amber,
     );
   }
 }
@@ -308,33 +354,59 @@ extension AppThemeTokenLookup on ThemeData {
 
   AppHeroGradients get heroGradients =>
       extension<AppHeroGradients>() ?? AppThemeFallbacks.heroGradients;
+
+  AppChartPalette get chartPalette =>
+      extension<AppChartPalette>() ?? AppThemeFallbacks.chartPalette;
 }
 
 class AppThemeFallbacks {
   const AppThemeFallbacks._();
 
-  /// 浅色语义色。
+  /// 浅色语义色（D2 暖纸 · 靛蓝）。
   ///
-  /// 每个值都保证在白色 / 暖白 / 次表面三种底色上 ≥4.5:1（WCAG AA），
-  /// 并且两两色相距离 ≥25°：原来的值在暖白底上只有 2.55~4.14:1，
-  /// 其中 warning 与背景色相只差 5.7°，天然吃亏。
+  /// 与旧值的区别不只是色相：这五个颜色是在**色觉缺陷模拟空间**里求解出来的 ——
+  /// 只把五色调到等明度时，绿色盲下「支出↔收入」的 OKLab ΔE 只有 0.015（几乎同色）；
+  /// 这里用明度梯度做冗余编码，红/绿/蓝三种色盲下最差 ΔE 也 ≥0.06，
+  /// 同时每个色在 surface / sunken 上都 ≥4.5:1。
   static const moneyColors = AppMoneyColors(
-    income: Color(0xFF157F41),
-    expense: Color(0xFFCD323F),
-    transfer: Color(0xFF2270BF),
-    credit: Color(0xFF8757BE),
-    warning: Color(0xFF856C06),
-    success: Color(0xFF157F41),
+    income: Color(0xFF006E30),
+    expense: Color(0xFFA7463C),
+    transfer: Color(0xFF004557),
+    credit: Color(0xFF7B428C),
+    warning: Color(0xFF473D00),
+    success: Color(0xFF006E30),
   );
 
   static const heroGradients = AppHeroGradients(
-    netWorth: AppHeroGradient(colors: [Color(0xFF6C507B), Color(0xFF2C8089)]),
+    netWorth: AppHeroGradient(
+      colors: [Color(0xFF6A55C6), Color(0xFF006EA0), Color(0xFF007370)],
+    ),
+    // 品牌卡（首页 Hero / 预算卡）：暖赭金。
+    // 不用冷渐变的原因：纸底是暖色（色相 35°），冷渐变与它近互补（色相差 124~165°）
+    // ＋彩度 0.17，一大块冷色压上去会「突兀」。
+    // 也不用暖玫：它与超支告警渐变 ΔE 只有 0.03（几乎同色），会把「正常」与「超支」
+    // 两个状态糊在一起 —— 旧配色的品牌卡 vs 超支卡 ΔE 也只有 0.08~0.14，同样分不清。
+    // 赭金既在暖色区（不突兀），与告警的 ΔE 又有 0.17（分得清）。
     brand: AppHeroGradient(
-      colors: [Color(0xFFC25144), Color(0xFFC0515C), Color(0xFFBE506A)],
+      colors: [Color(0xFFA15500), Color(0xFF9C6400), Color(0xFF936E00)],
     ),
     danger: AppHeroGradient(
-      colors: [Color(0xFF9E001D), Color(0xFFB00020), Color(0xFFBD1D45)],
+      colors: [Color(0xFFB2397C), Color(0xFFBF3D6D), Color(0xFFCB4453)],
     ),
+    amber: AppThemeTokens.lightHeroAmber,
+  );
+
+  static const chartPalette = AppChartPalette(
+    colors: [
+      Color(0xFFA66C11),
+      Color(0xFF008B97),
+      Color(0xFFA95C8F),
+      Color(0xFF77821F),
+      Color(0xFF3E7EBF),
+      Color(0xFFB75B54),
+      Color(0xFF1E9063),
+      Color(0xFF816AB9),
+    ],
   );
 
   static const spacingTokens = AppSpacingTokens(

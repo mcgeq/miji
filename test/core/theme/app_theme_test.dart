@@ -1,31 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/core/theme/app_theme.dart';
 import 'package:miji/core/theme/app_theme_extension.dart';
 import 'package:miji/core/theme/app_theme_tokens.dart';
 
 void main() {
   group('AppThemeTokens', () {
-    test('contains the approved Warm Daily light palette', () {
-      expect(AppThemeTokens.lightPrimary, const Color(0xFFE45F4F));
-      expect(AppThemeTokens.lightSecondary, const Color(0xFF21A78B));
-      expect(AppThemeTokens.lightTertiary, const Color(0xFFD85C93));
-      expect(AppThemeTokens.lightFocus, const Color(0xFF6C67D8));
-      expect(AppThemeTokens.lightBackground, const Color(0xFFFFF8F2));
-      expect(AppThemeTokens.lightSurface, const Color(0xFFFFFFFF));
-      expect(AppThemeTokens.lightSurfaceAlt, const Color(0xFFFFF0E5));
-      expect(AppThemeTokens.lightOutline, const Color(0xFFEAD8CC));
+    test('浅色：D2 暖纸 · 靛蓝（docs/theme-studio.html）', () {
+      expect(AppThemeTokens.lightPrimary, const Color(0xFF4269D3));
+      expect(AppThemeTokens.lightPrimaryFill, const Color(0xFF5E88F6));
+      expect(AppThemeTokens.lightOnPrimaryFill, const Color(0xFF03001F));
+      expect(AppThemeTokens.lightPrimaryContainer, const Color(0xFFDDE8FF));
+      expect(AppThemeTokens.lightOnPrimaryContainer, const Color(0xFF2E488E));
+      expect(AppThemeTokens.lightSecondary, const Color(0xFF626E8A));
+      expect(AppThemeTokens.lightTertiary, const Color(0xFF8B608C));
+      expect(AppThemeTokens.lightFocus, const Color(0xFF007C7D));
+      // 中性层：暖纸四级
+      expect(AppThemeTokens.lightSurfaceSunken, const Color(0xFFECE7E1));
+      expect(AppThemeTokens.lightBackground, const Color(0xFFF2EDE6));
+      expect(AppThemeTokens.lightSurface, const Color(0xFFFBF6F0));
+      expect(AppThemeTokens.lightSurfaceRaised, const Color(0xFFF6F1EB));
+      // 描边两档
+      expect(AppThemeTokens.lightOutline, const Color(0xFF998D80));
+      expect(AppThemeTokens.lightOutlineVariant, const Color(0xFFDAD5CF));
+      expect(AppThemeTokens.lightHeroAmber, const Color(0xFFFFE6BC));
     });
 
-    test('contains the approved Warm Daily dark palette', () {
-      expect(AppThemeTokens.darkPrimary, const Color(0xFFFF9A88));
-      expect(AppThemeTokens.darkSecondary, const Color(0xFF7AE1C8));
-      expect(AppThemeTokens.darkTertiary, const Color(0xFFFFADD1));
-      expect(AppThemeTokens.darkFocus, const Color(0xFFC1BCFF));
-      expect(AppThemeTokens.darkBackground, const Color(0xFF1B1412));
-      expect(AppThemeTokens.darkSurface, const Color(0xFF241C19));
-      expect(AppThemeTokens.darkSurfaceAlt, const Color(0xFF30231E));
-      expect(AppThemeTokens.darkOutline, const Color(0xFF57433A));
+    test('深色：D2 暖纸 · 靛蓝（暗色重定档）', () {
+      expect(AppThemeTokens.darkPrimary, const Color(0xFF759DFF));
+      expect(AppThemeTokens.darkPrimaryFill, const Color(0xFFCADBFF));
+      expect(AppThemeTokens.darkOnPrimaryFill, const Color(0xFF03001F));
+      expect(AppThemeTokens.darkSurfaceSunken, const Color(0xFF090604));
+      expect(AppThemeTokens.darkBackground, const Color(0xFF0E0A07));
+      expect(AppThemeTokens.darkSurface, const Color(0xFF17130F));
+      expect(AppThemeTokens.darkSurfaceRaised, const Color(0xFF221D18));
+      expect(AppThemeTokens.darkOutline, const Color(0xFF6B6257));
+      expect(AppThemeTokens.darkOutlineVariant, const Color(0xFF322E2A));
+      expect(AppThemeTokens.darkHeroAmber, const Color(0xFFFFE6BC));
+    });
+
+    test('主题提供四档表面阶梯与图表色板', () {
+      final light = AppTheme.light();
+      final low = light.colorScheme.surfaceContainerLow;
+      final high = light.colorScheme.surfaceContainerHighest;
+      expect(light.colorScheme.surface, AppThemeTokens.lightSurface);
+      expect(low, isNot(high), reason: '表面阶梯不该四级同色');
+      expect(light.chartPalette.colors, hasLength(8));
+      expect(AppTheme.dark().chartPalette.colors, hasLength(8));
     });
   });
 
@@ -36,8 +58,8 @@ void main() {
         focusContainer: AppThemeTokens.lightFocusContainer,
       );
 
-      expect(colors.focus, const Color(0xFF6C67D8));
-      expect(colors.focusContainer, const Color(0xFFEBE9FF));
+      expect(colors.focus, AppThemeTokens.lightFocus);
+      expect(colors.focusContainer, AppThemeTokens.lightFocusContainer);
     });
 
     test('lerps semantic colors', () {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/components/app_legend_item.dart';
 
+import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_chart_style.dart';
@@ -150,19 +151,11 @@ class _MoneyCategoryShareChartState extends State<MoneyCategoryShareChart> {
     });
   }
 
+  /// 切片取色统一走主题的图表色板（原来这里内联了一份 Material 原色，
+  /// 四张图各不相同、且不随深浅主题变化）。
   Color _sliceColor(BuildContext context, int index) {
     final theme = Theme.of(context);
-    final palette = <Color>[
-      widget.baseColor,
-      theme.colorScheme.tertiary,
-      theme.colorScheme.primary,
-      Colors.orange,
-      Colors.teal,
-      Colors.indigo,
-      Colors.pink,
-      Colors.cyan,
-    ];
-    return palette[index % palette.length];
+    return theme.chartPalette[index];
   }
 }
 

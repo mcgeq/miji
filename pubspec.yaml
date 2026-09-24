@@ -69,6 +69,8 @@ dependencies:
   flutter_timezone: ^5.1.0
 
 dev_dependencies:
+  # 主题设计工具用（tool/theme_gen.dart）：官方 HCT/色调板实现
+  material_color_utilities: ^0.13.0
   flutter_test:
     sdk: flutter
 

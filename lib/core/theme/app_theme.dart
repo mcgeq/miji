@@ -33,16 +33,23 @@ class AppTheme {
       theme,
       colorScheme: theme.colorScheme.copyWith(
         primary: AppThemeTokens.lightPrimary,
+        onPrimary: Colors.white,
+        primaryContainer: AppThemeTokens.lightPrimaryContainer,
+        onPrimaryContainer: AppThemeTokens.lightOnPrimaryContainer,
         secondary: AppThemeTokens.lightSecondary,
         tertiary: AppThemeTokens.lightTertiary,
         surface: AppThemeTokens.lightSurface,
+        onSurface: AppThemeTokens.lightText,
+        onSurfaceVariant: AppThemeTokens.lightTextSecondary,
+        // 四级表面阶梯：越低越“陷进去”，让卡片浮起来（不再四级同色）
         surfaceContainerLowest: AppThemeTokens.lightSurface,
-        surfaceContainerLow: AppThemeTokens.lightSurface,
-        surfaceContainer: AppThemeTokens.lightSurfaceAlt,
-        surfaceContainerHigh: AppThemeTokens.lightSurfaceAlt,
-        surfaceContainerHighest: AppThemeTokens.lightSurfaceAlt,
+        surfaceContainerLow: AppThemeTokens.lightSurfaceRaised,
+        surfaceContainer: AppThemeTokens.lightSurfaceRaised,
+        surfaceContainerHigh: AppThemeTokens.lightSurfaceSunken,
+        surfaceContainerHighest: AppThemeTokens.lightSurfaceSunken,
+        // 描边两档：控件描边 3:1，分隔线只求可见
         outline: AppThemeTokens.lightOutline,
-        outlineVariant: AppThemeTokens.lightOutline,
+        outlineVariant: AppThemeTokens.lightOutlineVariant,
       ),
       scaffoldBackgroundColor: AppThemeTokens.lightBackground,
       semanticColors: const AppSemanticColors(
@@ -51,6 +58,7 @@ class AppTheme {
       ),
       moneyColors: AppThemeFallbacks.moneyColors,
       heroGradients: AppThemeFallbacks.heroGradients,
+      chartPalette: AppThemeFallbacks.chartPalette,
     );
   }
 
@@ -68,24 +76,21 @@ class AppTheme {
       theme,
       colorScheme: theme.colorScheme.copyWith(
         primary: AppThemeTokens.darkPrimary,
+        onPrimary: Colors.white,
+        primaryContainer: AppThemeTokens.darkPrimaryContainer,
+        onPrimaryContainer: AppThemeTokens.darkOnPrimaryContainer,
         secondary: AppThemeTokens.darkSecondary,
         tertiary: AppThemeTokens.darkTertiary,
         surface: AppThemeTokens.darkSurface,
-        surfaceContainerLowest: AppThemeTokens.darkSurfaceAlt,
-        surfaceContainerLow: AppThemeTokens.darkSurfaceAlt,
-        surfaceContainer: AppThemeTokens.darkSurfaceAlt,
-        surfaceContainerHigh: Color.lerp(
-          AppThemeTokens.darkSurfaceAlt,
-          AppThemeTokens.darkOutline,
-          0.28,
-        ),
-        surfaceContainerHighest: Color.lerp(
-          AppThemeTokens.darkSurfaceAlt,
-          AppThemeTokens.darkOutline,
-          0.42,
-        ),
+        onSurface: AppThemeTokens.darkText,
+        onSurfaceVariant: AppThemeTokens.darkTextSecondary,
+        surfaceContainerLowest: AppThemeTokens.darkSurfaceSunken,
+        surfaceContainerLow: AppThemeTokens.darkBackground,
+        surfaceContainer: AppThemeTokens.darkSurface,
+        surfaceContainerHigh: AppThemeTokens.darkSurfaceRaised,
+        surfaceContainerHighest: AppThemeTokens.darkSurfaceRaised,
         outline: AppThemeTokens.darkOutline,
-        outlineVariant: AppThemeTokens.darkOutline,
+        outlineVariant: AppThemeTokens.darkOutlineVariant,
       ),
       scaffoldBackgroundColor: AppThemeTokens.darkBackground,
       semanticColors: const AppSemanticColors(
@@ -93,24 +98,37 @@ class AppTheme {
         focusContainer: AppThemeTokens.darkFocusContainer,
       ),
       moneyColors: const AppMoneyColors(
-        income: Color(0xFF7ED8A6),
-        expense: Color(0xFFFF9AAF),
-        transfer: Color(0xFFA8BFFF),
-        credit: Color(0xFFFFC27A),
-        warning: Color(0xFFFFC66B),
-        success: Color(0xFF7ED8A6),
+        income: Color(0xFF9DF7B0),
+        expense: Color(0xFFFFB5AA),
+        transfer: Color(0xFF3FCDF6),
+        credit: Color(0xFFF7DDFF),
+        warning: Color(0xFFC8B648),
+        success: Color(0xFF9DF7B0),
       ),
       heroGradients: const AppHeroGradients(
-        // 深色下把右端压暗，否则白字只有 2.37:1、琥珀「负债」只有 1.76:1。
+        // 每个端点都同时满足「白字 ≥4.5」与「琥珀字 ≥4.5」（求解器算出来的）。
         netWorth: AppHeroGradient(
-          colors: [Color(0xFF74608B), Color(0xFF4A7D85)],
+          colors: [Color(0xFF6A55C6), Color(0xFF006EA0), Color(0xFF007370)],
         ),
         brand: AppHeroGradient(
-          colors: [Color(0xFF8A5349), Color(0xFF8B5A62), Color(0xFF8C5F73)],
+          colors: [Color(0xFFA15500), Color(0xFF9C6400), Color(0xFF936E00)],
         ),
         danger: AppHeroGradient(
-          colors: [Color(0xFF703741), Color(0xFF8E4250), Color(0xFFAA5463)],
+          colors: [Color(0xFFB2397C), Color(0xFFBF3D6D), Color(0xFFCB4453)],
         ),
+        amber: AppThemeTokens.darkHeroAmber,
+      ),
+      chartPalette: const AppChartPalette(
+        colors: [
+          Color(0xFFEEB062),
+          Color(0xFF45D3E3),
+          Color(0xFFF29ED5),
+          Color(0xFFBAC769),
+          Color(0xFF8AC3FF),
+          Color(0xFFFFA097),
+          Color(0xFF70D6A4),
+          Color(0xFFC4AEFF),
+        ],
       ),
     );
   }
@@ -122,6 +140,7 @@ class AppTheme {
     required AppSemanticColors semanticColors,
     required AppMoneyColors moneyColors,
     required AppHeroGradients heroGradients,
+    required AppChartPalette chartPalette,
   }) {
     return theme.copyWith(
       colorScheme: colorScheme,
@@ -132,6 +151,7 @@ class AppTheme {
         semanticColors,
         moneyColors,
         heroGradients,
+        chartPalette,
         AppThemeFallbacks.spacingTokens,
         AppThemeFallbacks.radiusTokens,
         AppThemeFallbacks.controlTokens,

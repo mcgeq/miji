@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>主题色设计 v2 · 理论依据 + 三个体系化方案 · 米记</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F3F0;color:#211F1D;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1220px;margin:0 auto;padding:26px 20px 90px}
+h1{font-size:26px;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:17px;margin:36px 0 6px}
+h2 .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:#211F1D;color:#fff;font-size:12px;margin-right:8px;vertical-align:1px}
+p.sub{margin:0 0 14px;color:#6B655F;font-size:13px;line-height:1.7}
+.card{background:#fff;border:1px solid #E6E0D9;border-radius:16px;padding:18px;box-shadow:0 1px 2px rgba(60,40,30,.04)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#8A8178;padding:0 8px 8px;border-bottom:1px solid #E6E0D9}
+td{padding:8px;border-bottom:1px solid #F2EEE9;vertical-align:top}
+tr:last-child td{border-bottom:0}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;background:#F3EFEA;border:1px solid #E6E0D9;border-radius:5px;padding:1px 5px}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.bad{background:#FDE7EA;color:#B3203A}.warn{background:#FDF1DF;color:#8A5A12}.good{background:#E4F5EC;color:#14603A}
+.sw{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 0}
+.sw i{width:30px;height:30px;border-radius:8px;display:block;border:1px solid rgba(0,0,0,.07)}
+.grad{height:24px;border-radius:8px;margin-top:6px}
+.bar{position:sticky;top:0;z-index:9;background:rgba(245,243,240,.93);backdrop-filter:blur(8px);border-bottom:1px solid #E6E0D9;padding:11px 0}
+.bar .row{max-width:1220px;margin:0 auto;padding:0 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;gap:3px;padding:3px;background:#E9E3DC;border-radius:999px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;color:#6B655F}
+.seg button.on{background:#fff;color:#211F1D;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.btn{padding:8px 14px;border-radius:10px;border:0;background:#211F1D;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer}
+.tiny{font-size:11.5px;color:#8A8178}
+.pv{border-radius:18px;padding:16px;background:var(--surface);color:var(--fg)}
+.pvTitle{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8A8178;font-weight:800;margin:0 0 10px}
+.mHero{border-radius:16px;padding:16px;color:#fff;background:linear-gradient(135deg,var(--hb0),var(--hb1) 55%,var(--hb2))}
+.mHero .amt{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:4px 0 8px}
+.mHero .bd{font-size:11.5px;opacity:.95;display:grid;gap:3px}
+.mHero .bd div{display:flex;justify-content:space-between}
+.pbar{height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin-top:9px;position:relative;overflow:hidden}
+.pbar i{position:absolute;inset:0 62% 0 0;background:#fff;border-radius:3px;display:block}
+.pbar.warn i{background:var(--amber);inset:0 18% 0 0}
+.mNet{border-radius:16px;padding:16px;color:#fff;background:linear-gradient(135deg,var(--hn0),var(--hn1))}
+.mNet .row{display:flex;gap:18px;margin-top:8px;font-size:11.5px}
+.mNet .row b{display:block;font-size:15px;font-weight:800}
+.mNet .amber{color:var(--amber)}
+.mList{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:12px}
+.mRow{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.mRow:last-child{border-bottom:0}
+.mRow .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:14px}
+.mRow .amt{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums}
+.mForm{border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:10px;margin-top:12px}
+.mSeg{display:flex;gap:3px;padding:3px;background:var(--chipbg);border-radius:999px;font-size:12px;font-weight:700}
+.mSeg span{flex:1;text-align:center;padding:6px 0;border-radius:999px}
+.mSeg .on{background:var(--primary);color:var(--onprimary)}
+.mChip{border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-size:12px;display:inline-block;background:var(--surface)}
+.mChip .p{display:block;font-size:9.5px;color:var(--fg2)}
+.mChip.on{border-color:var(--pc);background:var(--pc);color:var(--opc)}
+.mChip.solid{background:var(--primary);color:var(--onprimary);border-color:var(--primary);font-weight:700}
+.mChart{display:flex;gap:12px;align-items:flex-end;height:96px;border-bottom:1px solid var(--line);margin-top:14px}
+.mChart .b{flex:1;border-radius:6px 6px 2px 2px}
+.mPie{width:96px;height:96px;border-radius:50%;flex:none;background:conic-gradient(var(--c0) 0 22%,var(--c1) 0 40%,var(--c2) 0 56%,var(--c3) 0 70%,var(--c4) 0 86%,var(--c5) 0 100%)}
+.mLegend{display:grid;gap:5px;font-size:11.5px;color:var(--fg2)}
+.mLegend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:6px}
+.mAlert{border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:8px}
+.mAlert.fill{background:var(--warningfill);color:var(--fg)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.grid3,.pair{grid-template-columns:1fr}}
+textarea{width:100%;min-height:200px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;border:1px solid #E6E0D9;border-radius:12px;padding:12px;background:#fff}
+.dec{display:grid;gap:12px}
+.dec label{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;font-size:13px;cursor:pointer}
+.dec b{display:block;font-size:13.5px}
+.dec em{font-style:normal;color:#6B655F;font-size:12.5px;line-height:1.65}
+.dec .tag{font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:6px}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute"><filter id="cvd-protan" color-interpolation-filters="linearRGB"><feColorMatrix type="matrix" values="0.152286 1.052583 -0.204868 0 0  0.114503 0.786281 0.099216 0 0  -0.003882 -0.048116 1.051998 0 0  0 0 0 1 0"/></filter><filter id="cvd-deutan" color-interpolation-filters="linearRGB"><feColorMatrix type="matrix" values="0.367322 0.860646 -0.227968 0 0  0.280085 0.672501 0.047413 0 0  -0.011820 0.042940 0.968881 0 0  0 0 0 1 0"/></filter><filter id="cvd-tritan" color-interpolation-filters="linearRGB"><feColorMatrix type="matrix" values="1.255528 -0.076749 -0.178779 0 0  -0.078411 0.930809 0.147602 0 0  0.004733 0.691367 0.303900 0 0  0 0 0 1 0"/></filter></svg>
+<div class="bar"><div class="row">
+  <b style="font-size:13px">主题色 v2</b>
+  <div class="seg" id="schemeSeg">
+    <button data-key="ink" class="on">V1 墨蓝</button>
+    <button data-key="jade">V2 青碧</button>
+    <button data-key="plum">V3 绛紫</button>
+  </div>
+  <div class="seg" id="neutralSeg">
+    <button data-neutral="warm" class="on">暖白中性</button>
+    <button data-neutral="cool">冷灰中性</button>
+  </div>
+  <div class="seg" id="stratSeg">
+    <button data-strat="cvd" class="on">色盲强化语义</button>
+    <button data-strat="balanced">均衡语义</button>
+  </div>
+  <div class="seg" id="cvdSeg">
+    <button data-cvd="none" class="on">正常视觉</button>
+    <button data-cvd="protan">红色盲</button>
+    <button data-cvd="deutan">绿色盲</button>
+    <button data-cvd="tritan">蓝黄色盲</button>
+  </div>
+  <button class="btn" id="exportBtn">导出我的选择</button>
+</div></div>
+
+<div class="wrap">
+  <h1>主题色设计 v2 · 有依据的体系化配色</h1>
+  <p class="sub">上一轮是「修对比度」；这一轮按<b>色彩理论 + 可访问性标准 + 竞品结构</b>重新设计两套主题。
+  所有数字都是现场算的：WCAG 对比度、APCA（Lc）、OKLab ΔE、以及 Viénot/Brettel 色觉缺陷模拟。</p>
+
+  <h2><span class="n">1</span>设计依据：理论 → 约束</h2>
+  <p class="sub">每条理论都落到一个可检查的约束上，后面所有颜色都是这些约束求解出来的，不是手调的。</p>
+  <div class="card"><table><thead><tr><th style="width:250px">理论 / 研究</th><th style="width:380px">说了什么</th><th>落成什么约束</th></tr></thead><tbody><tr><td><b>对立过程理论（Hering 1878）</b></td><td>人眼把颜色编码成红—绿、蓝—黄两对对立通道。红绿同属一个通道 → 红绿色盲（约 8% 男性）看不出红绿差别。</td><td>① 支出/收入不能只靠红绿区分；② 必须叠加明度差或符号（App 里金额都带 +/−）。</td></tr><tr><td><b>色觉缺陷设计（Okabe & Ito 2008；Wong, Nature Methods 2011）</b></td><td>色盲友好不是"换一套色"，而是"不要只靠色相"：用明度差 + 形状/文字做冗余编码。</td><td>语义色策略提供「色盲强化型」：明度跨度 0.15，色盲下最小 ΔE 从 0.015 提到 0.10+。</td></tr><tr><td><b>感知均匀色彩空间（Ottosson 2020 OKLab；Google HCT）</b></td><td>CIELAB/OKLab 里「相同 L」才等于「看起来一样亮」。sRGB/HSL 里黄色天生比蓝色亮得多，直接调不出均衡的色板。</td><td>① 语义色与图表色板全部在 OKLCH 里按 L 定档；② M3 角色用官方 HCT/色调板生成。</td></tr><tr><td><b>无障碍对比度（WCAG 2.2 SC 1.4.3/1.4.11；APCA W3 草案）</b></td><td>正文 4.5:1、大字号 3:1、非文字图形 3:1。APCA 用感知对比（Lc）衡量，在深色模式下比 WCAG 2 的公式更贴近观感。</td><td>每个关键配对都过 WCAG；再用 APCA 复核（页面给出 Lc 值，白/黑锚定 = 106）。</td></tr><tr><td><b>Material 3 色彩角色（Google M3）</b></td><td>primary 是「交互色」，secondary 是 primary 的弱化版，**不是第二个语义色**；onX/primaryContainer 是成对出现的。</td><td>① 不再把 secondary 当「收入绿」；② 选中态改用 primaryContainer/onPrimaryContainer 配对（实测 8~13:1）。</td></tr><tr><td><b>分类色编码（Ware《Information Visualization》；ColorBrewer, Brewer 2003）</b></td><td>定性色板靠色相区分、明度保持接近；可用色相数量有限（6~8 个），再多的分类必须靠分组或标注。</td><td>图表色板固定 8 色、等明度、相邻切片色相相距 135°、对比度 ≥3:1。</td></tr></tbody></table></div>
+
+  <h2><span class="n">2</span>竞品结构观察</h2>
+  <p class="sub">说明：本环境无法联网核查，以下是从公开产品印象里提炼的<b>结构规律</b>（不是色值抄录）。真正落到设计里的是「结构」，色值由求解器算。</p>
+  <div class="card"><table><thead><tr><th style="width:230px">规律</th><th style="width:420px">竞品普遍做法</th><th>我们的处理</th></tr></thead><tbody><tr><td><b>品牌色几乎不占「红」这个语义槽位</b></td><td>国内随手记/鲨鱼/钱迹、国外 YNAB/Monarch/Copilot/Money Manager 的主流做法是把品牌放在蓝、绿、紫或黑，红色留给「支出/超支」。</td><td>我们的现状恰好相反：品牌 #E45F4F 与支出 #CD323F 只差 11.5° → 三个方案都把品牌移出红色区。</td></tr><tr><td><b>语义红绿只用于金额，且一定叠加符号或文字</b></td><td>几乎看不到只用颜色表示收支的地方，金额前都有 +/− 或「收入/支出」标签。</td><td>本方案保留 +/− 冗余，并把这一点写进设计约束（色觉缺陷策略的替代方案）。</td></tr><tr><td><b>中性面低饱和，品牌色是唯一的强调色</b></td><td>主流 App 的底色要么暖白要么冷灰，饱和度都很低（明度分层而不是靠颜色分层）；一屏内强调色不超过 2 个。</td><td>三个方案的中性面 chroma 都 ≤7（HCT），品牌色只在按钮/选中/图标上出现。</td></tr><tr><td><b>深色主题是独立设计的明度阶梯，不是「浅色调暗」</b></td><td>深色模式普遍重新定档：表面用 3~4 级明度分层（不做纯黑），语义色提亮并降饱和，避免暗底上的晕光。</td><td>本方案用 M3 的 surfaceContainer 5 级阶梯 + 深色语义色单独求解（对比度门槛提到 7:1）。</td></tr></tbody></table></div>
+
+  <h2><span class="n">3</span>现状诊断（实测）</h2>
+  <div class="grid3">
+    <div class="card"><b>实心按钮白字 <span class="chip bad">不达标</span></b>
+      <p class="sub" style="margin:8px 0 0">浅色 3.47:1、深色 <b>2.05:1</b>（`app_icon_action_button.dart:48` 硬编码白字）。深色下几乎读不清。</p></div>
+    <div class="card"><b>只靠色相区分收支 <span class="chip bad">不可靠</span></b>
+      <p class="sub" style="margin:8px 0 0">实测：把五个语义色调到<b>等明度</b>后，绿色盲下「支出↔收入」的 ΔE 只有 <b>0.015</b>（正常视觉 0.13）—— 色相通道在色盲下会塌。</p></div>
+    <div class="card"><b>选中态同色叠同色 <span class="chip bad">不达标</span></b>
+      <p class="sub" style="margin:8px 0 0">primary 12% 底 + primary 文字 = 3.03:1。改用 primaryContainer/onPrimaryContainer 配对后 8~13:1。</p></div>
+  </div>
+  <div class="card" style="margin-top:14px"><table>
+    <thead><tr><th>语义色策略</th><th>明度跨度</th><th>正常视觉最小ΔE</th><th>红色盲</th><th>绿色盲</th><th>蓝黄色盲</th><th>APCA 最差 Lc</th></tr></thead>
+    <tbody><tr><td>浅色 · 均衡型</td><td>0.08</td><td>0.127<span class="tiny"> expense/warning</span></td><td>0.060<span class="tiny"> income/warning</span></td><td>0.057<span class="tiny"> expense/income</span></td><td>0.039<span class="tiny"> expense/warning</span></td><td>77</td></tr><tr><td>浅色 · 色盲强化型</td><td>0.15</td><td>0.155<span class="tiny"> income/transfer</span></td><td>0.081<span class="tiny"> expense/income</span></td><td>0.065<span class="tiny"> expense/income</span></td><td>0.097<span class="tiny"> expense/warning</span></td><td>70</td></tr><tr><td>深色 · 均衡型</td><td>0.08</td><td>0.129<span class="tiny"> expense/warning</span></td><td>0.073<span class="tiny"> transfer/credit</span></td><td>0.015<span class="tiny"> transfer/credit</span></td><td>0.086<span class="tiny"> expense/warning</span></td><td>-74</td></tr><tr><td>深色 · 色盲强化型</td><td>0.15</td><td>0.162<span class="tiny"> expense/warning</span></td><td>0.097<span class="tiny"> transfer/credit</span></td><td>0.105<span class="tiny"> income/warning</span></td><td>0.095<span class="tiny"> expense/warning</span></td><td>-81</td></tr></tbody></table>
+    <p class="tiny" style="margin-top:10px">ΔE 判读：≥0.10 是「明显可区分」（约等于 CIELAB ΔE*ab ≥ 10，ColorBrewer 的实用门槛）；≥0.05 是「并排能看出不同」。<br>
+    均衡型与色盲强化型的差别就是<b>明度跨度</b>：跨度小 → 五个色视觉权重一致、更鲜亮，但要靠 +/− 和文字冗余；跨度大 → 不依赖颜色也能分辨。</p></div>
+
+  <h2><span class="n">4</span>三个体系化方案</h2>
+  <p class="sub">M3 角色用 Google 官方 HCT/色调板生成（<code>tool/theme_gen.dart</code>），语义色与图表色板用 OKLCH 求解器算（<code>docs/theme_solve_ladder.py</code>）。</p>
+  <div class="grid3"><div class="card">
+  <div style="display:flex;align-items:baseline;gap:8px"><b style="font-size:15px">V1 墨蓝 · 暖白</b>
+    <span class="chip good">HCT 种子 H262 C34</span></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">M3 角色 · 浅色</div>
+  <div class="sw"><i style="background:#425F8D" title="#425F8D"></i><i style="background:#FFFFFF" title="#FFFFFF"></i><i style="background:#D6E3FF" title="#D6E3FF"></i><i style="background:#294774" title="#294774"></i><i style="background:#6D5774" title="#6D5774"></i><i style="background:#FFF8F4" title="#FFF8F4"></i><i style="background:#FFF1E6" title="#FFF1E6"></i><i style="background:#867462" title="#867462"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">M3 角色 · 深色</div>
+  <div class="sw"><i style="background:#ABC7FC" title="#ABC7FC"></i><i style="background:#0E305C" title="#0E305C"></i><i style="background:#294774" title="#294774"></i><i style="background:#D6E3FF" title="#D6E3FF"></i><i style="background:#D9BEDF" title="#D9BEDF"></i><i style="background:#19120A" title="#19120A"></i><i style="background:#221A12" title="#221A12"></i><i style="background:#A18D7B" title="#A18D7B"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">语义色 · 均衡型（浅 / 深）</div>
+  <div class="sw"><i style="background:#7E1B11" title="#7E1B11"></i><i style="background:#005333" title="#005333"></i><i style="background:#006087" title="#006087"></i><i style="background:#562B7D" title="#562B7D"></i><i style="background:#795200" title="#795200"></i></div><div class="sw"><i style="background:#FFAB9D" title="#FFAB9D"></i><i style="background:#6ADFA6" title="#6ADFA6"></i><i style="background:#44BBF7" title="#44BBF7"></i><i style="background:#BF94EF" title="#BF94EF"></i><i style="background:#D99F36" title="#D99F36"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">语义色 · 色盲强化型（浅 / 深）</div>
+  <div class="sw"><i style="background:#811F14" title="#811F14"></i><i style="background:#005031" title="#005031"></i><i style="background:#00668F" title="#00668F"></i><i style="background:#54287A" title="#54287A"></i><i style="background:#8F6200" title="#8F6200"></i></div><div class="sw"><i style="background:#F08574" title="#F08574"></i><i style="background:#78ECB2" title="#78ECB2"></i><i style="background:#33AEE9" title="#33AEE9"></i><i style="background:#DEC3FF" title="#DEC3FF"></i><i style="background:#FEC25E" title="#FEC25E"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">品牌渐变 / 净资产渐变 / 告警渐变（浅色）</div>
+  <div class="grad" style="background:linear-gradient(135deg,#006F98,#456ACE,#8A5FC9)"></div>
+  <div class="grad" style="background:linear-gradient(135deg,#624EB7,#00679A,#007673)"></div>
+  <div class="grad" style="background:linear-gradient(135deg,#AF3E7C,#BC426D,#C74955)"></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">图表色板（8 色 · 与品牌同族）</div>
+  <div class="sw"><i style="background:#AC6820" title="#AC6820"></i><i style="background:#008C8F" title="#008C8F"></i><i style="background:#A35E9A" title="#A35E9A"></i><i style="background:#837E0F" title="#837E0F"></i><i style="background:#2981BB" title="#2981BB"></i><i style="background:#B65A60" title="#B65A60"></i><i style="background:#388E56" title="#388E56"></i><i style="background:#766EBD" title="#766EBD"></i></div>
+  <table style="margin-top:12px"><thead><tr><th>校验（浅色）</th><th>实测</th><th>要求</th><th></th><th></th></tr></thead>
+  <tbody><tr><td>onPrimary：实心按钮文字</td><td>6.46</td><td>4.5</td><td>✓</td><td class="tiny">#425F8D 上的 #FFFFFF</td></tr><tr><td>primary 当文字</td><td>6.14</td><td>4.5</td><td>✓</td><td class="tiny">#425F8D</td></tr><tr><td>selected chip（container 配对）</td><td>7.25</td><td>4.5</td><td>✓</td><td class="tiny">#294774 on #D6E3FF</td></tr><tr><td>语义色最差（文字）</td><td>6.28</td><td>4.5</td><td>✓</td><td class="tiny">五色取最差</td></tr><tr><td>hero 渐变白字最差</td><td>4.6</td><td>4.5</td><td>✓</td><td class="tiny">全部端点</td></tr><tr><td>hero 琥珀字最差</td><td>4.62</td><td>4.5</td><td>✓</td><td class="tiny">净资产渐变</td></tr><tr><td>图表色板最差（图形）</td><td>3.86</td><td>3.0</td><td>✓</td><td class="tiny">8 色取最差</td></tr></tbody></table>
+</div><div class="card">
+  <div style="display:flex;align-items:baseline;gap:8px"><b style="font-size:15px">V2 青碧 · 中性</b>
+    <span class="chip good">HCT 种子 H195 C30</span></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">M3 角色 · 浅色</div>
+  <div class="sw"><i style="background:#246867" title="#246867"></i><i style="background:#FFFFFF" title="#FFFFFF"></i><i style="background:#ADEEEC" title="#ADEEEC"></i><i style="background:#00504F" title="#00504F"></i><i style="background:#4C6078" title="#4C6078"></i><i style="background:#FFF8F4" title="#FFF8F4"></i><i style="background:#FFF1E6" title="#FFF1E6"></i><i style="background:#867462" title="#867462"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">M3 角色 · 深色</div>
+  <div class="sw"><i style="background:#91D2D0" title="#91D2D0"></i><i style="background:#003736" title="#003736"></i><i style="background:#00504F" title="#00504F"></i><i style="background:#ADEEEC" title="#ADEEEC"></i><i style="background:#B3C8E4" title="#B3C8E4"></i><i style="background:#19120A" title="#19120A"></i><i style="background:#221A12" title="#221A12"></i><i style="background:#A18D7B" title="#A18D7B"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">语义色 · 均衡型（浅 / 深）</div>
+  <div class="sw"><i style="background:#7E1B11" title="#7E1B11"></i><i style="background:#005333" title="#005333"></i><i style="background:#006087" title="#006087"></i><i style="background:#562B7D" title="#562B7D"></i><i style="background:#795200" title="#795200"></i></div><div class="sw"><i style="background:#FFAB9D" title="#FFAB9D"></i><i style="background:#6ADFA6" title="#6ADFA6"></i><i style="background:#44BBF7" title="#44BBF7"></i><i style="background:#BF94EF" title="#BF94EF"></i><i style="background:#D99F36" title="#D99F36"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">语义色 · 色盲强化型（浅 / 深）</div>
+  <div class="sw"><i style="background:#811F14" title="#811F14"></i><i style="background:#005031" title="#005031"></i><i style="background:#00668F" title="#00668F"></i><i style="background:#54287A" title="#54287A"></i><i style="background:#8F6200" title="#8F6200"></i></div><div class="sw"><i style="background:#F08574" title="#F08574"></i><i style="background:#78ECB2" title="#78ECB2"></i><i style="background:#33AEE9" title="#33AEE9"></i><i style="background:#DEC3FF" title="#DEC3FF"></i><i style="background:#FEC25E" title="#FEC25E"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">品牌渐变 / 净资产渐变 / 告警渐变（浅色）</div>
+  <div class="grad" style="background:linear-gradient(135deg,#007956,#007B80,#007CA9)"></div>
+  <div class="grad" style="background:linear-gradient(135deg,#624EB7,#00679A,#007673)"></div>
+  <div class="grad" style="background:linear-gradient(135deg,#AF3E7C,#BC426D,#C74955)"></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">图表色板（8 色 · 与品牌同族）</div>
+  <div class="sw"><i style="background:#B0597E" title="#B0597E"></i><i style="background:#628835" title="#628835"></i><i style="background:#5777C1" title="#5777C1"></i><i style="background:#B55F40" title="#B55F40"></i><i style="background:#008F77" title="#008F77"></i><i style="background:#9064AF" title="#9064AF"></i><i style="background:#9B7300" title="#9B7300"></i><i style="background:#0088A6" title="#0088A6"></i></div>
+  <table style="margin-top:12px"><thead><tr><th>校验（浅色）</th><th>实测</th><th>要求</th><th></th><th></th></tr></thead>
+  <tbody><tr><td>onPrimary：实心按钮文字</td><td>6.46</td><td>4.5</td><td>✓</td><td class="tiny">#246867 上的 #FFFFFF</td></tr><tr><td>primary 当文字</td><td>6.15</td><td>4.5</td><td>✓</td><td class="tiny">#246867</td></tr><tr><td>selected chip（container 配对）</td><td>7.17</td><td>4.5</td><td>✓</td><td class="tiny">#00504F on #ADEEEC</td></tr><tr><td>语义色最差（文字）</td><td>6.28</td><td>4.5</td><td>✓</td><td class="tiny">五色取最差</td></tr><tr><td>hero 渐变白字最差</td><td>4.65</td><td>4.5</td><td>✓</td><td class="tiny">全部端点</td></tr><tr><td>hero 琥珀字最差</td><td>4.62</td><td>4.5</td><td>✓</td><td class="tiny">净资产渐变</td></tr><tr><td>图表色板最差（图形）</td><td>3.85</td><td>3.0</td><td>✓</td><td class="tiny">8 色取最差</td></tr></tbody></table>
+</div><div class="card">
+  <div style="display:flex;align-items:baseline;gap:8px"><b style="font-size:15px">V3 绛紫 · 暖白</b>
+    <span class="chip good">HCT 种子 H318 C32</span></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">M3 角色 · 浅色</div>
+  <div class="sw"><i style="background:#725281" title="#725281"></i><i style="background:#FFFFFF" title="#FFFFFF"></i><i style="background:#F6D9FF" title="#F6D9FF"></i><i style="background:#593B67" title="#593B67"></i><i style="background:#7E5354" title="#7E5354"></i><i style="background:#FFF8F4" title="#FFF8F4"></i><i style="background:#FFF1E6" title="#FFF1E6"></i><i style="background:#867462" title="#867462"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">M3 角色 · 深色</div>
+  <div class="sw"><i style="background:#DFB9EE" title="#DFB9EE"></i><i style="background:#41254F" title="#41254F"></i><i style="background:#593B67" title="#593B67"></i><i style="background:#F6D9FF" title="#F6D9FF"></i><i style="background:#F1B9BA" title="#F1B9BA"></i><i style="background:#19120A" title="#19120A"></i><i style="background:#221A12" title="#221A12"></i><i style="background:#A18D7B" title="#A18D7B"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">语义色 · 均衡型（浅 / 深）</div>
+  <div class="sw"><i style="background:#7E1B11" title="#7E1B11"></i><i style="background:#005333" title="#005333"></i><i style="background:#006087" title="#006087"></i><i style="background:#562B7D" title="#562B7D"></i><i style="background:#795200" title="#795200"></i></div><div class="sw"><i style="background:#FFAB9D" title="#FFAB9D"></i><i style="background:#6ADFA6" title="#6ADFA6"></i><i style="background:#44BBF7" title="#44BBF7"></i><i style="background:#BF94EF" title="#BF94EF"></i><i style="background:#D99F36" title="#D99F36"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">语义色 · 色盲强化型（浅 / 深）</div>
+  <div class="sw"><i style="background:#811F14" title="#811F14"></i><i style="background:#005031" title="#005031"></i><i style="background:#00668F" title="#00668F"></i><i style="background:#54287A" title="#54287A"></i><i style="background:#8F6200" title="#8F6200"></i></div><div class="sw"><i style="background:#F08574" title="#F08574"></i><i style="background:#78ECB2" title="#78ECB2"></i><i style="background:#33AEE9" title="#33AEE9"></i><i style="background:#DEC3FF" title="#DEC3FF"></i><i style="background:#FEC25E" title="#FEC25E"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">品牌渐变 / 净资产渐变 / 告警渐变（浅色）</div>
+  <div class="grad" style="background:linear-gradient(135deg,#6A57C1,#9E4EAB,#C0497D)"></div>
+  <div class="grad" style="background:linear-gradient(135deg,#624EB7,#00679A,#007673)"></div>
+  <div class="grad" style="background:linear-gradient(135deg,#AF3E7C,#BC426D,#C74955)"></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">图表色板（8 色 · 与品牌同族）</div>
+  <div class="sw"><i style="background:#748322" title="#748322"></i><i style="background:#427DBF" title="#427DBF"></i><i style="background:#B75B51" title="#B75B51"></i><i style="background:#169065" title="#169065"></i><i style="background:#8369B8" title="#8369B8"></i><i style="background:#A56D0D" title="#A56D0D"></i><i style="background:#008A99" title="#008A99"></i><i style="background:#AA5B8D" title="#AA5B8D"></i></div>
+  <table style="margin-top:12px"><thead><tr><th>校验（浅色）</th><th>实测</th><th>要求</th><th></th><th></th></tr></thead>
+  <tbody><tr><td>onPrimary：实心按钮文字</td><td>6.48</td><td>4.5</td><td>✓</td><td class="tiny">#725281 上的 #FFFFFF</td></tr><tr><td>primary 当文字</td><td>6.17</td><td>4.5</td><td>✓</td><td class="tiny">#725281</td></tr><tr><td>selected chip（container 配对）</td><td>7.25</td><td>4.5</td><td>✓</td><td class="tiny">#593B67 on #F6D9FF</td></tr><tr><td>语义色最差（文字）</td><td>6.28</td><td>4.5</td><td>✓</td><td class="tiny">五色取最差</td></tr><tr><td>hero 渐变白字最差</td><td>4.65</td><td>4.5</td><td>✓</td><td class="tiny">全部端点</td></tr><tr><td>hero 琥珀字最差</td><td>4.62</td><td>4.5</td><td>✓</td><td class="tiny">净资产渐变</td></tr><tr><td>图表色板最差（图形）</td><td>3.83</td><td>3.0</td><td>✓</td><td class="tiny">8 色取最差</td></tr></tbody></table>
+</div></div>
+
+  <h2><span class="n">5</span>校验总表</h2>
+  <div class="card"><table><thead><tr><th>方案</th><th>变体</th><th>onPrimary：实心按钮文字</th><th>primary 当文字</th><th>selected chip（container 配对）</th><th>语义色最差（文字）</th><th>hero 渐变白字最差</th><th>hero 琥珀字最差</th><th>图表色板最差（图形）</th></tr></thead><tbody><tr><td>V1 墨蓝 · 暖白</td><td>warm_light</td><td class="ok">6.46</td><td class="ok">6.14</td><td class="ok">7.25</td><td class="ok">6.28</td><td class="ok">4.6</td><td class="ok">4.62</td><td class="ok">3.86</td></tr><tr><td>V1 墨蓝 · 暖白</td><td>warm_dark</td><td class="ok">7.71</td><td class="ok">10.87</td><td class="ok">7.25</td><td class="ok">7.1</td><td class="ok">4.71</td><td class="ok">4.62</td><td class="ok">9.43</td></tr><tr><td>V1 墨蓝 · 暖白</td><td>cool_light</td><td class="ok">6.46</td><td class="ok">6.14</td><td class="ok">7.25</td><td class="ok">6.28</td><td class="ok">4.6</td><td class="ok">4.62</td><td class="ok">3.86</td></tr><tr><td>V1 墨蓝 · 暖白</td><td>cool_dark</td><td class="ok">7.71</td><td class="ok">10.89</td><td class="ok">7.25</td><td class="ok">7.08</td><td class="ok">4.71</td><td class="ok">4.62</td><td class="ok">9.44</td></tr><tr><td>V2 青碧 · 中性</td><td>warm_light</td><td class="ok">6.46</td><td class="ok">6.15</td><td class="ok">7.17</td><td class="ok">6.28</td><td class="ok">4.65</td><td class="ok">4.62</td><td class="ok">3.85</td></tr><tr><td>V2 青碧 · 中性</td><td>warm_dark</td><td class="ok">7.71</td><td class="ok">10.89</td><td class="ok">7.17</td><td class="ok">7.1</td><td class="ok">4.71</td><td class="ok">4.62</td><td class="ok">9.45</td></tr><tr><td>V2 青碧 · 中性</td><td>cool_light</td><td class="ok">6.46</td><td class="ok">6.15</td><td class="ok">7.17</td><td class="ok">6.28</td><td class="ok">4.65</td><td class="ok">4.62</td><td class="ok">3.85</td></tr><tr><td>V2 青碧 · 中性</td><td>cool_dark</td><td class="ok">7.71</td><td class="ok">10.91</td><td class="ok">7.17</td><td class="ok">7.08</td><td class="ok">4.71</td><td class="ok">4.62</td><td class="ok">9.47</td></tr><tr><td>V3 绛紫 · 暖白</td><td>warm_light</td><td class="ok">6.48</td><td class="ok">6.17</td><td class="ok">7.25</td><td class="ok">6.28</td><td class="ok">4.65</td><td class="ok">4.62</td><td class="ok">3.83</td></tr><tr><td>V3 绛紫 · 暖白</td><td>warm_dark</td><td class="ok">7.68</td><td class="ok">10.87</td><td class="ok">7.25</td><td class="ok">7.1</td><td class="ok">4.77</td><td class="ok">4.62</td><td class="ok">9.42</td></tr><tr><td>V3 绛紫 · 暖白</td><td>cool_light</td><td class="ok">6.48</td><td class="ok">6.17</td><td class="ok">7.25</td><td class="ok">6.28</td><td class="ok">4.65</td><td class="ok">4.62</td><td class="ok">3.83</td></tr><tr><td>V3 绛紫 · 暖白</td><td>cool_dark</td><td class="ok">7.68</td><td class="ok">10.89</td><td class="ok">7.25</td><td class="ok">7.08</td><td class="ok">4.77</td><td class="ok">4.62</td><td class="ok">9.44</td></tr></tbody></table></div>
+
+  <h2><span class="n">6</span>色觉缺陷模拟 + 实时预览</h2>
+  <p class="sub">顶部可切方案 / 暖冷中性 / 语义策略 / 四种视觉。下面的 mockup 全部用候选 token 实时换肤（CSS 变量），色盲模式用 Machado 2009 的线性 RGB 矩阵（feColorMatrix）。<br>
+  试着切到「绿色盲」：你会看到收支金额的颜色几乎一样 —— 这就是为什么方案里加了明度冗余。</p>
+  <div id="preview" class="pair"><div class="pv" style="--primary:#425F8D;--onprimary:#FFFFFF;--pc:#D6E3FF;--opc:#294774;--expense:#811F14;--income:#005031;--transfer:#00668F;--credit:#54287A;--warning:#8F6200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#FFF8F4;--line:#867462;--chipbg:#FFF1E6;--fg:#221A12;--fg2:#6B655F;--hb0:#006F98;--hb1:#456ACE;--hb2:#8A5FC9;--hn0:#624EB7;--hn1:#00679A;--c0:#AC6820;--c1:#008C8F;--c2:#A35E9A;--c3:#837E0F;--c4:#2981BB;--c5:#B65A60;">
+  <p class="pvTitle">浅色 light · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#AC6820"></div><div class="b" style="height:78%;background:#008C8F"></div><div class="b" style="height:58%;background:#A35E9A"></div><div class="b" style="height:92%;background:#837E0F"></div><div class="b" style="height:40%;background:#2981BB"></div><div class="b" style="height:66%;background:#B65A60"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#AC6820"></i>餐饮 30%</span><span><i style="background:#008C8F"></i>购物 18%</span><span><i style="background:#A35E9A"></i>交通 16%</span><span><i style="background:#837E0F"></i>居住 14%</span><span><i style="background:#2981BB"></i>娱乐 12%</span><span><i style="background:#B65A60"></i>其他 10%</span></div>
+  </div>
+</div><div class="pv" style="--primary:#ABC7FC;--onprimary:#0E305C;--pc:#294774;--opc:#D6E3FF;--expense:#F08574;--income:#78ECB2;--transfer:#33AEE9;--credit:#DEC3FF;--warning:#FEC25E;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#19120A;--line:#A18D7B;--chipbg:#221A12;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#006F98;--hb1:#4D6DBD;--hb2:#8463B8;--hn0:#6154A8;--hn1:#00679A;--c0:#F5AC69;--c1:#44D5D8;--c2:#EBA1E0;--c3:#C6C362;--c4:#7AC6FF;--c5:#FF9EA3;">
+  <p class="pvTitle">深色 dark · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#F5AC69"></div><div class="b" style="height:78%;background:#44D5D8"></div><div class="b" style="height:58%;background:#EBA1E0"></div><div class="b" style="height:92%;background:#C6C362"></div><div class="b" style="height:40%;background:#7AC6FF"></div><div class="b" style="height:66%;background:#FF9EA3"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#F5AC69"></i>餐饮 30%</span><span><i style="background:#44D5D8"></i>购物 18%</span><span><i style="background:#EBA1E0"></i>交通 16%</span><span><i style="background:#C6C362"></i>居住 14%</span><span><i style="background:#7AC6FF"></i>娱乐 12%</span><span><i style="background:#FF9EA3"></i>其他 10%</span></div>
+  </div>
+</div></div>
+
+  <h2><span class="n">7</span>逐项拍板</h2>
+  <div class="card"><div class="dec"><label><input type="checkbox" data-dec="D1" checked><span><b>D1 · 品牌色走哪个方案<span class="tag warn">推荐 V1 墨蓝</span></b><em>V1 墨蓝（最稳）/ V2 青碧（最中性）/ V3 绛紫（最接近 M3 默认审美）。三个方案的品牌色都满足：可当文字 ≥4.5、配 onPrimary 做实心按钮 ≥4.5、与支出红夹角 ≥90°。</em></span></label><label><input type="checkbox" data-dec="D2" checked><span><b>D2 · 中性面用暖白还是冷灰<span class="tag warn">推荐暖白</span></b><em>暖白（chroma 7、色相 68°）让"暖米记"的气质保留；冷灰（chroma 4、色相 250°）更工具感。三个方案各自都可以切。</em></span></label><label><input type="checkbox" data-dec="D3" checked><span><b>D3 · 语义色用「均衡型」还是「色盲强化型」<span class="tag warn">推荐色盲强化型</span></b><em>均衡型：明度跨度 0.08，五色看起来一样重、最鲜亮；色盲下最小 ΔE 约 0.04~0.07，靠 +/− 与文字冗余（符合 WCAG 1.4.1）。色盲强化型：跨度 0.15，色盲最小 ΔE ≥0.10，不依赖颜色也能分辨；代价是明暗不齐。</em></span></label><label><input type="checkbox" data-dec="D4" checked><span><b>D4 · Hero 渐变的色系<span class="tag warn">推荐按方案默认</span></b><em>品牌渐变：品牌色相邻色相弧 + 三档明度梯度（5.4/4.9/4.6 对比度目标）。净资产渐变：固定「紫 → 青」（这是你认可的那张卡）；告警渐变：红 → 深紫红。</em></span></label><label><input type="checkbox" data-dec="D5" checked><span><b>D5 · 图表色板是否 token 化<span class="tag warn">推荐做</span></b><em>新增 AppChartPalette（浅/深各 8 色，等明度、相邻色相 135°、≥3:1），四张图共用同一顺序，替掉现在的 4 套 Material 原色。</em></span></label><label><input type="checkbox" data-dec="D6" checked><span><b>D6 · 分类自定义色是否改为「色相 + 主题求明度」<span class="tag warn">推荐做</span></b><em>现状 15 色色板在两套主题下都有不达标（浅 6 / 深 2）。改为用户选色相、明度由主题求解，可两套主题全部 ≥3:1。</em></span></label><label><input type="checkbox" data-dec="D7" checked><span><b>D7 · 是否接回 themeSeedColor<span class="tag warn">推荐接回（色相可换）</span></b><em>这个偏好字段有列、有默认值，但主题从未读取（死配置）。要么真的支持换主题色（用本页的求解器按色相生成），要么删列。</em></span></label><label><input type="checkbox" data-dec="D8" checked><span><b>D8 · 深色底亮度<span class="tag warn">推荐按 M3 阶梯</span></b><em>现状 #1B1412 很暗；M3 阶梯给的是 #19120A（暖）/ #121316（冷）。可整体提亮一档更利于长时间阅读，也可保持。</em></span></label></div></div>
+
+  <h2><span class="n">8</span>导出</h2>
+  <div class="card"><textarea id="out" readonly placeholder="点右上角「导出我的选择」生成…"></textarea>
+  <div style="margin-top:10px"><button class="btn" id="copyBtn">复制</button> <span class="tiny" id="copyHint"></span></div></div>
+</div>
+<template id="tpl-ink-warm-light-balanced"><div class="pv" style="--primary:#425F8D;--onprimary:#FFFFFF;--pc:#D6E3FF;--opc:#294774;--expense:#7E1B11;--income:#005333;--transfer:#006087;--credit:#562B7D;--warning:#795200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#FFF8F4;--line:#867462;--chipbg:#FFF1E6;--fg:#221A12;--fg2:#6B655F;--hb0:#006F98;--hb1:#456ACE;--hb2:#8A5FC9;--hn0:#624EB7;--hn1:#00679A;--c0:#AC6820;--c1:#008C8F;--c2:#A35E9A;--c3:#837E0F;--c4:#2981BB;--c5:#B65A60;">
+  <p class="pvTitle">浅色 light · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#AC6820"></div><div class="b" style="height:78%;background:#008C8F"></div><div class="b" style="height:58%;background:#A35E9A"></div><div class="b" style="height:92%;background:#837E0F"></div><div class="b" style="height:40%;background:#2981BB"></div><div class="b" style="height:66%;background:#B65A60"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#AC6820"></i>餐饮 30%</span><span><i style="background:#008C8F"></i>购物 18%</span><span><i style="background:#A35E9A"></i>交通 16%</span><span><i style="background:#837E0F"></i>居住 14%</span><span><i style="background:#2981BB"></i>娱乐 12%</span><span><i style="background:#B65A60"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-ink-warm-light-cvd"><div class="pv" style="--primary:#425F8D;--onprimary:#FFFFFF;--pc:#D6E3FF;--opc:#294774;--expense:#811F14;--income:#005031;--transfer:#00668F;--credit:#54287A;--warning:#8F6200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#FFF8F4;--line:#867462;--chipbg:#FFF1E6;--fg:#221A12;--fg2:#6B655F;--hb0:#006F98;--hb1:#456ACE;--hb2:#8A5FC9;--hn0:#624EB7;--hn1:#00679A;--c0:#AC6820;--c1:#008C8F;--c2:#A35E9A;--c3:#837E0F;--c4:#2981BB;--c5:#B65A60;">
+  <p class="pvTitle">浅色 light · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#AC6820"></div><div class="b" style="height:78%;background:#008C8F"></div><div class="b" style="height:58%;background:#A35E9A"></div><div class="b" style="height:92%;background:#837E0F"></div><div class="b" style="height:40%;background:#2981BB"></div><div class="b" style="height:66%;background:#B65A60"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#AC6820"></i>餐饮 30%</span><span><i style="background:#008C8F"></i>购物 18%</span><span><i style="background:#A35E9A"></i>交通 16%</span><span><i style="background:#837E0F"></i>居住 14%</span><span><i style="background:#2981BB"></i>娱乐 12%</span><span><i style="background:#B65A60"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-ink-warm-dark-balanced"><div class="pv" style="--primary:#ABC7FC;--onprimary:#0E305C;--pc:#294774;--opc:#D6E3FF;--expense:#FFAB9D;--income:#6ADFA6;--transfer:#44BBF7;--credit:#BF94EF;--warning:#D99F36;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#19120A;--line:#A18D7B;--chipbg:#221A12;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#006F98;--hb1:#4D6DBD;--hb2:#8463B8;--hn0:#6154A8;--hn1:#00679A;--c0:#F5AC69;--c1:#44D5D8;--c2:#EBA1E0;--c3:#C6C362;--c4:#7AC6FF;--c5:#FF9EA3;">
+  <p class="pvTitle">深色 dark · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#F5AC69"></div><div class="b" style="height:78%;background:#44D5D8"></div><div class="b" style="height:58%;background:#EBA1E0"></div><div class="b" style="height:92%;background:#C6C362"></div><div class="b" style="height:40%;background:#7AC6FF"></div><div class="b" style="height:66%;background:#FF9EA3"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#F5AC69"></i>餐饮 30%</span><span><i style="background:#44D5D8"></i>购物 18%</span><span><i style="background:#EBA1E0"></i>交通 16%</span><span><i style="background:#C6C362"></i>居住 14%</span><span><i style="background:#7AC6FF"></i>娱乐 12%</span><span><i style="background:#FF9EA3"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-ink-warm-dark-cvd"><div class="pv" style="--primary:#ABC7FC;--onprimary:#0E305C;--pc:#294774;--opc:#D6E3FF;--expense:#F08574;--income:#78ECB2;--transfer:#33AEE9;--credit:#DEC3FF;--warning:#FEC25E;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#19120A;--line:#A18D7B;--chipbg:#221A12;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#006F98;--hb1:#4D6DBD;--hb2:#8463B8;--hn0:#6154A8;--hn1:#00679A;--c0:#F5AC69;--c1:#44D5D8;--c2:#EBA1E0;--c3:#C6C362;--c4:#7AC6FF;--c5:#FF9EA3;">
+  <p class="pvTitle">深色 dark · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#F5AC69"></div><div class="b" style="height:78%;background:#44D5D8"></div><div class="b" style="height:58%;background:#EBA1E0"></div><div class="b" style="height:92%;background:#C6C362"></div><div class="b" style="height:40%;background:#7AC6FF"></div><div class="b" style="height:66%;background:#FF9EA3"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#F5AC69"></i>餐饮 30%</span><span><i style="background:#44D5D8"></i>购物 18%</span><span><i style="background:#EBA1E0"></i>交通 16%</span><span><i style="background:#C6C362"></i>居住 14%</span><span><i style="background:#7AC6FF"></i>娱乐 12%</span><span><i style="background:#FF9EA3"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-ink-cool-light-balanced"><div class="pv" style="--primary:#425F8D;--onprimary:#FFFFFF;--pc:#D6E3FF;--opc:#294774;--expense:#7E1B11;--income:#005333;--transfer:#006087;--credit:#562B7D;--warning:#795200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#F9F9FC;--line:#72777F;--chipbg:#F3F3F7;--fg:#221A12;--fg2:#6B655F;--hb0:#006F98;--hb1:#456ACE;--hb2:#8A5FC9;--hn0:#624EB7;--hn1:#00679A;--c0:#AC6820;--c1:#008C8F;--c2:#A35E9A;--c3:#837E0F;--c4:#2981BB;--c5:#B65A60;">
+  <p class="pvTitle">浅色 light · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#AC6820"></div><div class="b" style="height:78%;background:#008C8F"></div><div class="b" style="height:58%;background:#A35E9A"></div><div class="b" style="height:92%;background:#837E0F"></div><div class="b" style="height:40%;background:#2981BB"></div><div class="b" style="height:66%;background:#B65A60"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#AC6820"></i>餐饮 30%</span><span><i style="background:#008C8F"></i>购物 18%</span><span><i style="background:#A35E9A"></i>交通 16%</span><span><i style="background:#837E0F"></i>居住 14%</span><span><i style="background:#2981BB"></i>娱乐 12%</span><span><i style="background:#B65A60"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-ink-cool-light-cvd"><div class="pv" style="--primary:#425F8D;--onprimary:#FFFFFF;--pc:#D6E3FF;--opc:#294774;--expense:#811F14;--income:#005031;--transfer:#00668F;--credit:#54287A;--warning:#8F6200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#F9F9FC;--line:#72777F;--chipbg:#F3F3F7;--fg:#221A12;--fg2:#6B655F;--hb0:#006F98;--hb1:#456ACE;--hb2:#8A5FC9;--hn0:#624EB7;--hn1:#00679A;--c0:#AC6820;--c1:#008C8F;--c2:#A35E9A;--c3:#837E0F;--c4:#2981BB;--c5:#B65A60;">
+  <p class="pvTitle">浅色 light · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#AC6820"></div><div class="b" style="height:78%;background:#008C8F"></div><div class="b" style="height:58%;background:#A35E9A"></div><div class="b" style="height:92%;background:#837E0F"></div><div class="b" style="height:40%;background:#2981BB"></div><div class="b" style="height:66%;background:#B65A60"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#AC6820"></i>餐饮 30%</span><span><i style="background:#008C8F"></i>购物 18%</span><span><i style="background:#A35E9A"></i>交通 16%</span><span><i style="background:#837E0F"></i>居住 14%</span><span><i style="background:#2981BB"></i>娱乐 12%</span><span><i style="background:#B65A60"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-ink-cool-dark-balanced"><div class="pv" style="--primary:#ABC7FC;--onprimary:#0E305C;--pc:#294774;--opc:#D6E3FF;--expense:#FFAB9D;--income:#6ADFA6;--transfer:#44BBF7;--credit:#BF94EF;--warning:#D99F36;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#121316;--line:#8C9199;--chipbg:#1A1C1E;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#006F98;--hb1:#4D6DBD;--hb2:#8463B8;--hn0:#6154A8;--hn1:#00679A;--c0:#F5AC69;--c1:#44D5D8;--c2:#EBA1E0;--c3:#C6C362;--c4:#7AC6FF;--c5:#FF9EA3;">
+  <p class="pvTitle">深色 dark · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#F5AC69"></div><div class="b" style="height:78%;background:#44D5D8"></div><div class="b" style="height:58%;background:#EBA1E0"></div><div class="b" style="height:92%;background:#C6C362"></div><div class="b" style="height:40%;background:#7AC6FF"></div><div class="b" style="height:66%;background:#FF9EA3"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#F5AC69"></i>餐饮 30%</span><span><i style="background:#44D5D8"></i>购物 18%</span><span><i style="background:#EBA1E0"></i>交通 16%</span><span><i style="background:#C6C362"></i>居住 14%</span><span><i style="background:#7AC6FF"></i>娱乐 12%</span><span><i style="background:#FF9EA3"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-ink-cool-dark-cvd"><div class="pv" style="--primary:#ABC7FC;--onprimary:#0E305C;--pc:#294774;--opc:#D6E3FF;--expense:#F08574;--income:#78ECB2;--transfer:#33AEE9;--credit:#DEC3FF;--warning:#FEC25E;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#121316;--line:#8C9199;--chipbg:#1A1C1E;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#006F98;--hb1:#4D6DBD;--hb2:#8463B8;--hn0:#6154A8;--hn1:#00679A;--c0:#F5AC69;--c1:#44D5D8;--c2:#EBA1E0;--c3:#C6C362;--c4:#7AC6FF;--c5:#FF9EA3;">
+  <p class="pvTitle">深色 dark · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#F5AC69"></div><div class="b" style="height:78%;background:#44D5D8"></div><div class="b" style="height:58%;background:#EBA1E0"></div><div class="b" style="height:92%;background:#C6C362"></div><div class="b" style="height:40%;background:#7AC6FF"></div><div class="b" style="height:66%;background:#FF9EA3"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#F5AC69"></i>餐饮 30%</span><span><i style="background:#44D5D8"></i>购物 18%</span><span><i style="background:#EBA1E0"></i>交通 16%</span><span><i style="background:#C6C362"></i>居住 14%</span><span><i style="background:#7AC6FF"></i>娱乐 12%</span><span><i style="background:#FF9EA3"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-jade-warm-light-balanced"><div class="pv" style="--primary:#246867;--onprimary:#FFFFFF;--pc:#ADEEEC;--opc:#00504F;--expense:#7E1B11;--income:#005333;--transfer:#006087;--credit:#562B7D;--warning:#795200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#FFF8F4;--line:#867462;--chipbg:#FFF1E6;--fg:#221A12;--fg2:#6B655F;--hb0:#007956;--hb1:#007B80;--hb2:#007CA9;--hn0:#624EB7;--hn1:#00679A;--c0:#B0597E;--c1:#628835;--c2:#5777C1;--c3:#B55F40;--c4:#008F77;--c5:#9064AF;">
+  <p class="pvTitle">浅色 light · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#B0597E"></div><div class="b" style="height:78%;background:#628835"></div><div class="b" style="height:58%;background:#5777C1"></div><div class="b" style="height:92%;background:#B55F40"></div><div class="b" style="height:40%;background:#008F77"></div><div class="b" style="height:66%;background:#9064AF"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#B0597E"></i>餐饮 30%</span><span><i style="background:#628835"></i>购物 18%</span><span><i style="background:#5777C1"></i>交通 16%</span><span><i style="background:#B55F40"></i>居住 14%</span><span><i style="background:#008F77"></i>娱乐 12%</span><span><i style="background:#9064AF"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-jade-warm-light-cvd"><div class="pv" style="--primary:#246867;--onprimary:#FFFFFF;--pc:#ADEEEC;--opc:#00504F;--expense:#811F14;--income:#005031;--transfer:#00668F;--credit:#54287A;--warning:#8F6200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#FFF8F4;--line:#867462;--chipbg:#FFF1E6;--fg:#221A12;--fg2:#6B655F;--hb0:#007956;--hb1:#007B80;--hb2:#007CA9;--hn0:#624EB7;--hn1:#00679A;--c0:#B0597E;--c1:#628835;--c2:#5777C1;--c3:#B55F40;--c4:#008F77;--c5:#9064AF;">
+  <p class="pvTitle">浅色 light · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#B0597E"></div><div class="b" style="height:78%;background:#628835"></div><div class="b" style="height:58%;background:#5777C1"></div><div class="b" style="height:92%;background:#B55F40"></div><div class="b" style="height:40%;background:#008F77"></div><div class="b" style="height:66%;background:#9064AF"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#B0597E"></i>餐饮 30%</span><span><i style="background:#628835"></i>购物 18%</span><span><i style="background:#5777C1"></i>交通 16%</span><span><i style="background:#B55F40"></i>居住 14%</span><span><i style="background:#008F77"></i>娱乐 12%</span><span><i style="background:#9064AF"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-jade-warm-dark-balanced"><div class="pv" style="--primary:#91D2D0;--onprimary:#003736;--pc:#00504F;--opc:#ADEEEC;--expense:#FFAB9D;--income:#6ADFA6;--transfer:#44BBF7;--credit:#BF94EF;--warning:#D99F36;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#19120A;--line:#A18D7B;--chipbg:#221A12;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#007956;--hb1:#007B80;--hb2:#007CA9;--hn0:#6154A8;--hn1:#00679A;--c0:#FB9DC2;--c1:#A4CD79;--c2:#9EBDFF;--c3:#FFA382;--c4:#59D7B9;--c5:#D5A8F8;">
+  <p class="pvTitle">深色 dark · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#FB9DC2"></div><div class="b" style="height:78%;background:#A4CD79"></div><div class="b" style="height:58%;background:#9EBDFF"></div><div class="b" style="height:92%;background:#FFA382"></div><div class="b" style="height:40%;background:#59D7B9"></div><div class="b" style="height:66%;background:#D5A8F8"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#FB9DC2"></i>餐饮 30%</span><span><i style="background:#A4CD79"></i>购物 18%</span><span><i style="background:#9EBDFF"></i>交通 16%</span><span><i style="background:#FFA382"></i>居住 14%</span><span><i style="background:#59D7B9"></i>娱乐 12%</span><span><i style="background:#D5A8F8"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-jade-warm-dark-cvd"><div class="pv" style="--primary:#91D2D0;--onprimary:#003736;--pc:#00504F;--opc:#ADEEEC;--expense:#F08574;--income:#78ECB2;--transfer:#33AEE9;--credit:#DEC3FF;--warning:#FEC25E;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#19120A;--line:#A18D7B;--chipbg:#221A12;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#007956;--hb1:#007B80;--hb2:#007CA9;--hn0:#6154A8;--hn1:#00679A;--c0:#FB9DC2;--c1:#A4CD79;--c2:#9EBDFF;--c3:#FFA382;--c4:#59D7B9;--c5:#D5A8F8;">
+  <p class="pvTitle">深色 dark · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#FB9DC2"></div><div class="b" style="height:78%;background:#A4CD79"></div><div class="b" style="height:58%;background:#9EBDFF"></div><div class="b" style="height:92%;background:#FFA382"></div><div class="b" style="height:40%;background:#59D7B9"></div><div class="b" style="height:66%;background:#D5A8F8"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#FB9DC2"></i>餐饮 30%</span><span><i style="background:#A4CD79"></i>购物 18%</span><span><i style="background:#9EBDFF"></i>交通 16%</span><span><i style="background:#FFA382"></i>居住 14%</span><span><i style="background:#59D7B9"></i>娱乐 12%</span><span><i style="background:#D5A8F8"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-jade-cool-light-balanced"><div class="pv" style="--primary:#246867;--onprimary:#FFFFFF;--pc:#ADEEEC;--opc:#00504F;--expense:#7E1B11;--income:#005333;--transfer:#006087;--credit:#562B7D;--warning:#795200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#F9F9FC;--line:#72777F;--chipbg:#F3F3F7;--fg:#221A12;--fg2:#6B655F;--hb0:#007956;--hb1:#007B80;--hb2:#007CA9;--hn0:#624EB7;--hn1:#00679A;--c0:#B0597E;--c1:#628835;--c2:#5777C1;--c3:#B55F40;--c4:#008F77;--c5:#9064AF;">
+  <p class="pvTitle">浅色 light · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#B0597E"></div><div class="b" style="height:78%;background:#628835"></div><div class="b" style="height:58%;background:#5777C1"></div><div class="b" style="height:92%;background:#B55F40"></div><div class="b" style="height:40%;background:#008F77"></div><div class="b" style="height:66%;background:#9064AF"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#B0597E"></i>餐饮 30%</span><span><i style="background:#628835"></i>购物 18%</span><span><i style="background:#5777C1"></i>交通 16%</span><span><i style="background:#B55F40"></i>居住 14%</span><span><i style="background:#008F77"></i>娱乐 12%</span><span><i style="background:#9064AF"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-jade-cool-light-cvd"><div class="pv" style="--primary:#246867;--onprimary:#FFFFFF;--pc:#ADEEEC;--opc:#00504F;--expense:#811F14;--income:#005031;--transfer:#00668F;--credit:#54287A;--warning:#8F6200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#F9F9FC;--line:#72777F;--chipbg:#F3F3F7;--fg:#221A12;--fg2:#6B655F;--hb0:#007956;--hb1:#007B80;--hb2:#007CA9;--hn0:#624EB7;--hn1:#00679A;--c0:#B0597E;--c1:#628835;--c2:#5777C1;--c3:#B55F40;--c4:#008F77;--c5:#9064AF;">
+  <p class="pvTitle">浅色 light · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#B0597E"></div><div class="b" style="height:78%;background:#628835"></div><div class="b" style="height:58%;background:#5777C1"></div><div class="b" style="height:92%;background:#B55F40"></div><div class="b" style="height:40%;background:#008F77"></div><div class="b" style="height:66%;background:#9064AF"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#B0597E"></i>餐饮 30%</span><span><i style="background:#628835"></i>购物 18%</span><span><i style="background:#5777C1"></i>交通 16%</span><span><i style="background:#B55F40"></i>居住 14%</span><span><i style="background:#008F77"></i>娱乐 12%</span><span><i style="background:#9064AF"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-jade-cool-dark-balanced"><div class="pv" style="--primary:#91D2D0;--onprimary:#003736;--pc:#00504F;--opc:#ADEEEC;--expense:#FFAB9D;--income:#6ADFA6;--transfer:#44BBF7;--credit:#BF94EF;--warning:#D99F36;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#121316;--line:#8C9199;--chipbg:#1A1C1E;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#007956;--hb1:#007B80;--hb2:#007CA9;--hn0:#6154A8;--hn1:#00679A;--c0:#FB9DC2;--c1:#A4CD79;--c2:#9EBDFF;--c3:#FFA382;--c4:#59D7B9;--c5:#D5A8F8;">
+  <p class="pvTitle">深色 dark · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#FB9DC2"></div><div class="b" style="height:78%;background:#A4CD79"></div><div class="b" style="height:58%;background:#9EBDFF"></div><div class="b" style="height:92%;background:#FFA382"></div><div class="b" style="height:40%;background:#59D7B9"></div><div class="b" style="height:66%;background:#D5A8F8"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#FB9DC2"></i>餐饮 30%</span><span><i style="background:#A4CD79"></i>购物 18%</span><span><i style="background:#9EBDFF"></i>交通 16%</span><span><i style="background:#FFA382"></i>居住 14%</span><span><i style="background:#59D7B9"></i>娱乐 12%</span><span><i style="background:#D5A8F8"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-jade-cool-dark-cvd"><div class="pv" style="--primary:#91D2D0;--onprimary:#003736;--pc:#00504F;--opc:#ADEEEC;--expense:#F08574;--income:#78ECB2;--transfer:#33AEE9;--credit:#DEC3FF;--warning:#FEC25E;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#121316;--line:#8C9199;--chipbg:#1A1C1E;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#007956;--hb1:#007B80;--hb2:#007CA9;--hn0:#6154A8;--hn1:#00679A;--c0:#FB9DC2;--c1:#A4CD79;--c2:#9EBDFF;--c3:#FFA382;--c4:#59D7B9;--c5:#D5A8F8;">
+  <p class="pvTitle">深色 dark · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#FB9DC2"></div><div class="b" style="height:78%;background:#A4CD79"></div><div class="b" style="height:58%;background:#9EBDFF"></div><div class="b" style="height:92%;background:#FFA382"></div><div class="b" style="height:40%;background:#59D7B9"></div><div class="b" style="height:66%;background:#D5A8F8"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#FB9DC2"></i>餐饮 30%</span><span><i style="background:#A4CD79"></i>购物 18%</span><span><i style="background:#9EBDFF"></i>交通 16%</span><span><i style="background:#FFA382"></i>居住 14%</span><span><i style="background:#59D7B9"></i>娱乐 12%</span><span><i style="background:#D5A8F8"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-plum-warm-light-balanced"><div class="pv" style="--primary:#725281;--onprimary:#FFFFFF;--pc:#F6D9FF;--opc:#593B67;--expense:#7E1B11;--income:#005333;--transfer:#006087;--credit:#562B7D;--warning:#795200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#FFF8F4;--line:#867462;--chipbg:#FFF1E6;--fg:#221A12;--fg2:#6B655F;--hb0:#6A57C1;--hb1:#9E4EAB;--hb2:#C0497D;--hn0:#624EB7;--hn1:#00679A;--c0:#748322;--c1:#427DBF;--c2:#B75B51;--c3:#169065;--c4:#8369B8;--c5:#A56D0D;">
+  <p class="pvTitle">浅色 light · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#748322"></div><div class="b" style="height:78%;background:#427DBF"></div><div class="b" style="height:58%;background:#B75B51"></div><div class="b" style="height:92%;background:#169065"></div><div class="b" style="height:40%;background:#8369B8"></div><div class="b" style="height:66%;background:#A56D0D"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#748322"></i>餐饮 30%</span><span><i style="background:#427DBF"></i>购物 18%</span><span><i style="background:#B75B51"></i>交通 16%</span><span><i style="background:#169065"></i>居住 14%</span><span><i style="background:#8369B8"></i>娱乐 12%</span><span><i style="background:#A56D0D"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-plum-warm-light-cvd"><div class="pv" style="--primary:#725281;--onprimary:#FFFFFF;--pc:#F6D9FF;--opc:#593B67;--expense:#811F14;--income:#005031;--transfer:#00668F;--credit:#54287A;--warning:#8F6200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#FFF8F4;--line:#867462;--chipbg:#FFF1E6;--fg:#221A12;--fg2:#6B655F;--hb0:#6A57C1;--hb1:#9E4EAB;--hb2:#C0497D;--hn0:#624EB7;--hn1:#00679A;--c0:#748322;--c1:#427DBF;--c2:#B75B51;--c3:#169065;--c4:#8369B8;--c5:#A56D0D;">
+  <p class="pvTitle">浅色 light · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#748322"></div><div class="b" style="height:78%;background:#427DBF"></div><div class="b" style="height:58%;background:#B75B51"></div><div class="b" style="height:92%;background:#169065"></div><div class="b" style="height:40%;background:#8369B8"></div><div class="b" style="height:66%;background:#A56D0D"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#748322"></i>餐饮 30%</span><span><i style="background:#427DBF"></i>购物 18%</span><span><i style="background:#B75B51"></i>交通 16%</span><span><i style="background:#169065"></i>居住 14%</span><span><i style="background:#8369B8"></i>娱乐 12%</span><span><i style="background:#A56D0D"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-plum-warm-dark-balanced"><div class="pv" style="--primary:#DFB9EE;--onprimary:#41254F;--pc:#593B67;--opc:#F6D9FF;--expense:#FFAB9D;--income:#6ADFA6;--transfer:#44BBF7;--credit:#BF94EF;--warning:#D99F36;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#19120A;--line:#A18D7B;--chipbg:#221A12;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#695DB2;--hb1:#9758A1;--hb2:#B1537A;--hn0:#6154A8;--hn1:#00679A;--c0:#B7C86B;--c1:#8DC2FF;--c2:#FFA194;--c3:#6CD6A7;--c4:#C7ADFF;--c5:#EDB160;">
+  <p class="pvTitle">深色 dark · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#B7C86B"></div><div class="b" style="height:78%;background:#8DC2FF"></div><div class="b" style="height:58%;background:#FFA194"></div><div class="b" style="height:92%;background:#6CD6A7"></div><div class="b" style="height:40%;background:#C7ADFF"></div><div class="b" style="height:66%;background:#EDB160"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#B7C86B"></i>餐饮 30%</span><span><i style="background:#8DC2FF"></i>购物 18%</span><span><i style="background:#FFA194"></i>交通 16%</span><span><i style="background:#6CD6A7"></i>居住 14%</span><span><i style="background:#C7ADFF"></i>娱乐 12%</span><span><i style="background:#EDB160"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-plum-warm-dark-cvd"><div class="pv" style="--primary:#DFB9EE;--onprimary:#41254F;--pc:#593B67;--opc:#F6D9FF;--expense:#F08574;--income:#78ECB2;--transfer:#33AEE9;--credit:#DEC3FF;--warning:#FEC25E;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#19120A;--line:#A18D7B;--chipbg:#221A12;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#695DB2;--hb1:#9758A1;--hb2:#B1537A;--hn0:#6154A8;--hn1:#00679A;--c0:#B7C86B;--c1:#8DC2FF;--c2:#FFA194;--c3:#6CD6A7;--c4:#C7ADFF;--c5:#EDB160;">
+  <p class="pvTitle">深色 dark · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#B7C86B"></div><div class="b" style="height:78%;background:#8DC2FF"></div><div class="b" style="height:58%;background:#FFA194"></div><div class="b" style="height:92%;background:#6CD6A7"></div><div class="b" style="height:40%;background:#C7ADFF"></div><div class="b" style="height:66%;background:#EDB160"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#B7C86B"></i>餐饮 30%</span><span><i style="background:#8DC2FF"></i>购物 18%</span><span><i style="background:#FFA194"></i>交通 16%</span><span><i style="background:#6CD6A7"></i>居住 14%</span><span><i style="background:#C7ADFF"></i>娱乐 12%</span><span><i style="background:#EDB160"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-plum-cool-light-balanced"><div class="pv" style="--primary:#725281;--onprimary:#FFFFFF;--pc:#F6D9FF;--opc:#593B67;--expense:#7E1B11;--income:#005333;--transfer:#006087;--credit:#562B7D;--warning:#795200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#F9F9FC;--line:#72777F;--chipbg:#F3F3F7;--fg:#221A12;--fg2:#6B655F;--hb0:#6A57C1;--hb1:#9E4EAB;--hb2:#C0497D;--hn0:#624EB7;--hn1:#00679A;--c0:#748322;--c1:#427DBF;--c2:#B75B51;--c3:#169065;--c4:#8369B8;--c5:#A56D0D;">
+  <p class="pvTitle">浅色 light · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#748322"></div><div class="b" style="height:78%;background:#427DBF"></div><div class="b" style="height:58%;background:#B75B51"></div><div class="b" style="height:92%;background:#169065"></div><div class="b" style="height:40%;background:#8369B8"></div><div class="b" style="height:66%;background:#A56D0D"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#748322"></i>餐饮 30%</span><span><i style="background:#427DBF"></i>购物 18%</span><span><i style="background:#B75B51"></i>交通 16%</span><span><i style="background:#169065"></i>居住 14%</span><span><i style="background:#8369B8"></i>娱乐 12%</span><span><i style="background:#A56D0D"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-plum-cool-light-cvd"><div class="pv" style="--primary:#725281;--onprimary:#FFFFFF;--pc:#F6D9FF;--opc:#593B67;--expense:#811F14;--income:#005031;--transfer:#00668F;--credit:#54287A;--warning:#8F6200;--amber:#FFE9C6;--warningfill:#F3E7CE;--surface:#F9F9FC;--line:#72777F;--chipbg:#F3F3F7;--fg:#221A12;--fg2:#6B655F;--hb0:#6A57C1;--hb1:#9E4EAB;--hb2:#C0497D;--hn0:#624EB7;--hn1:#00679A;--c0:#748322;--c1:#427DBF;--c2:#B75B51;--c3:#169065;--c4:#8369B8;--c5:#A56D0D;">
+  <p class="pvTitle">浅色 light · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#748322"></div><div class="b" style="height:78%;background:#427DBF"></div><div class="b" style="height:58%;background:#B75B51"></div><div class="b" style="height:92%;background:#169065"></div><div class="b" style="height:40%;background:#8369B8"></div><div class="b" style="height:66%;background:#A56D0D"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#748322"></i>餐饮 30%</span><span><i style="background:#427DBF"></i>购物 18%</span><span><i style="background:#B75B51"></i>交通 16%</span><span><i style="background:#169065"></i>居住 14%</span><span><i style="background:#8369B8"></i>娱乐 12%</span><span><i style="background:#A56D0D"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-plum-cool-dark-balanced"><div class="pv" style="--primary:#DFB9EE;--onprimary:#41254F;--pc:#593B67;--opc:#F6D9FF;--expense:#FFAB9D;--income:#6ADFA6;--transfer:#44BBF7;--credit:#BF94EF;--warning:#D99F36;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#121316;--line:#8C9199;--chipbg:#1A1C1E;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#695DB2;--hb1:#9758A1;--hb2:#B1537A;--hn0:#6154A8;--hn1:#00679A;--c0:#B7C86B;--c1:#8DC2FF;--c2:#FFA194;--c3:#6CD6A7;--c4:#C7ADFF;--c5:#EDB160;">
+  <p class="pvTitle">深色 dark · 均衡型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#B7C86B"></div><div class="b" style="height:78%;background:#8DC2FF"></div><div class="b" style="height:58%;background:#FFA194"></div><div class="b" style="height:92%;background:#6CD6A7"></div><div class="b" style="height:40%;background:#C7ADFF"></div><div class="b" style="height:66%;background:#EDB160"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#B7C86B"></i>餐饮 30%</span><span><i style="background:#8DC2FF"></i>购物 18%</span><span><i style="background:#FFA194"></i>交通 16%</span><span><i style="background:#6CD6A7"></i>居住 14%</span><span><i style="background:#C7ADFF"></i>娱乐 12%</span><span><i style="background:#EDB160"></i>其他 10%</span></div>
+  </div>
+</div></template><template id="tpl-plum-cool-dark-cvd"><div class="pv" style="--primary:#DFB9EE;--onprimary:#41254F;--pc:#593B67;--opc:#F6D9FF;--expense:#F08574;--income:#78ECB2;--transfer:#33AEE9;--credit:#DEC3FF;--warning:#FEC25E;--amber:#FFE9C6;--warningfill:#3A2E14;--surface:#121316;--line:#8C9199;--chipbg:#1A1C1E;--fg:#EDE7E1;--fg2:#B0A79F;--hb0:#695DB2;--hb1:#9758A1;--hb2:#B1537A;--hn0:#6154A8;--hn1:#00679A;--c0:#B7C86B;--c1:#8DC2FF;--c2:#FFA194;--c3:#6CD6A7;--c4:#C7ADFF;--c5:#EDB160;">
+  <p class="pvTitle">深色 dark · 色盲强化型</p>
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div></div>
+    <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+  </div>
+  <div class="mList">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--credit) 8%,transparent);color:var(--credit)">💳</span>信用卡还款<span class="amt" style="color:var(--credit)">¥1,200.00</span></div>
+  </div>
+  <div class="mForm">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+  <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+  <div class="mChart"><div class="b" style="height:46%;background:#B7C86B"></div><div class="b" style="height:78%;background:#8DC2FF"></div><div class="b" style="height:58%;background:#FFA194"></div><div class="b" style="height:92%;background:#6CD6A7"></div><div class="b" style="height:40%;background:#C7ADFF"></div><div class="b" style="height:66%;background:#EDB160"></div></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div><div class="mLegend"><span><i style="background:#B7C86B"></i>餐饮 30%</span><span><i style="background:#8DC2FF"></i>购物 18%</span><span><i style="background:#FFA194"></i>交通 16%</span><span><i style="background:#6CD6A7"></i>居住 14%</span><span><i style="background:#C7ADFF"></i>娱乐 12%</span><span><i style="background:#EDB160"></i>其他 10%</span></div>
+  </div>
+</div></template>
+<script>
+var DATA = {"palettes": {"ink": {"meta": {"label": "V1 墨蓝 · 暖白", "seedHue": 262.0, "seedChroma": 34.0}, "variants": {"warm_light": {"roles": {"primary": "#425F8D", "onPrimary": "#FFFFFF", "primaryContainer": "#D6E3FF", "onPrimaryContainer": "#294774", "secondary": "#575F6E", "onSecondary": "#FFFFFF", "tertiary": "#6D5774", "onTertiary": "#FFFFFF", "error": "#BA1A1A", "onError": "#FFFFFF", "surface": "#FFF8F4", "onSurface": "#221A12", "surfaceContainerLowest": "#FFFFFF", "surfaceContainerLow": "#FFF1E6", "surfaceContainer": "#FBEBDE", "surfaceContainerHigh": "#F5E5D8", "surfaceContainerHighest": "#F0E0D2", "outline": "#867462", "outlineVariant": "#D9C3AE"}, "semantic_balanced": {"expense": "#7E1B11", "income": "#005333", "transfer": "#006087", "credit": "#562B7D", "warning": "#795200"}, "semantic_cvd": {"expense": "#811F14", "income": "#005031", "transfer": "#00668F", "credit": "#54287A", "warning": "#8F6200"}, "chart": ["#AC6820", "#008C8F", "#A35E9A", "#837E0F", "#2981BB", "#B65A60", "#388E56", "#766EBD"], "hero": {"brand": ["#006F98", "#456ACE", "#8A5FC9"], "netWorth": ["#624EB7", "#00679A", "#007673"], "danger": ["#AF3E7C", "#BC426D", "#C74955"]}, "amber": "#FFE9C6"}, "warm_dark": {"roles": {"primary": "#ABC7FC", "onPrimary": "#0E305C", "primaryContainer": "#294774", "onPrimaryContainer": "#D6E3FF", "secondary": "#BFC6D9", "onSecondary": "#29313F", "tertiary": "#D9BEDF", "onTertiary": "#3C2943", "error": "#FFB4AB", "onError": "#690005", "surface": "#19120A", "onSurface": "#F0E0D2", "surfaceContainerLowest": "#140D06", "surfaceContainerLow": "#221A12", "surfaceContainer": "#261E16", "surfaceContainerHigh": "#312820", "surfaceContainerHighest": "#3C332A", "outline": "#A18D7B", "outlineVariant": "#534434"}, "semantic_balanced": {"expense": "#FFAB9D", "income": "#6ADFA6", "transfer": "#44BBF7", "credit": "#BF94EF", "warning": "#D99F36"}, "semantic_cvd": {"expense": "#F08574", "income": "#78ECB2", "transfer": "#33AEE9", "credit": "#DEC3FF", "warning": "#FEC25E"}, "chart": ["#F5AC69", "#44D5D8", "#EBA1E0", "#C6C362", "#7AC6FF", "#FF9EA3", "#7FD497", "#B9B3FF"], "hero": {"brand": ["#006F98", "#4D6DBD", "#8463B8"], "netWorth": ["#6154A8", "#00679A", "#007673"], "danger": ["#A44B79", "#B04F6E", "#B7535A"]}, "amber": "#FFE9C6"}, "cool_light": {"roles": {"primary": "#425F8D", "onPrimary": "#FFFFFF", "primaryContainer": "#D6E3FF", "onPrimaryContainer": "#294774", "secondary": "#575F6E", "onSecondary": "#FFFFFF", "tertiary": "#6D5774", "onTertiary": "#FFFFFF", "error": "#BA1A1A", "onError": "#FFFFFF", "surface": "#F9F9FC", "onSurface": "#1A1C1E", "surfaceContainerLowest": "#FFFFFF", "surfaceContainerLow": "#F3F3F7", "surfaceContainer": "#EEEDF1", "surfaceContainerHigh": "#E8E8EB", "surfaceContainerHighest": "#E2E2E5", "outline": "#72777F", "outlineVariant": "#C2C7CF"}, "semantic_balanced": {"expense": "#7E1B11", "income": "#005333", "transfer": "#006087", "credit": "#562B7D", "warning": "#795200"}, "semantic_cvd": {"expense": "#811F14", "income": "#005031", "transfer": "#00668F", "credit": "#54287A", "warning": "#8F6200"}, "chart": ["#AC6820", "#008C8F", "#A35E9A", "#837E0F", "#2981BB", "#B65A60", "#388E56", "#766EBD"], "hero": {"brand": ["#006F98", "#456ACE", "#8A5FC9"], "netWorth": ["#624EB7", "#00679A", "#007673"], "danger": ["#AF3E7C", "#BC426D", "#C74955"]}, "amber": "#FFE9C6"}, "cool_dark": {"roles": {"primary": "#ABC7FC", "onPrimary": "#0E305C", "primaryContainer": "#294774", "onPrimaryContainer": "#D6E3FF", "secondary": "#BFC6D9", "onSecondary": "#29313F", "tertiary": "#D9BEDF", "onTertiary": "#3C2943", "error": "#FFB4AB", "onError": "#690005", "surface": "#121316", "onSurface": "#E2E2E5", "surfaceContainerLowest": "#0C0E11", "surfaceContainerLow": "#1A1C1E", "surfaceContainer": "#1E2022", "surfaceContainerHigh": "#282A2D", "surfaceContainerHighest": "#333538", "outline": "#8C9199", "outlineVariant": "#42474E"}, "semantic_balanced": {"expense": "#FFAB9D", "income": "#6ADFA6", "transfer": "#44BBF7", "credit": "#BF94EF", "warning": "#D99F36"}, "semantic_cvd": {"expense": "#F08574", "income": "#78ECB2", "transfer": "#33AEE9", "credit": "#DEC3FF", "warning": "#FEC25E"}, "chart": ["#F5AC69", "#44D5D8", "#EBA1E0", "#C6C362", "#7AC6FF", "#FF9EA3", "#7FD497", "#B9B3FF"], "hero": {"brand": ["#006F98", "#4D6DBD", "#8463B8"], "netWorth": ["#6154A8", "#00679A", "#007673"], "danger": ["#A44B79", "#B04F6E", "#B7535A"]}, "amber": "#FFE9C6"}}}, "jade": {"meta": {"label": "V2 青碧 · 中性", "seedHue": 195.0, "seedChroma": 30.0}, "variants": {"warm_light": {"roles": {"primary": "#246867", "onPrimary": "#FFFFFF", "primaryContainer": "#ADEEEC", "onPrimaryContainer": "#00504F", "secondary": "#4D6261", "onSecondary": "#FFFFFF", "tertiary": "#4C6078", "onTertiary": "#FFFFFF", "error": "#BA1A1A", "onError": "#FFFFFF", "surface": "#FFF8F4", "onSurface": "#221A12", "surfaceContainerLowest": "#FFFFFF", "surfaceContainerLow": "#FFF1E6", "surfaceContainer": "#FBEBDE", "surfaceContainerHigh": "#F5E5D8", "surfaceContainerHighest": "#F0E0D2", "outline": "#867462", "outlineVariant": "#D9C3AE"}, "semantic_balanced": {"expense": "#7E1B11", "income": "#005333", "transfer": "#006087", "credit": "#562B7D", "warning": "#795200"}, "semantic_cvd": {"expense": "#811F14", "income": "#005031", "transfer": "#00668F", "credit": "#54287A", "warning": "#8F6200"}, "chart": ["#B0597E", "#628835", "#5777C1", "#B55F40", "#008F77", "#9064AF", "#9B7300", "#0088A6"], "hero": {"brand": ["#007956", "#007B80", "#007CA9"], "netWorth": ["#624EB7", "#00679A", "#007673"], "danger": ["#AF3E7C", "#BC426D", "#C74955"]}, "amber": "#FFE9C6"}, "warm_dark": {"roles": {"primary": "#91D2D0", "onPrimary": "#003736", "primaryContainer": "#00504F", "onPrimaryContainer": "#ADEEEC", "secondary": "#B4CBCA", "onSecondary": "#1F3433", "tertiary": "#B3C8E4", "onTertiary": "#1D3248", "error": "#FFB4AB", "onError": "#690005", "surface": "#19120A", "onSurface": "#F0E0D2", "surfaceContainerLowest": "#140D06", "surfaceContainerLow": "#221A12", "surfaceContainer": "#261E16", "surfaceContainerHigh": "#312820", "surfaceContainerHighest": "#3C332A", "outline": "#A18D7B", "outlineVariant": "#534434"}, "semantic_balanced": {"expense": "#FFAB9D", "income": "#6ADFA6", "transfer": "#44BBF7", "credit": "#BF94EF", "warning": "#D99F36"}, "semantic_cvd": {"expense": "#F08574", "income": "#78ECB2", "transfer": "#33AEE9", "credit": "#DEC3FF", "warning": "#FEC25E"}, "chart": ["#FB9DC2", "#A4CD79", "#9EBDFF", "#FFA382", "#59D7B9", "#D5A8F8", "#E1B75C", "#52CFF3"], "hero": {"brand": ["#007956", "#007B80", "#007CA9"], "netWorth": ["#6154A8", "#00679A", "#007673"], "danger": ["#A44B79", "#B04F6E", "#B7535A"]}, "amber": "#FFE9C6"}, "cool_light": {"roles": {"primary": "#246867", "onPrimary": "#FFFFFF", "primaryContainer": "#ADEEEC", "onPrimaryContainer": "#00504F", "secondary": "#4D6261", "onSecondary": "#FFFFFF", "tertiary": "#4C6078", "onTertiary": "#FFFFFF", "error": "#BA1A1A", "onError": "#FFFFFF", "surface": "#F9F9FC", "onSurface": "#1A1C1E", "surfaceContainerLowest": "#FFFFFF", "surfaceContainerLow": "#F3F3F7", "surfaceContainer": "#EEEDF1", "surfaceContainerHigh": "#E8E8EB", "surfaceContainerHighest": "#E2E2E5", "outline": "#72777F", "outlineVariant": "#C2C7CF"}, "semantic_balanced": {"expense": "#7E1B11", "income": "#005333", "transfer": "#006087", "credit": "#562B7D", "warning": "#795200"}, "semantic_cvd": {"expense": "#811F14", "income": "#005031", "transfer": "#00668F", "credit": "#54287A", "warning": "#8F6200"}, "chart": ["#B0597E", "#628835", "#5777C1", "#B55F40", "#008F77", "#9064AF", "#9B7300", "#0088A6"], "hero": {"brand": ["#007956", "#007B80", "#007CA9"], "netWorth": ["#624EB7", "#00679A", "#007673"], "danger": ["#AF3E7C", "#BC426D", "#C74955"]}, "amber": "#FFE9C6"}, "cool_dark": {"roles": {"primary": "#91D2D0", "onPrimary": "#003736", "primaryContainer": "#00504F", "onPrimaryContainer": "#ADEEEC", "secondary": "#B4CBCA", "onSecondary": "#1F3433", "tertiary": "#B3C8E4", "onTertiary": "#1D3248", "error": "#FFB4AB", "onError": "#690005", "surface": "#121316", "onSurface": "#E2E2E5", "surfaceContainerLowest": "#0C0E11", "surfaceContainerLow": "#1A1C1E", "surfaceContainer": "#1E2022", "surfaceContainerHigh": "#282A2D", "surfaceContainerHighest": "#333538", "outline": "#8C9199", "outlineVariant": "#42474E"}, "semantic_balanced": {"expense": "#FFAB9D", "income": "#6ADFA6", "transfer": "#44BBF7", "credit": "#BF94EF", "warning": "#D99F36"}, "semantic_cvd": {"expense": "#F08574", "income": "#78ECB2", "transfer": "#33AEE9", "credit": "#DEC3FF", "warning": "#FEC25E"}, "chart": ["#FB9DC2", "#A4CD79", "#9EBDFF", "#FFA382", "#59D7B9", "#D5A8F8", "#E1B75C", "#52CFF3"], "hero": {"brand": ["#007956", "#007B80", "#007CA9"], "netWorth": ["#6154A8", "#00679A", "#007673"], "danger": ["#A44B79", "#B04F6E", "#B7535A"]}, "amber": "#FFE9C6"}}}, "plum": {"meta": {"label": "V3 绛紫 · 暖白", "seedHue": 318.0, "seedChroma": 32.0}, "variants": {"warm_light": {"roles": {"primary": "#725281", "onPrimary": "#FFFFFF", "primaryContainer": "#F6D9FF", "onPrimaryContainer": "#593B67", "secondary": "#675A6B", "onSecondary": "#FFFFFF", "tertiary": "#7E5354", "onTertiary": "#FFFFFF", "error": "#BA1A1A", "onError": "#FFFFFF", "surface": "#FFF8F4", "onSurface": "#221A12", "surfaceContainerLowest": "#FFFFFF", "surfaceContainerLow": "#FFF1E6", "surfaceContainer": "#FBEBDE", "surfaceContainerHigh": "#F5E5D8", "surfaceContainerHighest": "#F0E0D2", "outline": "#867462", "outlineVariant": "#D9C3AE"}, "semantic_balanced": {"expense": "#7E1B11", "income": "#005333", "transfer": "#006087", "credit": "#562B7D", "warning": "#795200"}, "semantic_cvd": {"expense": "#811F14", "income": "#005031", "transfer": "#00668F", "credit": "#54287A", "warning": "#8F6200"}, "chart": ["#748322", "#427DBF", "#B75B51", "#169065", "#8369B8", "#A56D0D", "#008A99", "#AA5B8D"], "hero": {"brand": ["#6A57C1", "#9E4EAB", "#C0497D"], "netWorth": ["#624EB7", "#00679A", "#007673"], "danger": ["#AF3E7C", "#BC426D", "#C74955"]}, "amber": "#FFE9C6"}, "warm_dark": {"roles": {"primary": "#DFB9EE", "onPrimary": "#41254F", "primaryContainer": "#593B67", "onPrimaryContainer": "#F6D9FF", "secondary": "#D2C1D5", "onSecondary": "#382C3C", "tertiary": "#F1B9BA", "onTertiary": "#4A2628", "error": "#FFB4AB", "onError": "#690005", "surface": "#19120A", "onSurface": "#F0E0D2", "surfaceContainerLowest": "#140D06", "surfaceContainerLow": "#221A12", "surfaceContainer": "#261E16", "surfaceContainerHigh": "#312820", "surfaceContainerHighest": "#3C332A", "outline": "#A18D7B", "outlineVariant": "#534434"}, "semantic_balanced": {"expense": "#FFAB9D", "income": "#6ADFA6", "transfer": "#44BBF7", "credit": "#BF94EF", "warning": "#D99F36"}, "semantic_cvd": {"expense": "#F08574", "income": "#78ECB2", "transfer": "#33AEE9", "credit": "#DEC3FF", "warning": "#FEC25E"}, "chart": ["#B7C86B", "#8DC2FF", "#FFA194", "#6CD6A7", "#C7ADFF", "#EDB160", "#46D3E6", "#F49ED2"], "hero": {"brand": ["#695DB2", "#9758A1", "#B1537A"], "netWorth": ["#6154A8", "#00679A", "#007673"], "danger": ["#A44B79", "#B04F6E", "#B7535A"]}, "amber": "#FFE9C6"}, "cool_light": {"roles": {"primary": "#725281", "onPrimary": "#FFFFFF", "primaryContainer": "#F6D9FF", "onPrimaryContainer": "#593B67", "secondary": "#675A6B", "onSecondary": "#FFFFFF", "tertiary": "#7E5354", "onTertiary": "#FFFFFF", "error": "#BA1A1A", "onError": "#FFFFFF", "surface": "#F9F9FC", "onSurface": "#1A1C1E", "surfaceContainerLowest": "#FFFFFF", "surfaceContainerLow": "#F3F3F7", "surfaceContainer": "#EEEDF1", "surfaceContainerHigh": "#E8E8EB", "surfaceContainerHighest": "#E2E2E5", "outline": "#72777F", "outlineVariant": "#C2C7CF"}, "semantic_balanced": {"expense": "#7E1B11", "income": "#005333", "transfer": "#006087", "credit": "#562B7D", "warning": "#795200"}, "semantic_cvd": {"expense": "#811F14", "income": "#005031", "transfer": "#00668F", "credit": "#54287A", "warning": "#8F6200"}, "chart": ["#748322", "#427DBF", "#B75B51", "#169065", "#8369B8", "#A56D0D", "#008A99", "#AA5B8D"], "hero": {"brand": ["#6A57C1", "#9E4EAB", "#C0497D"], "netWorth": ["#624EB7", "#00679A", "#007673"], "danger": ["#AF3E7C", "#BC426D", "#C74955"]}, "amber": "#FFE9C6"}, "cool_dark": {"roles": {"primary": "#DFB9EE", "onPrimary": "#41254F", "primaryContainer": "#593B67", "onPrimaryContainer": "#F6D9FF", "secondary": "#D2C1D5", "onSecondary": "#382C3C", "tertiary": "#F1B9BA", "onTertiary": "#4A2628", "error": "#FFB4AB", "onError": "#690005", "surface": "#121316", "onSurface": "#E2E2E5", "surfaceContainerLowest": "#0C0E11", "surfaceContainerLow": "#1A1C1E", "surfaceContainer": "#1E2022", "surfaceContainerHigh": "#282A2D", "surfaceContainerHighest": "#333538", "outline": "#8C9199", "outlineVariant": "#42474E"}, "semantic_balanced": {"expense": "#FFAB9D", "income": "#6ADFA6", "transfer": "#44BBF7", "credit": "#BF94EF", "warning": "#D99F36"}, "semantic_cvd": {"expense": "#F08574", "income": "#78ECB2", "transfer": "#33AEE9", "credit": "#DEC3FF", "warning": "#FEC25E"}, "chart": ["#B7C86B", "#8DC2FF", "#FFA194", "#6CD6A7", "#C7ADFF", "#EDB160", "#46D3E6", "#F49ED2"], "hero": {"brand": ["#695DB2", "#9758A1", "#B1537A"], "netWorth": ["#6154A8", "#00679A", "#007673"], "danger": ["#A44B79", "#B04F6E", "#B7535A"]}, "amber": "#FFE9C6"}}}}, "names": {"ink": "V1 墨蓝 · 暖白", "jade": "V2 青碧 · 中性", "plum": "V3 绛紫 · 暖白"}};
+var state = {key:'ink', neutral:'warm', strat:'cvd', cvd:'none', mode:'both'};
+try { var s = localStorage.getItem('miji-theme-v2'); if (s) state = Object.assign(state, JSON.parse(s)); } catch(e) {}
+
+function seg(id, attr, fn) {
+  document.querySelectorAll('#'+id+' button').forEach(function(b) {
+    b.onclick = function() {
+      document.querySelectorAll('#'+id+' button').forEach(function(x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      state[attr] = b.getAttribute('data-'+attr); fn(); save();
+    };
+  });
+}
+function save() { try { localStorage.setItem('miji-theme-v2', JSON.stringify(state)); } catch(e) {} }
+
+function render() {
+  ['schemeSeg:key','neutralSeg:neutral','stratSeg:strat','cvdSeg:cvd'].forEach(function(p) {
+    var parts = p.split(':');
+    document.querySelectorAll('#'+parts[0]+' button').forEach(function(b) {
+      b.classList.toggle('on', b.getAttribute('data-'+parts[1]) === state[parts[1]]);
+    });
+  });
+  var box = document.getElementById('preview');
+  box.innerHTML = '';
+  ['light','dark'].forEach(function(mode) {
+    var tpl = document.getElementById('tpl-'+state.key+'-'+state.neutral+'-'+mode+'-'+state.strat);
+    var el = tpl.content.firstElementChild.cloneNode(true);
+    if (state.cvd !== 'none') el.style.filter = 'url(#cvd-'+state.cvd+')';
+    box.appendChild(el);
+  });
+  save();
+}
+
+document.getElementById('exportBtn').onclick = function() {
+  var p = DATA.palettes[state.key], v = p.variants[state.neutral+'_light'];
+  var vd = p.variants[state.neutral+'_dark'];
+  var decs = [];
+  document.querySelectorAll('[data-dec]').forEach(function(c) {
+    decs.push(c.getAttribute('data-dec') + '=' + (c.checked ? '采纳' : '不采纳'));
+  });
+  var lines = [];
+  lines.push('【方案】' + DATA.names[state.key] + ' · 中性=' + state.neutral +
+             ' · 语义策略=' + state.strat);
+  lines.push('【决策】' + decs.join('  '));
+  lines.push('');
+  ['light','dark'].forEach(function(mode) {
+    var vv = p.variants[state.neutral+'_'+mode], r = vv.roles;
+    var sem = state.strat === 'cvd' ? vv.semantic_cvd : vv.semantic_balanced;
+    lines.push('--- ' + (mode === 'light' ? '浅色 light' : '深色 dark') + ' ---');
+    lines.push('primary ' + r.primary + '  onPrimary ' + r.onPrimary +
+               '  container ' + r.primaryContainer + ' / ' + r.onPrimaryContainer);
+    lines.push('secondary ' + r.secondary + '  tertiary ' + r.tertiary);
+    lines.push('surface ' + r.surface + '  containerLow ' + r.surfaceContainerLow +
+               '  outline ' + r.outline);
+    lines.push('semantic ' + Object.keys(sem).map(function(k) { return k + ' ' + sem[k]; }).join('  '));
+    lines.push('chart ' + vv.chart.join(' '));
+    lines.push('hero.brand ' + vv.hero.brand.join(' → '));
+    lines.push('hero.netWorth ' + vv.hero.netWorth.join(' → '));
+    lines.push('hero.danger ' + vv.hero.danger.join(' → '));
+    lines.push('');
+  });
+  document.getElementById('out').value = lines.join('\n');
+};
+document.getElementById('copyBtn').onclick = function() {
+  var el = document.getElementById('out'); el.select();
+  try { document.execCommand('copy'); document.getElementById('copyHint').textContent = '已复制'; } catch(e) {}
+};
+document.querySelectorAll('[data-dec]').forEach(function(c) { c.onchange = save; });
+seg('schemeSeg','key',render); seg('neutralSeg','neutral',render);
+seg('stratSeg','strat',render); seg('cvdSeg','cvd',render);
+render();
+</script>
+</body></html>

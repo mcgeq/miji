@@ -101,13 +101,12 @@ class AppSlidingSegmentedControl<T> extends StatelessWidget {
                           width: segmentWidth - 6,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: colorScheme.primary,
+                              color: colorScheme.primaryContainer,
                               borderRadius: BorderRadius.circular(radius.pill),
                               boxShadow: [
                                 BoxShadow(
-                                  color: colorScheme.primary.withValues(
-                                    alpha: 0.18,
-                                  ),
+                                  color: colorScheme.primaryContainer
+                                      .withValues(alpha: 0.18),
                                   blurRadius: 10,
                                   offset: const Offset(0, 3),
                                 ),
@@ -159,7 +158,7 @@ class _SlidingSegmentButton<T> extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final foreground = selected
-        ? colorScheme.onPrimary
+        ? colorScheme.onPrimaryContainer
         : colorScheme.onSurfaceVariant;
     final icon = segment.icon;
 

@@ -1,0 +1,525 @@
+"""生成 docs/theme-studio.html：主题设计工作台。
+
+- 左侧：4 个全新方向（D1~D4）+ 可调参数（强调色相/彩度、中性层暖度/彩度、深色底明度、语义策略）
+- 右侧：实时 mockup（浅/深并排）+ 实时校验（WCAG / APCA / 色觉缺陷 ΔE）+ 导出
+- 颜色运算全部在浏览器里跑（OKLCH→sRGB、对比度、APCA、色觉模拟），参数一改立刻重算
+"""
+import json
+
+presets = json.load(open('docs/_studio_presets.json', encoding='utf-8'))
+
+CSS = """
+*{box-sizing:border-box}
+body{margin:0;background:#F4F2EF;color:#1F1D1B;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+.top{position:sticky;top:0;z-index:20;background:rgba(244,242,239,.94);backdrop-filter:blur(10px);border-bottom:1px solid #E5DFD8}
+.top .in{max-width:1400px;margin:0 auto;padding:10px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;gap:3px;padding:3px;background:#E8E2DB;border-radius:999px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:650;cursor:pointer;color:#6A645E}
+.seg button.on{background:#fff;color:#1F1D1B;box-shadow:0 1px 3px rgba(0,0,0,.09)}
+.seg button[data-preset].on{background:#1F1D1B;color:#fff}
+.btn{padding:8px 14px;border-radius:10px;border:0;background:#1F1D1B;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer}
+.btn.ghost{background:#fff;color:#1F1D1B;border:1px solid #DED8D1}
+.layout{max-width:1400px;margin:0 auto;padding:18px;display:grid;grid-template-columns:322px 1fr;gap:18px;align-items:start}
+@media(max-width:1080px){.layout{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid #E5DFD8;border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(60,40,30,.04)}
+.panel h3{margin:0 0 4px;font-size:14px}
+.hint{margin:0 0 12px;font-size:12px;color:#6A645E;line-height:1.6}
+label.ctl{display:block;margin:12px 0 4px;font-size:12px;font-weight:700;color:#4A453F}
+label.ctl span{float:right;font-weight:600;color:#8A847D;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:#1F1D1B}
+.sw{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.sw i{width:30px;height:30px;border-radius:8px;display:block;border:1px solid rgba(0,0,0,.08);cursor:default}
+table{width:100%;border-collapse:collapse;font-size:12px}
+td{padding:6px 4px;border-bottom:1px solid #F2EEE9}
+tr:last-child td{border-bottom:0}
+td.v{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.chip{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:800}
+.ok{background:#E4F5EC;color:#14603A}.no{background:#FDE7EA;color:#B3203A}.meh{background:#FDF1DF;color:#8A5A12}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.pair{grid-template-columns:1fr}}
+.pv{border-radius:18px;padding:16px;background:var(--surface);color:var(--text);border:1px solid var(--line)}
+.pvTitle{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);font-weight:800;margin:0 0 10px}
+.mHero{border-radius:16px;padding:16px;color:#fff;background:linear-gradient(135deg,var(--hb0),var(--hb1) 55%,var(--hb2))}
+.mHero .amt{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:4px 0 8px}
+.mHero .bd{font-size:11.5px;opacity:.95;display:grid;gap:3px}
+.mHero .bd div{display:flex;justify-content:space-between}
+.pbar{height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin-top:9px;position:relative;overflow:hidden}
+.pbar i{position:absolute;inset:0 62% 0 0;background:#fff;border-radius:3px;display:block}
+.pbar.warn i{background:var(--amber);inset:0 18% 0 0}
+.mNet{border-radius:16px;padding:16px;color:#fff;background:linear-gradient(135deg,var(--hn0),var(--hn1));margin-top:12px}
+.mNet .row{display:flex;gap:18px;margin-top:8px;font-size:11.5px}
+.mNet .row b{display:block;font-size:15px;font-weight:800}
+.mNet .amber{color:var(--amber)}
+.mList{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:12px;background:var(--surfaceRaised)}
+.mRow{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.mRow:last-child{border-bottom:0}
+.mRow .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:14px}
+.mRow .amt{margin-left:auto;font-weight:800}
+.mForm{border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:10px;margin-top:12px;background:var(--surfaceRaised)}
+.mInput{border:1px solid var(--borderStrong);border-radius:10px;padding:9px 11px;font-size:12.5px;color:var(--text2);background:var(--surface)}
+.mSeg{display:flex;gap:3px;padding:3px;background:var(--sunken);border-radius:999px;font-size:12px;font-weight:700}
+.mSeg span{flex:1;text-align:center;padding:6px 0;border-radius:999px}
+.mSeg .on{background:var(--accentFill);color:var(--onAccent)}
+.mChip{border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-size:12px;display:inline-block;background:var(--surface)}
+.mChip .p{display:block;font-size:9.5px;color:var(--text2)}
+.mChip.on{border-color:var(--accentFill);background:var(--accentWash);color:var(--accentText)}
+.mChip.solid{background:var(--accentFill);color:var(--onAccent);border-color:var(--accentFill);font-weight:700}
+.mAlert{border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:8px;background:var(--warningWash);color:var(--warning)}
+.mChart{display:flex;gap:12px;align-items:flex-end;height:92px;border-bottom:1px solid var(--line);margin-top:14px}
+.mChart .b{flex:1;border-radius:6px 6px 2px 2px}
+.mPie{width:92px;height:92px;border-radius:50%;flex:none}
+.mLegend{display:grid;gap:5px;font-size:11.5px;color:var(--text2)}
+.mLegend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:6px}
+textarea{width:100%;min-height:170px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;border:1px solid #E5DFD8;border-radius:12px;padding:12px;background:#fff}
+.meta{font-size:12px;color:#6A645E;line-height:1.6}
+"""
+
+JS_COLOR = r"""
+// ── 颜色引擎（与 Python 端 docs/theme_verify.py 同一套公式，已用 node 对拍校验）──
+const M1=[[0.4122214708,0.5363325363,0.0514459929],[0.2119034982,0.6806995451,0.1073969566],[0.0883024619,0.2817188376,0.6299787005]];
+const M2=[[0.2104542553,0.7936177850,-0.0040720468],[1.9779984951,-2.4285922050,0.4505937099],[0.0259040371,0.7827717662,-0.8086757660]];
+function s2l(c){return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+function l2s(c){return c<=0.0031308?c*12.92:1.055*Math.pow(c,1/2.4)-0.055;}
+function hex2rgb(h){h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16)/255);}
+function rgb2hex(v){return '#'+v.map(x=>Math.round(Math.max(0,Math.min(1,x))*255).toString(16).padStart(2,'0')).join('').toUpperCase();}
+function oklab(h){let [r,g,b]=hex2rgb(h).map(s2l);let l=M1[0][0]*r+M1[0][1]*g+M1[0][2]*b,m=M1[1][0]*r+M1[1][1]*g+M1[1][2]*b,s=M1[2][0]*r+M1[2][1]*g+M1[2][2]*b;
+  l=Math.cbrt(l);m=Math.cbrt(m);s=Math.cbrt(s);
+  return [M2[0][0]*l+M2[0][1]*m+M2[0][2]*s, M2[1][0]*l+M2[1][1]*m+M2[1][2]*s, M2[2][0]*l+M2[2][1]*m+M2[2][2]*s];}
+function oklch(h){const [L,a,b]=oklab(h);return [L,Math.hypot(a,b),(Math.atan2(b,a)*180/Math.PI+360)%360];}
+function oklch2hex(L,C,H){const a=C*Math.cos(H*Math.PI/180),b=C*Math.sin(H*Math.PI/180);
+  const l_=Math.pow(L+0.3963377774*a+0.2158037573*b,3),m_=Math.pow(L-0.1055613458*a-0.0638541728*b,3),s_=Math.pow(L-0.0894841775*a-1.2914855480*b,3);
+  const r=4.0767416621*l_-3.3077115913*m_+0.2309699292*s_,g=-1.2684380046*l_+2.6097574011*m_-0.3413193965*s_,bb=-0.0041960863*l_-0.7034186147*m_+1.7076147010*s_;
+  if([r,g,bb].some(x=>x<-0.002||x>1.002))return null;
+  return rgb2hex([r,g,bb].map(x=>l2s(Math.max(0,Math.min(1,x)))));}
+function maxChroma(L,H,cap){cap=cap||0.30;let lo=0,hi=cap;for(let i=0;i<26;i++){const mid=(lo+hi)/2;oklch2hex(L,mid,H)===null?hi=mid:lo=mid;}return lo;}
+function lin(h){return hex2rgb(h).map(s2l);}
+function lum(h){const [r,g,b]=lin(h);return 0.2126*r+0.7152*g+0.0722*b;}
+function contrast(a,b){const la=lum(a),lb=lum(b),hi=Math.max(la,lb),lo=Math.min(la,lb);return (hi+0.05)/(lo+0.05);}
+function apca(txt,bg){const y=h=>{const [r,g,b]=lin(h);return 0.2126729*r+0.7151522*g+0.0721750*b;};
+  let yt=y(txt),yb=y(bg);const bt=0.022,bc=1.414;yt=yt<bt?yt+Math.pow(bt-yt,bc):yt;yb=yb<bt?yb+Math.pow(bt-yb,bc):yb;
+  if(Math.abs(yb-yt)<0.0005)return 0;let sapc,out;const sc=1.14,lc=0.1,lo=0.027;
+  if(yb>yt){sapc=(Math.pow(yb,0.56)-Math.pow(yt,0.57))*sc;out=sapc<lc?0:sapc-lo;}
+  else{sapc=(Math.pow(yb,0.65)-Math.pow(yt,0.62))*sc;out=sapc>-lc?0:sapc+lo;}
+  return out*100;}
+const RGB2LMS=[[17.8824,43.5161,4.11935],[3.45565,27.1554,3.86714],[0.0299566,0.184309,1.46709]];
+const LMS2RGB=[[0.080944,-0.130504,0.116721],[-0.0102485,0.0540194,-0.113615],[-0.000365294,-0.00412163,0.693513]];
+function cvd(h,kind){const rgb=hex2rgb(h).map(s2l).map(x=>x*255);
+  let L=RGB2LMS[0][0]*rgb[0]+RGB2LMS[0][1]*rgb[1]+RGB2LMS[0][2]*rgb[2];
+  let M=RGB2LMS[1][0]*rgb[0]+RGB2LMS[1][1]*rgb[1]+RGB2LMS[1][2]*rgb[2];
+  let S=RGB2LMS[2][0]*rgb[0]+RGB2LMS[2][1]*rgb[1]+RGB2LMS[2][2]*rgb[2];
+  if(kind==='protan')L=2.02344*M-2.52581*S; else if(kind==='deutan')M=0.494207*L+1.24827*S; else S=-0.395913*L+0.801109*M;
+  const o=[0,1,2].map(i=>LMS2RGB[i][0]*L+LMS2RGB[i][1]*M+LMS2RGB[i][2]*S);
+  return rgb2hex(o.map(x=>l2s(Math.max(0,Math.min(1,x/255)))));}
+function dE(a,b){const A=oklab(a),B=oklab(b);return Math.hypot(A[0]-B[0],A[1]-B[1],A[2]-B[2]);}
+// 解明度：找满足对比度的第一档（preferHigh=true 时从亮往暗找）
+function solveL(hue,chroma,bg,target,preferHigh){const seq=[];for(let i=30;i<=88;i++)seq.push(i/100);
+  const order=preferHigh?seq.slice().reverse():seq;
+  for(const L of order){const hx=oklch2hex(L,Math.min(chroma,maxChroma(L,hue)),hue);if(hx&&contrast(hx,bg)>=target)return [L,hx];}
+  return [0.5,oklch2hex(0.5,Math.min(chroma,maxChroma(0.5,hue)),hue)||'#888888'];}
+function neutralHex(L,hue,chroma){return oklch2hex(L,Math.min(chroma,maxChroma(L,hue)),hue)||'#808080';}
+"""
+
+JS_APP = r"""
+const PRESETS = window.PRESETS;
+const state = {preset:'ink_cyan', mode:'light', strategy:'cvd', cvd:'none',
+  accentHue:null, accentChroma:null, neutralHue:null, neutralChroma:null, darkBase:null};
+try{const s=localStorage.getItem('miji-studio');if(s)Object.assign(state,JSON.parse(s));}catch(e){}
+
+const RAMPS={light:{sunken:0.955,bg:0.972,surface:1.0,raised:0.985,border:0.90,text2:0.505,text:0.235},
+             dark:{sunken:0.105,bg:0.145,surface:0.195,raised:0.245,border:0.325,text2:0.685,text:0.935}};
+
+function tokens(mode){
+  const p=PRESETS[state.preset], meta=p.meta;
+  const accentHue=pick('accentHue',meta.accentHue), accentChroma=pick('accentChroma',meta.accentChroma);
+  const neutralHue=pick('neutralHue',meta.neutralHue), neutralChroma=pick('neutralChroma',meta.neutralChroma);
+  const darkBase=pick('darkBase', 0.175);
+  const base = mode==='light' ? 0.972 : darkBase;
+  const ramp = Object.assign({}, RAMPS[mode]);
+  const shift = base - ramp.surface;
+  const n={};
+  for(const k in ramp) n[k]=neutralHex(clamp(ramp[k]+shift,0.055,0.995),neutralHue,neutralChroma);
+  // 浅色下要「刚好达标的最亮色」（否则描边会变成一道黑线）；深色反之。
+  n.borderStrong = solveL(neutralHue, Math.max(neutralChroma,0.012)*2, n.surface, 3.0, mode==='light')[1];
+  // 强调层：填充（≥3:1）与前景（≥4.6）联合求解，优先更亮的填充
+  let accentFill='#888', onAccent='#000', accentText='#444';
+  const levels=[]; for(let i=30;i<=88;i++) levels.push(i/100);
+  outer: for(const L of levels.slice().reverse()){
+    const f=oklch2hex(L,Math.min(accentChroma,maxChroma(L,accentHue)),accentHue);
+    if(!f||contrast(f,n.surface)<3.0) continue;
+    for(let j=6;j<42;j++){const L2=j/100;
+      const on=oklch2hex(L2,Math.min(accentChroma*0.8,maxChroma(L2,accentHue)),accentHue);
+      if(on&&contrast(f,on)>=4.6){accentFill=f;onAccent=on;break outer;}}
+  }
+  accentText = solveL(accentHue,accentChroma,n.surface, mode==='light'?4.6:7.0, mode==='light')[1];
+  // 语义层：来自预设（与强调色无关，切换策略即可）
+  const sem = state.strategy==='cvd' ? p[mode].semantic : p[mode].semantic_balanced;
+  // 图表色板与 Hero 渐变跟着强调色相实时重算（改品牌色就跟着变）
+  const chart = liveChart(accentHue, n.surface, mode);
+  const hero = liveHero(accentHue, mode);
+  return {n:n, accentFill:accentFill, onAccent:onAccent, accentText:accentText, sem:sem,
+          chart:chart, hero:hero, amber:p[mode].amber};
+}
+function liveChart(accentHue, surface, mode){
+  const L0 = mode==='light' ? 0.58 : 0.80, out = [];
+  for(let i=0;i<8;i++){
+    const h=(accentHue+165+i*135)%360; let best=null;
+    for(let k=0;k<7;k++){
+      const L = mode==='light' ? L0-0.03*k : L0+0.03*k;
+      const hx = oklch2hex(L, Math.min(0.12, maxChroma(L,h)), h);
+      if(hx && contrast(hx,surface)>=3.0){best=hx;break;}
+    }
+    out.push(best || oklch2hex(L0, 0.09, h) || '#888888');
+  }
+  return out;
+}
+function liveHero(accentHue, mode){
+  const AMB = PRESETS[state.preset][mode].amber;
+  // 每一档：先求「满足对比度的最亮明度」，再往下排两档 —— 这样渐变真的有色阶，
+  // 而不是三档都停在刚好达标的位置（那样是平的、发闷）。
+  const spec = {
+    // depth：从「刚好达标的最亮档」再往下压多少。彩度高的渐变用 0（最鲜亮），
+    // 墨色系往下压，才是真的「墨」而不是中灰。
+    cool:     {h:[accentHue-26, accentHue+6, accentHue+40], c:0.17,  min:4.6, depth:0},
+    // 暖赭金：暖色区里唯一与「超支」告警渐变拉得开的方向（ΔE 0.17），
+    // 也是暖纸底上最不突兀的品牌卡
+    warmGold: {h:[58, 72, 86],                               c:0.15,  min:4.6, depth:0},
+    // 暖玫：色相上更"暖红"，但与告警渐变 ΔE 只有 0.03 —— 正常/超支两张卡几乎同色
+    warmRose: {h:[340, 356, 14],                             c:0.15,  min:4.6, depth:0},
+    inkBrand: {h:[accentHue-12, accentHue+4, accentHue+20],  c:0.055, min:5.0, depth:0.16},
+    ink:      {h:[72, 66, 58],                               c:0.022, min:5.0, depth:0.19}
+  }[state.heroStyle || 'cool'];
+  const whiteOk = (L,h) => {
+    const hx = oklch2hex(L, Math.min(spec.c, maxChroma(L,h)), h);
+    if (!hx) return -1;
+    return contrast('#FFFFFF', hx) >= spec.min ? L : -1;
+  };
+  let Lmax = 0.34;
+  for (let L = 0.70; L >= 0.16; L -= 0.01) { if (whiteOk(L, spec.h[0]) > 0) { Lmax = L; break; } }
+  const lift = mode === 'dark' ? 0.05 : 0;   // 深色下把卡片提亮一点，免得与暗底糊在一起
+  const brand = spec.h.map((h, i) => {
+    let L = Lmax - spec.depth - i * 0.07 + lift;
+    while (L > 0.14 && whiteOk(L, h) < 0) { L -= 0.01; }   // 提亮后仍要满足白字
+    return oklch2hex(L, Math.min(spec.c, maxChroma(L, h)), h) || '#333333';
+  });
+  const amberStop = (h, target) => {
+    for (let i = 64; i > 18; i--) {
+      const L = i / 100;
+      const hx = oklch2hex(L, Math.min(0.17, maxChroma(L, h)), h);
+      if (hx && contrast('#FFFFFF', hx) >= target && contrast(AMB, hx) >= 4.6) return hx;
+    }
+    return oklch2hex(0.32, 0.10, h) || '#333333';
+  };
+  const whiteStop = (h, target, cap) => {
+    for (let i = 64; i > 18; i--) {
+      const L = i / 100;
+      const hx = oklch2hex(L, Math.min(cap === undefined ? 0.17 : cap, maxChroma(L, h)), h);
+      if (hx && contrast('#FFFFFF', hx) >= target) return hx;
+    }
+    return oklch2hex(0.32, 0.10, h) || '#333333';
+  };
+  return {
+    brand: brand,
+    netWorth: [amberStop(288, 5.2), amberStop(238, 5.0), amberStop(192, 4.6)],
+    danger: [whiteStop(350, 5.4), whiteStop(2, 5.0), whiteStop(18, 4.6)]
+  };
+}
+function pick(key,fallback){return state[key]===null||state[key]===undefined?fallback:state[key];}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+
+function styleFor(t,mode,withCvd){
+  const n=t.n;
+  const s = `--surface:${n.surface};--surfaceRaised:${n.raised};--sunken:${n.sunken};--line:${n.border};`
+   + `--borderStrong:${n.borderStrong};--text:${n.text};--text2:${n.text2};`
+   + `--accentFill:${t.accentFill};--onAccent:${t.onAccent};--accentText:${t.accentText};`
+   + `--accentWash:${mix(t.accentFill,n.surface,0.12)};`
+   + `--expense:${t.sem.expense};--income:${t.sem.income};--transfer:${t.sem.transfer};`
+   + `--credit:${t.sem.credit};--warning:${t.sem.warning};`
+   + `--warningWash:${mix(t.sem.warning,n.surface,0.12)};--amber:${t.amber};`
+   + `--hb0:${t.hero.brand[0]};--hb1:${t.hero.brand[1]};--hb2:${t.hero.brand[2]};`
+   + `--hn0:${t.hero.netWorth[0]};--hn1:${t.hero.netWorth[1]};`;
+  return s;
+}
+function mix(fg,bg,a){const A=hex2rgb(fg),B=hex2rgb(bg);return rgb2hex([0,1,2].map(i=>A[i]*a+B[i]*(1-a)));}
+
+function mock(t,mode){
+  const c=t.chart, sem=t.sem;
+  const bars=[46,78,58,92,40,66].map((h,i)=>`<div class="b" style="height:${h}%;background:${c[i%c.length]}"></div>`).join('');
+  const legend=[['餐饮',30],['购物',18],['交通',16],['居住',14],['娱乐',12],['其他',10]]
+    .map((x,i)=>`<span><i style="background:${c[i]}"></i>${x[0]} ${x[1]}%</span>`).join('');
+  const pie=[0,22,40,56,70,86,100].map((p,i)=>i<6?`${c[i]} ${p}%`:`${c[5]} 100%`);
+  return `<div class="pv" style="${styleFor(t,mode)}${state.cvd!=='none'?'filter:url(#cvd-'+state.cvd+')':''}">
+    <p class="pvTitle">${mode==='light'?'浅色 light':'深色 dark'} · ${state.strategy==='cvd'?'色盲强化语义':'均衡语义'}</p>
+    <div class="mHero">
+      <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+      <div style="font-size:11px;opacity:.88;margin-top:10px">本月还可花</div>
+      <div class="amt">¥2,860.00</div>
+      <div class="bd"><div><span>预算</span><span>¥4,000.00</span></div>
+        <div><span>已用</span><span>¥1,140.00</span></div>
+        <div><span>日均可花</span><span>¥95.00</span></div></div>
+      <div class="pbar"><i></i></div><div class="pbar warn"><i></i></div>
+      <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+    </div>
+    <div class="mNet">
+      <div style="font-size:11px;opacity:.88">净资产</div>
+      <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+      <div class="row"><span>总资产<b>¥2,000.00</b></span><span>负债<b class="amber">¥1,000.00</b></span></div>
+    </div>
+    <div class="mList">
+      <div class="mRow"><span class="ic" style="background:${mix(sem.expense,t.n.surface,0.08)};color:${sem.expense}">🍜</span>餐饮外卖<span class="amt" style="color:${sem.expense}">-¥38.50</span></div>
+      <div class="mRow"><span class="ic" style="background:${mix(sem.income,t.n.surface,0.08)};color:${sem.income}">💰</span>工资<span class="amt" style="color:${sem.income}">+¥12,000.00</span></div>
+      <div class="mRow"><span class="ic" style="background:${mix(sem.transfer,t.n.surface,0.08)};color:${sem.transfer}">🔁</span>转账到储蓄<span class="amt" style="color:${sem.transfer}">¥2,000.00</span></div>
+      <div class="mRow"><span class="ic" style="background:${mix(sem.credit,t.n.surface,0.08)};color:${sem.credit}">💳</span>信用卡还款<span class="amt" style="color:${sem.credit}">¥1,200.00</span></div>
+    </div>
+    <div class="mForm">
+      <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+      <div class="mInput">¥ 38.50　·　账户：现金</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="mChip on">外卖<span class="p">餐饮</span></span>
+        <span class="mChip">交通<span class="p">出行</span></span>
+        <span class="mChip">购物<span class="p">日用</span></span>
+        <span class="mChip solid">保存</span>
+      </div>
+    </div>
+    <div class="mAlert">● 预算已用 82%，注意节奏（警示条：同色淡底 + 同色文字）</div>
+    <div class="mChart">${bars}</div>
+    <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+      <div class="mPie" style="background:conic-gradient(${pie.join(',')})"></div>
+      <div class="mLegend">${legend}</div>
+    </div>
+  </div>`;
+}
+
+function checks(t,mode){
+  const n=t.n, sem=t.sem, rows=[];
+  const add=(name,val,need)=>{rows.push([name,val.toFixed(2),need,val>=need]);};
+  add('强调填充 + 其上前景', contrast(t.accentFill,t.onAccent), 4.5);
+  add('强调色当文字', contrast(t.accentText,n.surface), 4.5);
+  add('正文', contrast(n.text,n.surface), 4.5);
+  add('次要文字', contrast(n.text2,n.surface), 4.5);
+  add('控件描边（非文字）', contrast(n.borderStrong,n.surface), 3.0);
+  add('语义色最差（文字）', Math.min(...Object.values(sem).map(c=>contrast(c,n.sunken))), 4.5);
+  add('图表最差（图形）', Math.min(...t.chart.map(c=>contrast(c,n.surface))), 3.0);
+  add('Hero 白字最差', Math.min(...Object.values(t.hero).flat().map(c=>contrast('#FFFFFF',c))), 4.5);
+  add('品牌卡与页面底色的可见度', contrast(t.hero.brand[1], t.n.bg), 1.15);
+  add('品牌卡 ↔ 超支卡 差异(ΔE)', dE(t.hero.brand[1], t.hero.danger[1]), 0.10);
+  add('Hero 琥珀字（净资产）', Math.min(...t.hero.netWorth.map(c=>contrast(t.amber,c))), 4.5);
+  return rows;
+}
+function cvdReport(sem){
+  const kinds=['protan','deutan','tritan'], names=Object.keys(sem);
+  const out={};
+  for(const k of kinds){
+    let worst=9,pair='';
+    for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++){
+      const d=dE(cvd(sem[names[i]],k),cvd(sem[names[j]],k));
+      if(d<worst){worst=d;pair=names[i]+'/'+names[j];}
+    }
+    out[k]=[worst,pair];
+  }
+  return out;
+}
+
+function render(){
+  const t=tokens(state.mode), tDark=tokens('dark');
+  document.getElementById('previewLight').innerHTML=mock(tokens('light'),'light');
+  document.getElementById('previewDark').innerHTML=mock(tDark,'dark');
+  // 校验表（用当前模式）
+  const rows=checks(t,state.mode);
+  document.getElementById('checks').innerHTML=rows.map(r=>
+    `<tr><td>${r[0]}</td><td class="v">${r[1]}</td><td class="v" style="color:#8A847D">${r[2]}</td>
+     <td><span class="chip ${r[3]?'ok':'no'}">${r[3]?'通过':'不达标'}</span></td></tr>`).join('');
+  const rep=cvdReport(t.sem);
+  document.getElementById('cvdTable').innerHTML=Object.entries(rep).map(([k,v])=>
+    `<tr><td>${({protan:'红色盲',deutan:'绿色盲',tritan:'蓝黄色盲'})[k]}</td>
+     <td class="v">${v[0].toFixed(3)}</td><td class="meta">${v[1]}</td>
+     <td><span class="chip ${v[0]>=0.10?'ok':(v[0]>=0.05?'meh':'no')}">${v[0]>=0.10?'可辨':'偏近'}</span></td></tr>`).join('');
+  // 色卡
+  const sw=(arr)=>arr.map(c=>`<i style="background:${c}" title="${c}"></i>`).join('');
+  document.getElementById('swAccent').innerHTML=sw([t.accentFill,t.onAccent,t.accentText]);
+  document.getElementById('swNeutral').innerHTML=sw([t.n.sunken,t.n.bg,t.n.surface,t.n.raised,t.n.border,t.n.borderStrong,t.n.text2,t.n.text]);
+  document.getElementById('swSem').innerHTML=sw(Object.values(t.sem));
+  document.getElementById('swChart').innerHTML=sw(t.chart);
+  document.getElementById('swHero').innerHTML=sw([...t.hero.brand,...t.hero.netWorth,...t.hero.danger]);
+  document.getElementById('modeLabel').textContent = state.mode==='light'?'浅色':'深色';
+  const meta=PRESETS[state.preset].meta;
+  document.getElementById('presetNote').textContent=meta.note;
+  save();
+}
+function save(){try{localStorage.setItem('miji-studio',JSON.stringify(state));}catch(e){}}
+
+function seg(id,attr,after){
+  document.querySelectorAll('#'+id+' button').forEach(b=>{
+    b.onclick=()=>{document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); state[attr]=isNaN(+b.dataset[attr])?b.dataset[attr]:+b.dataset[attr]; after();};
+  });
+}
+window.addEventListener('DOMContentLoaded',()=>{
+  const p=PRESETS[state.preset];
+  // 初始化滑杆
+  const set=(id,val)=>{document.getElementById(id).value=val;};
+  set('slAccentHue',pick('accentHue',p.meta.accentHue));
+  set('slAccentChroma',pick('accentChroma',p.meta.accentChroma)*100);
+  set('slNeutralHue',pick('neutralHue',p.meta.neutralHue));
+  set('slNeutralChroma',pick('neutralChroma',p.meta.neutralChroma)*1000);
+  set('slDarkBase',pick('darkBase',0.175)*1000);
+  const bind=(id,key,scale,label,digits)=>{
+    const el=document.getElementById(id);
+    const upd=()=>{state[key]=+el.value/(scale||1); document.getElementById(label).textContent=(+el.value)/(scale||1)===undefined?'':(digits==='x1000'?(+el.value).toFixed(0):(+el.value).toFixed(digits)); render();};
+    el.oninput=upd; upd();
+  };
+  bind('slAccentHue','accentHue',1,'vAccentHue',0);
+  bind('slAccentChroma','accentChroma',100,'vAccentChroma',3);
+  bind('slNeutralHue','neutralHue',1,'vNeutralHue',0);
+  bind('slNeutralChroma','neutralChroma',1000,'vNeutralChroma',1);
+  bind('slDarkBase','darkBase',1000,'vDarkBase',0);
+  document.getElementById('slDarkBase').oninput=(e)=>{state.darkBase=+e.target.value/1000; document.getElementById('vDarkBase').textContent=(+e.target.value).toFixed(0); render();};
+  seg('segPreset','preset',()=>{const np=PRESETS[state.preset];
+    ['accentHue','accentChroma','neutralHue','neutralChroma','darkBase'].forEach(k=>state[k]=null);
+    document.getElementById('slAccentHue').value=np.meta.accentHue; state.accentHue=np.meta.accentHue;
+    document.getElementById('slAccentChroma').value=np.meta.accentChroma*100; state.accentChroma=np.meta.accentChroma;
+    document.getElementById('slNeutralHue').value=np.meta.neutralHue; state.neutralHue=np.meta.neutralHue;
+    document.getElementById('slNeutralChroma').value=np.meta.neutralChroma*1000; state.neutralChroma=np.meta.neutralChroma;
+    document.getElementById('vAccentHue').textContent=np.meta.accentHue;
+    document.getElementById('vAccentChroma').textContent=np.meta.accentChroma.toFixed(3);
+    document.getElementById('vNeutralHue').textContent=np.meta.neutralHue;
+    document.getElementById('vNeutralChroma').textContent=(np.meta.neutralChroma*1000).toFixed(1);
+    render();});
+  seg('segHero','heroStyle',render);
+  seg('segStrategy','strategy',render);
+  seg('segCvd','cvd',render);
+  seg('segMode','mode',render);
+  document.querySelectorAll('#segPreset button').forEach(b=>b.classList.toggle('on',b.dataset.preset===state.preset));
+  document.querySelectorAll('#segStrategy button').forEach(b=>b.classList.toggle('on',b.dataset.strategy===state.strategy));
+  document.querySelectorAll('#segHero button').forEach(b=>b.classList.toggle('on',b.dataset.heroStyle===state.heroStyle));
+  document.querySelectorAll('#segCvd button').forEach(b=>b.classList.toggle('on',b.dataset.cvd===state.cvd));
+  document.querySelectorAll('#segMode button').forEach(b=>b.classList.toggle('on',b.dataset.mode===state.mode));
+  document.getElementById('exportBtn').onclick=()=>{
+    const lines=[];
+    lines.push('【预设】'+PRESETS[state.preset].meta.label+'　语义策略='+(state.strategy==='cvd'?'色盲强化':'均衡'));
+    lines.push('【Hero 卡背景】' + (state.heroStyle||'cool'));
+    lines.push('【参数】强调色相='+Math.round(pick('accentHue',PRESETS[state.preset].meta.accentHue))
+      +'　强调彩度='+pick('accentChroma',PRESETS[state.preset].meta.accentChroma).toFixed(3)
+      +'　中性色相='+Math.round(pick('neutralHue',PRESETS[state.preset].meta.neutralHue))
+      +'　中性彩度='+pick('neutralChroma',PRESETS[state.preset].meta.neutralChroma).toFixed(3)
+      +'　深色底明度='+pick('darkBase',0.175).toFixed(3));
+    ['light','dark'].forEach(m=>{
+      const t=tokens(m);
+      lines.push('--- '+(m==='light'?'浅色 light':'深色 dark')+' ---');
+      lines.push('中性  sunken '+t.n.sunken+'  bg '+t.n.bg+'  surface '+t.n.surface+'  raised '+t.n.raised);
+      lines.push('      border '+t.n.border+'  borderStrong '+t.n.borderStrong+'  text2 '+t.n.text2+'  text '+t.n.text);
+      lines.push('强调  fill '+t.accentFill+'  onFill '+t.onAccent+'  text '+t.accentText);
+      lines.push('语义  '+Object.entries(t.sem).map(([k,v])=>k+' '+v).join('  '));
+      lines.push('图表  '+t.chart.join(' '));
+      lines.push('渐变  brand '+t.hero.brand.join(' → '));
+      lines.push('      netWorth '+t.hero.netWorth.join(' → ')+'   danger '+t.hero.danger.join(' → '));
+      lines.push('');
+    });
+    document.getElementById('out').value=lines.join('\n');
+  };
+  document.getElementById('copyBtn').onclick=()=>{const el=document.getElementById('out');el.select();
+    try{document.execCommand('copy');document.getElementById('copyHint').textContent='已复制';}catch(e){}};
+  render();
+});
+"""
+
+MATRICES = {
+    'protan': '0.152286 1.052583 -0.204868 0 0  0.114503 0.786281 0.099216 0 0  -0.003882 -0.048116 1.051998 0 0  0 0 0 1 0',
+    'deutan': '0.367322 0.860646 -0.227968 0 0  0.280085 0.672501 0.047413 0 0  -0.011820 0.042940 0.968881 0 0  0 0 0 1 0',
+    'tritan': '1.255528 -0.076749 -0.178779 0 0  -0.078411 0.930809 0.147602 0 0  0.004733 0.691367 0.303900 0 0  0 0 0 1 0',
+}
+
+preset_buttons = ''.join(
+    f'<button data-preset="{k}"{" class=\"on\"" if i == 0 else ""}>{v["meta"]["label"]}</button>'
+    for i, (k, v) in enumerate(presets.items()))
+
+html = f'''<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>主题设计工作台 · 从零设计的四套体系 · 米记</title>
+<style>{CSS}</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  {''.join(f'<filter id="cvd-{k}" color-interpolation-filters="linearRGB"><feColorMatrix type="matrix" values="{v}"/></filter>' for k, v in MATRICES.items())}
+</svg>
+<div class="top"><div class="in">
+  <b style="font-size:13px">主题设计工作台</b>
+  <div class="seg" id="segPreset">{preset_buttons}</div>
+  <div class="seg" id="segStrategy">
+    <button data-strategy="cvd" class="on">色盲强化语义</button>
+    <button data-strategy="balanced">均衡语义</button>
+  </div>
+  <div class="seg" id="segCvd">
+    <button data-cvd="none" class="on">正常视觉</button>
+    <button data-cvd="protan">红色盲</button>
+    <button data-cvd="deutan">绿色盲</button>
+    <button data-cvd="tritan">蓝黄色盲</button>
+  </div>
+  <div class="seg" id="segHero">
+    <button data-hero-style="cool">Hero 冷渐变</button>
+    <button data-hero-style="warmGold" class="on">暖赭金</button>
+    <button data-hero-style="warmRose">暖玫（与告警撞色）</button>
+    <button data-hero-style="inkBrand">品牌墨</button>
+    <button data-hero-style="ink">墨色</button>
+  </div>
+  <div class="seg" id="segMode">
+    <button data-mode="light" class="on">浅色</button>
+    <button data-mode="dark">深色</button>
+  </div>
+  <button class="btn" id="exportBtn">导出配置</button>
+</div></div>
+
+<div class="layout">
+  <div>
+    <div class="panel">
+      <h3>可调参数</h3>
+      <p class="hint" id="presetNote"></p>
+      <label class="ctl">强调色相 <span id="vAccentHue"></span></label>
+      <input type="range" id="slAccentHue" min="0" max="360" step="1">
+      <label class="ctl">强调彩度 <span id="vAccentChroma"></span></label>
+      <input type="range" id="slAccentChroma" min="2" max="24" step="1">
+      <label class="ctl">中性层色相（暖 ↔ 冷） <span id="vNeutralHue"></span></label>
+      <input type="range" id="slNeutralHue" min="0" max="360" step="1">
+      <label class="ctl">中性层彩度 <span id="vNeutralChroma"></span></label>
+      <input type="range" id="slNeutralChroma" min="0" max="20" step="1">
+      <label class="ctl">深色底明度 <span id="vDarkBase"></span></label>
+      <input type="range" id="slDarkBase" min="80" max="260" step="4">
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h3>当前色卡（<span id="modeLabel"></span>）</h3>
+      <p class="hint">强调层</p><div class="sw" id="swAccent"></div>
+      <p class="hint" style="margin-top:10px">中性层（sunken → surface → border → text）</p><div class="sw" id="swNeutral"></div>
+      <p class="hint" style="margin-top:10px">语义层</p><div class="sw" id="swSem"></div>
+      <p class="hint" style="margin-top:10px">数据层（图表 8 色）</p><div class="sw" id="swChart"></div>
+      <p class="hint" style="margin-top:10px">品牌时刻（品牌 / 净资产 / 告警渐变）</p><div class="sw" id="swHero"></div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h3>实时校验（当前模式）</h3>
+      <p class="hint">WCAG 2.2 门槛：文字 4.5:1、非文字 3:1。</p>
+      <table id="checks"></table>
+      <h3 style="margin-top:14px">色觉缺陷下的可辨性</h3>
+      <p class="hint">五色两两取最小 OKLab ΔE：≥0.10 明显可辨、≥0.05 并排能看出不同。</p>
+      <table id="cvdTable"></table>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h3>实时预览</h3>
+      <p class="hint">浅色 / 深色并排。顶部可切色觉模拟 —— 切到「绿色盲」你会看到只靠色相的方案会怎样。</p>
+      <div class="pair"><div id="previewLight"></div><div id="previewDark"></div></div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h3>导出</h3>
+      <p class="hint">调到满意后导出，把这段贴回来，我按它改 <code>app_theme_tokens.dart</code> / <code>app_theme.dart</code>。</p>
+      <textarea id="out" readonly placeholder="点右上角「导出配置」"></textarea>
+      <div style="margin-top:10px"><button class="btn ghost" id="copyBtn">复制</button> <span class="meta" id="copyHint"></span></div>
+    </div>
+  </div>
+</div>
+<script>window.PRESETS = {json.dumps(presets, ensure_ascii=False)};</script>
+<script>{JS_COLOR}</script>
+<script>{JS_APP}</script>
+</body></html>
+'''
+open('docs/theme-studio.html', 'w', encoding='utf-8').write(html)
+print('written docs/theme-studio.html', len(html))

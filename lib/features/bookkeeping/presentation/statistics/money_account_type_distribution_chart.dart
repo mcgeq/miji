@@ -143,17 +143,7 @@ class _MoneyAccountTypeDistributionChartState
 
   Color _sliceColor(BuildContext context, int index) {
     final theme = Theme.of(context);
-    final palette = <Color>[
-      theme.colorScheme.primary,
-      theme.colorScheme.tertiary,
-      theme.moneyColors.credit,
-      theme.moneyColors.income,
-      theme.moneyColors.expense,
-      Colors.teal,
-      Colors.orange,
-      Colors.indigo,
-    ];
-    return palette[index % palette.length];
+    return theme.chartPalette[index];
   }
 }
 

@@ -99,13 +99,30 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (migrator) => migrator.createAll(),
       onUpgrade: (migrator, from, to) async {
+        if (from < 23) {
+          // 删掉 theme_seed_color：这个偏好有列、注册时写默认值，但主题从未读取它
+          // （app_theme.dart 一直用写死的 AppThemeTokens），留着会误导下一个人。
+          // 这里先查一下列是否存在：迁移测试是用「当前 schema 再减列」来模拟旧版本，
+          // 那种库上并没有这一列，直接 ALTER 会报错。
+          final columns = await customSelect(
+            "PRAGMA table_info('user_preferences')",
+          ).get();
+          final hasSeedColor = columns.any(
+            (row) => row.read<String>('name') == 'theme_seed_color',
+          );
+          if (hasSeedColor) {
+            await customStatement(
+              'ALTER TABLE user_preferences DROP COLUMN theme_seed_color',
+            );
+          }
+        }
         if (from < 2) {
           await migrator.addColumn(
             userPreferences,

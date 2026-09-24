@@ -7,8 +7,6 @@ class UserPreferences extends Table {
 
   TextColumn get themeMode => text().withDefault(const Constant('system'))();
 
-  IntColumn get themeSeedColor => integer()();
-
   TextColumn get locale => text().nullable()();
 
   TextColumn get timezone => text().nullable()();

@@ -27,6 +27,15 @@ Future<void> _dropV15SortOrderColumns(AppDatabase db) async {
 /// V1.4 给 `user_preferences` 增加了两列。迁移测试通过「建当前 schema →
 /// 删列 → 回退 user_version」来伪造旧库，所以伪造 v20 及更早版本时
 /// 必须把这两列一并删掉，否则迁移会因重复列而失败。
+/// v23 删掉了 theme_seed_color（死配置）。模拟 v23 之前的库时要先把这列加回来 ——
+/// 迁移测试的做法是「从当前 schema 减列」，不减的话这一列本来就不在。
+Future<void> _restoreThemeSeedColorColumn(AppDatabase db) async {
+  await db.customStatement(
+    'ALTER TABLE user_preferences '
+    'ADD COLUMN theme_seed_color INTEGER NOT NULL DEFAULT 0',
+  );
+}
+
 Future<void> _dropV14PreferenceColumns(AppDatabase db) async {
   await db.customStatement(
     'ALTER TABLE user_preferences DROP COLUMN mask_money_amounts',
@@ -77,6 +86,7 @@ void main() {
     );
     await _dropV14PreferenceColumns(v18db);
     await _dropV15SortOrderColumns(v18db);
+    await _restoreThemeSeedColorColumn(v18db);
     await v18db.customStatement('PRAGMA user_version = 15');
     await v18db.close();
 
@@ -148,6 +158,7 @@ void main() {
     await v18db.customStatement('DROP TABLE IF EXISTS todo_task_tags');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_tags');
     await v18db.customStatement('DROP TABLE IF EXISTS todo_recurrence_rules');
+    await _restoreThemeSeedColorColumn(v18db);
     await v18db.customStatement('PRAGMA user_version = 16');
     await v18db.close();
 
@@ -197,6 +208,7 @@ void main() {
     );
     await _dropV14PreferenceColumns(v18db);
     await _dropV15SortOrderColumns(v18db);
+    await _restoreThemeSeedColorColumn(v18db);
     await v18db.customStatement('PRAGMA user_version = 17');
     await v18db.close();
 
@@ -242,7 +254,6 @@ void main() {
           .insert(
             UserPreferencesCompanion.insert(
               userId: 'user-1',
-              themeSeedColor: 0xFF6750A4,
               createdAt: now,
               updatedAt: now,
             ),
@@ -254,6 +265,7 @@ void main() {
       );
       await _dropV14PreferenceColumns(v19db);
       await _dropV15SortOrderColumns(v19db);
+      await _restoreThemeSeedColorColumn(v19db);
       await v19db.customStatement('PRAGMA user_version = 18');
       await v19db.close();
 
@@ -322,6 +334,7 @@ void main() {
 
       // Simulate a v21 release: no sort_order columns.
       await _dropV15SortOrderColumns(v21db);
+      await _restoreThemeSeedColorColumn(v21db);
       await v21db.customStatement('PRAGMA user_version = 21');
       await v21db.close();
 
@@ -376,7 +389,6 @@ void main() {
           .insert(
             UserPreferencesCompanion.insert(
               userId: 'user-1',
-              themeSeedColor: 0xFF6750A4,
               createdAt: now,
               updatedAt: now,
             ),
@@ -385,6 +397,7 @@ void main() {
       // Simulate a v20 release: drop the V1.4 columns that v20 lacked.
       await _dropV14PreferenceColumns(v20db);
       await _dropV15SortOrderColumns(v20db);
+      await _restoreThemeSeedColorColumn(v20db);
       await v20db.customStatement('PRAGMA user_version = 20');
       await v20db.close();
 

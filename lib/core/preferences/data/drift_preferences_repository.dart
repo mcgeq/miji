@@ -60,33 +60,6 @@ class DriftPreferencesRepository implements PreferencesRepository {
   }
 
   @override
-  Future<void> updateThemeSeedColor(String userId, int themeSeedColor) async {
-    try {
-      final updatedRows =
-          await (database.update(
-            database.userPreferences,
-          )..where((preferences) => preferences.userId.equals(userId))).write(
-            UserPreferencesCompanion(
-              themeSeedColor: Value(themeSeedColor),
-              updatedAt: Value(DateTime.now().toUtc()),
-            ),
-          );
-
-      if (updatedRows == 0) {
-        throw const PreferencesRepositoryException(
-          PreferencesRepositoryErrorCode.preferencesNotFound,
-        );
-      }
-    } on PreferencesRepositoryException {
-      rethrow;
-    } catch (error) {
-      throw PreferencesRepositoryException(
-        PreferencesRepositoryErrorCode.databaseWriteFailed,
-        error,
-      );
-    }
-  }
-
   @override
   Future<void> updateCurrencyCode(String userId, String currencyCode) async {
     try {
@@ -221,7 +194,6 @@ class DriftPreferencesRepository implements PreferencesRepository {
     return UserPreferencesEntity(
       userId: preferences.userId,
       themeMode: AppThemeModePreference.fromStorageValue(preferences.themeMode),
-      themeSeedColor: preferences.themeSeedColor,
       sensitiveAccessTtl: SensitiveAccessTtlOption.fromStorageValue(
         preferences.sensitiveAccessTtl,
       ),

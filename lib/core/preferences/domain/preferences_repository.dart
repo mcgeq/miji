@@ -6,8 +6,6 @@ abstract class PreferencesRepository {
 
   Future<void> updateThemeMode(String userId, AppThemeModePreference themeMode);
 
-  Future<void> updateThemeSeedColor(String userId, int themeSeedColor);
-
   Future<void> updateCurrencyCode(String userId, String currencyCode);
 
   Future<void> updateSensitiveAccessTtl(

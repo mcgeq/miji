@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>主题色重设计 · 人工选择 · 米记</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F6F4F1;color:#22201E;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei UI","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+h1{font-size:26px;letter-spacing:-.02em;margin:0 0 6px}
+h2{font-size:17px;margin:34px 0 4px;letter-spacing:-.01em}
+h2 .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:#22201E;color:#fff;font-size:12px;margin-right:8px;vertical-align:1px}
+p.sub{margin:0 0 14px;color:#6C6660;font-size:13px;line-height:1.65}
+.card{background:#fff;border:1px solid #E7E1DA;border-radius:16px;padding:18px;box-shadow:0 1px 2px rgba(60,40,30,.04)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8A8178;padding:0 8px 8px;border-bottom:1px solid #E7E1DA}
+td{padding:9px 8px;border-bottom:1px solid #F1EDE8;vertical-align:top}
+tr:last-child td{border-bottom:0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;background:#F3EFEA;border:1px solid #E7E1DA;border-radius:5px;padding:1px 5px}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.bad{background:#FDE7EA;color:#B3203A}
+.warn{background:#FDF1DF;color:#8A5A12}
+.good{background:#E4F5EC;color:#14603A}
+.sw{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
+.sw i{width:34px;height:34px;border-radius:9px;display:block;border:1px solid rgba(0,0,0,.08)}
+/* ── 控制条 ── */
+.bar{position:sticky;top:0;z-index:9;background:rgba(246,244,241,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid #E7E1DA;padding:12px 0;margin-bottom:6px}
+.bar .row{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{padding:7px 14px;border-radius:999px;border:1px solid #E0D9D1;background:#fff;font-size:12.5px;font-weight:600;cursor:pointer}
+.pill.on{background:#22201E;border-color:#22201E;color:#fff}
+.seg{display:flex;gap:3px;padding:3px;background:#EAE4DD;border-radius:999px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;color:#6C6660}
+.seg button.on{background:#fff;color:#22201E;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.btn{padding:8px 14px;border-radius:10px;border:0;background:#22201E;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer}
+.tiny{font-size:12px;color:#8A8178}
+/* ── 预览区（全部用 CSS 变量，跟着方向/明暗实时换肤）── */
+.pv{border-radius:18px;padding:16px;transition:background .18s ease}
+.pv.light{--fg:#22201E;--fg2:#6C6660;--line:#E7E1DA;--chipbg:#F3EFEA}
+.pv.dark{--fg:#F3EEEA;--fg2:#B6ADA6;--line:#3A3330;--chipbg:#332B28}
+.pv{background:var(--surface);color:var(--fg)}
+.pvTitle{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8A8178;font-weight:800;margin:0 0 10px}
+.mHero{border-radius:16px;padding:16px;color:#fff;background:linear-gradient(135deg,var(--hb0),var(--hb1) 55%,var(--hb2))}
+.mHero .lbl{font-size:11px;opacity:.88}
+.mHero .amt{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:4px 0 8px}
+.mHero .bd{font-size:11.5px;opacity:.94;display:grid;gap:3px}
+.mHero .bd div{display:flex;justify-content:space-between}
+.mHero .pbar{height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin-top:10px;position:relative;overflow:hidden}
+.mHero .pbar i{position:absolute;inset:0 62% 0 0;background:#fff;border-radius:3px;display:block}
+.mHero .pbar.warn i{background:var(--amber);inset:0 18% 0 0}
+.mNet{border-radius:16px;padding:16px;color:#fff;background:linear-gradient(135deg,var(--hn0),var(--hn1))}
+.mNet .row{display:flex;gap:18px;margin-top:8px;font-size:11.5px}
+.mNet .row b{display:block;font-size:15px;font-weight:800}
+.mNet .amber{color:var(--amber)}
+.mList{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.mRow{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.mRow:last-child{border-bottom:0}
+.mRow .ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:15px}
+.mRow .amt{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums}
+.mForm{border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:10px}
+.mInput{border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12.5px;color:var(--fg2);background:var(--surface)}
+.mSeg{display:flex;gap:3px;padding:3px;background:var(--chipbg);border-radius:999px;font-size:12px;font-weight:700}
+.mSeg span{flex:1;text-align:center;padding:6px 0;border-radius:999px}
+.mSeg .on{background:var(--primary);color:var(--onprimary)}
+.mChips{display:flex;gap:8px;flex-wrap:wrap}
+.mChip{border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-size:12px;background:var(--surface)}
+.mChip .p{display:block;font-size:9.5px;color:var(--fg2)}
+.mChip.on{border-color:var(--primaryContainer);background:var(--primaryContainer);color:var(--onPrimaryContainer)}
+.mChip.solid{background:var(--primary);color:var(--onprimary);border-color:var(--primary);font-weight:700}
+.mChart{display:flex;gap:14px;align-items:flex-end;height:104px;border-bottom:1px solid var(--line);padding-bottom:0}
+.mChart .b{flex:1;border-radius:6px 6px 2px 2px;background:var(--primary)}
+.mChart .b.s{background:var(--expense)}
+.mPie{width:104px;height:104px;border-radius:50%;flex:none;
+  background:conic-gradient(var(--c0) 0 22%,var(--c1) 0 40%,var(--c2) 0 56%,var(--c3) 0 70%,var(--c4) 0 86%,var(--c5) 0 100%)}
+.mLegend{display:grid;gap:5px;font-size:11.5px;color:var(--fg2);flex:1}
+.mLegend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:6px}
+.mAlert{border-radius:12px;padding:10px 12px;font-size:12.5px;display:flex;gap:8px;align-items:flex-start}
+.mAlert.fill{background:var(--warningfill);color:var(--fg)}
+.mAlert.text{border:1px solid var(--line);background:var(--surface);color:var(--warning)}
+.mRing{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;
+  background:conic-gradient(var(--primary) 0 68%,var(--chipbg) 0);color:var(--fg)}
+.mRing span{width:46px;height:46px;border-radius:50%;background:var(--surface);display:grid;place-items:center}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.grid3,.grid2,.pair{grid-template-columns:1fr}}
+.legendRow{display:flex;align-items:center;gap:8px;font-size:12px;color:#6C6660;margin:10px 0 0}
+.legendRow i{width:10px;height:10px;border-radius:3px;display:inline-block}
+textarea{width:100%;min-height:190px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;
+  border:1px solid #E7E1DA;border-radius:12px;padding:12px;background:#fff;color:#22201E}
+.dec{display:grid;gap:10px}
+.dec label{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;font-size:13px;cursor:pointer}
+.dec input{margin-top:2px}
+.dec b{display:block;font-size:13.5px}
+.dec em{font-style:normal;color:#6C6660;font-size:12.5px;line-height:1.6}
+.dec .tag{font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:1px}
+</style>
+</head>
+<body>
+<div class="bar"><div class="row">
+  <b style="font-size:13px">主题色重设计</b>
+  <div class="seg" id="themeSeg">
+    <button data-theme="current" class="on">现状</button>
+    <button data-theme="warm">1 暖橙</button>
+    <button data-theme="indigo">2 靛蓝</button>
+    <button data-theme="teal">3 深青</button>
+  </div>
+  <div class="seg" id="modeSeg">
+    <button data-mode="both" class="on">浅+深并排</button>
+    <button data-mode="light">只看浅色</button>
+    <button data-mode="dark">只看深色</button>
+  </div>
+  <button class="btn" id="exportBtn">导出我的选择</button>
+  <span class="tiny" id="hint">选择会记在本机浏览器里</span>
+</div></div>
+
+<div class="wrap">
+  <h1>主题色重设计 · 请人工选择</h1>
+  <p class="sub">先把现有两套主题（light / dark）全量体检了 → 找出 8 个问题 → 用「阈值求解」生成 3 个候选方向（而不是手调色）→ 下面可以实时换肤预览、并逐项拍板。<br>
+  <b>所有对比度都是 WCAG 公式现场算出来的</b>，阈值：正文/金额文字 4.5:1、大字号 3:1、非文字图形 3:1、深色主题语义色 7:1。</p>
+
+  <h2><span class="n">1</span>现状体检</h2>
+  <p class="sub">数值来自 <code>lib/core/theme/app_theme_tokens.dart</code> 与 <code>app_theme.dart</code>（解析自源码，不是抄的）。</p>
+  <div class="card"><table>
+    <thead><tr><th style="width:70px">判定</th><th style="width:280px">问题</th><th>实测与说明</th></tr></thead>
+    <tbody><tr><td><span class="chip bad">严重</span></td><td><b>深色实心按钮白字只有 2.05:1</b></td><td>深色 primary #FF9A88 + 白字 = 2.05:1（浅色 3.47:1）。实心按钮白字要 4.5:1 —— 深色下几乎读不清，是本次最严重的一项。</td></tr><tr><td><span class="chip bad">严重</span></td><td><b>选中 chip：同色叠同色 3.03:1</b></td><td>chip 选中态用 primary 12% 底 + primary 文字 = 3.03:1（secondary 同理 2.66:1）；「同色系淡底 + 同色文字」天然不达标。</td></tr><tr><td><span class="chip bad">严重</span></td><td><b>品牌红与支出红只差 11.5°</b></td><td>品牌 #E45F4F(6.4°) 与支出 #CD323F(355°) 夹角 11.5°；品牌↔tertiary 21.6°。同一屏里两个红，用户分不清「强调」还是「支出」。</td></tr><tr><td><span class="chip bad">严重</span></td><td><b>深色的「信用」色与浅色不同族</b></td><td>浅色 credit #8757BE（紫 268°）、深色 credit #FFC27A（橙 32°）—— 同一个语义在两种主题下是两种颜色，且深色里品牌橙/信用橙/警示黄三者只差 11°~15°。</td></tr><tr><td><span class="chip bad">严重</span></td><td><b>Hero 琥珀字 #FFD9A0 对比不足</b></td><td>净资产卡「负债」用的琥珀在渐变端点上只有 3.44:1（需 4.5:1）；品牌渐变上也是 3.43:1。</td></tr><tr><td><span class="chip warn">待改</span></td><td><b>品牌渐变三档几乎同色</b></td><td>品牌渐变 #C25144 → #C0515C → #BE506A 色相跨度仅 9°，观感偏「糊」；而被认可的净资产卡跨度 93°——这就是它好看的原因。</td></tr><tr><td><span class="chip bad">严重</span></td><td><b>分类自定义色板在两种主题下都有不达标色</b></td><td>色板 15 色实测：浅色主题 6/15 不达 3:1（#F97316 2.80、#F59E0B 2.15、#EAB308 1.92、#0EA5E9 2.77、#06B6D4 2.43、#10B981 2.54），深色主题 2/15 不达 3:1（#475569 2.21、#334155 1.62）。<b>同一个色板不可能同时服务两种主题</b>：橙黄系在浅色下发虚、深蓝灰在深色下消失。</td></tr><tr><td><span class="chip bad">严重</span></td><td><b>「同色文字叠同色淡底」系统性地卡在 4.3:1</b></td><td>语义色 12% 淡底 + 同色文字：浅色主题实测 4.25:1（现状 chip 选中态 3.03:1 更糟）。扫了透明度梯度：6% → 4.67、8% → 4.54、10% → 4.40、12% → 4.25、16% → 4.00。<b>要过 4.5 必须 ≤8%</b>，而现在通用的写法是 12%~14%。</td></tr><tr><td><span class="chip warn">待改</span></td><td><b>淡底没有梯度 token</b></td><td>全仓 270 处给颜色加透明度（6%~94% 都有），但没有任何「淡底梯度」token —— 每处都在手写 alpha，层级和达标情况全靠自觉。这正是上一批 UI 统一时只统一了圆角/间距、没统一颜色的后遗症。</td></tr><tr><td><span class="chip bad">严重</span></td><td><b>图表色板未 token 化</b></td><td>四张图各自写了一份调色板（顺序都不同），并直接用 Material 原色 Colors.orange / teal / indigo / pink / cyan —— 深色模式下不跟随主题（如 #3F51B5 压在深底上过暗）。</td></tr><tr><td><span class="chip warn">待改</span></td><td><b>themeSeedColor 是死配置</b></td><td>user_preferences 有列、注册时写默认值，但 app_theme.dart 从未读取 → 换主题色毫无效果。要么接回主题，要么删列。</td></tr><tr><td><span class="chip good">已达标</span></td><td><b>已经做得对的部分</b></td><td>浅色语义色 4.55~5.09:1、深色 8.15~11.72:1 全部达标；暖中性三色（#FFF8F2 / #FFF0E5 / #EAD8CC）色相挤在 4° 内、只靠明度分层 —— 这是「暖」且耐看的根基，三个方案都保留。</td></tr></tbody>
+  </table></div>
+
+  <h2><span class="n">2</span>三个候选方向</h2>
+  <p class="sub">每个方向的每个颜色都由「固定色相 + 解明度」得到：色相保证语义不撞车，明度保证对比度达标。三个方向的浅色语义色都落在 4.55~4.7:1、深色 7.5~12:1。</p>
+  <div class="grid3"><div class="card">
+  <div style="display:flex;align-items:baseline;gap:8px">
+    <b style="font-size:15px">1 暖橙 · 修正版</b>
+    <span class="chip warn">保身份</span>
+  </div>
+  <p class="sub" style="margin:8px 0 10px">把品牌从「红」挪到「暖橙」，支出红就独占红色语义；暖米底原样保留。</p>
+  <div class="tiny" style="font-weight:700">浅色 · 品牌 / 语义 / 中性</div>
+  <div class="sw"><i style="background:#A75922" title="#A75922"></i><i style="background:#CD303D" title="#CD303D"></i><i style="background:#1D7D45" title="#1D7D45"></i><i style="background:#2772A8" title="#2772A8"></i><i style="background:#9744D3" title="#9744D3"></i><i style="background:#776F1C" title="#776F1C"></i><i style="background:#FFF8F2" title="#FFF8F2"></i><i style="background:#FFFFFF" title="#FFFFFF"></i><i style="background:#FFF0E5" title="#FFF0E5"></i><i style="background:#EAD8CC" title="#EAD8CC"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">深色 · 品牌 / 语义 / 中性</div>
+  <div class="sw"><i style="background:#F3A56C" title="#F3A56C"></i><i style="background:#E8A5AA" title="#E8A5AA"></i><i style="background:#3DCF7A" title="#3DCF7A"></i><i style="background:#89BDE1" title="#89BDE1"></i><i style="background:#CEA8E9" title="#CEA8E9"></i><i style="background:#C6BA31" title="#C6BA31"></i><i style="background:#1B1412" title="#1B1412"></i><i style="background:#241C19" title="#241C19"></i><i style="background:#30231E" title="#30231E"></i><i style="background:#57433A" title="#57433A"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">品牌 Hero 渐变</div>
+  <div style="height:26px;border-radius:8px;margin-top:6px;background:linear-gradient(135deg,#B95A2B,#D23E56 55%,#CF319A)"></div>
+  <div style="height:26px;border-radius:8px;margin-top:6px;background:linear-gradient(135deg,#AE603A,#C34D60 55%,#C14497)"></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">图表色板（8 色，四张图共用同一顺序）</div>
+  <div class="sw"><i style="background:#379ABC" title="#379ABC"></i><i style="background:#D56DA1" title="#D56DA1"></i><i style="background:#4CA22F" title="#4CA22F"></i><i style="background:#8787DC" title="#8787DC"></i><i style="background:#D0785B" title="#D0785B"></i><i style="background:#2FA269" title="#2FA269"></i><i style="background:#BD72D6" title="#BD72D6"></i><i style="background:#94942B" title="#94942B"></i></div>
+  <ul style="margin:12px 0 0;padding-left:18px;font-size:12.5px;line-height:1.7">
+    <li style="color:#14603A">气质最接近现状，老用户无感切换</li><li style="color:#14603A">品牌↔支出 30°，一屏不再两红</li><li style="color:#14603A">所有可读性阈值一次达标</li>
+    <li style="color:#8A5A12">品牌色偏赭（#A75922）不如现在的珊瑚鲜亮 → 可选「双色」保留鲜亮填充</li><li style="color:#8A5A12">品牌↔警示黄仍需把警示让到 55°</li>
+  </ul>
+</div><div class="card">
+  <div style="display:flex;align-items:baseline;gap:8px">
+    <b style="font-size:15px">2 靛蓝 · 冷品牌</b>
+    <span class="chip warn">最清晰</span>
+  </div>
+  <p class="sub" style="margin:8px 0 10px">品牌走蓝紫，红=支出、绿=收入、蓝=品牌，三种语义在色相环上各占一方。</p>
+  <div class="tiny" style="font-weight:700">浅色 · 品牌 / 语义 / 中性</div>
+  <div class="sw"><i style="background:#5560DC" title="#5560DC"></i><i style="background:#CD303D" title="#CD303D"></i><i style="background:#1D7D45" title="#1D7D45"></i><i style="background:#2772A8" title="#2772A8"></i><i style="background:#9744D3" title="#9744D3"></i><i style="background:#776F1C" title="#776F1C"></i><i style="background:#FFF8F2" title="#FFF8F2"></i><i style="background:#FFFFFF" title="#FFFFFF"></i><i style="background:#FFF0E5" title="#FFF0E5"></i><i style="background:#EAD8CC" title="#EAD8CC"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">深色 · 品牌 / 语义 / 中性</div>
+  <div class="sw"><i style="background:#ABB2F8" title="#ABB2F8"></i><i style="background:#E8A5AA" title="#E8A5AA"></i><i style="background:#3DCF7A" title="#3DCF7A"></i><i style="background:#89BDE1" title="#89BDE1"></i><i style="background:#CEA8E9" title="#CEA8E9"></i><i style="background:#C6BA31" title="#C6BA31"></i><i style="background:#1B1412" title="#1B1412"></i><i style="background:#241C19" title="#241C19"></i><i style="background:#30231E" title="#30231E"></i><i style="background:#57433A" title="#57433A"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">品牌 Hero 渐变</div>
+  <div style="height:26px;border-radius:8px;margin-top:6px;background:linear-gradient(135deg,#5F6ADA,#9356D7 55%,#C52EC4)"></div>
+  <div style="height:26px;border-radius:8px;margin-top:6px;background:linear-gradient(135deg,#646CCB,#8F5CC9 55%,#BB3FBB)"></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">图表色板（8 色，四张图共用同一顺序）</div>
+  <div class="sw"><i style="background:#AB8C32" title="#AB8C32"></i><i style="background:#2E9E9F" title="#2E9E9F"></i><i style="background:#D46AB9" title="#D46AB9"></i><i style="background:#669E2E" title="#669E2E"></i><i style="background:#758DD7" title="#758DD7"></i><i style="background:#D67373" title="#D67373"></i><i style="background:#30A44D" title="#30A44D"></i><i style="background:#AA7BD9" title="#AA7BD9"></i></div>
+  <ul style="margin:12px 0 0;padding-left:18px;font-size:12.5px;line-height:1.7">
+    <li style="color:#14603A">品牌↔支出 120°+，误读概率最低</li><li style="color:#14603A">图表色板从品牌色相推导，天然错开</li><li style="color:#14603A">暖底 + 冷品牌，观感更「工具」</li>
+    <li style="color:#8A5A12">气质变化最大，不再是「暖米记」</li><li style="color:#8A5A12">与净资产卡的紫（285°）有点近，需要靠明度区分</li>
+  </ul>
+</div><div class="card">
+  <div style="display:flex;align-items:baseline;gap:8px">
+    <b style="font-size:15px">3 深青 · 低饱和</b>
+    <span class="chip warn">最安静</span>
+  </div>
+  <p class="sub" style="margin:8px 0 10px">品牌走深青、中性底转冷灰绿，整体低饱和，适合长时间记账。</p>
+  <div class="tiny" style="font-weight:700">浅色 · 品牌 / 语义 / 中性</div>
+  <div class="sw"><i style="background:#197976" title="#197976"></i><i style="background:#CC303D" title="#CC303D"></i><i style="background:#1D7C45" title="#1D7C45"></i><i style="background:#2772A8" title="#2772A8"></i><i style="background:#9743D3" title="#9743D3"></i><i style="background:#766F1C" title="#766F1C"></i><i style="background:#FBF8F3" title="#FBF8F3"></i><i style="background:#FFFFFF" title="#FFFFFF"></i><i style="background:#EEF3F1" title="#EEF3F1"></i><i style="background:#D6E0DC" title="#D6E0DC"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">深色 · 品牌 / 语义 / 中性</div>
+  <div class="sw"><i style="background:#11D7D0" title="#11D7D0"></i><i style="background:#ECB2B6" title="#ECB2B6"></i><i style="background:#5DD790" title="#5DD790"></i><i style="background:#99C6E6" title="#99C6E6"></i><i style="background:#D5B4EC" title="#D5B4EC"></i><i style="background:#CFC441" title="#CFC441"></i><i style="background:#131A1B" title="#131A1B"></i><i style="background:#1B2425" title="#1B2425"></i><i style="background:#243031" title="#243031"></i><i style="background:#3E4C4C" title="#3E4C4C"></i></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">品牌 Hero 渐变</div>
+  <div style="height:26px;border-radius:8px;margin-top:6px;background:linear-gradient(135deg,#1F827F,#277CA7 55%,#6F65DB)"></div>
+  <div style="height:26px;border-radius:8px;margin-top:6px;background:linear-gradient(135deg,#2B817F,#357CA0 55%,#7168CD)"></div>
+  <div class="tiny" style="font-weight:700;margin-top:10px">图表色板（8 色，四张图共用同一顺序）</div>
+  <div class="sw"><i style="background:#D67185" title="#D67185"></i><i style="background:#30A536" title="#30A536"></i><i style="background:#9B81DA" title="#9B81DA"></i><i style="background:#C08338" title="#C08338"></i><i style="background:#2FA08A" title="#2FA08A"></i><i style="background:#D366CD" title="#D366CD"></i><i style="background:#7A9B2D" title="#7A9B2D"></i><i style="background:#6092D1" title="#6092D1"></i></div>
+  <ul style="margin:12px 0 0;padding-left:18px;font-size:12.5px;line-height:1.7">
+    <li style="color:#14603A">最安静、最不抢注意力（记账 App 的核心诉求）</li><li style="color:#14603A">品牌与红/绿都拉开 30°+</li>
+    <li style="color:#8A5A12">冷底弱化了现在的「暖米」辨识度</li><li style="color:#8A5A12">低饱和下警示/超支的紧迫感也会变弱</li>
+  </ul>
+</div></div>
+
+  <h2><span class="n">3</span>三条修法配方（与选哪个方向无关，都建议做）</h2>
+  <p class="sub">这三条是「怎么做」，不是「选哪个颜色」。三条都有实测数字支撑。</p>
+  <div class="grid3">
+    <div class="card">
+      <b style="font-size:14px">R1 · 选中态改用 container 配对</b>
+      <p class="sub" style="margin:8px 0 6px">选中态不要用「primary 淡底 + primary 文字」，改用 M3 的 <code>primaryContainer</code> 底 + <code>onPrimaryContainer</code> 文字。</p>
+      <table><tbody>
+        <tr><td>现状 chip 选中态</td><td><b style="color:#B3203A">3.03:1</b></td></tr>
+        <tr><td>方向 1 配对</td><td><b style="color:#14603A">10.71 / 9.13:1</b></td></tr>
+        <tr><td>方向 2 配对</td><td><b style="color:#14603A">13.29 / 10.27:1</b></td></tr>
+        <tr><td>方向 3 配对</td><td><b style="color:#14603A">8.42 / 8.21:1</b></td></tr>
+      </tbody></table>
+      <p class="tiny" style="margin-top:8px">（浅色 / 深色两档；本页所有 mockup 的选中态已按这个配方渲染）</p>
+    </div>
+    <div class="card">
+      <b style="font-size:14px">R2 · 淡底统一 ≤8%（建议 6%）</b>
+      <p class="sub" style="margin:8px 0 6px">同色文字叠同色淡底的实测梯度，浅色主题（阈值 4.5）：</p>
+      <table><thead><tr><th>淡底</th><th>最差对比度</th><th></th></tr></thead><tbody>
+        <tr><td>6%</td><td>4.67 ~ 4.75</td><td><span class="chip good">过</span></td></tr>
+        <tr><td>8%</td><td>4.54 ~ 4.58</td><td><span class="chip good">刚好过</span></td></tr>
+        <tr><td>10%</td><td>4.40 ~ 4.45</td><td><span class="chip bad">不过</span></td></tr>
+        <tr><td>12%（现状常用）</td><td>4.25 ~ 4.32</td><td><span class="chip bad">不过</span></td></tr>
+        <tr><td>16%</td><td>4.00 ~ 4.06</td><td><span class="chip bad">不过</span></td></tr>
+      </tbody></table>
+      <p class="tiny" style="margin-top:8px">建议新增一组 <code>AppTints</code>（6 / 10 / 14 / 24 / 40%），文字叠底一律用 6% 档。</p>
+    </div>
+    <div class="card">
+      <b style="font-size:14px">R3 · 分类色改成「用户选色相」</b>
+      <p class="sub" style="margin:8px 0 6px">现在的 15 色色板在两种主题下都有一批不达标。做法：用户只挑色相（12 档），<b>明度由主题求解</b>（和语义色同一套求解器）。</p>
+      <table><tbody>
+        <tr><td>浅色主题不达标</td><td><b style="color:#B3203A">6/15</b> · 橙黄与青绿系</td></tr>
+        <tr><td>深色主题不达标</td><td><b style="color:#B3203A">2/15</b> · 深蓝灰系</td></tr>
+        <tr><td>改后</td><td><b style="color:#14603A">两主题全部 ≥3:1</b></td></tr>
+      </tbody></table>
+      <p class="tiny" style="margin-top:8px">代价：老数据里的分类色需要映射到最近的色相（一次性迁移，存储仍存 hex 以便回退）。</p>
+    </div>
+  </div>
+
+  <h2><span class="n">4</span>实时预览</h2>
+  <p class="sub">切换顶部方案与明暗，下面所有 mockup 会实时换肤（用的就是候选 token）。包含：品牌 Hero、净资产卡（含琥珀「负债」）、流水三态金额、记一笔表单（分段/选中 chip/实心按钮）、预算环、柱状图与饼图色板、警示条的填充态与文字态。</p>
+  <div id="preview"><div class="pair"><div class="pv light" style="
+  --primary:#A75922;--onprimary:#FFFFFF;
+  --primaryContainer:#F6E9DF;--onPrimaryContainer:#4E290E;
+  --expense:#CD303D;
+  --income:#1D7D45;--transfer:#2772A8;--credit:#9744D3;--warning:#776F1C;
+  --warningfill:#A3970D;--amber:#FFF0D6;
+  --bg:#FFF8F2;--surface:#FFFFFF;--surfacealt:#FFF0E5;--line:#EAD8CC;
+  --hb0:#B95A2B;--hb1:#D23E56;--hb2:#CF319A;--hn0:#8D569F;--hn1:#43737E;
+  --c0:#379ABC;--c1:#D56DA1;--c2:#4CA22F;--c3:#8787DC;--c4:#D0785B;--c5:#2FA269;background:#FFFFFF">
+  <p class="pvTitle">浅色</p>
+
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div class="lbl" style="margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd">
+      <div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div>
+    </div>
+    <div class="pbar"><i></i></div>
+    <div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row">
+      <span>总资产<b>¥2,000.00</b></span>
+      <span>负债<b class="amber">¥1,000.00</b></span>
+    </div>
+  </div>
+
+  <div class="mList" style="margin-top:12px">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+  </div>
+
+  <div class="mForm" style="margin-top:12px">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div class="mInput">¥ 38.50</div>
+    <div class="mChips">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mRing"><span>68%</span></div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700">本月预算</div>
+      <div style="font-size:11.5px;color:var(--fg2)">已用 ¥2,720 / ¥4,000</div>
+      <div class="pbar" style="height:6px;border-radius:3px;background:var(--chipbg);margin-top:6px;position:relative;overflow:hidden">
+        <i style="position:absolute;inset:0 32% 0 0;background:var(--primary);display:block"></i></div>
+    </div>
+  </div>
+
+  <div class="mChart" style="margin-top:14px">
+    <div class="b" style="height:46%"></div>
+    <div class="b s" style="height:78%"></div>
+    <div class="b" style="height:58%"></div>
+    <div class="b s" style="height:92%"></div>
+    <div class="b" style="height:40%"></div>
+    <div class="b" style="height:66%"></div>
+  </div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div>
+    <div class="mLegend">
+      <span><i style="background:var(--c0)"></i>餐饮 30%</span>
+      <span><i style="background:var(--c1)"></i>购物 18%</span>
+      <span><i style="background:var(--c2)"></i>交通 16%</span>
+      <span><i style="background:var(--c3)"></i>居住 14%</span>
+      <span><i style="background:var(--c4)"></i>娱乐 12%</span>
+      <span><i style="background:var(--c5)"></i>其他 10%</span>
+    </div>
+  </div>
+
+  <div style="display:grid;gap:8px;margin-top:14px">
+    <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+    <div class="mAlert text">● 警示文字（文字态）：已超支 ¥120.00</div>
+  </div>
+</div><div class="pv dark" style="
+  --primary:#F3A56C;--onprimary:#773303;
+  --primaryContainer:#4C3524;--onPrimaryContainer:#F4E3D7;
+  --expense:#E8A5AA;
+  --income:#3DCF7A;--transfer:#89BDE1;--credit:#CEA8E9;--warning:#C6BA31;
+  --warningfill:#FCFAE9;--amber:#FFF0D6;
+  --bg:#1B1412;--surface:#241C19;--surfacealt:#30231E;--line:#57433A;
+  --hb0:#AE603A;--hb1:#C34D60;--hb2:#C14497;--hn0:#89599A;--hn1:#49737D;
+  --c0:#36798F;--c1:#B94780;--c2:#447E30;--c3:#6666C5;--c4:#AA5B40;--c5:#307F57;background:#241C19">
+  <p class="pvTitle">深色</p>
+
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div class="lbl" style="margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd">
+      <div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div>
+    </div>
+    <div class="pbar"><i></i></div>
+    <div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row">
+      <span>总资产<b>¥2,000.00</b></span>
+      <span>负债<b class="amber">¥1,000.00</b></span>
+    </div>
+  </div>
+
+  <div class="mList" style="margin-top:12px">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+  </div>
+
+  <div class="mForm" style="margin-top:12px">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div class="mInput">¥ 38.50</div>
+    <div class="mChips">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mRing"><span>68%</span></div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700">本月预算</div>
+      <div style="font-size:11.5px;color:var(--fg2)">已用 ¥2,720 / ¥4,000</div>
+      <div class="pbar" style="height:6px;border-radius:3px;background:var(--chipbg);margin-top:6px;position:relative;overflow:hidden">
+        <i style="position:absolute;inset:0 32% 0 0;background:var(--primary);display:block"></i></div>
+    </div>
+  </div>
+
+  <div class="mChart" style="margin-top:14px">
+    <div class="b" style="height:46%"></div>
+    <div class="b s" style="height:78%"></div>
+    <div class="b" style="height:58%"></div>
+    <div class="b s" style="height:92%"></div>
+    <div class="b" style="height:40%"></div>
+    <div class="b" style="height:66%"></div>
+  </div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div>
+    <div class="mLegend">
+      <span><i style="background:var(--c0)"></i>餐饮 30%</span>
+      <span><i style="background:var(--c1)"></i>购物 18%</span>
+      <span><i style="background:var(--c2)"></i>交通 16%</span>
+      <span><i style="background:var(--c3)"></i>居住 14%</span>
+      <span><i style="background:var(--c4)"></i>娱乐 12%</span>
+      <span><i style="background:var(--c5)"></i>其他 10%</span>
+    </div>
+  </div>
+
+  <div style="display:grid;gap:8px;margin-top:14px">
+    <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+    <div class="mAlert text">● 警示文字（文字态）：已超支 ¥120.00</div>
+  </div>
+</div></div></div>
+
+  <h2><span class="n">5</span>逐项拍板</h2>
+  <p class="sub">默认已勾选的是我的建议；取消勾选表示不采纳。这些决定会一起写进导出的配置里。</p>
+  <div class="card"><div class="dec"><label><input type="checkbox" data-dec="D1" ><span><b>D1 · 品牌色走哪个方向<span class="tag warn">推荐 1 或 2</span></b><em>选三张方向卡之一（现状 / 1 暖橙 / 2 靛蓝 / 3 深青）。这是唯一影响全局气质的一项。</em></span></label><label><input type="checkbox" data-dec="D2" checked><span><b>D2 · 品牌色用「单色」还是「填充+文字」双色<span class="tag warn">推荐：先单色，等不满足了再加</span></b><em>单色：primary 一个值同时当文字与按钮底（必须压暗，如 #A75922），最省事。双色：primaryFill 保持鲜亮（配深色前景）+ primaryText 压暗供文字用 —— 保住现在的鲜亮感，代价是多一个 token、调用点要选对。</em></span></label><label><input type="checkbox" data-dec="D3" checked><span><b>D3 · 暖中性底是否保留<span class="tag warn">推荐保留暖底</span></b><em>三个方案里都保留了暖底（#FFF8F2 / #FFF0E5）。若选靛蓝方案又想更冷，可切到中性冷底 #FBF8F3 / #EEF3F1 / #D6E0DC（第 3 方案就是这么做的）。</em></span></label><label><input type="checkbox" data-dec="D4" checked><span><b>D4 · 是否统一语义色色相<span class="tag warn">推荐统一</span></b><em>把 warning 让到 55°（给暖橙品牌腾位置）、credit 固定 275° 紫（浅深同族）、transfer 205°。这样六个语义色两两夹角 ≥25°。</em></span></label><label><input type="checkbox" data-dec="D5" checked><span><b>D5 · Hero 渐变是否换新跨度<span class="tag warn">推荐换</span></b><em>品牌渐变从 9° 跨度提到约 60°（如暖橙：橙→玫红→梅子），并让所有端点满足白字 4.5:1；净资产渐变的琥珀字同时满足 4.5:1。</em></span></label><label><input type="checkbox" data-dec="D6" checked><span><b>D6 · 图表色板 token 化<span class="tag warn">推荐做</span></b><em>新增 AppChartPalette（浅/深各 8 色，相邻切片色相相差 135°、可区分度≥3:1），四张图共用同一顺序。</em></span></label><label><input type="checkbox" data-dec="D7" checked><span><b>D7 · 深色底亮度<span class="tag warn">推荐保持</span></b><em>保持现状 #1B1412（很暗的暖黑）；或提亮一档 surface #2A211D（层级更清楚，OLED 上略费电）。</em></span></label><label><input type="checkbox" data-dec="R1" checked><span><b>R1 · 选中态改用 container/onContainer 配对<span class="tag warn">推荐做</span></b><em>把「primary 淡底 + primary 文字」（3.03:1）统一改成 primaryContainer 底 + onPrimaryContainer 文字（实测 8.2~13.3:1）。</em></span></label><label><input type="checkbox" data-dec="R2" checked><span><b>R2 · 新增淡底梯度 token（≤8%）<span class="tag warn">推荐做</span></b><em>新增 AppTints（6/10/14/24/40%），文字叠底一律 6%；顺手把 12% 的旧写法收敛到 6%。</em></span></label><label><input type="checkbox" data-dec="R3" checked><span><b>R3 · 分类色改为「色相 + 主题求解明度」<span class="tag warn">推荐做</span></b><em>用户只选色相，浅/深主题各自求解明度，保证两套主题下分类图标与文字都 ≥3:1。</em></span></label><label><input type="checkbox" data-dec="D8" checked><span><b>D8 · 顺手清掉三处硬编码<span class="tag warn">推荐一起做</span></b><em>① 实心按钮前景改用 onPrimary（现在是硬编码 Colors.white）；② Hero/账户页的琥珀 #FFD9A0 提成 token；③ 决定 themeSeedColor 是接回主题还是删列。</em></span></label></div></div>
+
+  <h2><span class="n">6</span>导出</h2>
+  <p class="sub">点右上角「导出我的选择」生成下面这段，把它连同你的补充说明贴给我即可实施。</p>
+  <div class="card"><textarea id="out" readonly placeholder="点右上角按钮生成…"></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+      <button class="btn" id="copyBtn">复制</button>
+      <span class="tiny" id="copyHint"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+var THEMES = {"current": {"light": {"primary": "#E45F4F", "onPrimary": "#FFFFFF", "secondary": "#21A78B", "tertiary": "#D85C93", "bg": "#FFF8F2", "surface": "#FFFFFF", "surfaceAlt": "#FFF0E5", "outline": "#EAD8CC", "income": "#157F41", "expense": "#CD323F", "transfer": "#2270BF", "credit": "#8757BE", "warning": "#856C06", "success": "#157F41", "hero": {"netWorth": ["#6C507B", "#2C8089"], "brand": ["#C25144", "#C0515C", "#BE506A"], "danger": ["#9E001D", "#B00020", "#BD1D45"]}, "chart": ["#E45F4F", "#D85C93", "#FB8C00", "#00897B", "#3F51B5", "#EC407A", "#00BCD4", "#8757BE"], "warningFill": "#E08A1E", "heroAmber": "#FFD9A0"}, "dark": {"primary": "#FF9A88", "onPrimary": "#FFFFFF", "secondary": "#7AE1C8", "tertiary": "#FFADD1", "bg": "#1B1412", "surface": "#241C19", "surfaceAlt": "#30231E", "outline": "#57433A", "income": "#7ED8A6", "expense": "#FF9AAF", "transfer": "#A8BFFF", "credit": "#FFC27A", "warning": "#FFC66B", "success": "#7ED8A6", "hero": {"netWorth": ["#74608B", "#4A7D85"], "brand": ["#8A5349", "#8B5A62", "#8C5F73"], "danger": ["#703741", "#8E4250", "#AA5463"]}, "chart": ["#FF9A88", "#FFADD1", "#FB8C00", "#00897B", "#3F51B5", "#EC407A", "#00BCD4", "#FFC27A"], "warningFill": "#E08A1E", "heroAmber": "#FFD9A0"}}, "warm": {"light": {"bg": "#FFF8F2", "surface": "#FFFFFF", "surfaceAlt": "#FFF0E5", "outline": "#EAD8CC", "primary": "#A75922", "onPrimary": "#FFFFFF", "primaryContainer": "#F6E9DF", "onPrimaryContainer": "#4E290E", "primaryFill": "#DE7B35", "onPrimaryFill": "#492206", "primaryText": "#A75922", "secondary": "#8B654B", "tertiary": "#B5447D", "expense": "#CD303D", "income": "#1D7D45", "transfer": "#2772A8", "credit": "#9744D3", "warning": "#776F1C", "warningFill": "#A3970D", "success": "#1D7D45", "hero": {"netWorth": ["#8D569F", "#43737E"], "brand": ["#B95A2B", "#D23E56", "#CF319A"], "danger": ["#D23F4C", "#D04437", "#D03784"]}, "chart": ["#379ABC", "#D56DA1", "#4CA22F", "#8787DC", "#D0785B", "#2FA269", "#BD72D6", "#94942B"], "heroAmber": "#FFF0D6"}, "dark": {"bg": "#1B1412", "surface": "#241C19", "surfaceAlt": "#30231E", "outline": "#57433A", "primary": "#F3A56C", "onPrimary": "#773303", "primaryContainer": "#4C3524", "onPrimaryContainer": "#F4E3D7", "primaryFill": "#A94E0E", "onPrimaryFill": "#F96B06", "primaryText": "#F3A56C", "secondary": "#C6B3A5", "tertiary": "#DBA8C2", "expense": "#E8A5AA", "income": "#3DCF7A", "transfer": "#89BDE1", "credit": "#CEA8E9", "warning": "#C6BA31", "warningFill": "#FCFAE9", "success": "#3DCF7A", "hero": {"netWorth": ["#89599A", "#49737D"], "brand": ["#AE603A", "#C34D60", "#C14497"], "danger": ["#C44D57", "#C25147", "#C24885"]}, "chart": ["#36798F", "#B94780", "#447E30", "#6666C5", "#AA5B40", "#307F57", "#A04DBB", "#74742C"], "heroAmber": "#FFF0D6"}}, "indigo": {"light": {"bg": "#FFF8F2", "surface": "#FFFFFF", "surfaceAlt": "#FFF0E5", "outline": "#EAD8CC", "primary": "#5560DC", "onPrimary": "#FFFFFF", "primaryContainer": "#DFE1F6", "onPrimaryContainer": "#0E134E", "primaryFill": "#848DEB", "onPrimaryFill": "#0B168E", "primaryText": "#5560DC", "secondary": "#6268AB", "tertiary": "#9B4ABB", "expense": "#CD303D", "income": "#1D7D45", "transfer": "#2772A8", "credit": "#9744D3", "warning": "#776F1C", "warningFill": "#A3970D", "success": "#1D7D45", "hero": {"netWorth": ["#8D569F", "#43737E"], "brand": ["#5F6ADA", "#9356D7", "#C52EC4"], "danger": ["#D23F4C", "#D04437", "#D03784"]}, "chart": ["#AB8C32", "#2E9E9F", "#D46AB9", "#669E2E", "#758DD7", "#D67373", "#30A44D", "#AA7BD9"], "heroAmber": "#FFF0D6"}, "dark": {"bg": "#1B1412", "surface": "#241C19", "surfaceAlt": "#30231E", "outline": "#57433A", "primary": "#ABB2F8", "onPrimary": "#0618E5", "primaryContainer": "#24284C", "onPrimaryContainer": "#D7DAF4", "primaryFill": "#4554F0", "onPrimaryFill": "#061BF9", "primaryText": "#ABB2F8", "secondary": "#B2B5CE", "tertiary": "#CEAADC", "expense": "#E8A5AA", "income": "#3DCF7A", "transfer": "#89BDE1", "credit": "#CEA8E9", "warning": "#C6BA31", "warningFill": "#FCFAE9", "success": "#3DCF7A", "hero": {"netWorth": ["#89599A", "#49737D"], "brand": ["#646CCB", "#8F5CC9", "#BB3FBB"], "danger": ["#C44D57", "#C25147", "#C24885"]}, "chart": ["#836F32", "#2F7C7C", "#B54599", "#557C2F", "#526DBD", "#BB4D4D", "#308044", "#8C58C0"], "heroAmber": "#FFF0D6"}}, "teal": {"light": {"bg": "#FBF8F3", "surface": "#FFFFFF", "surfaceAlt": "#EEF3F1", "outline": "#D6E0DC", "primary": "#197976", "onPrimary": "#FFFFFF", "primaryContainer": "#DFF6F5", "onPrimaryContainer": "#0E4E4C", "primaryFill": "#1BA5A1", "onPrimaryFill": "#043231", "primaryText": "#197976", "secondary": "#407675", "tertiary": "#8E6536", "expense": "#CC303D", "income": "#1D7C45", "transfer": "#2772A8", "credit": "#9743D3", "warning": "#766F1C", "warningFill": "#A3970D", "success": "#1D7C45", "hero": {"netWorth": ["#8957A2", "#457383"], "brand": ["#1F827F", "#277CA7", "#6F65DB"], "danger": ["#D23F4C", "#D04437", "#D03784"]}, "chart": ["#D67185", "#30A536", "#9B81DA", "#C08338", "#2FA08A", "#D366CD", "#7A9B2D", "#6092D1"], "heroAmber": "#FFF0D6"}, "dark": {"bg": "#131A1B", "surface": "#1B2425", "surfaceAlt": "#243031", "outline": "#3E4C4C", "primary": "#11D7D0", "onPrimary": "#025856", "primaryContainer": "#244C4A", "onPrimaryContainer": "#D7F4F3", "primaryFill": "#0A7975", "onPrimaryFill": "#06F9F1", "primaryText": "#11D7D0", "secondary": "#A7C7C5", "tertiary": "#D7BC9D", "expense": "#ECB2B6", "income": "#5DD790", "transfer": "#99C6E6", "credit": "#D5B4EC", "warning": "#CFC441", "warningFill": "#FCFAE9", "success": "#5DD790", "hero": {"netWorth": ["#855A9A", "#4B7281"], "brand": ["#2B817F", "#357CA0", "#7168CD"], "danger": ["#C44D57", "#C25147", "#C24885"]}, "chart": ["#BD5166", "#328536", "#8064C4", "#976C39", "#318171", "#B745B2", "#657D2F", "#4477B4"], "heroAmber": "#FFF0D6"}}};
+var META = {"current": {"name": "现状"}, "warm": {"name": "1 暖橙 · 修正版"}, "indigo": {"name": "2 靛蓝 · 冷品牌"}, "teal": {"name": "3 深青 · 低饱和"}};
+var FINDINGS_COUNT = 12;
+</script>
+<script>
+(function(){
+  var state = {theme:'current', mode:'both'};
+  try { var s = localStorage.getItem('miji-theme-choice'); if (s) state = Object.assign(state, JSON.parse(s)); } catch(e) {}
+
+  function vars(mode, key) {
+    var L = THEMES[key][mode], hero = L.hero.brand, net = L.hero.netWorth;
+    return [
+      ['--primary', L.primary], ['--onprimary', L.onPrimary],
+      ['--primaryContainer', L.primaryContainer || L.primary], ['--onPrimaryContainer', L.onPrimaryContainer || L.onPrimary],
+      ['--expense', L.expense],
+      ['--income', L.income], ['--transfer', L.transfer], ['--credit', L.credit],
+      ['--warning', L.warning], ['--warningfill', L.warningFill || '#E08A1E'],
+      ['--amber', L.heroAmber || '#FFD9A0'], ['--bg', L.bg], ['--surface', L.surface],
+      ['--surfacealt', L.surfaceAlt], ['--line', L.outline],
+      ['--hb0', hero[0]], ['--hb1', hero[1]], ['--hb2', hero[2]],
+      ['--hn0', net[0]], ['--hn1', net[1]],
+      ['--c0', L.chart[0]], ['--c1', L.chart[1]], ['--c2', L.chart[2]],
+      ['--c3', L.chart[3]], ['--c4', L.chart[4]], ['--c5', L.chart[5]]
+    ];
+  }
+
+  function render() {
+    document.querySelectorAll('#themeSeg button').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-theme')===state.theme);
+    });
+    document.querySelectorAll('#modeSeg button').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-mode')===state.mode);
+    });
+    var box = document.getElementById('preview');
+    box.innerHTML = '';
+    var modes = state.mode==='both' ? ['light','dark'] : [state.mode];
+    modes.forEach(function(mode){
+      var tpl = document.querySelector('template#'+mode+'Tpl');
+      var el = tpl.content.firstElementChild.cloneNode(true);
+      vars(mode, state.theme).forEach(function(p){ el.style.setProperty(p[0], p[1]); });
+      el.style.background = THEMES[state.theme][mode].surface;
+      if (state.mode==='both') {
+        var wrap = box.querySelector('.pair');
+        if (!wrap) { wrap = document.createElement('div'); wrap.className='pair'; box.appendChild(wrap); }
+        wrap.appendChild(el);
+      } else {
+        box.appendChild(el);
+      }
+    });
+    save();
+  }
+
+  function save() {
+    try { localStorage.setItem('miji-theme-choice', JSON.stringify(state)); } catch(e) {}
+  }
+
+  document.querySelectorAll('#themeSeg button').forEach(function(b){
+    b.onclick = function(){ state.theme=b.getAttribute('data-theme'); render(); };
+  });
+  document.querySelectorAll('#modeSeg button').forEach(function(b){
+    b.onclick = function(){ state.mode=b.getAttribute('data-mode'); render(); };
+  });
+
+  document.getElementById('exportBtn').onclick = function(){
+    var decs = [];
+    document.querySelectorAll('[data-dec]').forEach(function(c){
+      decs.push(c.getAttribute('data-dec') + '=' + (c.checked ? '采纳' : '不采纳'));
+    });
+    var t = THEMES[state.theme];
+    var lines = [];
+    lines.push('【主题方向】' + META[state.theme].name);
+    lines.push('【决策】' + decs.join('  '));
+    lines.push('');
+    ['light','dark'].forEach(function(mode){
+      var L = t[mode];
+      lines.push('--- ' + (mode==='light'?'浅色 light':'深色 dark') + ' ---');
+      lines.push('primary      ' + L.primary + '   onPrimary ' + L.onPrimary);
+      if (L.primaryFill) lines.push('primaryFill  ' + L.primaryFill + '   onPrimaryFill ' + L.onPrimaryFill);
+      lines.push('secondary    ' + L.secondary + '   tertiary ' + L.tertiary);
+      lines.push('semantic     expense ' + L.expense + '  income ' + L.income + '  transfer ' + L.transfer + '  credit ' + L.credit + '  warning ' + L.warning);
+      lines.push('neutral      bg ' + L.bg + '  surface ' + L.surface + '  surfaceAlt ' + L.surfaceAlt + '  outline ' + L.outline);
+      lines.push('hero.netWorth ' + L.hero.netWorth.join(' → ') + '   amber ' + (L.heroAmber||''));
+      lines.push('hero.brand    ' + L.hero.brand.join(' → '));
+      lines.push('hero.danger   ' + L.hero.danger.join(' → '));
+      lines.push('chart         ' + L.chart.join(' '));
+      lines.push('');
+    });
+    document.getElementById('out').value = lines.join('\n');
+  };
+
+  document.getElementById('copyBtn').onclick = function(){
+    var el = document.getElementById('out');
+    el.select();
+    try { document.execCommand('copy'); document.getElementById('copyHint').textContent = '已复制'; } catch(e) {}
+  };
+
+  document.querySelectorAll('[data-dec]').forEach(function(c){ c.onchange = save; });
+
+  render();
+})();
+</script>
+<template id="lightTpl"><div class="pv light" style="
+  --primary:#A75922;--onprimary:#FFFFFF;
+  --primaryContainer:#F6E9DF;--onPrimaryContainer:#4E290E;
+  --expense:#CD303D;
+  --income:#1D7D45;--transfer:#2772A8;--credit:#9744D3;--warning:#776F1C;
+  --warningfill:#A3970D;--amber:#FFF0D6;
+  --bg:#FFF8F2;--surface:#FFFFFF;--surfacealt:#FFF0E5;--line:#EAD8CC;
+  --hb0:#B95A2B;--hb1:#D23E56;--hb2:#CF319A;--hn0:#8D569F;--hn1:#43737E;
+  --c0:#379ABC;--c1:#D56DA1;--c2:#4CA22F;--c3:#8787DC;--c4:#D0785B;--c5:#2FA269;background:#FFFFFF">
+  <p class="pvTitle">浅色</p>
+
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div class="lbl" style="margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd">
+      <div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div>
+    </div>
+    <div class="pbar"><i></i></div>
+    <div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row">
+      <span>总资产<b>¥2,000.00</b></span>
+      <span>负债<b class="amber">¥1,000.00</b></span>
+    </div>
+  </div>
+
+  <div class="mList" style="margin-top:12px">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+  </div>
+
+  <div class="mForm" style="margin-top:12px">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div class="mInput">¥ 38.50</div>
+    <div class="mChips">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mRing"><span>68%</span></div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700">本月预算</div>
+      <div style="font-size:11.5px;color:var(--fg2)">已用 ¥2,720 / ¥4,000</div>
+      <div class="pbar" style="height:6px;border-radius:3px;background:var(--chipbg);margin-top:6px;position:relative;overflow:hidden">
+        <i style="position:absolute;inset:0 32% 0 0;background:var(--primary);display:block"></i></div>
+    </div>
+  </div>
+
+  <div class="mChart" style="margin-top:14px">
+    <div class="b" style="height:46%"></div>
+    <div class="b s" style="height:78%"></div>
+    <div class="b" style="height:58%"></div>
+    <div class="b s" style="height:92%"></div>
+    <div class="b" style="height:40%"></div>
+    <div class="b" style="height:66%"></div>
+  </div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div>
+    <div class="mLegend">
+      <span><i style="background:var(--c0)"></i>餐饮 30%</span>
+      <span><i style="background:var(--c1)"></i>购物 18%</span>
+      <span><i style="background:var(--c2)"></i>交通 16%</span>
+      <span><i style="background:var(--c3)"></i>居住 14%</span>
+      <span><i style="background:var(--c4)"></i>娱乐 12%</span>
+      <span><i style="background:var(--c5)"></i>其他 10%</span>
+    </div>
+  </div>
+
+  <div style="display:grid;gap:8px;margin-top:14px">
+    <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+    <div class="mAlert text">● 警示文字（文字态）：已超支 ¥120.00</div>
+  </div>
+</div></template><template id="darkTpl"><div class="pv dark" style="
+  --primary:#F3A56C;--onprimary:#773303;
+  --primaryContainer:#4C3524;--onPrimaryContainer:#F4E3D7;
+  --expense:#E8A5AA;
+  --income:#3DCF7A;--transfer:#89BDE1;--credit:#CEA8E9;--warning:#C6BA31;
+  --warningfill:#FCFAE9;--amber:#FFF0D6;
+  --bg:#1B1412;--surface:#241C19;--surfacealt:#30231E;--line:#57433A;
+  --hb0:#AE603A;--hb1:#C34D60;--hb2:#C14497;--hn0:#89599A;--hn1:#49737D;
+  --c0:#36798F;--c1:#B94780;--c2:#447E30;--c3:#6666C5;--c4:#AA5B40;--c5:#307F57;background:#241C19">
+  <p class="pvTitle">深色</p>
+
+  <div class="mHero">
+    <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.9"><span>● 节奏正常</span><span>10月</span></div>
+    <div class="lbl" style="margin-top:10px">本月还可花</div>
+    <div class="amt">¥2,860.00</div>
+    <div class="bd">
+      <div><span>预算</span><span>¥4,000.00</span></div>
+      <div><span>已用</span><span>¥1,140.00</span></div>
+      <div><span>日均可花</span><span>¥95.00</span></div>
+    </div>
+    <div class="pbar"><i></i></div>
+    <div class="pbar warn"><i></i></div>
+    <div style="font-size:10.5px;opacity:.86;margin-top:6px">分类预算：餐饮 68% · 购物 82%（进度条用琥珀）</div>
+  </div>
+
+  <div class="mNet" style="margin-top:12px">
+    <div style="font-size:11px;opacity:.88">净资产</div>
+    <div style="font-size:24px;font-weight:800;margin-top:2px">¥1,000.00</div>
+    <div class="row">
+      <span>总资产<b>¥2,000.00</b></span>
+      <span>负债<b class="amber">¥1,000.00</b></span>
+    </div>
+  </div>
+
+  <div class="mList" style="margin-top:12px">
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--expense) 8%,transparent);color:var(--expense)">🍜</span>餐饮外卖<span class="amt" style="color:var(--expense)">-¥38.50</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--income) 8%,transparent);color:var(--income)">💰</span>工资<span class="amt" style="color:var(--income)">+¥12,000.00</span></div>
+    <div class="mRow"><span class="ic" style="background:color-mix(in srgb,var(--transfer) 8%,transparent);color:var(--transfer)">🔁</span>转账到储蓄<span class="amt" style="color:var(--transfer)">¥2,000.00</span></div>
+  </div>
+
+  <div class="mForm" style="margin-top:12px">
+    <div class="mSeg"><span class="on">支出</span><span>收入</span><span>转账</span></div>
+    <div class="mInput">¥ 38.50</div>
+    <div class="mChips">
+      <span class="mChip on">外卖<span class="p">餐饮</span></span>
+      <span class="mChip">交通<span class="p">出行</span></span>
+      <span class="mChip">购物<span class="p">日用</span></span>
+      <span class="mChip solid">保存</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mRing"><span>68%</span></div>
+    <div style="flex:1">
+      <div style="font-size:12.5px;font-weight:700">本月预算</div>
+      <div style="font-size:11.5px;color:var(--fg2)">已用 ¥2,720 / ¥4,000</div>
+      <div class="pbar" style="height:6px;border-radius:3px;background:var(--chipbg);margin-top:6px;position:relative;overflow:hidden">
+        <i style="position:absolute;inset:0 32% 0 0;background:var(--primary);display:block"></i></div>
+    </div>
+  </div>
+
+  <div class="mChart" style="margin-top:14px">
+    <div class="b" style="height:46%"></div>
+    <div class="b s" style="height:78%"></div>
+    <div class="b" style="height:58%"></div>
+    <div class="b s" style="height:92%"></div>
+    <div class="b" style="height:40%"></div>
+    <div class="b" style="height:66%"></div>
+  </div>
+  <div style="display:flex;gap:14px;align-items:center;margin-top:12px">
+    <div class="mPie"></div>
+    <div class="mLegend">
+      <span><i style="background:var(--c0)"></i>餐饮 30%</span>
+      <span><i style="background:var(--c1)"></i>购物 18%</span>
+      <span><i style="background:var(--c2)"></i>交通 16%</span>
+      <span><i style="background:var(--c3)"></i>居住 14%</span>
+      <span><i style="background:var(--c4)"></i>娱乐 12%</span>
+      <span><i style="background:var(--c5)"></i>其他 10%</span>
+    </div>
+  </div>
+
+  <div style="display:grid;gap:8px;margin-top:14px">
+    <div class="mAlert fill">● 警示条（填充态）：预算已用 82%，注意节奏</div>
+    <div class="mAlert text">● 警示文字（文字态）：已超支 ¥120.00</div>
+  </div>
+</div></template></body>
+</html>

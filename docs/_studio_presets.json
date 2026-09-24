@@ -1,0 +1,1230 @@
+{
+ "ink_cyan": {
+  "meta": {
+   "label": "D1 墨黑 · 电光青",
+   "tag": "暗色优先 · 工具感",
+   "note": "数据优先、对比强。深色是主场景（OLED 上省电），浅色作为白天版本。",
+   "accentHue": 188,
+   "accentChroma": 0.155,
+   "neutralHue": 248,
+   "neutralChroma": 0.004
+  },
+  "light": {
+   "neutrals": {
+    "sunken": "#E8EAED",
+    "bg": "#EEF0F2",
+    "surface": "#F7F9FC",
+    "raised": "#F2F4F7",
+    "border": "#D6D8DB",
+    "text2": "#5E6062",
+    "text": "#181A1C",
+    "borderStrong": "#84919D"
+   },
+   "accent": {
+    "fill": "#00A299",
+    "onFill": "#000304",
+    "text": "#007D76",
+    "hue": 188,
+    "chroma": 0.155
+   },
+   "semantic": {
+    "expense": "#7F2213",
+    "income": "#004B21",
+    "transfer": "#3951A0",
+    "credit": "#5D1C62",
+    "warning": "#905C00"
+   },
+   "semantic_balanced": {
+    "expense": "#A23F2E",
+    "income": "#00783A",
+    "transfer": "#425DAF",
+    "credit": "#88448D",
+    "warning": "#895700"
+   },
+   "chart": [
+    "#AF5A80",
+    "#658732",
+    "#5478C1",
+    "#B55E43",
+    "#008F74",
+    "#8E65B1",
+    "#9C7200",
+    "#0089A4"
+   ],
+   "amber": "#FFE6BC",
+   "hero": {
+    "brand": [
+     "#00764F",
+     "#007C7B",
+     "#007DA3"
+    ],
+    "netWorth": [
+     "#6A55C6",
+     "#006EA0",
+     "#007370"
+    ],
+    "danger": [
+     "#B2397C",
+     "#BF3D6D",
+     "#CB4453"
+    ]
+   },
+   "direction": "D1 墨黑 · 电光青",
+   "report_balanced": {
+    "checks": {
+     "accent 填充 + onFill": 6.53,
+     "accent 文字 on surface": 4.75,
+     "正文 on surface": 16.55,
+     "次要文字 on surface": 5.99,
+     "控件描边 on surface（非文字）": 3.05,
+     "分隔线 on surface（仅需可见）": 1.35,
+     "语义色最差 on sunken": 4.65,
+     "语义色最差 on surface": 5.31,
+     "Hero 白字最差": 4.68,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 3.84
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.086,
+      "pair": "expense/warning",
+      "second": 0.128
+     },
+     "protan": {
+      "min": 0.061,
+      "pair": "expense/warning",
+      "second": 0.062
+     },
+     "deutan": {
+      "min": 0.022,
+      "pair": "expense/warning",
+      "second": 0.029
+     },
+     "tritan": {
+      "min": 0.018,
+      "pair": "income/transfer",
+      "second": 0.024
+     }
+    },
+    "apca": {
+     "text": 98.6,
+     "text2": 74.3,
+     "accent": 67.7
+    },
+    "spread": 0.001
+   },
+   "report": {
+    "checks": {
+     "accent 填充 + onFill": 6.53,
+     "accent 文字 on surface": 4.75,
+     "正文 on surface": 16.55,
+     "次要文字 on surface": 5.99,
+     "控件描边 on surface（非文字）": 3.05,
+     "分隔线 on surface（仅需可见）": 1.35,
+     "语义色最差 on sunken": 4.69,
+     "语义色最差 on surface": 5.36,
+     "Hero 白字最差": 4.68,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 3.84
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.146,
+      "pair": "expense/warning",
+      "second": 0.15
+     },
+     "protan": {
+      "min": 0.06,
+      "pair": "expense/income",
+      "second": 0.11
+     },
+     "deutan": {
+      "min": 0.062,
+      "pair": "expense/income",
+      "second": 0.112
+     },
+     "tritan": {
+      "min": 0.091,
+      "pair": "expense/credit",
+      "second": 0.093
+     }
+    },
+    "apca": {
+     "text": 98.6,
+     "text2": 74.3,
+     "accent": 67.7
+    },
+    "spread": 0.16
+   }
+  },
+  "dark": {
+   "neutrals": {
+    "sunken": "#010101",
+    "bg": "#020304",
+    "surface": "#090A0C",
+    "raised": "#141517",
+    "border": "#26282A",
+    "text2": "#898B8D",
+    "text": "#D7D9DC",
+    "borderStrong": "#535F6B"
+   },
+   "accent": {
+    "fill": "#00FBEE",
+    "onFill": "#000304",
+    "text": "#00ACA3",
+    "hue": 188,
+    "chroma": 0.155
+   },
+   "semantic": {
+    "expense": "#EA8470",
+    "income": "#4AA969",
+    "transfer": "#94B1FF",
+    "credit": "#C47EC7",
+    "warning": "#FBB961"
+   },
+   "semantic_balanced": {
+    "expense": "#E97F6B",
+    "income": "#57B977",
+    "transfer": "#7D9DF6",
+    "credit": "#CC82D0",
+    "warning": "#D59230"
+   },
+   "chart": [
+    "#FA9DC4",
+    "#A7CD77",
+    "#9CBEFF",
+    "#FFA285",
+    "#5CD7B6",
+    "#D3A9F9",
+    "#E3B65C",
+    "#4FD0F1"
+   ],
+   "amber": "#FFE6BC",
+   "hero": {
+    "brand": [
+     "#00764F",
+     "#007C7B",
+     "#007DA3"
+    ],
+    "netWorth": [
+     "#6A55C6",
+     "#006EA0",
+     "#007370"
+    ],
+    "danger": [
+     "#B2397C",
+     "#BF3D6D",
+     "#CB4453"
+    ]
+   },
+   "direction": "D1 墨黑 · 电光青",
+   "report_balanced": {
+    "checks": {
+     "accent 填充 + onFill": 15.8,
+     "accent 文字 on surface": 7.01,
+     "正文 on surface": 14.0,
+     "次要文字 on surface": 5.79,
+     "控件描边 on surface（非文字）": 3.03,
+     "分隔线 on surface（仅需可见）": 1.34,
+     "语义色最差 on sunken": 7.63,
+     "语义色最差 on surface": 7.23,
+     "Hero 白字最差": 4.68,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 10.08
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.092,
+      "pair": "expense/warning",
+      "second": 0.13
+     },
+     "protan": {
+      "min": 0.064,
+      "pair": "transfer/credit",
+      "second": 0.079
+     },
+     "deutan": {
+      "min": 0.029,
+      "pair": "expense/income",
+      "second": 0.056
+     },
+     "tritan": {
+      "min": 0.015,
+      "pair": "income/transfer",
+      "second": 0.019
+     }
+    },
+    "apca": {
+     "text": -83.7,
+     "text2": -42.0,
+     "accent": -49.3
+    },
+    "spread": 0.001
+   },
+   "report": {
+    "checks": {
+     "accent 填充 + onFill": 15.8,
+     "accent 文字 on surface": 7.01,
+     "正文 on surface": 14.0,
+     "次要文字 on surface": 5.79,
+     "控件描边 on surface（非文字）": 3.03,
+     "分隔线 on surface（仅需可见）": 1.34,
+     "语义色最差 on sunken": 7.11,
+     "语义色最差 on surface": 6.75,
+     "Hero 白字最差": 4.68,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 10.08
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.142,
+      "pair": "expense/warning",
+      "second": 0.142
+     },
+     "protan": {
+      "min": 0.05,
+      "pair": "expense/income",
+      "second": 0.104
+     },
+     "deutan": {
+      "min": 0.069,
+      "pair": "expense/income",
+      "second": 0.092
+     },
+     "tritan": {
+      "min": 0.082,
+      "pair": "expense/credit",
+      "second": 0.092
+     }
+    },
+    "apca": {
+     "text": -83.7,
+     "text2": -42.0,
+     "accent": -49.3
+    },
+    "spread": 0.169
+   }
+  }
+ },
+ "paper_indigo": {
+  "meta": {
+   "label": "D2 暖纸 · 靛蓝",
+   "tag": "浅色优先 · 账本感",
+   "note": "像一本好纸账本：中性层温暖、强调色冷静，长时间看不累。",
+   "accentHue": 266,
+   "accentChroma": 0.17,
+   "neutralHue": 72,
+   "neutralChroma": 0.01
+  },
+  "light": {
+   "neutrals": {
+    "sunken": "#ECE7E1",
+    "bg": "#F2EDE6",
+    "surface": "#FBF6F0",
+    "raised": "#F6F1EB",
+    "border": "#DAD5CF",
+    "text2": "#615D58",
+    "text": "#1B1813",
+    "borderStrong": "#998D80"
+   },
+   "accent": {
+    "fill": "#5E88F6",
+    "onFill": "#03001F",
+    "text": "#4269D3",
+    "hue": 266,
+    "chroma": 0.17
+   },
+   "semantic": {
+    "expense": "#A7463C",
+    "income": "#006E30",
+    "transfer": "#004557",
+    "credit": "#7B428C",
+    "warning": "#473D00"
+   },
+   "semantic_balanced": {
+    "expense": "#A23E35",
+    "income": "#087736",
+    "transfer": "#006E89",
+    "credit": "#824694",
+    "warning": "#726400"
+   },
+   "chart": [
+    "#A66C11",
+    "#008B97",
+    "#A95C8F",
+    "#77821F",
+    "#3E7EBF",
+    "#B75B54",
+    "#1E9063",
+    "#816AB9"
+   ],
+   "amber": "#FFE6BC",
+   "hero": {
+    "brand": [
+     "#0070A7",
+     "#5165D3",
+     "#9459C8"
+    ],
+    "netWorth": [
+     "#6A55C6",
+     "#006EA0",
+     "#007370"
+    ],
+    "danger": [
+     "#B2397C",
+     "#BF3D6D",
+     "#CB4453"
+    ]
+   },
+   "direction": "D2 暖纸 · 靛蓝",
+   "report_balanced": {
+    "checks": {
+     "accent 填充 + onFill": 6.18,
+     "accent 文字 on surface": 4.66,
+     "正文 on surface": 16.47,
+     "次要文字 on surface": 6.08,
+     "控件描边 on surface（非文字）": 3.02,
+     "分隔线 on surface（仅需可见）": 1.36,
+     "语义色最差 on sunken": 4.61,
+     "语义色最差 on surface": 5.28,
+     "Hero 白字最差": 4.64,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 3.74
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.105,
+      "pair": "income/warning",
+      "second": 0.138
+     },
+     "protan": {
+      "min": 0.048,
+      "pair": "income/warning",
+      "second": 0.087
+     },
+     "deutan": {
+      "min": 0.015,
+      "pair": "transfer/credit",
+      "second": 0.017
+     },
+     "tritan": {
+      "min": 0.007,
+      "pair": "credit/warning",
+      "second": 0.039
+     }
+    },
+    "apca": {
+     "text": 97.7,
+     "text2": 74.0,
+     "accent": 66.5
+    },
+    "spread": 0.003
+   },
+   "report": {
+    "checks": {
+     "accent 填充 + onFill": 6.18,
+     "accent 文字 on surface": 4.66,
+     "正文 on surface": 16.47,
+     "次要文字 on surface": 6.08,
+     "控件描边 on surface（非文字）": 3.02,
+     "分隔线 on surface（仅需可见）": 1.36,
+     "语义色最差 on sunken": 4.77,
+     "语义色最差 on surface": 5.45,
+     "Hero 白字最差": 4.64,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 3.74
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.125,
+      "pair": "transfer/warning",
+      "second": 0.15
+     },
+     "protan": {
+      "min": 0.064,
+      "pair": "expense/income",
+      "second": 0.091
+     },
+     "deutan": {
+      "min": 0.06,
+      "pair": "expense/income",
+      "second": 0.11
+     },
+     "tritan": {
+      "min": 0.106,
+      "pair": "expense/credit",
+      "second": 0.114
+     }
+    },
+    "apca": {
+     "text": 97.7,
+     "text2": 74.0,
+     "accent": 66.5
+    },
+    "spread": 0.161
+   }
+  },
+  "dark": {
+   "neutrals": {
+    "sunken": "#030201",
+    "bg": "#090604",
+    "surface": "#13100C",
+    "raised": "#1F1B17",
+    "border": "#322E2A",
+    "text2": "#98938D",
+    "text": "#E7E2DC",
+    "borderStrong": "#695E52"
+   },
+   "accent": {
+    "fill": "#CADBFF",
+    "onFill": "#03001F",
+    "text": "#759DFF",
+    "hue": 266,
+    "chroma": 0.17
+   },
+   "semantic": {
+    "expense": "#FFB5AA",
+    "income": "#9DF7B0",
+    "transfer": "#3FCDF6",
+    "credit": "#F7DDFF",
+    "warning": "#C8B648"
+   },
+   "semantic_balanced": {
+    "expense": "#EA7E71",
+    "income": "#5CB973",
+    "transfer": "#00B3DC",
+    "credit": "#C485D8",
+    "warning": "#B5A329"
+   },
+   "chart": [
+    "#EEB062",
+    "#45D3E3",
+    "#F29ED5",
+    "#BAC769",
+    "#8AC3FF",
+    "#FFA097",
+    "#70D6A4",
+    "#C4AEFF"
+   ],
+   "amber": "#FFE6BC",
+   "hero": {
+    "brand": [
+     "#0070A7",
+     "#5165D3",
+     "#9459C8"
+    ],
+    "netWorth": [
+     "#6A55C6",
+     "#006EA0",
+     "#007370"
+    ],
+    "danger": [
+     "#B2397C",
+     "#BF3D6D",
+     "#CB4453"
+    ]
+   },
+   "direction": "D2 暖纸 · 靛蓝",
+   "report_balanced": {
+    "checks": {
+     "accent 填充 + onFill": 14.74,
+     "accent 文字 on surface": 7.25,
+     "正文 on surface": 14.73,
+     "次要文字 on surface": 6.23,
+     "控件描边 on surface（非文字）": 3.0,
+     "分隔线 on surface（仅需可见）": 1.41,
+     "语义色最差 on sunken": 7.6,
+     "语义色最差 on surface": 6.95,
+     "Hero 白字最差": 4.64,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 9.6
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.113,
+      "pair": "income/warning",
+      "second": 0.156
+     },
+     "protan": {
+      "min": 0.074,
+      "pair": "income/warning",
+      "second": 0.087
+     },
+     "deutan": {
+      "min": 0.012,
+      "pair": "transfer/credit",
+      "second": 0.015
+     },
+     "tritan": {
+      "min": 0.013,
+      "pair": "credit/warning",
+      "second": 0.053
+     }
+    },
+    "apca": {
+     "text": -88.8,
+     "text2": -45.6,
+     "accent": -51.8
+    },
+    "spread": 0.001
+   },
+   "report": {
+    "checks": {
+     "accent 填充 + onFill": 14.74,
+     "accent 文字 on surface": 7.25,
+     "正文 on surface": 14.73,
+     "次要文字 on surface": 6.23,
+     "控件描边 on surface（非文字）": 3.0,
+     "分隔线 on surface（仅需可见）": 1.41,
+     "语义色最差 on sunken": 10.11,
+     "语义色最差 on surface": 9.25,
+     "Hero 白字最差": 4.64,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 9.6
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.124,
+      "pair": "expense/credit",
+      "second": 0.149
+     },
+     "protan": {
+      "min": 0.087,
+      "pair": "transfer/credit",
+      "second": 0.106
+     },
+     "deutan": {
+      "min": 0.057,
+      "pair": "expense/income",
+      "second": 0.1
+     },
+     "tritan": {
+      "min": 0.095,
+      "pair": "expense/warning",
+      "second": 0.113
+     }
+    },
+    "apca": {
+     "text": -88.8,
+     "text2": -45.6,
+     "accent": -51.8
+    },
+    "spread": 0.158
+   }
+  }
+ },
+ "obsidian_gold": {
+  "meta": {
+   "label": "D3 曜石 · 赤金",
+   "tag": "暗色优先 · 质感",
+   "note": "黑金质感：表面更暗、强调色更暖，语义色整体降彩度避免与金争抢。",
+   "accentHue": 78,
+   "accentChroma": 0.15,
+   "neutralHue": 60,
+   "neutralChroma": 0.006
+  },
+  "light": {
+   "neutrals": {
+    "sunken": "#EDE9E6",
+    "bg": "#F2EEEB",
+    "surface": "#FCF8F4",
+    "raised": "#F7F3EF",
+    "border": "#DAD7D4",
+    "text2": "#625E5C",
+    "text": "#1C1917",
+    "borderStrong": "#9B8C81"
+   },
+   "accent": {
+    "fill": "#C08500",
+    "onFill": "#0A0000",
+    "text": "#966700",
+    "hue": 78,
+    "chroma": 0.15
+   },
+   "semantic": {
+    "expense": "#A74546",
+    "income": "#006D42",
+    "transfer": "#003F6F",
+    "credit": "#6F4FA1",
+    "warning": "#692400"
+   },
+   "semantic_balanced": {
+    "expense": "#A23C3F",
+    "income": "#007748",
+    "transfer": "#0066AB",
+    "credit": "#704EA4",
+    "warning": "#9F440F"
+   },
+   "chart": [
+    "#2B81BB",
+    "#B65A5F",
+    "#368E57",
+    "#786DBD",
+    "#AB681E",
+    "#008C90",
+    "#A45D99",
+    "#827F11"
+   ],
+   "amber": "#FFE6BC",
+   "hero": {
+    "brand": [
+     "#A84F00",
+     "#916A00",
+     "#6B7B00"
+    ],
+    "netWorth": [
+     "#6A55C6",
+     "#006EA0",
+     "#007370"
+    ],
+    "danger": [
+     "#B2397C",
+     "#BF3D6D",
+     "#CB4453"
+    ]
+   },
+   "direction": "D3 曜石 · 赤金",
+   "report_balanced": {
+    "checks": {
+     "accent 填充 + onFill": 6.51,
+     "accent 文字 on surface": 4.69,
+     "正文 on surface": 16.55,
+     "次要文字 on surface": 6.07,
+     "控件描边 on surface（非文字）": 3.08,
+     "分隔线 on surface（仅需可见）": 1.36,
+     "语义色最差 on sunken": 4.66,
+     "语义色最差 on surface": 5.32,
+     "Hero 白字最差": 4.68,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 3.85
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.055,
+      "pair": "expense/warning",
+      "second": 0.117
+     },
+     "protan": {
+      "min": 0.042,
+      "pair": "transfer/credit",
+      "second": 0.061
+     },
+     "deutan": {
+      "min": 0.019,
+      "pair": "transfer/credit",
+      "second": 0.026
+     },
+     "tritan": {
+      "min": 0.0,
+      "pair": "expense/warning",
+      "second": 0.053
+     }
+    },
+    "apca": {
+     "text": 98.5,
+     "text2": 74.6,
+     "accent": 67.3
+    },
+    "spread": 0.003
+   },
+   "report": {
+    "checks": {
+     "accent 填充 + onFill": 6.51,
+     "accent 文字 on surface": 4.69,
+     "正文 on surface": 16.55,
+     "次要文字 on surface": 6.07,
+     "控件描边 on surface（非文字）": 3.08,
+     "分隔线 on surface（仅需可见）": 1.36,
+     "语义色最差 on sunken": 4.86,
+     "语义色最差 on surface": 5.55,
+     "Hero 白字最差": 4.68,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 3.85
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.168,
+      "pair": "expense/warning",
+      "second": 0.172
+     },
+     "protan": {
+      "min": 0.06,
+      "pair": "expense/income",
+      "second": 0.108
+     },
+     "deutan": {
+      "min": 0.065,
+      "pair": "expense/income",
+      "second": 0.11
+     },
+     "tritan": {
+      "min": 0.116,
+      "pair": "credit/warning",
+      "second": 0.12
+     }
+    },
+    "apca": {
+     "text": 98.5,
+     "text2": 74.6,
+     "accent": 67.3
+    },
+    "spread": 0.161
+   }
+  },
+  "dark": {
+   "neutrals": {
+    "sunken": "#010100",
+    "bg": "#010100",
+    "surface": "#060504",
+    "raised": "#100E0C",
+    "border": "#23201E",
+    "text2": "#84817E",
+    "text": "#D2CECB",
+    "borderStrong": "#685B50"
+   },
+   "accent": {
+    "fill": "#FFD38E",
+    "onFill": "#0A0000",
+    "text": "#CC8E00",
+    "hue": 78,
+    "chroma": 0.15
+   },
+   "semantic": {
+    "expense": "#FF9592",
+    "income": "#7AE4AA",
+    "transfer": "#4C9BE1",
+    "credit": "#CCB0FF",
+    "warning": "#DD7F53"
+   },
+   "semantic_balanced": {
+    "expense": "#EA7D7B",
+    "income": "#48BB81",
+    "transfer": "#55A7F1",
+    "credit": "#AF8DE9",
+    "warning": "#E68456"
+   },
+   "chart": [
+    "#7CC6FF",
+    "#FF9FA2",
+    "#7DD499",
+    "#BAB3FF",
+    "#F4AC68",
+    "#43D5D9",
+    "#ECA0DF",
+    "#C5C463"
+   ],
+   "amber": "#FFE6BC",
+   "hero": {
+    "brand": [
+     "#A84F00",
+     "#916A00",
+     "#6B7B00"
+    ],
+    "netWorth": [
+     "#6A55C6",
+     "#006EA0",
+     "#007370"
+    ],
+    "danger": [
+     "#B2397C",
+     "#BF3D6D",
+     "#CB4453"
+    ]
+   },
+   "direction": "D3 曜石 · 赤金",
+   "report_balanced": {
+    "checks": {
+     "accent 填充 + onFill": 14.77,
+     "accent 文字 on surface": 7.21,
+     "正文 on surface": 13.02,
+     "次要文字 on surface": 5.26,
+     "控件描边 on surface（非文字）": 3.1,
+     "分隔线 on surface（仅需可见）": 1.26,
+     "语义色最差 on sunken": 7.67,
+     "语义色最差 on surface": 7.48,
+     "Hero 白字最差": 4.68,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 10.34
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.054,
+      "pair": "expense/warning",
+      "second": 0.118
+     },
+     "protan": {
+      "min": 0.046,
+      "pair": "transfer/credit",
+      "second": 0.054
+     },
+     "deutan": {
+      "min": 0.018,
+      "pair": "transfer/credit",
+      "second": 0.022
+     },
+     "tritan": {
+      "min": 0.0,
+      "pair": "expense/warning",
+      "second": 0.03
+     }
+    },
+    "apca": {
+     "text": -78.3,
+     "text2": -38.1,
+     "accent": -49.8
+    },
+    "spread": 0.003
+   },
+   "report": {
+    "checks": {
+     "accent 填充 + onFill": 14.77,
+     "accent 文字 on surface": 7.21,
+     "正文 on surface": 13.02,
+     "次要文字 on surface": 5.26,
+     "控件描边 on surface（非文字）": 3.1,
+     "分隔线 on surface（仅需可见）": 1.26,
+     "语义色最差 on sunken": 7.04,
+     "语义色最差 on surface": 6.87,
+     "Hero 白字最差": 4.68,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 10.34
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.104,
+      "pair": "expense/warning",
+      "second": 0.161
+     },
+     "protan": {
+      "min": 0.095,
+      "pair": "transfer/credit",
+      "second": 0.101
+     },
+     "deutan": {
+      "min": 0.056,
+      "pair": "expense/income",
+      "second": 0.101
+     },
+     "tritan": {
+      "min": 0.09,
+      "pair": "expense/warning",
+      "second": 0.103
+     }
+    },
+    "apca": {
+     "text": -78.3,
+     "text2": -38.1,
+     "accent": -49.8
+    },
+    "spread": 0.169
+   }
+  }
+ },
+ "snow_berry": {
+  "meta": {
+   "label": "D4 雪白 · 莓红",
+   "tag": "浅色优先 · 鲜明",
+   "note": "鲜亮、年轻、消费感。莓红与支出红靠色相 + 明度双重区分，不冲突。",
+   "accentHue": 355,
+   "accentChroma": 0.185,
+   "neutralHue": 255,
+   "neutralChroma": 0.005
+  },
+  "light": {
+   "neutrals": {
+    "sunken": "#EAECEF",
+    "bg": "#EFF2F5",
+    "surface": "#F9FBFE",
+    "raised": "#F4F6F9",
+    "border": "#D8DADD",
+    "text2": "#5F6164",
+    "text": "#1A1B1E",
+    "borderStrong": "#8993A1"
+   },
+   "accent": {
+    "fill": "#EB5E9E",
+    "onFill": "#120001",
+    "text": "#C5397D",
+    "hue": 355,
+    "chroma": 0.185
+   },
+   "semantic": {
+    "expense": "#A54A24",
+    "income": "#207029",
+    "transfer": "#00435E",
+    "credit": "#534294",
+    "warning": "#503900"
+   },
+   "semantic_balanced": {
+    "expense": "#A04318",
+    "income": "#23762C",
+    "transfer": "#006C94",
+    "credit": "#6452AA",
+    "warning": "#7E5D00"
+   },
+   "chart": [
+    "#228F61",
+    "#806AB9",
+    "#A76C12",
+    "#008B96",
+    "#A85C90",
+    "#79821D",
+    "#3C7EBE",
+    "#B75B55"
+   ],
+   "amber": "#FFE6BC",
+   "hero": {
+    "brand": [
+     "#A1419E",
+     "#BF3D6E",
+     "#CB4A2A"
+    ],
+    "netWorth": [
+     "#6A55C6",
+     "#006EA0",
+     "#007370"
+    ],
+    "danger": [
+     "#B2397C",
+     "#BF3D6D",
+     "#CB4453"
+    ]
+   },
+   "direction": "D4 雪白 · 莓红",
+   "report_balanced": {
+    "checks": {
+     "accent 填充 + onFill": 6.46,
+     "accent 文字 on surface": 4.76,
+     "正文 on surface": 16.61,
+     "次要文字 on surface": 5.99,
+     "控件描边 on surface（非文字）": 3.0,
+     "分隔线 on surface（仅需可见）": 1.35,
+     "语义色最差 on sunken": 4.8,
+     "语义色最差 on surface": 5.48,
+     "Hero 白字最差": 4.61,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 3.92
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.09,
+      "pair": "expense/warning",
+      "second": 0.118
+     },
+     "protan": {
+      "min": 0.05,
+      "pair": "expense/warning",
+      "second": 0.055
+     },
+     "deutan": {
+      "min": 0.004,
+      "pair": "expense/warning",
+      "second": 0.031
+     },
+     "tritan": {
+      "min": 0.044,
+      "pair": "expense/warning",
+      "second": 0.061
+     }
+    },
+    "apca": {
+     "text": 99.5,
+     "text2": 75.0,
+     "accent": 68.4
+    },
+    "spread": 0.002
+   },
+   "report": {
+    "checks": {
+     "accent 填充 + onFill": 6.46,
+     "accent 文字 on surface": 4.76,
+     "正文 on surface": 16.61,
+     "次要文字 on surface": 5.99,
+     "控件描边 on surface（非文字）": 3.0,
+     "分隔线 on surface（仅需可见）": 1.35,
+     "语义色最差 on sunken": 4.92,
+     "语义色最差 on surface": 5.62,
+     "Hero 白字最差": 4.61,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 3.92
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.134,
+      "pair": "transfer/credit",
+      "second": 0.144
+     },
+     "protan": {
+      "min": 0.056,
+      "pair": "expense/income",
+      "second": 0.091
+     },
+     "deutan": {
+      "min": 0.054,
+      "pair": "expense/income",
+      "second": 0.098
+     },
+     "tritan": {
+      "min": 0.097,
+      "pair": "income/credit",
+      "second": 0.1
+     }
+    },
+    "apca": {
+     "text": 99.5,
+     "text2": 75.0,
+     "accent": 68.4
+    },
+    "spread": 0.16
+   }
+  },
+  "dark": {
+   "neutrals": {
+    "sunken": "#010202",
+    "bg": "#050607",
+    "surface": "#0E1012",
+    "raised": "#191B1D",
+    "border": "#2C2E30",
+    "text2": "#909295",
+    "text": "#DFE1E5",
+    "borderStrong": "#57616E"
+   },
+   "accent": {
+    "fill": "#FFC9DD",
+    "onFill": "#120001",
+    "text": "#FA6BAA",
+    "hue": 355,
+    "chroma": 0.185
+   },
+   "semantic": {
+    "expense": "#FFC5AF",
+    "income": "#80CD82",
+    "transfer": "#3CB5EB",
+    "credit": "#D3CDFF",
+    "warning": "#C79A2F"
+   },
+   "semantic_balanced": {
+    "expense": "#E7835B",
+    "income": "#67B76B",
+    "transfer": "#29AFE7",
+    "credit": "#A192EF",
+    "warning": "#C89A25"
+   },
+   "chart": [
+    "#71D6A3",
+    "#C3AFFF",
+    "#EFB062",
+    "#44D4E2",
+    "#F19FD6",
+    "#BBC769",
+    "#89C3FF",
+    "#FFA098"
+   ],
+   "amber": "#FFE6BC",
+   "hero": {
+    "brand": [
+     "#A1419E",
+     "#BF3D6E",
+     "#CB4A2A"
+    ],
+    "netWorth": [
+     "#6A55C6",
+     "#006EA0",
+     "#007370"
+    ],
+    "danger": [
+     "#B2397C",
+     "#BF3D6D",
+     "#CB4453"
+    ]
+   },
+   "direction": "D4 雪白 · 莓红",
+   "report_balanced": {
+    "checks": {
+     "accent 填充 + onFill": 14.28,
+     "accent 文字 on surface": 7.03,
+     "正文 on surface": 14.56,
+     "次要文字 on surface": 6.11,
+     "控件描边 on surface（非文字）": 3.03,
+     "分隔线 on surface（仅需可见）": 1.4,
+     "语义色最差 on sunken": 7.71,
+     "语义色最差 on surface": 7.08,
+     "Hero 白字最差": 4.61,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 9.69
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.099,
+      "pair": "expense/warning",
+      "second": 0.13
+     },
+     "protan": {
+      "min": 0.059,
+      "pair": "transfer/credit",
+      "second": 0.071
+     },
+     "deutan": {
+      "min": 0.01,
+      "pair": "transfer/credit",
+      "second": 0.034
+     },
+     "tritan": {
+      "min": 0.031,
+      "pair": "expense/warning",
+      "second": 0.057
+     }
+    },
+    "apca": {
+     "text": -87.8,
+     "text2": -44.8,
+     "accent": -50.4
+    },
+    "spread": 0.002
+   },
+   "report": {
+    "checks": {
+     "accent 填充 + onFill": 14.28,
+     "accent 文字 on surface": 7.03,
+     "正文 on surface": 14.56,
+     "次要文字 on surface": 6.11,
+     "控件描边 on surface（非文字）": 3.03,
+     "分隔线 on surface（仅需可见）": 1.4,
+     "语义色最差 on sunken": 8.0,
+     "语义色最差 on surface": 7.35,
+     "Hero 白字最差": 4.61,
+     "Hero 琥珀字最差": 4.63,
+     "图表最差 on surface": 9.69
+    },
+    "cvd": {
+     "normal": {
+      "min": 0.117,
+      "pair": "expense/credit",
+      "second": 0.147
+     },
+     "protan": {
+      "min": 0.057,
+      "pair": "expense/income",
+      "second": 0.1
+     },
+     "deutan": {
+      "min": 0.094,
+      "pair": "expense/income",
+      "second": 0.095
+     },
+     "tritan": {
+      "min": 0.103,
+      "pair": "income/transfer",
+      "second": 0.114
+     }
+    },
+    "apca": {
+     "text": -87.8,
+     "text2": -44.8,
+     "accent": -50.4
+    },
+    "spread": 0.16
+   }
+  }
+ }
+}

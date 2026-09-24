@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/core/theme/app_theme.dart';
+import 'package:miji/core/theme/app_theme_tokens.dart';
 
 /// 相对亮度（WCAG 2.1）。
 double _luminance(Color color) {
@@ -120,11 +121,90 @@ void main() {
     });
   });
 
+  group('强调层与描边（D2 新增的不变量）', () {
+    for (final entry in themes.entries) {
+      final label = entry.key;
+      final scheme = entry.value.colorScheme;
+
+      test('$label：实心按钮（填充 + 前景）≥ 4.5:1', () {
+        final tokens = label == 'light'
+            ? (
+                AppThemeTokens.lightPrimaryFill,
+                AppThemeTokens.lightOnPrimaryFill,
+              )
+            : (
+                AppThemeTokens.darkPrimaryFill,
+                AppThemeTokens.darkOnPrimaryFill,
+              );
+        final ratio = contrastRatio(tokens.$1, tokens.$2);
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason:
+              '$label 填充按钮只有 ${ratio.toStringAsFixed(2)}:1 '
+              '（旧实现深色下是 2.05:1）',
+        );
+      });
+
+      test('$label：强调色当文字 ≥ 4.5:1', () {
+        final ratio = contrastRatio(scheme.primary, scheme.surface);
+        expect(ratio, greaterThanOrEqualTo(4.5));
+      });
+
+      test('$label：选中态 container 配对 ≥ 4.5:1', () {
+        final ratio = contrastRatio(
+          scheme.onPrimaryContainer,
+          scheme.primaryContainer,
+        );
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason: '同色淡底 + 同色文字的老写法只有 3.03:1',
+        );
+      });
+
+      test('$label：控件描边 ≥ 3:1、分隔线只要可见', () {
+        expect(
+          contrastRatio(scheme.outline, scheme.surface),
+          greaterThanOrEqualTo(3.0),
+          reason: 'WCAG 1.4.11：控件边界 3:1',
+        );
+        expect(
+          contrastRatio(scheme.outlineVariant, scheme.surface),
+          greaterThan(1.1),
+        );
+      });
+
+      test('$label：图片色板每个色对卡片 ≥ 3:1', () {
+        for (final color in entry.value.chartPalette.colors) {
+          expect(
+            contrastRatio(color, scheme.surface),
+            greaterThanOrEqualTo(3.0),
+          );
+        }
+      });
+
+      test('$label：Hero 上的琥珀字 ≥ 4.5:1', () {
+        final gradients = entry.value.heroGradients;
+        for (final color in gradients.netWorth.colors) {
+          final ratio = contrastRatio(gradients.amber, color);
+          expect(
+            ratio,
+            greaterThanOrEqualTo(4.5),
+            reason:
+                '$label 净资产渐变 $color 上的琥珀字只有 '
+                '${ratio.toStringAsFixed(2)}:1',
+          );
+        }
+      });
+    }
+  });
+
   group('语义金额色', () {
     final backgrounds = {
-      '白色卡片': const Color(0xFFFFFFFF),
-      '页面底色': const Color(0xFFFFF8F2),
-      '次表面': const Color(0xFFFFF0E5),
+      '卡片 surface': AppThemeTokens.lightSurface,
+      '页面底色': AppThemeTokens.lightBackground,
+      '凹陷面 sunken': AppThemeTokens.lightSurfaceSunken,
     };
 
     test('浅色主题：六种语义色在所有底色上都 ≥ 4.5:1', () {
@@ -161,8 +241,8 @@ void main() {
         'success': money.success,
       };
       final backgrounds = {
-        '卡片': const Color(0xFF241C19),
-        '页面底色': const Color(0xFF1B1412),
+        '卡片 surface': AppThemeTokens.darkSurface,
+        '页面底色': AppThemeTokens.darkBackground,
       };
 
       colors.forEach((name, color) {

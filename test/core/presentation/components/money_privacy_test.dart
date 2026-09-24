@@ -98,7 +98,6 @@ UserPreferencesEntity _preferences({required bool maskMoneyAmounts}) {
   return UserPreferencesEntity(
     userId: 'user-1',
     themeMode: AppThemeModePreference.system,
-    themeSeedColor: 0xFFE45F4F,
     sensitiveAccessTtl: SensitiveAccessTtlOption.defaultOption,
     currencyCode: 'CNY',
     maskMoneyAmounts: maskMoneyAmounts,

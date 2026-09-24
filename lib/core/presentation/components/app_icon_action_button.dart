@@ -43,9 +43,11 @@ class AppIconActionButton extends StatelessWidget {
         shape: const StadiumBorder(),
         side: const BorderSide(color: Colors.grey),
       ),
+      // 填充版用「鲜亮填充 + 深色前景」这组配对（联合求解过，≥4.5:1）。
+      // 原来前景硬编码 Colors.white：深色主题下浅珊瑚底上的白字只有 2.05:1。
       AppIconActionVariant.filled => IconButton.styleFrom(
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
       ),
       AppIconActionVariant.filledTonal => IconButton.styleFrom(
         backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),

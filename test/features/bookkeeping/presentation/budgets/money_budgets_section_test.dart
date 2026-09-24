@@ -170,7 +170,6 @@ Widget _wrapWithPreferences(
         (ref) async => UserPreferencesEntity(
           userId: 'user-1',
           themeMode: AppThemeModePreference.system,
-          themeSeedColor: 0xFFE45F4F,
           sensitiveAccessTtl: SensitiveAccessTtlOption.defaultOption,
           currencyCode: 'CNY',
           maskMoneyAmounts: masked,

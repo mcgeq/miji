@@ -38,7 +38,6 @@ class UserPreferencesEntity {
   const UserPreferencesEntity({
     required this.userId,
     required this.themeMode,
-    required this.themeSeedColor,
     required this.sensitiveAccessTtl,
     required this.createdAt,
     required this.updatedAt,
@@ -52,7 +51,6 @@ class UserPreferencesEntity {
 
   final String userId;
   final AppThemeModePreference themeMode;
-  final int themeSeedColor;
   final SensitiveAccessTtlOption sensitiveAccessTtl;
   final String? locale;
   final String? timezone;

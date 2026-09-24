@@ -144,17 +144,7 @@ class _MoneyPaymentMethodChartState extends State<MoneyPaymentMethodChart> {
 
   Color _sliceColor(BuildContext context, int index) {
     final theme = Theme.of(context);
-    final palette = <Color>[
-      theme.colorScheme.primary,
-      theme.colorScheme.tertiary,
-      theme.moneyColors.expense,
-      Colors.teal,
-      Colors.orange,
-      Colors.indigo,
-      Colors.pink,
-      Colors.cyan,
-    ];
-    return palette[index % palette.length];
+    return theme.chartPalette[index];
   }
 }
 

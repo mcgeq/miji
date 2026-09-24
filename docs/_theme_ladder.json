@@ -1,0 +1,238 @@
+{
+ "light_balanced": {
+  "colors": {
+   "expense": "#7E1B11",
+   "income": "#005333",
+   "transfer": "#006087",
+   "credit": "#562B7D",
+   "warning": "#795200"
+  },
+  "contrast": {
+   "expense": 9.739461851673294,
+   "income": 8.745892899988347,
+   "transfer": 6.611073672242086,
+   "credit": 9.809352165526766,
+   "warning": 6.617850204368334
+  },
+  "lightness": {
+   "expense": 0.390611124582422,
+   "income": 0.3899245715531337,
+   "transfer": 0.4616742122732361,
+   "credit": 0.38863287300958493,
+   "warning": 0.4693972927841649
+  },
+  "spread": 0.08076441977457999,
+  "cvd": {
+   "normal": {
+    "min": 0.12674441452934782,
+    "pair": "expense/warning",
+    "second": 0.13592786627494166,
+    "secondPair": "income/transfer"
+   },
+   "protan": {
+    "min": 0.0599049300813723,
+    "pair": "income/warning",
+    "second": 0.10374397766690233,
+    "secondPair": "expense/income"
+   },
+   "deutan": {
+    "min": 0.057052123994208954,
+    "pair": "expense/income",
+    "second": 0.0745113522036887,
+    "secondPair": "transfer/credit"
+   },
+   "tritan": {
+    "min": 0.038582338691770364,
+    "pair": "expense/warning",
+    "second": 0.09085323011747246,
+    "secondPair": "expense/credit"
+   }
+  },
+  "apca": {
+   "expense": 86.74622849902424,
+   "income": 84.17953536141177,
+   "transfer": 77.14221678301308,
+   "credit": 86.91850306976579,
+   "warning": 77.16540997509456
+  },
+  "score": 0.20545701534946065,
+  "strategy": "balanced"
+ },
+ "light_cvd": {
+  "colors": {
+   "expense": "#811F14",
+   "income": "#005031",
+   "transfer": "#00668F",
+   "credit": "#54287A",
+   "warning": "#8F6200"
+  },
+  "contrast": {
+   "expense": 9.341010415172768,
+   "income": 9.118148999499429,
+   "transfer": 6.06132397413117,
+   "credit": 10.188735947515909,
+   "warning": 5.104798634501921
+  },
+  "lightness": {
+   "expense": 0.4005656800053435,
+   "income": 0.3802518533798705,
+   "transfer": 0.48163707939741124,
+   "credit": 0.37955138909532,
+   "warning": 0.5303666624352356
+  },
+  "spread": 0.15081527333991557,
+  "cvd": {
+   "normal": {
+    "min": 0.15473085682919951,
+    "pair": "income/transfer",
+    "second": 0.1641957386655762,
+    "secondPair": "expense/warning"
+   },
+   "protan": {
+    "min": 0.08136785720453665,
+    "pair": "expense/income",
+    "second": 0.11699795500445782,
+    "secondPair": "income/warning"
+   },
+   "deutan": {
+    "min": 0.06524497311117579,
+    "pair": "expense/income",
+    "second": 0.10010889493971814,
+    "secondPair": "transfer/credit"
+   },
+   "tritan": {
+    "min": 0.09651380275303059,
+    "pair": "expense/warning",
+    "second": 0.10541558025755503,
+    "secondPair": "expense/credit"
+   }
+  },
+  "apca": {
+   "expense": 85.75458549651682,
+   "income": 85.18216114482944,
+   "transfer": 74.82184917917394,
+   "credit": 87.81258785639876,
+   "warning": 69.98912516062231
+  },
+  "score": 0.10439195697788127,
+  "strategy": "cvd"
+ },
+ "dark_balanced": {
+  "colors": {
+   "expense": "#FFAB9D",
+   "income": "#6ADFA6",
+   "transfer": "#44BBF7",
+   "credit": "#BF94EF",
+   "warning": "#D99F36"
+  },
+  "contrast": {
+   "expense": 10.213406793028431,
+   "income": 11.233076827840422,
+   "transfer": 8.5644367572125,
+   "credit": 7.68179326817551,
+   "warning": 7.916047389236337
+  },
+  "lightness": {
+   "expense": 0.8194302867407748,
+   "income": 0.8205081066918045,
+   "transfer": 0.7512973181156712,
+   "credit": 0.7408025232035247,
+   "warning": 0.7401042996678941
+  },
+  "spread": 0.08040380702391037,
+  "cvd": {
+   "normal": {
+    "min": 0.12888997000683297,
+    "pair": "expense/warning",
+    "second": 0.1554357339358015,
+    "secondPair": "transfer/credit"
+   },
+   "protan": {
+    "min": 0.072856842532703,
+    "pair": "transfer/credit",
+    "second": 0.095947354456366,
+    "secondPair": "expense/income"
+   },
+   "deutan": {
+    "min": 0.014512785881220912,
+    "pair": "transfer/credit",
+    "second": 0.022221058135470578,
+    "secondPair": "expense/income"
+   },
+   "tritan": {
+    "min": 0.08604638561491601,
+    "pair": "expense/warning",
+    "second": 0.10351913414981846,
+    "secondPair": "income/transfer"
+   }
+  },
+  "apca": {
+   "expense": -68.57978132979473,
+   "income": -73.66985195386135,
+   "transfer": -59.85431096180051,
+   "credit": -54.90044713248153,
+   "warning": -56.24216533400943
+  },
+  "score": 0.21653514961147938,
+  "strategy": "balanced"
+ },
+ "dark_cvd": {
+  "colors": {
+   "expense": "#F08574",
+   "income": "#78ECB2",
+   "transfer": "#33AEE9",
+   "credit": "#DEC3FF",
+   "warning": "#FEC25E"
+  },
+  "contrast": {
+   "expense": 7.341424943504728,
+   "income": 12.753183806943865,
+   "transfer": 7.394033310525866,
+   "credit": 11.796051309085064,
+   "warning": 11.563370431921133
+  },
+  "lightness": {
+   "expense": 0.7299470323539311,
+   "income": 0.8596240322666413,
+   "transfer": 0.7107629829454232,
+   "credit": 0.8596563655805035,
+   "warning": 0.8497778780901548
+  },
+  "spread": 0.14889338263508034,
+  "cvd": {
+   "normal": {
+    "min": 0.16201649932078172,
+    "pair": "expense/warning",
+    "second": 0.17726113313150538,
+    "secondPair": "income/warning"
+   },
+   "protan": {
+    "min": 0.09741113270719289,
+    "pair": "transfer/credit",
+    "second": 0.10859990416193747,
+    "secondPair": "income/warning"
+   },
+   "deutan": {
+    "min": 0.10547206551114442,
+    "pair": "income/warning",
+    "second": 0.11213779769148943,
+    "secondPair": "income/credit"
+   },
+   "tritan": {
+    "min": 0.09470999360701514,
+    "pair": "expense/warning",
+    "second": 0.13542410396290006,
+    "secondPair": "income/credit"
+   }
+  },
+  "apca": {
+   "expense": -52.92849573232119,
+   "income": -80.9271472992435,
+   "transfer": -53.22764905556231,
+   "credit": -76.40519916683964,
+   "warning": -75.28617195888269
+  },
+  "score": 0.10547206551114442,
+  "strategy": "cvd"
+ }
+}

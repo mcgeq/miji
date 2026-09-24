@@ -1,0 +1,1400 @@
+{
+ "palettes": {
+  "ink": {
+   "meta": {
+    "label": "V1 墨蓝 · 暖白",
+    "seedHue": 262.0,
+    "seedChroma": 34.0
+   },
+   "variants": {
+    "warm_light": {
+     "roles": {
+      "primary": "#425F8D",
+      "onPrimary": "#FFFFFF",
+      "primaryContainer": "#D6E3FF",
+      "onPrimaryContainer": "#294774",
+      "secondary": "#575F6E",
+      "onSecondary": "#FFFFFF",
+      "tertiary": "#6D5774",
+      "onTertiary": "#FFFFFF",
+      "error": "#BA1A1A",
+      "onError": "#FFFFFF",
+      "surface": "#FFF8F4",
+      "onSurface": "#221A12",
+      "surfaceContainerLowest": "#FFFFFF",
+      "surfaceContainerLow": "#FFF1E6",
+      "surfaceContainer": "#FBEBDE",
+      "surfaceContainerHigh": "#F5E5D8",
+      "surfaceContainerHighest": "#F0E0D2",
+      "outline": "#867462",
+      "outlineVariant": "#D9C3AE"
+     },
+     "semantic_balanced": {
+      "expense": "#7E1B11",
+      "income": "#005333",
+      "transfer": "#006087",
+      "credit": "#562B7D",
+      "warning": "#795200"
+     },
+     "semantic_cvd": {
+      "expense": "#811F14",
+      "income": "#005031",
+      "transfer": "#00668F",
+      "credit": "#54287A",
+      "warning": "#8F6200"
+     },
+     "chart": [
+      "#AC6820",
+      "#008C8F",
+      "#A35E9A",
+      "#837E0F",
+      "#2981BB",
+      "#B65A60",
+      "#388E56",
+      "#766EBD"
+     ],
+     "hero": {
+      "brand": [
+       "#006F98",
+       "#456ACE",
+       "#8A5FC9"
+      ],
+      "netWorth": [
+       "#624EB7",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#AF3E7C",
+       "#BC426D",
+       "#C74955"
+      ]
+     },
+     "amber": "#FFE9C6"
+    },
+    "warm_dark": {
+     "roles": {
+      "primary": "#ABC7FC",
+      "onPrimary": "#0E305C",
+      "primaryContainer": "#294774",
+      "onPrimaryContainer": "#D6E3FF",
+      "secondary": "#BFC6D9",
+      "onSecondary": "#29313F",
+      "tertiary": "#D9BEDF",
+      "onTertiary": "#3C2943",
+      "error": "#FFB4AB",
+      "onError": "#690005",
+      "surface": "#19120A",
+      "onSurface": "#F0E0D2",
+      "surfaceContainerLowest": "#140D06",
+      "surfaceContainerLow": "#221A12",
+      "surfaceContainer": "#261E16",
+      "surfaceContainerHigh": "#312820",
+      "surfaceContainerHighest": "#3C332A",
+      "outline": "#A18D7B",
+      "outlineVariant": "#534434"
+     },
+     "semantic_balanced": {
+      "expense": "#FFAB9D",
+      "income": "#6ADFA6",
+      "transfer": "#44BBF7",
+      "credit": "#BF94EF",
+      "warning": "#D99F36"
+     },
+     "semantic_cvd": {
+      "expense": "#F08574",
+      "income": "#78ECB2",
+      "transfer": "#33AEE9",
+      "credit": "#DEC3FF",
+      "warning": "#FEC25E"
+     },
+     "chart": [
+      "#F5AC69",
+      "#44D5D8",
+      "#EBA1E0",
+      "#C6C362",
+      "#7AC6FF",
+      "#FF9EA3",
+      "#7FD497",
+      "#B9B3FF"
+     ],
+     "hero": {
+      "brand": [
+       "#006F98",
+       "#4D6DBD",
+       "#8463B8"
+      ],
+      "netWorth": [
+       "#6154A8",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#A44B79",
+       "#B04F6E",
+       "#B7535A"
+      ]
+     },
+     "amber": "#FFE9C6"
+    },
+    "cool_light": {
+     "roles": {
+      "primary": "#425F8D",
+      "onPrimary": "#FFFFFF",
+      "primaryContainer": "#D6E3FF",
+      "onPrimaryContainer": "#294774",
+      "secondary": "#575F6E",
+      "onSecondary": "#FFFFFF",
+      "tertiary": "#6D5774",
+      "onTertiary": "#FFFFFF",
+      "error": "#BA1A1A",
+      "onError": "#FFFFFF",
+      "surface": "#F9F9FC",
+      "onSurface": "#1A1C1E",
+      "surfaceContainerLowest": "#FFFFFF",
+      "surfaceContainerLow": "#F3F3F7",
+      "surfaceContainer": "#EEEDF1",
+      "surfaceContainerHigh": "#E8E8EB",
+      "surfaceContainerHighest": "#E2E2E5",
+      "outline": "#72777F",
+      "outlineVariant": "#C2C7CF"
+     },
+     "semantic_balanced": {
+      "expense": "#7E1B11",
+      "income": "#005333",
+      "transfer": "#006087",
+      "credit": "#562B7D",
+      "warning": "#795200"
+     },
+     "semantic_cvd": {
+      "expense": "#811F14",
+      "income": "#005031",
+      "transfer": "#00668F",
+      "credit": "#54287A",
+      "warning": "#8F6200"
+     },
+     "chart": [
+      "#AC6820",
+      "#008C8F",
+      "#A35E9A",
+      "#837E0F",
+      "#2981BB",
+      "#B65A60",
+      "#388E56",
+      "#766EBD"
+     ],
+     "hero": {
+      "brand": [
+       "#006F98",
+       "#456ACE",
+       "#8A5FC9"
+      ],
+      "netWorth": [
+       "#624EB7",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#AF3E7C",
+       "#BC426D",
+       "#C74955"
+      ]
+     },
+     "amber": "#FFE9C6"
+    },
+    "cool_dark": {
+     "roles": {
+      "primary": "#ABC7FC",
+      "onPrimary": "#0E305C",
+      "primaryContainer": "#294774",
+      "onPrimaryContainer": "#D6E3FF",
+      "secondary": "#BFC6D9",
+      "onSecondary": "#29313F",
+      "tertiary": "#D9BEDF",
+      "onTertiary": "#3C2943",
+      "error": "#FFB4AB",
+      "onError": "#690005",
+      "surface": "#121316",
+      "onSurface": "#E2E2E5",
+      "surfaceContainerLowest": "#0C0E11",
+      "surfaceContainerLow": "#1A1C1E",
+      "surfaceContainer": "#1E2022",
+      "surfaceContainerHigh": "#282A2D",
+      "surfaceContainerHighest": "#333538",
+      "outline": "#8C9199",
+      "outlineVariant": "#42474E"
+     },
+     "semantic_balanced": {
+      "expense": "#FFAB9D",
+      "income": "#6ADFA6",
+      "transfer": "#44BBF7",
+      "credit": "#BF94EF",
+      "warning": "#D99F36"
+     },
+     "semantic_cvd": {
+      "expense": "#F08574",
+      "income": "#78ECB2",
+      "transfer": "#33AEE9",
+      "credit": "#DEC3FF",
+      "warning": "#FEC25E"
+     },
+     "chart": [
+      "#F5AC69",
+      "#44D5D8",
+      "#EBA1E0",
+      "#C6C362",
+      "#7AC6FF",
+      "#FF9EA3",
+      "#7FD497",
+      "#B9B3FF"
+     ],
+     "hero": {
+      "brand": [
+       "#006F98",
+       "#4D6DBD",
+       "#8463B8"
+      ],
+      "netWorth": [
+       "#6154A8",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#A44B79",
+       "#B04F6E",
+       "#B7535A"
+      ]
+     },
+     "amber": "#FFE9C6"
+    }
+   }
+  },
+  "jade": {
+   "meta": {
+    "label": "V2 青碧 · 中性",
+    "seedHue": 195.0,
+    "seedChroma": 30.0
+   },
+   "variants": {
+    "warm_light": {
+     "roles": {
+      "primary": "#246867",
+      "onPrimary": "#FFFFFF",
+      "primaryContainer": "#ADEEEC",
+      "onPrimaryContainer": "#00504F",
+      "secondary": "#4D6261",
+      "onSecondary": "#FFFFFF",
+      "tertiary": "#4C6078",
+      "onTertiary": "#FFFFFF",
+      "error": "#BA1A1A",
+      "onError": "#FFFFFF",
+      "surface": "#FFF8F4",
+      "onSurface": "#221A12",
+      "surfaceContainerLowest": "#FFFFFF",
+      "surfaceContainerLow": "#FFF1E6",
+      "surfaceContainer": "#FBEBDE",
+      "surfaceContainerHigh": "#F5E5D8",
+      "surfaceContainerHighest": "#F0E0D2",
+      "outline": "#867462",
+      "outlineVariant": "#D9C3AE"
+     },
+     "semantic_balanced": {
+      "expense": "#7E1B11",
+      "income": "#005333",
+      "transfer": "#006087",
+      "credit": "#562B7D",
+      "warning": "#795200"
+     },
+     "semantic_cvd": {
+      "expense": "#811F14",
+      "income": "#005031",
+      "transfer": "#00668F",
+      "credit": "#54287A",
+      "warning": "#8F6200"
+     },
+     "chart": [
+      "#B0597E",
+      "#628835",
+      "#5777C1",
+      "#B55F40",
+      "#008F77",
+      "#9064AF",
+      "#9B7300",
+      "#0088A6"
+     ],
+     "hero": {
+      "brand": [
+       "#007956",
+       "#007B80",
+       "#007CA9"
+      ],
+      "netWorth": [
+       "#624EB7",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#AF3E7C",
+       "#BC426D",
+       "#C74955"
+      ]
+     },
+     "amber": "#FFE9C6"
+    },
+    "warm_dark": {
+     "roles": {
+      "primary": "#91D2D0",
+      "onPrimary": "#003736",
+      "primaryContainer": "#00504F",
+      "onPrimaryContainer": "#ADEEEC",
+      "secondary": "#B4CBCA",
+      "onSecondary": "#1F3433",
+      "tertiary": "#B3C8E4",
+      "onTertiary": "#1D3248",
+      "error": "#FFB4AB",
+      "onError": "#690005",
+      "surface": "#19120A",
+      "onSurface": "#F0E0D2",
+      "surfaceContainerLowest": "#140D06",
+      "surfaceContainerLow": "#221A12",
+      "surfaceContainer": "#261E16",
+      "surfaceContainerHigh": "#312820",
+      "surfaceContainerHighest": "#3C332A",
+      "outline": "#A18D7B",
+      "outlineVariant": "#534434"
+     },
+     "semantic_balanced": {
+      "expense": "#FFAB9D",
+      "income": "#6ADFA6",
+      "transfer": "#44BBF7",
+      "credit": "#BF94EF",
+      "warning": "#D99F36"
+     },
+     "semantic_cvd": {
+      "expense": "#F08574",
+      "income": "#78ECB2",
+      "transfer": "#33AEE9",
+      "credit": "#DEC3FF",
+      "warning": "#FEC25E"
+     },
+     "chart": [
+      "#FB9DC2",
+      "#A4CD79",
+      "#9EBDFF",
+      "#FFA382",
+      "#59D7B9",
+      "#D5A8F8",
+      "#E1B75C",
+      "#52CFF3"
+     ],
+     "hero": {
+      "brand": [
+       "#007956",
+       "#007B80",
+       "#007CA9"
+      ],
+      "netWorth": [
+       "#6154A8",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#A44B79",
+       "#B04F6E",
+       "#B7535A"
+      ]
+     },
+     "amber": "#FFE9C6"
+    },
+    "cool_light": {
+     "roles": {
+      "primary": "#246867",
+      "onPrimary": "#FFFFFF",
+      "primaryContainer": "#ADEEEC",
+      "onPrimaryContainer": "#00504F",
+      "secondary": "#4D6261",
+      "onSecondary": "#FFFFFF",
+      "tertiary": "#4C6078",
+      "onTertiary": "#FFFFFF",
+      "error": "#BA1A1A",
+      "onError": "#FFFFFF",
+      "surface": "#F9F9FC",
+      "onSurface": "#1A1C1E",
+      "surfaceContainerLowest": "#FFFFFF",
+      "surfaceContainerLow": "#F3F3F7",
+      "surfaceContainer": "#EEEDF1",
+      "surfaceContainerHigh": "#E8E8EB",
+      "surfaceContainerHighest": "#E2E2E5",
+      "outline": "#72777F",
+      "outlineVariant": "#C2C7CF"
+     },
+     "semantic_balanced": {
+      "expense": "#7E1B11",
+      "income": "#005333",
+      "transfer": "#006087",
+      "credit": "#562B7D",
+      "warning": "#795200"
+     },
+     "semantic_cvd": {
+      "expense": "#811F14",
+      "income": "#005031",
+      "transfer": "#00668F",
+      "credit": "#54287A",
+      "warning": "#8F6200"
+     },
+     "chart": [
+      "#B0597E",
+      "#628835",
+      "#5777C1",
+      "#B55F40",
+      "#008F77",
+      "#9064AF",
+      "#9B7300",
+      "#0088A6"
+     ],
+     "hero": {
+      "brand": [
+       "#007956",
+       "#007B80",
+       "#007CA9"
+      ],
+      "netWorth": [
+       "#624EB7",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#AF3E7C",
+       "#BC426D",
+       "#C74955"
+      ]
+     },
+     "amber": "#FFE9C6"
+    },
+    "cool_dark": {
+     "roles": {
+      "primary": "#91D2D0",
+      "onPrimary": "#003736",
+      "primaryContainer": "#00504F",
+      "onPrimaryContainer": "#ADEEEC",
+      "secondary": "#B4CBCA",
+      "onSecondary": "#1F3433",
+      "tertiary": "#B3C8E4",
+      "onTertiary": "#1D3248",
+      "error": "#FFB4AB",
+      "onError": "#690005",
+      "surface": "#121316",
+      "onSurface": "#E2E2E5",
+      "surfaceContainerLowest": "#0C0E11",
+      "surfaceContainerLow": "#1A1C1E",
+      "surfaceContainer": "#1E2022",
+      "surfaceContainerHigh": "#282A2D",
+      "surfaceContainerHighest": "#333538",
+      "outline": "#8C9199",
+      "outlineVariant": "#42474E"
+     },
+     "semantic_balanced": {
+      "expense": "#FFAB9D",
+      "income": "#6ADFA6",
+      "transfer": "#44BBF7",
+      "credit": "#BF94EF",
+      "warning": "#D99F36"
+     },
+     "semantic_cvd": {
+      "expense": "#F08574",
+      "income": "#78ECB2",
+      "transfer": "#33AEE9",
+      "credit": "#DEC3FF",
+      "warning": "#FEC25E"
+     },
+     "chart": [
+      "#FB9DC2",
+      "#A4CD79",
+      "#9EBDFF",
+      "#FFA382",
+      "#59D7B9",
+      "#D5A8F8",
+      "#E1B75C",
+      "#52CFF3"
+     ],
+     "hero": {
+      "brand": [
+       "#007956",
+       "#007B80",
+       "#007CA9"
+      ],
+      "netWorth": [
+       "#6154A8",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#A44B79",
+       "#B04F6E",
+       "#B7535A"
+      ]
+     },
+     "amber": "#FFE9C6"
+    }
+   }
+  },
+  "plum": {
+   "meta": {
+    "label": "V3 绛紫 · 暖白",
+    "seedHue": 318.0,
+    "seedChroma": 32.0
+   },
+   "variants": {
+    "warm_light": {
+     "roles": {
+      "primary": "#725281",
+      "onPrimary": "#FFFFFF",
+      "primaryContainer": "#F6D9FF",
+      "onPrimaryContainer": "#593B67",
+      "secondary": "#675A6B",
+      "onSecondary": "#FFFFFF",
+      "tertiary": "#7E5354",
+      "onTertiary": "#FFFFFF",
+      "error": "#BA1A1A",
+      "onError": "#FFFFFF",
+      "surface": "#FFF8F4",
+      "onSurface": "#221A12",
+      "surfaceContainerLowest": "#FFFFFF",
+      "surfaceContainerLow": "#FFF1E6",
+      "surfaceContainer": "#FBEBDE",
+      "surfaceContainerHigh": "#F5E5D8",
+      "surfaceContainerHighest": "#F0E0D2",
+      "outline": "#867462",
+      "outlineVariant": "#D9C3AE"
+     },
+     "semantic_balanced": {
+      "expense": "#7E1B11",
+      "income": "#005333",
+      "transfer": "#006087",
+      "credit": "#562B7D",
+      "warning": "#795200"
+     },
+     "semantic_cvd": {
+      "expense": "#811F14",
+      "income": "#005031",
+      "transfer": "#00668F",
+      "credit": "#54287A",
+      "warning": "#8F6200"
+     },
+     "chart": [
+      "#748322",
+      "#427DBF",
+      "#B75B51",
+      "#169065",
+      "#8369B8",
+      "#A56D0D",
+      "#008A99",
+      "#AA5B8D"
+     ],
+     "hero": {
+      "brand": [
+       "#6A57C1",
+       "#9E4EAB",
+       "#C0497D"
+      ],
+      "netWorth": [
+       "#624EB7",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#AF3E7C",
+       "#BC426D",
+       "#C74955"
+      ]
+     },
+     "amber": "#FFE9C6"
+    },
+    "warm_dark": {
+     "roles": {
+      "primary": "#DFB9EE",
+      "onPrimary": "#41254F",
+      "primaryContainer": "#593B67",
+      "onPrimaryContainer": "#F6D9FF",
+      "secondary": "#D2C1D5",
+      "onSecondary": "#382C3C",
+      "tertiary": "#F1B9BA",
+      "onTertiary": "#4A2628",
+      "error": "#FFB4AB",
+      "onError": "#690005",
+      "surface": "#19120A",
+      "onSurface": "#F0E0D2",
+      "surfaceContainerLowest": "#140D06",
+      "surfaceContainerLow": "#221A12",
+      "surfaceContainer": "#261E16",
+      "surfaceContainerHigh": "#312820",
+      "surfaceContainerHighest": "#3C332A",
+      "outline": "#A18D7B",
+      "outlineVariant": "#534434"
+     },
+     "semantic_balanced": {
+      "expense": "#FFAB9D",
+      "income": "#6ADFA6",
+      "transfer": "#44BBF7",
+      "credit": "#BF94EF",
+      "warning": "#D99F36"
+     },
+     "semantic_cvd": {
+      "expense": "#F08574",
+      "income": "#78ECB2",
+      "transfer": "#33AEE9",
+      "credit": "#DEC3FF",
+      "warning": "#FEC25E"
+     },
+     "chart": [
+      "#B7C86B",
+      "#8DC2FF",
+      "#FFA194",
+      "#6CD6A7",
+      "#C7ADFF",
+      "#EDB160",
+      "#46D3E6",
+      "#F49ED2"
+     ],
+     "hero": {
+      "brand": [
+       "#695DB2",
+       "#9758A1",
+       "#B1537A"
+      ],
+      "netWorth": [
+       "#6154A8",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#A44B79",
+       "#B04F6E",
+       "#B7535A"
+      ]
+     },
+     "amber": "#FFE9C6"
+    },
+    "cool_light": {
+     "roles": {
+      "primary": "#725281",
+      "onPrimary": "#FFFFFF",
+      "primaryContainer": "#F6D9FF",
+      "onPrimaryContainer": "#593B67",
+      "secondary": "#675A6B",
+      "onSecondary": "#FFFFFF",
+      "tertiary": "#7E5354",
+      "onTertiary": "#FFFFFF",
+      "error": "#BA1A1A",
+      "onError": "#FFFFFF",
+      "surface": "#F9F9FC",
+      "onSurface": "#1A1C1E",
+      "surfaceContainerLowest": "#FFFFFF",
+      "surfaceContainerLow": "#F3F3F7",
+      "surfaceContainer": "#EEEDF1",
+      "surfaceContainerHigh": "#E8E8EB",
+      "surfaceContainerHighest": "#E2E2E5",
+      "outline": "#72777F",
+      "outlineVariant": "#C2C7CF"
+     },
+     "semantic_balanced": {
+      "expense": "#7E1B11",
+      "income": "#005333",
+      "transfer": "#006087",
+      "credit": "#562B7D",
+      "warning": "#795200"
+     },
+     "semantic_cvd": {
+      "expense": "#811F14",
+      "income": "#005031",
+      "transfer": "#00668F",
+      "credit": "#54287A",
+      "warning": "#8F6200"
+     },
+     "chart": [
+      "#748322",
+      "#427DBF",
+      "#B75B51",
+      "#169065",
+      "#8369B8",
+      "#A56D0D",
+      "#008A99",
+      "#AA5B8D"
+     ],
+     "hero": {
+      "brand": [
+       "#6A57C1",
+       "#9E4EAB",
+       "#C0497D"
+      ],
+      "netWorth": [
+       "#624EB7",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#AF3E7C",
+       "#BC426D",
+       "#C74955"
+      ]
+     },
+     "amber": "#FFE9C6"
+    },
+    "cool_dark": {
+     "roles": {
+      "primary": "#DFB9EE",
+      "onPrimary": "#41254F",
+      "primaryContainer": "#593B67",
+      "onPrimaryContainer": "#F6D9FF",
+      "secondary": "#D2C1D5",
+      "onSecondary": "#382C3C",
+      "tertiary": "#F1B9BA",
+      "onTertiary": "#4A2628",
+      "error": "#FFB4AB",
+      "onError": "#690005",
+      "surface": "#121316",
+      "onSurface": "#E2E2E5",
+      "surfaceContainerLowest": "#0C0E11",
+      "surfaceContainerLow": "#1A1C1E",
+      "surfaceContainer": "#1E2022",
+      "surfaceContainerHigh": "#282A2D",
+      "surfaceContainerHighest": "#333538",
+      "outline": "#8C9199",
+      "outlineVariant": "#42474E"
+     },
+     "semantic_balanced": {
+      "expense": "#FFAB9D",
+      "income": "#6ADFA6",
+      "transfer": "#44BBF7",
+      "credit": "#BF94EF",
+      "warning": "#D99F36"
+     },
+     "semantic_cvd": {
+      "expense": "#F08574",
+      "income": "#78ECB2",
+      "transfer": "#33AEE9",
+      "credit": "#DEC3FF",
+      "warning": "#FEC25E"
+     },
+     "chart": [
+      "#B7C86B",
+      "#8DC2FF",
+      "#FFA194",
+      "#6CD6A7",
+      "#C7ADFF",
+      "#EDB160",
+      "#46D3E6",
+      "#F49ED2"
+     ],
+     "hero": {
+      "brand": [
+       "#695DB2",
+       "#9758A1",
+       "#B1537A"
+      ],
+      "netWorth": [
+       "#6154A8",
+       "#00679A",
+       "#007673"
+      ],
+      "danger": [
+       "#A44B79",
+       "#B04F6E",
+       "#B7535A"
+      ]
+     },
+     "amber": "#FFE9C6"
+    }
+   }
+  }
+ },
+ "checks": {
+  "ink": {
+   "warm_light": {
+    "onPrimary：实心按钮文字": {
+     "value": 6.46,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#425F8D 上的 #FFFFFF"
+    },
+    "primary 当文字": {
+     "value": 6.14,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#425F8D"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.25,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#294774 on #D6E3FF"
+    },
+    "语义色最差（文字）": {
+     "value": 6.28,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.6,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 3.86,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   },
+   "warm_dark": {
+    "onPrimary：实心按钮文字": {
+     "value": 7.71,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#ABC7FC 上的 #0E305C"
+    },
+    "primary 当文字": {
+     "value": 10.87,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#ABC7FC"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.25,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#D6E3FF on #294774"
+    },
+    "语义色最差（文字）": {
+     "value": 7.1,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.71,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 9.43,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   },
+   "cool_light": {
+    "onPrimary：实心按钮文字": {
+     "value": 6.46,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#425F8D 上的 #FFFFFF"
+    },
+    "primary 当文字": {
+     "value": 6.14,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#425F8D"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.25,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#294774 on #D6E3FF"
+    },
+    "语义色最差（文字）": {
+     "value": 6.28,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.6,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 3.86,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   },
+   "cool_dark": {
+    "onPrimary：实心按钮文字": {
+     "value": 7.71,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#ABC7FC 上的 #0E305C"
+    },
+    "primary 当文字": {
+     "value": 10.89,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#ABC7FC"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.25,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#D6E3FF on #294774"
+    },
+    "语义色最差（文字）": {
+     "value": 7.08,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.71,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 9.44,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   }
+  },
+  "jade": {
+   "warm_light": {
+    "onPrimary：实心按钮文字": {
+     "value": 6.46,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#246867 上的 #FFFFFF"
+    },
+    "primary 当文字": {
+     "value": 6.15,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#246867"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.17,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#00504F on #ADEEEC"
+    },
+    "语义色最差（文字）": {
+     "value": 6.28,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.65,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 3.85,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   },
+   "warm_dark": {
+    "onPrimary：实心按钮文字": {
+     "value": 7.71,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#91D2D0 上的 #003736"
+    },
+    "primary 当文字": {
+     "value": 10.89,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#91D2D0"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.17,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#ADEEEC on #00504F"
+    },
+    "语义色最差（文字）": {
+     "value": 7.1,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.71,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 9.45,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   },
+   "cool_light": {
+    "onPrimary：实心按钮文字": {
+     "value": 6.46,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#246867 上的 #FFFFFF"
+    },
+    "primary 当文字": {
+     "value": 6.15,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#246867"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.17,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#00504F on #ADEEEC"
+    },
+    "语义色最差（文字）": {
+     "value": 6.28,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.65,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 3.85,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   },
+   "cool_dark": {
+    "onPrimary：实心按钮文字": {
+     "value": 7.71,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#91D2D0 上的 #003736"
+    },
+    "primary 当文字": {
+     "value": 10.91,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#91D2D0"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.17,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#ADEEEC on #00504F"
+    },
+    "语义色最差（文字）": {
+     "value": 7.08,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.71,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 9.47,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   }
+  },
+  "plum": {
+   "warm_light": {
+    "onPrimary：实心按钮文字": {
+     "value": 6.48,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#725281 上的 #FFFFFF"
+    },
+    "primary 当文字": {
+     "value": 6.17,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#725281"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.25,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#593B67 on #F6D9FF"
+    },
+    "语义色最差（文字）": {
+     "value": 6.28,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.65,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 3.83,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   },
+   "warm_dark": {
+    "onPrimary：实心按钮文字": {
+     "value": 7.68,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#DFB9EE 上的 #41254F"
+    },
+    "primary 当文字": {
+     "value": 10.87,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#DFB9EE"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.25,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#F6D9FF on #593B67"
+    },
+    "语义色最差（文字）": {
+     "value": 7.1,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.77,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 9.42,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   },
+   "cool_light": {
+    "onPrimary：实心按钮文字": {
+     "value": 6.48,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#725281 上的 #FFFFFF"
+    },
+    "primary 当文字": {
+     "value": 6.17,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#725281"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.25,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#593B67 on #F6D9FF"
+    },
+    "语义色最差（文字）": {
+     "value": 6.28,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.65,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 3.83,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   },
+   "cool_dark": {
+    "onPrimary：实心按钮文字": {
+     "value": 7.68,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#DFB9EE 上的 #41254F"
+    },
+    "primary 当文字": {
+     "value": 10.89,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#DFB9EE"
+    },
+    "selected chip（container 配对）": {
+     "value": 7.25,
+     "need": 4.5,
+     "ok": true,
+     "detail": "#F6D9FF on #593B67"
+    },
+    "语义色最差（文字）": {
+     "value": 7.08,
+     "need": 4.5,
+     "ok": true,
+     "detail": "五色取最差"
+    },
+    "hero 渐变白字最差": {
+     "value": 4.77,
+     "need": 4.5,
+     "ok": true,
+     "detail": "全部端点"
+    },
+    "hero 琥珀字最差": {
+     "value": 4.62,
+     "need": 4.5,
+     "ok": true,
+     "detail": "净资产渐变"
+    },
+    "图表色板最差（图形）": {
+     "value": 9.44,
+     "need": 3.0,
+     "ok": true,
+     "detail": "8 色取最差"
+    }
+   }
+  }
+ },
+ "gradient_midpoints": {
+  "ink": {
+   "mode": "light",
+   "gradient": "netWorth",
+   "hueSpan": 48.9,
+   "rows": [
+    {
+     "pair": "#00679A → #007673",
+     "avgL": 0.501,
+     "rgbHex": "#006E86",
+     "rgbL": 0.498,
+     "rgbDip": -0.003,
+     "okHex": "#006F87",
+     "okL": 0.501,
+     "okDip": 0.0
+    }
+   ]
+  },
+  "jade": {
+   "mode": "light",
+   "gradient": "netWorth",
+   "hueSpan": 48.9,
+   "rows": [
+    {
+     "pair": "#00679A → #007673",
+     "avgL": 0.501,
+     "rgbHex": "#006E86",
+     "rgbL": 0.498,
+     "rgbDip": -0.003,
+     "okHex": "#006F87",
+     "okL": 0.501,
+     "okDip": 0.0
+    }
+   ]
+  },
+  "plum": {
+   "mode": "light",
+   "gradient": "netWorth",
+   "hueSpan": 48.9,
+   "rows": [
+    {
+     "pair": "#00679A → #007673",
+     "avgL": 0.501,
+     "rgbHex": "#006E86",
+     "rgbL": 0.498,
+     "rgbDip": -0.003,
+     "okHex": "#006F87",
+     "okL": 0.501,
+     "okDip": 0.0
+    }
+   ]
+  }
+ }
+}

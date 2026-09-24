@@ -722,7 +722,7 @@ class _CategoryBudgetRow extends StatelessWidget {
               minHeight: 6,
               backgroundColor: Colors.white.withValues(alpha: 0.22),
               valueColor: AlwaysStoppedAnimation(
-                warn ? const Color(0xFFFFD9A0) : Colors.white,
+                warn ? theme.heroGradients.amber : Colors.white,
               ),
             ),
           ),
@@ -810,7 +810,7 @@ class _DualProgress extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         color: exceeded
-                            ? const Color(0xFFFFD9A0)
+                            ? theme.heroGradients.amber
                             : Colors.white,
                         borderRadius: BorderRadius.circular(999),
                       ),

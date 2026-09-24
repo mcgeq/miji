@@ -16,7 +16,6 @@ class DriftAuthRepository implements AuthRepository {
        _now = now ?? DateTime.now;
 
   static const _credentialType = 'passcode';
-  static const _defaultThemeSeedColor = 0xFFE45F4F;
 
   final AppDatabase database;
   final CredentialHasher _credentialHasher;
@@ -102,7 +101,6 @@ class DriftAuthRepository implements AuthRepository {
             .insert(
               UserPreferencesCompanion.insert(
                 userId: userId,
-                themeSeedColor: _defaultThemeSeedColor,
                 currencyCode: const Value('CNY'),
                 createdAt: createdAt,
                 updatedAt: createdAt,
