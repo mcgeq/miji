@@ -90,11 +90,50 @@ class DatabaseSeedRunner {
   Future<void> seedUserDefaults(String userId) async {
     final now = DateTime.now().toUtc();
 
-    await database.transaction(() async {
-      // ... existing health seed ...
-    });
-
+    await _seedHealthDefaults(userId, now);
     await _seedCheckinDefaults(userId, now);
+  }
+
+  /// 每个用户一份生理周期设置。
+  ///
+  /// 健康模块的其它查询（`_activeSettingsForUser`）都依赖这一行；
+  /// 缺失时会直接抛错，因此这里是必要的用户级种子。
+  Future<void> _seedHealthDefaults(String userId, DateTime now) async {
+    await database.transaction(() async {
+      final existing =
+          await (database.select(database.healthPeriodSettings)..where(
+                (row) =>
+                    row.userId.equals(userId) & row.isDeleted.equals(false),
+              )
+              ..limit(1))
+              .getSingleOrNull();
+      if (existing != null) {
+        return;
+      }
+
+      await database
+          .into(database.healthPeriodSettings)
+          .insert(
+            HealthPeriodSettingsCompanion.insert(
+              id: _uuid.v4(),
+              userId: userId,
+              averageCycleLength: 28,
+              averagePeriodLength: 5,
+              reminderDays: 1,
+              periodTrackingEnabled: const Value(true),
+              periodReminderEnabled: const Value(false),
+              ovulationReminderEnabled: const Value(false),
+              pmsReminderEnabled: const Value(false),
+              dataSyncEnabled: const Value(true),
+              analyticsEnabled: const Value(false),
+              isDeleted: const Value(false),
+              deletedAt: const Value<DateTime?>(null),
+              createdAt: now,
+              updatedAt: now,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+    });
   }
 
   Future<void> _seedCheckinDefaults(String userId, DateTime now) async {

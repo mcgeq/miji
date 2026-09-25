@@ -124,6 +124,26 @@ class HomeMonthBudgetSummary {
   }
 }
 
+/// 解析首页 Hero 实际展示的预算摘要。
+///
+/// 背景只有「有预算」与「无预算」两种底色，而「已超支」是周期内的终态。
+/// 数据刷新期间若暂时拿不到「有预算」的摘要（但用户仍有可用预算），
+/// 保留上一次的摘要，避免卡片在 danger / brand 两种底色之间闪回。
+HomeMonthBudgetSummary? resolveStableBudgetSummary({
+  required HomeMonthBudgetSummary? current,
+  required HomeMonthBudgetSummary? previous,
+  required bool isLoading,
+  required bool hasEligibleBudget,
+}) {
+  if (current?.hasBudget ?? false) {
+    return current;
+  }
+  if (isLoading || hasEligibleBudget) {
+    return previous ?? current;
+  }
+  return current;
+}
+
 enum HomeCategoryStructureType {
   expense,
   income;

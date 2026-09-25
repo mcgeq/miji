@@ -160,6 +160,45 @@ void main() {
     expect(find.text('购物'), findsOneWidget);
   });
 
+  testWidgets('已超支是周期内终态：继续超支不改变背景渐变', (tester) async {
+    Future<LinearGradient> gradientFor(
+      double progress,
+      int remainingMinor,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          HomeBalanceHeroCard(
+            budget: _budget(progress: progress, remainingMinor: remainingMinor),
+            today: _spending,
+            categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+            isLoading: false,
+            masked: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final container = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(HomeBalanceHeroCard),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      return (container.decoration! as BoxDecoration).gradient!
+          as LinearGradient;
+    }
+
+    final exceeded = await gradientFor(1.08, -64000);
+    final moreExceeded = await gradientFor(1.52, -416000);
+    // 已超支后继续超支，背景渐变不应变化。
+    expect(moreExceeded.colors, exceeded.colors);
+
+    final underBudget = await gradientFor(0.92, 64000);
+    // 跨过 100% 边界才切换到 danger。
+    expect(underBudget.colors, isNot(exceeded.colors));
+  });
+
   testWidgets('shows an overspent label when the budget is exceeded', (
     tester,
   ) async {

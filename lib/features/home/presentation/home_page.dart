@@ -251,12 +251,21 @@ class _HomeDashboard extends ConsumerWidget {
       return const _HomeSkeleton();
     }
 
-    final hero = HomeBalanceHeroCard(
-      budget: budgetSummary.valueOrNull,
+    final rawBudgets = budgets.valueOrNull;
+    final hasEligibleBudget =
+        rawBudgets != null &&
+        selectHomeMonthlyExpenseBudget(
+              rawBudgets,
+              ref.watch(homeMoneyMonthScopeProvider),
+            ) !=
+            null;
+    final hero = _StableBudgetHero(
+      summary: budgetSummary.valueOrNull,
       today: todaySummary.valueOrNull,
       categoryBudgets: categoryBudgets.valueOrNull,
       isLoading: budgetSummary.isLoading || todaySummary.isLoading,
       masked: masked,
+      hasEligibleBudget: hasEligibleBudget,
       onTapBudget: () => launcher.run(MoneyQuickAction.budget),
     );
 
@@ -617,6 +626,63 @@ class _HomeSkeleton extends StatelessWidget {
           AppSkeletonBox(height: 180),
         ],
       ),
+    );
+  }
+}
+
+/// 预算 Hero 的稳定包装。
+///
+/// 背景只有「有预算」（品牌渐变）与「无预算」（品牌渐变+结余）两种底色，
+/// 「已超支」（danger 渐变）在周期内是终态。数据刷新期间若预算摘要暂时
+/// 变成「无预算」（账本/预算流重算的中间态），这里保留上一次「有预算」的
+/// 摘要，避免卡片在 danger / brand 之间闪回。
+class _StableBudgetHero extends StatefulWidget {
+  const _StableBudgetHero({
+    required this.summary,
+    required this.today,
+    required this.categoryBudgets,
+    required this.isLoading,
+    required this.masked,
+    required this.hasEligibleBudget,
+    this.onTapBudget,
+  });
+
+  final HomeMonthBudgetSummary? summary;
+  final HomeTodaySpendingSummary? today;
+  final HomeCategoryBudgetSummary? categoryBudgets;
+  final bool isLoading;
+  final bool masked;
+  final bool hasEligibleBudget;
+  final VoidCallback? onTapBudget;
+
+  @override
+  State<_StableBudgetHero> createState() => _StableBudgetHeroState();
+}
+
+class _StableBudgetHeroState extends State<_StableBudgetHero> {
+  HomeMonthBudgetSummary? _previous;
+
+  @override
+  Widget build(BuildContext context) {
+    final effective = resolveStableBudgetSummary(
+      current: widget.summary,
+      previous: _previous,
+      isLoading: widget.isLoading,
+      hasEligibleBudget: widget.hasEligibleBudget,
+    );
+    if (effective?.hasBudget ?? false) {
+      _previous = effective;
+    } else if (!widget.isLoading && !widget.hasEligibleBudget) {
+      // 确定没有可用预算时才清缓存，避免把旧摘要永久留着。
+      _previous = null;
+    }
+    return HomeBalanceHeroCard(
+      budget: effective,
+      today: widget.today,
+      categoryBudgets: widget.categoryBudgets,
+      isLoading: widget.isLoading,
+      masked: widget.masked,
+      onTapBudget: widget.onTapBudget,
     );
   }
 }

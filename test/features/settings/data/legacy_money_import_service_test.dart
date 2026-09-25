@@ -380,7 +380,14 @@ void main() {
     expect(byId['txn_transfer_in']?.actualPayerAccount, 'transfer_in');
   });
 
-  test('imports real legacy json snapshot into money tables', () async {
+  // 该用例依赖真实旧版导出快照（未入库）。文件缺失时跳过，避免本地/CI 失败；
+  // 把快照放入 docs/ 后会自动运行。
+  const legacySnapshotPath =
+      'docs/snap_2026-07-12T05-02-56.030566801+00-00.json';
+
+  test(
+    'imports real legacy json snapshot into money tables',
+    () async {
     final now = DateTime.utc(2026, 1, 2, 3, 4, 5);
     await appDatabase
         .into(appDatabase.users)
@@ -398,7 +405,7 @@ void main() {
     final service = LegacyMoneyImportService(database: appDatabase);
     final result = await service.importNow(
       const LegacyMoneyImportOptions(
-        sourcePath: 'docs/snap_2026-07-12T05-02-56.030566801+00-00.json',
+        sourcePath: legacySnapshotPath,
         userId: 'user_1',
         personalLedgerId: 'ledger_personal_1',
         defaultMemberId: 'member_1',
@@ -418,5 +425,9 @@ void main() {
     expect(accounts, isNotEmpty);
     expect(transactions, isNotEmpty);
     expect(ledgerTransactions, isNotEmpty);
-  });
+    },
+    skip: File(legacySnapshotPath).existsSync()
+        ? null
+        : '缺少真实旧版快照 $legacySnapshotPath（放入 docs/ 后自动运行）',
+  );
 }
