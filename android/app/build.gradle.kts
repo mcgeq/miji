@@ -42,6 +42,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // 仅保留中英文 Android 资源，剔除第三方库携带的其它语言字符串。
+        resourceConfigurations += listOf("zh", "en")
     }
 
     signingConfigs {
@@ -65,6 +67,13 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // 压缩安装包：移除未使用的 Java/Kotlin 代码与资源。
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

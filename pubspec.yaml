@@ -31,8 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  # Flutter 框架会引用 CupertinoIcons 字体族，保留以避免图标缺失（tree-shaking 后仅几 KB）。
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.3.2
   riverpod_annotation: ^4.0.3
@@ -45,7 +44,6 @@ dependencies:
   json_annotation: ^4.12.0
   intl: ^0.20.3
   uuid: ^4.5.3
-  logger: ^2.7.0
   flex_color_scheme: ^8.4.0
   fl_chart: ^1.2.0
   table_calendar: ^3.2.0
@@ -55,15 +53,11 @@ dependencies:
   permission_handler: ^12.0.3
   flutter_secure_storage: ^10.3.1
   shared_preferences: ^2.5.5
-  local_auth: ^3.0.1
   dio: ^5.10.0
-  connectivity_plus: ^7.2.0
   cryptography: ^2.9.0
   formz: ^0.8.0
   email_validator: ^3.0.0
   fluttertoast: ^9.1.0
-  google_fonts: ^8.1.0
-  flutter_svg: ^2.3.0
   image_picker: ^1.2.3
   timezone: ^0.11.1
   flutter_timezone: ^5.1.0
