@@ -98,8 +98,6 @@ class _MobileShellTopBar extends ConsumerWidget {
       child: Row(
         children: [
           const SizedBox(width: 14),
-          const _AppMark(compact: true),
-          if (showLedgerSelector) const SizedBox(width: 12),
           if (!showLedgerSelector) const Spacer(),
           if (showHomeMonthSelector) ...[
             const _MobileHomeMonthSelector(),
@@ -312,7 +310,7 @@ class _AppNavigationRail extends ConsumerWidget {
           child: Column(
             children: [
               const SizedBox(height: 12),
-              const _AppMark(compact: true),
+              const _AppMark(),
               const SizedBox(height: 14),
               for (var index = 0; index < _navigationItems.length; index++) ...[
                 _DesktopNavigationButton(
@@ -594,17 +592,16 @@ class _MobileNavButton extends StatelessWidget {
   }
 }
 
+/// 应用标识（米字方块）。移动端顶栏不再展示，只在桌面导航栏顶部保留。
 class _AppMark extends StatelessWidget {
-  const _AppMark({this.compact = false});
-
-  final bool compact;
+  const _AppMark();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final logo = Container(
+    return Container(
       width: 36,
       height: 36,
       alignment: Alignment.center,
@@ -621,24 +618,6 @@ class _AppMark extends StatelessWidget {
           letterSpacing: 0,
         ),
       ),
-    );
-
-    if (compact) return logo;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        logo,
-        const SizedBox(width: 10),
-        Text(
-          'Miji',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0,
-          ),
-        ),
-      ],
     );
   }
 }

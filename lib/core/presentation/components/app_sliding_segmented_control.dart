@@ -59,10 +59,11 @@ class AppSlidingSegmentedControl<T> extends StatelessWidget {
             ? availableWidth
             : minTotalWidth;
 
+        // 宽度不够时靠横向滚动兜底。这里不能开 `Clip.none`：溢出部分会直接
+        // 画到隔壁按钮底下（Row 里后画的兄弟盖在上面），既看不见边界又点不到。
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
-          clipBehavior: Clip.none,
           child: SizedBox(
             height: controlHeight,
             width: resolvedWidth,

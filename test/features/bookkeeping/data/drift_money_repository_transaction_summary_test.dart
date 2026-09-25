@@ -189,6 +189,77 @@ void main() {
       expect(onlyIncome.expenseMinor, 0);
     });
 
+    test('excludes transfers from expense and income totals', () async {
+      await addExpense(10000);
+      await addIncome(50000);
+      final secondAccount = await repository.createAccount(
+        'user_1',
+        MoneyAccountDraft(
+          name: '现金',
+          type: MoneyAccountType.cash,
+          initialBalanceMinor: 0,
+        ),
+      );
+      await repository.createTransfer(
+        'user_1',
+        MoneyTransferDraft(
+          transactionAt: transactionDate,
+          amountMinor: 30000,
+          currencyCode: 'CNY',
+          description: '转账',
+          fromAccountId: account.id,
+          toAccountId: secondAccount.id,
+          ledgerId: 'default_ledger_user_1',
+        ),
+      );
+
+      final summary = await repository.summarizeTransactions(
+        'user_1',
+        const MoneyTransactionQuery(),
+      );
+
+      // 转账的两个方向都不计入支出/收入/笔数。
+      expect(summary.count, 2);
+      expect(summary.expenseMinor, 10000);
+      expect(summary.incomeMinor, 50000);
+      expect(summary.netMinor, 40000);
+    });
+
+    test('ignores legacy rows filed under a transfer category', () async {
+      await addExpense(10000);
+      // 历史数据里可能存在「用转账分类记的支出/收入」：统计页与账户余额都按转账
+      // 处理，汇总条也必须一致地排除，否则笔数与金额会和别处对不上。
+      await database
+          .into(database.moneyTransactions)
+          .insert(
+            MoneyTransactionsCompanion.insert(
+              id: 'legacy_transfer_income',
+              userId: 'user_1',
+              type: MoneyTransactionType.income.storageValue,
+              status: MoneyTransactionStatus.completed.storageValue,
+              transactionAt: transactionDate,
+              amountMinor: 999900,
+              currencyCode: 'CNY',
+              description: '历史转账',
+              accountId: account.id,
+              categoryId: 'income_transfer',
+              paymentMethod: MoneyPaymentMethod.bankTransfer.storageValue,
+              actualPayerAccount: 'default',
+              createdAt: transactionDate,
+              updatedAt: transactionDate,
+            ),
+          );
+
+      final summary = await repository.summarizeTransactions(
+        'user_1',
+        const MoneyTransactionQuery(),
+      );
+
+      expect(summary.count, 1);
+      expect(summary.expenseMinor, 10000);
+      expect(summary.incomeMinor, 0);
+    });
+
     test('subtracts refunds from the expense total', () async {
       final transaction = await addExpense(10000);
       await repository.recordTransactionRefund('user_1', transaction.id, 4000);

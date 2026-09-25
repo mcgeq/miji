@@ -1046,15 +1046,26 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
         return (row.read(amountExp) ?? 0) - (row.read(refundExp) ?? 0);
       }
 
-      final expensePredicate =
-          basePredicate &
-          table.type.equals(MoneyTransactionType.expense.storageValue);
-      final incomePredicate =
-          basePredicate &
-          table.type.equals(MoneyTransactionType.income.storageValue);
+      // 转账不算收支：显式按 type 限定，再排除转账分类（历史数据里可能存在
+      // 「用转账分类记的支出/收入」，统计页与账户余额同样排除）。
+      Expression<bool> excludingTransferCategory(Expression<bool> predicate) {
+        return predicate &
+            table.categoryId.isNotIn(
+              _DriftMoneyRepositoryBase._transferCategoryIds,
+            );
+      }
+
+      final expensePredicate = excludingTransferCategory(
+        basePredicate &
+            table.type.equals(MoneyTransactionType.expense.storageValue),
+      );
+      final incomePredicate = excludingTransferCategory(
+        basePredicate &
+            table.type.equals(MoneyTransactionType.income.storageValue),
+      );
 
       final results = await Future.wait([
-        countOf(basePredicate),
+        countOf(expensePredicate | incomePredicate),
         netSumOf(expensePredicate),
         netSumOf(incomePredicate),
       ]);

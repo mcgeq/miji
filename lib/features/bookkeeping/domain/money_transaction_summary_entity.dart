@@ -14,13 +14,15 @@ class MoneyTransactionSummary {
       expenseMinor = 0,
       incomeMinor = 0;
 
-  /// 符合条件的流水笔数（含转账）。
+  /// 符合条件的**收支**笔数（仅 `expense` / `income`，**不含转账**）。
+  ///
+  /// 与 [expenseMinor] / [incomeMinor] 同口径，不随列表分页变化。
   final int count;
 
-  /// 支出合计（已扣除退款）。
+  /// 支出合计（仅 `type = expense`，已扣除退款，**不含转账**）。
   final int expenseMinor;
 
-  /// 收入合计（已扣除退款）。
+  /// 收入合计（仅 `type = income`，已扣除退款，**不含转账**）。
   final int incomeMinor;
 
   int get netMinor => incomeMinor - expenseMinor;

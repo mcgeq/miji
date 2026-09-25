@@ -51,4 +51,39 @@ void main() {
       expect(formatMoneyMinor(123456, 'XYZ'), 'XYZ1,234.56');
     });
   });
+
+  group('formatMoneyMinorCompact', () {
+    test('keeps full precision below one thousand', () {
+      expect(formatMoneyMinorCompact(0, 'CNY'), '¥0.00');
+      expect(formatMoneyMinorCompact(12345, 'CNY'), '¥123.45');
+      expect(formatMoneyMinorCompact(99900, 'CNY'), '¥999.00');
+    });
+
+    test('abbreviates thousands with k', () {
+      expect(formatMoneyMinorCompact(100000, 'CNY'), '¥1k');
+      expect(formatMoneyMinorCompact(230000, 'CNY'), '¥2.3k');
+      expect(formatMoneyMinorCompact(990000, 'CNY'), '¥9.9k');
+    });
+
+    test('abbreviates ten thousands with w', () {
+      expect(formatMoneyMinorCompact(1000000, 'CNY'), '¥1w');
+      expect(formatMoneyMinorCompact(3200000, 'CNY'), '¥3.2w');
+      expect(formatMoneyMinorCompact(123500000, 'CNY'), '¥123.5w');
+    });
+
+    test('rounds to one decimal and trims trailing zero', () {
+      expect(formatMoneyMinorCompact(995100, 'CNY'), '¥10k');
+      expect(formatMoneyMinorCompact(9999999, 'CNY'), '¥10w');
+    });
+
+    test('keeps the sign before the symbol', () {
+      expect(formatMoneyMinorCompact(-230000, 'CNY'), '-¥2.3k');
+      expect(formatMoneyMinorCompact(-12345, 'CNY'), '-¥123.45');
+    });
+
+    test('uses the currency symbol of the currency code', () {
+      expect(formatMoneyMinorCompact(230000, 'USD'), r'$2.3k');
+      expect(formatMoneyMinorCompact(230000, 'XYZ'), 'XYZ2.3k');
+    });
+  });
 }

@@ -249,7 +249,9 @@ class _MoneyTransactionsSectionState
             Expanded(
               child: AppSlidingSegmentedControl<MoneyTransactionType?>(
                 height: 38,
-                minSegmentWidth: 56,
+                // 44 能让「全部/支出/收入/转账」在 360dp 手机上完整放下；
+                // 56 时四段至少 224dp，会被右侧三个图标按钮盖住。
+                minSegmentWidth: 44,
                 value: _typeFilter,
                 onChanged: _setTypeFilter,
                 segments: const [
@@ -2447,6 +2449,23 @@ class _TransactionSummaryBar extends ConsumerWidget {
 
     final hasFilter = _hasAnyFilter(query);
     final masked = MoneyPrivacy.of(context);
+    final moneyColors = theme.moneyColors;
+
+    final expenseText = maskedMoneyOr(
+      formatMoneyMinorCompact(summary.expenseMinor, currencyCode),
+      masked,
+    );
+    final incomeText = maskedMoneyOr(
+      formatMoneyMinorCompact(summary.incomeMinor, currencyCode),
+      masked,
+    );
+    final netText = masked
+        ? '••••'
+        : '${summary.netMinor >= 0 ? '+' : '-'}'
+              '${formatMoneyMinorCompact(summary.netMinor.abs(), currencyCode)}';
+    final netColor = summary.netMinor >= 0
+        ? moneyColors.income
+        : moneyColors.expense;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -2461,87 +2480,76 @@ class _TransactionSummaryBar extends ConsumerWidget {
             ? colorScheme.primaryContainer.withValues(alpha: 0.22)
             : colorScheme.surfaceContainerLowest,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: _metric(
-              theme,
-              '共 ${summary.count} 笔（含转账）',
-              maskedMoneyOr(
-                '支出 ${formatMoneyMinor(summary.expenseMinor, currencyCode)}',
-                masked,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '共 ${summary.count} 笔',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0,
+                  ),
+                ),
               ),
-              theme.moneyColors.expense,
-            ),
+              if (hasFilter && onClear != null)
+                TextButton(
+                  onPressed: onClear,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                  ),
+                  child: const Text('清除筛选'),
+                ),
+            ],
           ),
-          Expanded(
-            child: _metric(
-              theme,
-              '收入',
-              maskedMoneyOr(
-                formatMoneyMinor(summary.incomeMinor, currencyCode),
-                masked,
-              ),
-              theme.moneyColors.income,
-            ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              _amount(theme, '支出', expenseText, moneyColors.expense),
+              _amount(theme, '收入', incomeText, moneyColors.income),
+              _amount(theme, '净', netText, netColor),
+            ],
           ),
-          Expanded(
-            child: _metric(
-              theme,
-              '净',
-              masked
-                  ? '••••'
-                  : '${summary.netMinor >= 0 ? '+' : '-'}'
-                        '${formatMoneyMinor(summary.netMinor.abs(), currencyCode)}',
-              summary.netMinor >= 0
-                  ? theme.moneyColors.income
-                  : theme.moneyColors.expense,
-            ),
-          ),
-          if (hasFilter && onClear != null)
-            TextButton(
-              onPressed: onClear,
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-              ),
-              child: const Text('清除筛选'),
-            ),
         ],
       ),
     );
   }
 
-  Widget _metric(ThemeData theme, String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0,
-          ),
-        ),
-        const SizedBox(height: 1),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            value,
-            maxLines: 1,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0,
+  /// 金额格。
+  ///
+  /// 视觉上只留金额、靠颜色区分方向，但「支出 / 收入 / 净」没有真正丢掉：
+  /// 它作为语义标签与长按提示保留，否则读屏用户与色觉缺陷用户拿不到方向信息。
+  Widget _amount(ThemeData theme, String label, String value, Color color) {
+    return Expanded(
+      child: Semantics(
+        label: '$label $value',
+        excludeSemantics: true,
+        child: Tooltip(
+          message: label,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 

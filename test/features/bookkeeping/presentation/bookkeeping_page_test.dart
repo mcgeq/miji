@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:miji/core/database/app_database.dart';
 import 'package:miji/core/database/database_providers.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/theme/app_theme.dart';
 import 'package:miji/features/bookkeeping/presentation/bookkeeping_page.dart';
 
@@ -94,6 +95,89 @@ void main() {
 
     expect(find.text('还没有预算'), findsOneWidget);
   });
+
+  testWidgets('type tabs are not covered by the share button on narrow phones', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    // 360dp 是主流窄屏宽度：56dp 最小段宽 * 4 = 224dp > 可用宽度，
+    // 曾经溢出到分享按钮下面（既被遮住又点不到）。
+    await _pump(tester, database, router, width: 360);
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+
+    final transfer = tester.getRect(find.text('转账'));
+    final share = tester.getRect(find.byTooltip('导出流水'));
+    expect(
+      transfer.right,
+      lessThanOrEqualTo(share.left),
+      reason: '「转账」标签被分享按钮遮住',
+    );
+
+    final control = tester.getRect(
+      find.byWidgetPredicate((widget) => widget is AppSlidingSegmentedControl),
+    );
+    expect(
+      transfer.right,
+      lessThanOrEqualTo(control.right),
+      reason: '「转账」标签超出了分段控件的可视区',
+    );
+  });
+
+  testWidgets('summary bar shows only amounts, labels live in semantics', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('共 0 笔'), findsOneWidget);
+
+    // 三格金额只靠颜色区分方向，所以「支出 / 收入 / 净」必须留在语义标签与
+    // 长按提示里，否则读屏用户与色觉缺陷用户拿不到方向信息。
+    final semantics = tester.ensureSemantics();
+    expect(find.bySemanticsLabel('支出 ¥0.00'), findsOneWidget);
+    expect(find.bySemanticsLabel('收入 ¥0.00'), findsOneWidget);
+    expect(find.bySemanticsLabel('净 +¥0.00'), findsOneWidget);
+    semantics.dispose();
+
+    expect(find.byTooltip('支出'), findsOneWidget);
+    expect(find.byTooltip('收入'), findsOneWidget);
+    expect(find.byTooltip('净'), findsOneWidget);
+
+    // 汇总条本身上不再有「支出 / 收入 / 净」文案（筛选条里的类型标签不算）。
+    // .first 取距「共 N 笔」最近的 Column，即汇总条自己的 Column；用搜索框
+    // 反证它不是更外层的页面 Column，否则这个断言会变成假阳性。
+    final bar = find
+        .ancestor(of: find.text('共 0 笔'), matching: find.byType(Column))
+        .first;
+    expect(
+      find.descendant(of: bar, matching: find.byType(TextField)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: bar, matching: find.byTooltip('支出')),
+      findsOneWidget,
+    );
+    for (final label in ['支出', '收入', '净']) {
+      expect(
+        find.descendant(of: bar, matching: find.text(label)),
+        findsNothing,
+        reason: '汇总条里不应再有「$label」文案',
+      );
+    }
+  });
 }
 
 GoRouter _router({String initialLocation = '/app/bookkeeping'}) {
@@ -118,9 +202,10 @@ GoRouter _router({String initialLocation = '/app/bookkeeping'}) {
 Future<void> _pump(
   WidgetTester tester,
   AppDatabase database,
-  GoRouter router,
-) async {
-  tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+  GoRouter router, {
+  double width = 390,
+}) async {
+  tester.view.physicalSize = Size(width * 3, 844 * 3);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
 

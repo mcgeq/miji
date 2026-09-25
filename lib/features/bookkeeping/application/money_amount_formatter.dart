@@ -36,6 +36,31 @@ String formatMoneyMinor(int amountMinor, String currencyCode) {
   return formatter.format(amountMinor / 100);
 }
 
+/// 压缩后的金额，用于横向空间紧张的汇总条。
+///
+/// 千位以上折算成 `k` / `w`（万），保留一位小数并在整数时省略，例如
+/// `¥2.3k`、`¥3.2w`、`-¥1.5k`；千位以下沿用 [formatMoneyMinor] 的完整格式，
+/// 保证小额仍然精确到分。
+String formatMoneyMinorCompact(int amountMinor, String currencyCode) {
+  final sign = amountMinor < 0 ? '-' : '';
+  final symbol = _symbolForCurrency(currencyCode);
+  final amount = amountMinor.abs() / 100;
+
+  if (amount >= 10000) {
+    return '$sign$symbol${_compactDecimal(amount / 10000)}w';
+  }
+  if (amount >= 1000) {
+    return '$sign$symbol${_compactDecimal(amount / 1000)}k';
+  }
+
+  return formatMoneyMinor(amountMinor, currencyCode);
+}
+
+String _compactDecimal(double value) {
+  final text = value.toStringAsFixed(1);
+  return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
+}
+
 String _localeForCurrency(String currencyCode) {
   return switch (currencyCode) {
     'CNY' => 'zh_CN',

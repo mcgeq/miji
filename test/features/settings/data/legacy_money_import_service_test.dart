@@ -388,43 +388,45 @@ void main() {
   test(
     'imports real legacy json snapshot into money tables',
     () async {
-    final now = DateTime.utc(2026, 1, 2, 3, 4, 5);
-    await appDatabase
-        .into(appDatabase.users)
-        .insert(
-          UsersCompanion.insert(
-            id: 'user_1',
-            username: 'user_1',
-            email: 'user_1@example.com',
-            displayName: '用户',
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
+      final now = DateTime.utc(2026, 1, 2, 3, 4, 5);
+      await appDatabase
+          .into(appDatabase.users)
+          .insert(
+            UsersCompanion.insert(
+              id: 'user_1',
+              username: 'user_1',
+              email: 'user_1@example.com',
+              displayName: '用户',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
 
-    final service = LegacyMoneyImportService(database: appDatabase);
-    final result = await service.importNow(
-      const LegacyMoneyImportOptions(
-        sourcePath: legacySnapshotPath,
-        userId: 'user_1',
-        personalLedgerId: 'ledger_personal_1',
-        defaultMemberId: 'member_1',
-      ),
-    );
+      final service = LegacyMoneyImportService(database: appDatabase);
+      final result = await service.importNow(
+        const LegacyMoneyImportOptions(
+          sourcePath: legacySnapshotPath,
+          userId: 'user_1',
+          personalLedgerId: 'ledger_personal_1',
+          defaultMemberId: 'member_1',
+        ),
+      );
 
-    final accounts = await appDatabase.select(appDatabase.moneyAccounts).get();
-    final transactions = await appDatabase
-        .select(appDatabase.moneyTransactions)
-        .get();
-    final ledgerTransactions = await appDatabase
-        .select(appDatabase.moneyLedgerTransactions)
-        .get();
+      final accounts = await appDatabase
+          .select(appDatabase.moneyAccounts)
+          .get();
+      final transactions = await appDatabase
+          .select(appDatabase.moneyTransactions)
+          .get();
+      final ledgerTransactions = await appDatabase
+          .select(appDatabase.moneyLedgerTransactions)
+          .get();
 
-    expect(result.countFor('account'), greaterThan(0));
-    expect(result.countFor('transactions'), greaterThan(0));
-    expect(accounts, isNotEmpty);
-    expect(transactions, isNotEmpty);
-    expect(ledgerTransactions, isNotEmpty);
+      expect(result.countFor('account'), greaterThan(0));
+      expect(result.countFor('transactions'), greaterThan(0));
+      expect(accounts, isNotEmpty);
+      expect(transactions, isNotEmpty);
+      expect(ledgerTransactions, isNotEmpty);
     },
     skip: File(legacySnapshotPath).existsSync()
         ? null

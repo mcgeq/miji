@@ -101,11 +101,12 @@ class DatabaseSeedRunner {
   Future<void> _seedHealthDefaults(String userId, DateTime now) async {
     await database.transaction(() async {
       final existing =
-          await (database.select(database.healthPeriodSettings)..where(
-                (row) =>
-                    row.userId.equals(userId) & row.isDeleted.equals(false),
-              )
-              ..limit(1))
+          await (database.select(database.healthPeriodSettings)
+                ..where(
+                  (row) =>
+                      row.userId.equals(userId) & row.isDeleted.equals(false),
+                )
+                ..limit(1))
               .getSingleOrNull();
       if (existing != null) {
         return;
