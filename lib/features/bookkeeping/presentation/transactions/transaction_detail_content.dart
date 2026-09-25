@@ -34,6 +34,7 @@ class TransactionDetailContent extends ConsumerWidget {
     this.onRemoveFromFamilyLedger,
     this.onEditSplit,
     this.onCancelSplit,
+    this.onSetStatus,
   });
 
   final MoneyTransactionEntity transaction;
@@ -48,6 +49,7 @@ class TransactionDetailContent extends ConsumerWidget {
   final ValueChanged<MoneyLedgerEntity>? onRemoveFromFamilyLedger;
   final ValueChanged<MoneySplitRecordEntity>? onEditSplit;
   final ValueChanged<MoneySplitRecordEntity>? onCancelSplit;
+  final ValueChanged<MoneyTransactionStatus>? onSetStatus;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -112,6 +114,20 @@ class TransactionDetailContent extends ConsumerWidget {
           onAddSplit: canAddSplit ? onAddSplit : null,
           onAddToFamilyLedger: !isReadOnly && _canManageLedgerMembership
               ? onAddToFamilyLedger
+              : null,
+          onConfirm:
+              !isReadOnly &&
+                  transaction.type != MoneyTransactionType.transfer &&
+                  transaction.status == MoneyTransactionStatus.pending &&
+                  onSetStatus != null
+              ? () => onSetStatus!(MoneyTransactionStatus.completed)
+              : null,
+          onVoid:
+              !isReadOnly &&
+                  transaction.type != MoneyTransactionType.transfer &&
+                  transaction.status == MoneyTransactionStatus.completed &&
+                  onSetStatus != null
+              ? () => onSetStatus!(MoneyTransactionStatus.voided)
               : null,
         ),
         const SizedBox(height: 10),
@@ -430,6 +446,8 @@ class _TransactionDetailSummary extends StatelessWidget {
     required this.onRefund,
     required this.onAddSplit,
     required this.onAddToFamilyLedger,
+    required this.onConfirm,
+    required this.onVoid,
   });
 
   final IconData icon;
@@ -444,6 +462,8 @@ class _TransactionDetailSummary extends StatelessWidget {
   final VoidCallback? onRefund;
   final VoidCallback? onAddSplit;
   final VoidCallback? onAddToFamilyLedger;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onVoid;
 
   @override
   Widget build(BuildContext context) {
@@ -558,6 +578,20 @@ class _TransactionDetailSummary extends StatelessWidget {
                       tooltip: '加入家庭账本',
                       onPressed: onAddToFamilyLedger!,
                       icon: Icons.group_add_outlined,
+                      variant: AppIconActionVariant.outlined,
+                    ),
+                  if (onConfirm != null)
+                    AppIconActionButton(
+                      tooltip: '确认入账',
+                      onPressed: onConfirm!,
+                      icon: Icons.check_circle_outline_rounded,
+                      variant: AppIconActionVariant.filled,
+                    ),
+                  if (onVoid != null)
+                    AppIconActionButton(
+                      tooltip: '作废',
+                      onPressed: onVoid!,
+                      icon: Icons.block_rounded,
                       variant: AppIconActionVariant.outlined,
                     ),
                 ],

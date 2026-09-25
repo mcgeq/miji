@@ -1,36 +1,58 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/components/app_content_panel.dart';
+import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/application/money_report_period.dart';
 import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/statistics/money_report_settings_dialog.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 
-class MoneyReportCard extends StatelessWidget {
+class MoneyReportCard extends ConsumerWidget {
   const MoneyReportCard({
     super.key,
     required this.latestReport,
     required this.isGenerating,
+    required this.period,
+    required this.onPeriodChanged,
     required this.onGenerate,
+    this.ledgerId,
   });
 
   final MoneyAnalysisReportEntity? latestReport;
   final bool isGenerating;
+  final String period;
+  final ValueChanged<String> onPeriodChanged;
   final VoidCallback onGenerate;
+  final String? ledgerId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final failed = latestReport?.status == 'failed';
+    final option = MoneyReportPeriodOption.fromValue(period);
     return AppContentPanel(
       title: '分析报表',
-      subtitle: '月度收支报告',
+      subtitle: '${option.label}收支报告',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          AppSlidingSegmentedControl<String>(
+            minSegmentWidth: 64,
+            value: period,
+            onChanged: (value) => onPeriodChanged(value),
+            segments: [
+              for (final item in MoneyReportPeriodOption.values)
+                AppSlidingSegment<String>(value: item.value, label: item.label),
+            ],
+          ),
+          const SizedBox(height: 12),
           if (failed) ...[
             Row(
               children: [
@@ -57,7 +79,10 @@ class MoneyReportCard extends StatelessWidget {
             _ReportSummary(report: latestReport!),
             const SizedBox(height: 14),
           ] else ...[
-            AppEmptyState(title: '暂无报告', message: '生成月度报表后，这里会显示收支摘要。'),
+            AppEmptyState(
+              title: '暂无报告',
+              message: '生成${option.label}后，这里会显示收支摘要。',
+            ),
             const SizedBox(height: 10),
           ],
           SizedBox(
@@ -76,13 +101,28 @@ class MoneyReportCard extends StatelessWidget {
                   : const Icon(Icons.auto_awesome_rounded, size: 18),
               label: Text(
                 failed
-                    ? '重新生成本月报表'
+                    ? '重新生成${option.label}'
                     : isGenerating
                     ? '生成中...'
-                    : '生成本月报表',
+                    : '生成${option.label}',
               ),
             ),
           ),
+          if (ledgerId != null) ...[
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => showAppResponsiveDialog<bool>(
+                  context: context,
+                  builder: (context) =>
+                      MoneyReportSettingsDialog(ledgerId: ledgerId!),
+                ),
+                icon: const Icon(Icons.settings_rounded, size: 16),
+                label: const Text('自动生成设置'),
+              ),
+            ),
+          ],
         ],
       ),
     );

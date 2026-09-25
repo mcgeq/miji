@@ -39,6 +39,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
 
   late final TextEditingController _amountController;
   late final TextEditingController _alertThresholdController;
+  late final TextEditingController _repeatIntervalController;
   late final TextEditingController _tagController;
   MoneyBudgetTrackingType _trackingType = MoneyBudgetTrackingType.expenseLimit;
   MoneyBudgetPeriodType _periodType = MoneyBudgetPeriodType.monthly;
@@ -71,6 +72,9 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     );
     _alertThresholdController = TextEditingController(
       text: budget?.alertThresholdPercent?.toString() ?? '80',
+    );
+    _repeatIntervalController = TextEditingController(
+      text: (budget?.repeatInterval ?? 1).toString(),
     );
     _categoryId = budget?.categoryId;
     _subCategoryId = budget?.subCategoryId;
@@ -114,6 +118,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     _descriptionController.dispose();
     _amountController.dispose();
     _alertThresholdController.dispose();
+    _repeatIntervalController.dispose();
     _tagController.dispose();
     super.dispose();
   }
@@ -471,6 +476,15 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
                   icon: Icons.warning_amber_rounded,
                 ),
             ],
+            if (!usesOneTimePeriod)
+              AppTextFormField(
+                controller: _repeatIntervalController,
+                keyboardType: TextInputType.number,
+                labelText: '重复间隔',
+                prefixIcon: const Icon(Icons.repeat_rounded),
+                suffixText: '个周期',
+                validator: _validateRepeatInterval,
+              ),
             AppAmountField(
               controller: _amountController,
               labelText: amountLabel,
@@ -645,7 +659,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               ledgerId: _ledgerId,
               trackingType: _trackingType,
               periodType: _periodType,
-              repeatInterval: 1,
+              repeatInterval: _repeatInterval,
               scopeType: _scopeType,
               amountMinor: amountMinor,
               categoryId: effectiveCategoryId,
@@ -666,7 +680,7 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               description: description.isEmpty ? null : description,
               trackingType: _trackingType,
               periodType: _periodType,
-              repeatInterval: 1,
+              repeatInterval: _repeatInterval,
               scopeType: _scopeType,
               amountMinor: amountMinor,
               currencyCode: budget.currencyCode,
@@ -715,6 +729,22 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     final threshold = int.tryParse(value?.trim() ?? '');
     if (threshold == null || threshold < 1 || threshold > 100) {
       return '请输入1到100之间的整数';
+    }
+    return null;
+  }
+
+  int get _repeatInterval {
+    final parsed = int.tryParse(_repeatIntervalController.text.trim());
+    if (parsed == null || parsed < 1) {
+      return 1;
+    }
+    return parsed > 99 ? 99 : parsed;
+  }
+
+  String? _validateRepeatInterval(String? value) {
+    final parsed = int.tryParse(value?.trim() ?? '');
+    if (parsed == null || parsed < 1 || parsed > 99) {
+      return '请输入 1 到 99 之间的整数';
     }
     return null;
   }

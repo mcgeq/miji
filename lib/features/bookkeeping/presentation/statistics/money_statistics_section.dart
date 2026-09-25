@@ -12,6 +12,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/application/money_report_period.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
@@ -355,8 +356,11 @@ class _StatisticsAsyncBody extends ConsumerWidget {
             MoneyUpcomingCashFlowSummary.empty(),
           );
 
+    final reportPeriod = ref.watch(moneyReportPeriodProvider);
+    // 进入统计页时按配置补齐当前周期的报表（异步、不阻塞）。
+    ref.watch(currentUserReportAutoGenerationProvider);
     final latestReport = ledgerId != null
-        ? ref.watch(currentUserLatestReportProvider((ledgerId, 'monthly')))
+        ? ref.watch(currentUserLatestReportProvider((ledgerId, reportPeriod)))
         : const AsyncValue<MoneyAnalysisReportEntity?>.data(null);
     final isGenerating = ref.watch(_reportGeneratingProvider);
 
@@ -435,6 +439,9 @@ class _StatisticsAsyncBody extends ConsumerWidget {
                 orElse: () => null,
               ),
               isGenerating: isGenerating,
+              reportPeriod: reportPeriod,
+              onPeriodChanged: (value) =>
+                  ref.read(moneyReportPeriodProvider.notifier).set(value),
               netWorthTrend: netWorthTrend.maybeWhen(
                 data: (value) => value,
                 orElse: () => const <MoneyNetWorthTrendPoint>[],
@@ -445,21 +452,25 @@ class _StatisticsAsyncBody extends ConsumerWidget {
                 ref.read(_reportGeneratingProvider.notifier).start();
                 try {
                   final now = DateTime.now();
+                  final range = resolveMoneyReportPeriodRange(
+                    reportPeriod,
+                    now,
+                  );
                   final repository = ref.read(moneyRepositoryProvider);
                   await repository.generateReportForUser(
                     readyContext.userId!,
                     MoneyAnalysisReportRequest(
                       ledgerId: id,
-                      reportPeriod: 'monthly',
-                      periodStart: DateTime(now.year, now.month, 1),
-                      periodEnd: DateTime(now.year, now.month + 1, 1),
+                      reportPeriod: reportPeriod,
+                      periodStart: range.start,
+                      periodEnd: range.endExclusive,
                     ),
                   );
                 } catch (_) {
                   // 失败状态已写入数据库，invalidate 后报表卡会展示失败态与重试入口。
                 } finally {
                   ref.invalidate(
-                    currentUserLatestReportProvider((id, 'monthly')),
+                    currentUserLatestReportProvider((id, reportPeriod)),
                   );
                   ref.read(_reportGeneratingProvider.notifier).done();
                 }
@@ -823,6 +834,8 @@ class _StatisticsBody extends StatelessWidget {
     required this.upcomingCashFlow,
     required this.latestReport,
     required this.isGenerating,
+    required this.reportPeriod,
+    required this.onPeriodChanged,
     required this.netWorthTrend,
     required this.onGenerateReport,
     required this.onOpenTransactions,
@@ -843,6 +856,8 @@ class _StatisticsBody extends StatelessWidget {
   final MoneyUpcomingCashFlowSummary upcomingCashFlow;
   final MoneyAnalysisReportEntity? latestReport;
   final bool isGenerating;
+  final String reportPeriod;
+  final ValueChanged<String> onPeriodChanged;
   final List<MoneyNetWorthTrendPoint> netWorthTrend;
   final VoidCallback onGenerateReport;
   final void Function(
@@ -1151,8 +1166,11 @@ class _StatisticsBody extends StatelessWidget {
         ],
         const SizedBox(height: 12),
         MoneyReportCard(
+          ledgerId: ledgerId,
           latestReport: latestReport,
           isGenerating: isGenerating,
+          period: reportPeriod,
+          onPeriodChanged: onPeriodChanged,
           onGenerate: onGenerateReport,
         ),
         const SizedBox(height: 12),

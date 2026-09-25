@@ -23,6 +23,7 @@ class TransactionDetailPanel extends StatelessWidget {
     this.onRemoveFromFamilyLedger,
     this.onEditSplit,
     this.onCancelSplit,
+    this.onSetStatus,
   });
 
   final MoneyTransactionEntity transaction;
@@ -38,6 +39,7 @@ class TransactionDetailPanel extends StatelessWidget {
   final ValueChanged<MoneyLedgerEntity>? onRemoveFromFamilyLedger;
   final ValueChanged<MoneySplitRecordEntity>? onEditSplit;
   final ValueChanged<MoneySplitRecordEntity>? onCancelSplit;
+  final ValueChanged<MoneyTransactionStatus>? onSetStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +61,7 @@ class TransactionDetailPanel extends StatelessWidget {
           onRemoveFromFamilyLedger: onRemoveFromFamilyLedger,
           onEditSplit: onEditSplit,
           onCancelSplit: onCancelSplit,
+          onSetStatus: onSetStatus,
         ),
       ),
     );

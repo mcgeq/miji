@@ -9,8 +9,10 @@ class MoneyCurrencies extends Table {
 
   TextColumn get symbol => text()();
 
+  /// 预留：当前所有币种均可选，未提供「启用币种」设置入口。
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 
+  /// 预留：当前未按启用状态过滤币种选择。
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
 
   DateTimeColumn get createdAt => dateTime()();

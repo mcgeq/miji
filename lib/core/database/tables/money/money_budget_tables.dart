@@ -29,6 +29,7 @@ class MoneyBudgets extends Table {
 
   IntColumn get repeatInterval => integer()();
 
+  /// 预留：当前未接入界面与业务计算，仅参与同步以保证旧数据不丢失。
   TextColumn get repeatDays => text().nullable()();
 
   IntColumn get startDate => integer()();
@@ -59,6 +60,7 @@ class MoneyBudgets extends Table {
 
   IntColumn get progressMinor => integer().withDefault(const Constant(0))();
 
+  /// 预留：当前未接入界面与业务计算，仅参与同步以保证旧数据不丢失。
   TextColumn get linkedGoal => text().nullable()();
 
   IntColumn get priority => integer().withDefault(const Constant(0))();
@@ -71,6 +73,7 @@ class MoneyBudgets extends Table {
 
   TextColumn get categoryScopeJson => text().nullable()();
 
+  /// 预留：当前未接入界面与业务计算，仅参与同步以保证旧数据不丢失。
   TextColumn get advancedRulesJson => text().nullable()();
 
   TextColumn get tagsJson => text().nullable()();

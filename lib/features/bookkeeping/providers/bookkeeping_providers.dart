@@ -11,6 +11,7 @@ import 'package:miji/core/sync/delta_sync/delta_sync_providers.dart';
 import 'package:miji/features/bookkeeping/application/money_bill_reminder_notification_service.dart';
 import 'package:miji/features/bookkeeping/application/money_budget_alert_notification_service.dart';
 import 'package:miji/features/bookkeeping/application/money_delta_conflict_apply_service.dart';
+import 'package:miji/features/bookkeeping/application/money_report_period.dart';
 import 'package:miji/features/bookkeeping/application/transaction_entry_defaults_store.dart';
 import 'package:miji/features/bookkeeping/data/drift_money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
@@ -1236,6 +1237,79 @@ final currentUserLatestReportProvider = FutureProvider.autoDispose
       return repository.getLatestReportForUser(userId, ledgerId, reportPeriod);
     });
 
+/// 当前分析报表选中的周期（weekly / monthly / quarterly / yearly）。
+final moneyReportPeriodProvider =
+    NotifierProvider<MoneyReportPeriodController, String>(
+      MoneyReportPeriodController.new,
+    );
+
+class MoneyReportPeriodController extends Notifier<String> {
+  @override
+  String build() => 'monthly';
+
+  void set(String value) {
+    state = value;
+  }
+}
+
+/// 按账本配置自动生成报表。
+///
+/// 进入统计页时检查一次：每个开启的周期若「当前周期还没有已生成的报表」
+/// 就补生成一份。已存在当前周期报表时跳过，因此重复进入不会重复生成。
+/// 注意：不 watch 报表 Provider，避免生成后自我触发形成循环。
+final currentUserReportAutoGenerationProvider = FutureProvider<void>((
+  ref,
+) async {
+  final session = ref.watch(authSessionControllerProvider);
+  if (!session.isUnlocked || session.userId == null) {
+    return;
+  }
+  final userId = session.userId!;
+  final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+  if (ledger == null) {
+    return;
+  }
+  final repository = ref.watch(moneyRepositoryProvider);
+  final config = await repository.getReportGenerationConfig(userId, ledger.id);
+  final enabled = <String>[
+    if (config.autoGenerateWeekly) 'weekly',
+    if (config.autoGenerateMonthly) 'monthly',
+    if (config.autoGenerateQuarterly) 'quarterly',
+    if (config.autoGenerateYearly) 'yearly',
+  ];
+  if (enabled.isEmpty) {
+    return;
+  }
+
+  final now = DateTime.now();
+  for (final period in enabled) {
+    try {
+      final range = resolveMoneyReportPeriodRange(period, now);
+      final latest = await repository.getLatestReportForUser(
+        userId,
+        ledger.id,
+        period,
+      );
+      if (latest != null &&
+          latest.isCompleted &&
+          !latest.periodStart.isBefore(range.start)) {
+        continue;
+      }
+      await repository.generateReportForUser(
+        userId,
+        MoneyAnalysisReportRequest(
+          ledgerId: ledger.id,
+          reportPeriod: period,
+          periodStart: range.start,
+          periodEnd: range.endExclusive,
+        ),
+      );
+    } catch (_) {
+      // 自动生成失败不影响页面，用户可手动生成。
+    }
+  }
+});
+
 final currentUserNetWorthTrendProvider = FutureProvider.autoDispose
     .family<List<MoneyNetWorthTrendPoint>, (String, int)>((ref, params) async {
       final (ledgerId, days) = params;
@@ -1687,6 +1761,10 @@ final currentUserMoneySplitActionsProvider =
     Provider<CurrentUserMoneySplitActions>((ref) {
       return CurrentUserMoneySplitActions(ref);
     });
+
+final currentUserTagActionsProvider = Provider<CurrentUserTagActions>((ref) {
+  return CurrentUserTagActions(ref);
+});
 
 final currentUserMoneyLedgerActionsProvider =
     Provider<CurrentUserMoneyLedgerActions>((ref) {
@@ -2244,6 +2322,8 @@ class CurrentUserMoneyInstallmentActions {
       subCategoryId: draft.subCategoryId,
       currencyCode: draft.currencyCode,
       notes: draft.notes,
+      calcMethod: draft.calcMethod,
+      interestRateBasisPoints: draft.interestRateBasisPoints,
     );
   }
 
@@ -2491,6 +2571,17 @@ class CurrentUserMoneyTransactionActions {
     _refresh();
   }
 
+  Future<void> setTransactionStatus(
+    String transactionId,
+    MoneyTransactionStatus status,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .setTransactionStatus(userId, transactionId, status);
+    _refresh(transactionId: transactionId);
+  }
+
   Future<MoneyTransactionPage> listTransactions(
     MoneyTransactionQuery query,
   ) async {
@@ -2639,5 +2730,43 @@ class CurrentUserMoneyTransactionActions {
     _ref
         .read(moneyDataRefreshCoordinatorProvider)
         .refreshAfterTransactionChanged(transactionId: transactionId);
+  }
+}
+
+/// 标签管理动作：重命名 / 删除，均级联更新流水与预算。
+class CurrentUserTagActions {
+  const CurrentUserTagActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> renameTag(String oldName, String newName) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .renameTag(userId, oldName, newName);
+    _refresh();
+  }
+
+  Future<void> deleteTag(String tagName) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).deleteTag(userId, tagName);
+    _refresh();
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+    return userId;
+  }
+
+  void _refresh() {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterTransactionChanged();
   }
 }

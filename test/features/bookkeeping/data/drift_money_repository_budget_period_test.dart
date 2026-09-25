@@ -198,4 +198,75 @@ void main() {
     final august = snapshots.singleWhere((s) => s.periodStart.month == 8);
     expect(august.budgetAmountMinor, 100000);
   });
+
+  test('weekly budget honors repeatInterval of 2', () async {
+    // 2026-07-06 is a Monday.
+    var localNow = DateTime(2026, 7, 6);
+    final pinned = DriftMoneyRepository(
+      database: database,
+      seedRunner: DatabaseSeedRunner(database: database),
+      now: () => localNow,
+    );
+
+    final budget = await pinned.createBudget(
+      'user_1',
+      const MoneyBudgetDraft(
+        name: '双周消费',
+        amountMinor: 50000,
+        periodType: MoneyBudgetPeriodType.weekly,
+        repeatInterval: 2,
+      ),
+    );
+
+    expect(budget.periodStart, DateTime(2026, 7, 6));
+    expect(budget.periodEnd, DateTime(2026, 7, 19, 23, 59, 59, 999));
+
+    // 推进一周，仍处于首个两周周期内。
+    localNow = DateTime(2026, 7, 13);
+    var list = await pinned.watchBudgetsForUser('user_1').first;
+    var refreshed = list.singleWhere((b) => b.id == budget.id);
+    expect(refreshed.periodStart, DateTime(2026, 7, 6));
+
+    // 再推进一周（共两周），进入下一个周期。
+    localNow = DateTime(2026, 7, 20);
+    list = await pinned.watchBudgetsForUser('user_1').first;
+    refreshed = list.singleWhere((b) => b.id == budget.id);
+    expect(refreshed.periodStart, DateTime(2026, 7, 20));
+    expect(refreshed.periodEnd, DateTime(2026, 8, 2, 23, 59, 59, 999));
+  });
+
+  test('monthly budget honors repeatInterval of 3', () async {
+    var localNow = DateTime(2026, 1, 15);
+    final pinned = DriftMoneyRepository(
+      database: database,
+      seedRunner: DatabaseSeedRunner(database: database),
+      now: () => localNow,
+    );
+
+    final budget = await pinned.createBudget(
+      'user_1',
+      const MoneyBudgetDraft(
+        name: '季度消费',
+        amountMinor: 300000,
+        periodType: MoneyBudgetPeriodType.monthly,
+        repeatInterval: 3,
+      ),
+    );
+
+    expect(budget.periodStart, DateTime(2026, 1, 1));
+    expect(budget.periodEnd, DateTime(2026, 3, 31, 23, 59, 59, 999));
+
+    // 第二个月仍处于首个季度周期内。
+    localNow = DateTime(2026, 2, 20);
+    var list = await pinned.watchBudgetsForUser('user_1').first;
+    var refreshed = list.singleWhere((b) => b.id == budget.id);
+    expect(refreshed.periodStart, DateTime(2026, 1, 1));
+
+    // 跨入下一季度。
+    localNow = DateTime(2026, 4, 2);
+    list = await pinned.watchBudgetsForUser('user_1').first;
+    refreshed = list.singleWhere((b) => b.id == budget.id);
+    expect(refreshed.periodStart, DateTime(2026, 4, 1));
+    expect(refreshed.periodEnd, DateTime(2026, 6, 30, 23, 59, 59, 999));
+  });
 }

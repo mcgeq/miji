@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:miji/core/presentation/app_page_layout.dart';
@@ -18,6 +19,8 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/core/router/app_routes.dart';
+import 'package:miji/features/bookkeeping/presentation/quick_actions/money_quick_action_launcher.dart';
 import 'package:miji/features/bookkeeping/presentation/reminders/bill_reminder_form_dialog.dart';
 
 enum _ReminderCenterView { pending, history }
@@ -181,6 +184,38 @@ class _MoneyReminderCenterSectionState
     });
   }
 
+  /// 根据提醒的动作类型跳转到对应入口。
+  ///
+  /// 账单提醒（openReminder）保持原有「点进去编辑」的行为，
+  /// 其它派生提醒跳到产生它的面板或直接发起记账。
+  void _handleItemAction(MoneyReminderCenterItem item) {
+    switch (item.actionType) {
+      case MoneyReminderCenterActionType.repay:
+        _goToBookkeepingSection('accounts');
+      case MoneyReminderCenterActionType.viewBudget:
+        _goToBookkeepingSection('budgets');
+      case MoneyReminderCenterActionType.openInstallment:
+        _goToBookkeepingSection('installments');
+      case MoneyReminderCenterActionType.recordTransaction:
+        MoneyQuickActionLauncher(
+          context: context,
+          ref: ref,
+          ensureToast: () => _toast ??= (FToast()..init(context)),
+        ).run(MoneyQuickAction.expense);
+      case MoneyReminderCenterActionType.openReminder:
+        _goToBookkeepingSection('reminders');
+    }
+  }
+
+  void _goToBookkeepingSection(String section) {
+    context.go(
+      Uri(
+        path: AppRoutes.bookkeeping,
+        queryParameters: {'section': section},
+      ).toString(),
+    );
+  }
+
   /// 新建 / 编辑账单提醒。
   Future<void> _openReminderForm([MoneyBillReminderEntity? reminder]) async {
     final result = await showAppResponsiveDialog<BillReminderFormResult>(
@@ -248,6 +283,12 @@ class _MoneyReminderCenterSectionState
                     selectionMode: _selectionMode,
                     onToggleSelect: () => _toggleSelection(item.itemKey),
                     onLongPress: () => _startSelection(item.itemKey),
+                    onOpen:
+                        _selectionMode ||
+                            item.actionType ==
+                                MoneyReminderCenterActionType.openReminder
+                        ? null
+                        : () => _handleItemAction(item),
                     onEditReminder: _selectionMode ? null : _openReminderForm,
                   ),
                   const SizedBox(height: 10),
@@ -559,6 +600,7 @@ class _BulkActionBar extends StatelessWidget {
 class _PendingReminderCard extends ConsumerWidget {
   const _PendingReminderCard({
     required this.item,
+    this.onOpen,
     this.onEditReminder,
     this.onLongPress,
     this.onToggleSelect,
@@ -567,6 +609,9 @@ class _PendingReminderCard extends ConsumerWidget {
   });
 
   final MoneyReminderCenterItem item;
+
+  /// 按动作类型跳转（还款 / 看预算 / 记一笔 / 看分期）。
+  final VoidCallback? onOpen;
 
   /// 账单提醒可以点进去编辑；预算 / 分期 / 账单等派生提醒没有表单。
   final void Function(MoneyBillReminderEntity reminder)? onEditReminder;
@@ -613,9 +658,10 @@ class _PendingReminderCard extends ConsumerWidget {
       onLongPress: onLongPress,
       onTap: selectionMode
           ? onToggleSelect
-          : editableReminder == null || onEditReminder == null
-          ? null
-          : () => onEditReminder!(editableReminder),
+          : onOpen ??
+                (editableReminder == null || onEditReminder == null
+                    ? null
+                    : () => onEditReminder!(editableReminder)),
       actions: selectionMode
           ? const <AppSwipeAction>[]
           : [

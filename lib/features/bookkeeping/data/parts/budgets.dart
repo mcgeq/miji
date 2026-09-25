@@ -114,6 +114,130 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
   }
 
   @override
+  Future<void> renameTag(String userId, String oldName, String newName) async {
+    final normalizedOld = oldName.trim();
+    final normalizedNew = newName.trim();
+    if (normalizedOld.isEmpty || normalizedNew.isEmpty) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.invalidCategoryName,
+      );
+    }
+    if (normalizedOld == normalizedNew) {
+      return;
+    }
+    await ensureReadyForUser(userId);
+    await _rewriteTag(
+      userId,
+      match: normalizedOld,
+      transformTags: (tags) => tags
+          .map((tag) => tag == normalizedOld ? normalizedNew : tag)
+          .toSet()
+          .toList(),
+      budgetReplacement: normalizedNew,
+    );
+  }
+
+  @override
+  Future<void> deleteTag(String userId, String tagName) async {
+    final normalized = tagName.trim();
+    if (normalized.isEmpty) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.invalidCategoryName,
+      );
+    }
+    await ensureReadyForUser(userId);
+    await _rewriteTag(
+      userId,
+      match: normalized,
+      transformTags: (tags) => tags.where((tag) => tag != normalized).toList(),
+      budgetReplacement: null,
+    );
+  }
+
+  /// 把 [match] 标签从所有流水与预算中重写（改名 / 删除共用）。
+  Future<void> _rewriteTag(
+    String userId, {
+    required String match,
+    required List<String> Function(List<String> tags) transformTags,
+    required String? budgetReplacement,
+  }) async {
+    await database.transaction(() async {
+      final tagRows = await (database.select(
+        database.moneyTransactionTags,
+      )..where((row) => row.tag.equals(match))).get();
+      final transactionIds = tagRows.map((row) => row.transactionId).toSet();
+      for (final transactionId in transactionIds) {
+        final transaction =
+            await (database.select(database.moneyTransactions)..where(
+                  (row) =>
+                      row.id.equals(transactionId) &
+                      row.userId.equals(userId) &
+                      row.isDeleted.equals(false),
+                ))
+                .getSingleOrNull();
+        if (transaction == null) {
+          continue;
+        }
+        final tags = await _getTagsForTransaction(transactionId);
+        final updated = transformTags(tags);
+        await _replaceTransactionTags(transactionId, updated);
+        final now = _utcNow();
+        await (database.update(database.moneyTransactions)..where(
+              (row) => row.id.equals(transactionId) & row.userId.equals(userId),
+            ))
+            .write(
+              MoneyTransactionsCompanion(
+                version: Value(transaction.version + 1),
+                updatedAt: Value(now),
+              ),
+            );
+        await _recordTransactionChange(
+          userId: userId,
+          recordId: transactionId,
+          operation: SyncChangeOperation.update,
+          changedFields: {'tags': updated},
+          beforeVersion: transaction.version,
+          afterVersion: transaction.version + 1,
+        );
+      }
+
+      final budgets =
+          await (database.select(database.moneyBudgets)..where(
+                (budget) =>
+                    budget.userId.equals(userId) &
+                    budget.isDeleted.equals(false),
+              ))
+              .get();
+      for (final budget in budgets) {
+        if (_readBudgetTag(budget.tagsJson) != match) {
+          continue;
+        }
+        final now = _utcNow();
+        final tagsJson = _budgetTagJson(budgetReplacement);
+        await (database.update(database.moneyBudgets)..where(
+              (row) => row.id.equals(budget.id) & row.userId.equals(userId),
+            ))
+            .write(
+              MoneyBudgetsCompanion(
+                tagsJson: Value<String?>(tagsJson),
+                version: Value(budget.version + 1),
+                updatedAt: Value(now),
+              ),
+            );
+        await _recordBudgetChange(
+          userId: userId,
+          recordId: budget.id,
+          operation: SyncChangeOperation.update,
+          changedFields: {'tags_json': tagsJson},
+          beforeVersion: budget.version,
+          afterVersion: budget.version + 1,
+        );
+      }
+    });
+    await _tryRebuildUsageStatsForUser(userId);
+  }
+
+  @override
   Stream<List<MoneyBudgetAllocationEntity>> watchBudgetAllocationsForUser(
     String userId,
     String budgetId,
@@ -224,6 +348,7 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
         userId: userId,
         periodType: draft.periodType,
         accountId: draft.accountId,
+        interval: draft.repeatInterval,
         startDate: draft.startDate,
         endDate: draft.endDate,
       );
@@ -375,6 +500,7 @@ mixin _Budgets on _DriftMoneyRepositoryBase {
         userId: userId,
         periodType: update.periodType,
         accountId: update.accountId,
+        interval: update.repeatInterval,
         startDate: update.startDate,
         endDate: update.endDate,
       );

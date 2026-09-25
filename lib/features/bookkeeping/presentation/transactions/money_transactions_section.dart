@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_toast.dart';
@@ -21,6 +24,7 @@ import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/application/money_export_service.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -92,6 +96,7 @@ class _MoneyTransactionsSectionState
   int _loadSerial = 0;
   bool _hasMore = false;
   bool _isLoadingInitial = true;
+  bool _isExporting = false;
   Object? _loadError;
   MoneyTransactionType? _typeFilter;
   String? _budgetIdFilter;
@@ -263,6 +268,12 @@ class _MoneyTransactionsSectionState
                   ),
                 ],
               ),
+            ),
+            const SizedBox(width: 8),
+            AppIconActionButton(
+              tooltip: '导出流水',
+              onPressed: _isExporting ? null : _exportTransactions,
+              icon: Icons.ios_share_rounded,
             ),
             const SizedBox(width: 8),
             _TransactionsSortButton(
@@ -504,6 +515,9 @@ class _MoneyTransactionsSectionState
             onCancelSplit: selectedTransaction.isInstallmentPosting
                 ? null
                 : (split) => _cancelSplit(selectedTransaction, split),
+            onSetStatus: selectedTransaction.isInstallmentPosting
+                ? null
+                : (status) => _changeStatus(selectedTransaction, status),
           ),
         ),
       ],
@@ -589,6 +603,11 @@ class _MoneyTransactionsSectionState
           : (split) {
               unawaited(_cancelSplit(transaction, split));
             },
+      onSetStatus: transaction.isInstallmentPosting
+          ? null
+          : (status) {
+              unawaited(_changeStatus(transaction, status));
+            },
     );
   }
 
@@ -596,6 +615,28 @@ class _MoneyTransactionsSectionState
     setState(() {
       _selectedTransactionId = null;
     });
+  }
+
+  Future<void> _changeStatus(
+    MoneyTransactionEntity transaction,
+    MoneyTransactionStatus status,
+  ) async {
+    final toast = _ensureToast();
+    try {
+      await ref
+          .read(currentUserMoneyTransactionActionsProvider)
+          .setTransactionStatus(transaction.id, status);
+      if (!mounted) return;
+      AppToast.success(
+        toast,
+        context,
+        status == MoneyTransactionStatus.completed ? '已确认入账' : '已作废',
+      );
+      await _refreshTransactions();
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(toast, context, moneyTransactionActionErrorText(error));
+    }
   }
 
   int _dayExpenseMinorFor(DateTime date) {
@@ -650,6 +691,82 @@ class _MoneyTransactionsSectionState
     await _loadTransactions(reset: true);
   }
 
+  /// 导出当前筛选条件下的流行为 CSV（上限 5000 条）。
+  Future<void> _exportTransactions() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+    final toast = _ensureToast();
+    try {
+      const exportPageSize = 500;
+      const maxRows = 5000;
+      final all = <MoneyTransactionEntity>[];
+      var page = 1;
+      while (all.length < maxRows) {
+        final result = await ref
+            .read(currentUserMoneyTransactionActionsProvider)
+            .listTransactions(
+              _currentQuery(page: page, pageSize: exportPageSize),
+            );
+        all.addAll(result.items);
+        if (!result.hasMore) break;
+        page += 1;
+      }
+      if (!mounted) return;
+      if (all.isEmpty) {
+        AppToast.error(toast, context, '当前筛选没有可导出的流水');
+        return;
+      }
+
+      final accounts = ref
+          .read(currentUserVisibleAccountsProvider)
+          .maybeWhen(
+            data: (value) => value,
+            orElse: () => const <MoneyAccountEntity>[],
+          );
+      final expenseCatalog = ref
+          .read(currentUserCategoryCatalogProvider(MoneyCategoryKind.expense))
+          .maybeWhen(
+            data: (value) => value,
+            orElse: () => const MoneyCategoryCatalog.empty(),
+          );
+      final incomeCatalog = ref
+          .read(currentUserCategoryCatalogProvider(MoneyCategoryKind.income))
+          .maybeWhen(
+            data: (value) => value,
+            orElse: () => const MoneyCategoryCatalog.empty(),
+          );
+      final csv = buildTransactionsCsv(
+        transactions: all,
+        accountNames: {for (final a in accounts) a.id: a.name},
+        categoryNames: {
+          for (final c in [
+            ...expenseCatalog.categories,
+            ...incomeCatalog.categories,
+          ])
+            c.id: c.name,
+        },
+        subCategoryNames: {
+          for (final s in [
+            ...expenseCatalog.subCategories,
+            ...incomeCatalog.subCategories,
+          ])
+            s.id: s.name,
+        },
+      );
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/miji_transactions.csv');
+      await file.writeAsString(csv, flush: true);
+      if (!mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], subject: 'Miji 记账流水导出'),
+      );
+    } catch (_) {
+      if (mounted) AppToast.error(toast, context, '导出失败');
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
   Future<void> _loadMoreTransactions() async {
     await _loadTransactions(reset: false);
   }
@@ -687,10 +804,10 @@ class _MoneyTransactionsSectionState
     }
   }
 
-  MoneyTransactionQuery _currentQuery({required int page}) {
+  MoneyTransactionQuery _currentQuery({required int page, int? pageSize}) {
     return MoneyTransactionQuery(
       page: page,
-      pageSize: _pageSize,
+      pageSize: pageSize ?? _pageSize,
       type: _typeFilter,
       accountId: _accountIdFilter,
       categoryId: _categoryIdFilter,
@@ -2349,7 +2466,7 @@ class _TransactionSummaryBar extends ConsumerWidget {
           Expanded(
             child: _metric(
               theme,
-              '共 ${summary.count} 笔',
+              '共 ${summary.count} 笔（含转账）',
               maskedMoneyOr(
                 '支出 ${formatMoneyMinor(summary.expenseMinor, currencyCode)}',
                 masked,

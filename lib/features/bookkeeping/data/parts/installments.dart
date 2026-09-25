@@ -175,18 +175,21 @@ mixin _Installments on _DriftMoneyRepositoryBase {
 
         final now = DateTime.now().toUtc();
         final planId = _uuid.v4();
-        final principalParts = _splitMinorAmount(
-          draft.totalPrincipalMinor,
-          draft.totalPeriods,
+        final schedule = buildInstallmentSchedule(
+          principalMinor: draft.totalPrincipalMinor,
+          totalPeriods: draft.totalPeriods,
+          calcMethod: draft.calcMethod,
+          interestRateBasisPoints: draft.interestRateBasisPoints ?? 0,
+          totalInterestMinor: draft.totalInterestMinor,
         );
-        final interestParts = _splitMinorAmount(
-          draft.totalInterestMinor,
-          draft.totalPeriods,
+        final totalInterestMinor = schedule.fold<int>(
+          0,
+          (sum, entry) => sum + entry.interestMinor,
         );
         final firstDueDate = _dateOnly(draft.firstDueDate);
         final endDate = _addMonths(firstDueDate, draft.totalPeriods - 1);
         final totalPayableMinor =
-            draft.totalPrincipalMinor + draft.totalInterestMinor;
+            draft.totalPrincipalMinor + totalInterestMinor;
 
         await database
             .into(database.moneyInstallmentPlans)
@@ -212,9 +215,11 @@ mixin _Installments on _DriftMoneyRepositoryBase {
                 endDate: _dateKey(endDate),
                 firstDueDate: _dateKey(firstDueDate),
                 status: MoneyInstallmentPlanStatus.active.storageValue,
-                interestRateBasisPoints: const Value<int?>(null),
-                totalInterestMinor: Value<int?>(draft.totalInterestMinor),
-                calcMethod: const Value<String?>('flat'),
+                interestRateBasisPoints: Value<int?>(
+                  draft.interestRateBasisPoints,
+                ),
+                totalInterestMinor: Value<int?>(totalInterestMinor),
+                calcMethod: Value<String?>(draft.calcMethod.storageValue),
                 notes: Value<String?>(_blankToNull(draft.notes)),
                 createdAt: now,
                 updatedAt: now,
@@ -222,8 +227,9 @@ mixin _Installments on _DriftMoneyRepositoryBase {
             );
 
         for (var index = 0; index < draft.totalPeriods; index += 1) {
-          final principalMinor = principalParts[index];
-          final interestMinor = interestParts[index];
+          final entry = schedule[index];
+          final principalMinor = entry.principalMinor;
+          final interestMinor = entry.interestMinor;
           await database
               .into(database.moneyInstallmentDetails)
               .insert(
@@ -233,7 +239,7 @@ mixin _Installments on _DriftMoneyRepositoryBase {
                   planId: planId,
                   accountId: draft.accountId,
                   periodNumber: index + 1,
-                  amountMinor: principalMinor + interestMinor,
+                  amountMinor: entry.amountMinor,
                   principalMinor: principalMinor,
                   interestMinor: interestMinor,
                   dueDate: _dateKey(_addMonths(firstDueDate, index)),

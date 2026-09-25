@@ -24,6 +24,7 @@ Future<void> showTransactionDetailDialog({
   ValueChanged<MoneyLedgerEntity>? onRemoveFromFamilyLedger,
   ValueChanged<MoneySplitRecordEntity>? onEditSplit,
   ValueChanged<MoneySplitRecordEntity>? onCancelSplit,
+  ValueChanged<MoneyTransactionStatus>? onSetStatus,
 }) {
   return showDialog<void>(
     context: context,
@@ -45,6 +46,7 @@ Future<void> showTransactionDetailDialog({
           ),
           onEditSplit: _closeDialogAndRunValue(context, onEditSplit),
           onCancelSplit: _closeDialogAndRunValue(context, onCancelSplit),
+          onSetStatus: _closeDialogAndRunValue(context, onSetStatus),
         ),
       );
     },
@@ -57,6 +59,7 @@ Future<void> showTransactionDetailProviderDialog({
   VoidCallback? onEdit,
   VoidCallback? onDelete,
   VoidCallback? onRefund,
+  ValueChanged<MoneyTransactionStatus>? onSetStatus,
 }) {
   return showDialog<void>(
     context: context,
@@ -66,6 +69,7 @@ Future<void> showTransactionDetailProviderDialog({
         onEdit: onEdit,
         onDelete: onDelete,
         onRefund: onRefund,
+        onSetStatus: onSetStatus,
       );
     },
   );
@@ -77,12 +81,14 @@ class _TransactionDetailProviderDialog extends ConsumerWidget {
     this.onEdit,
     this.onDelete,
     this.onRefund,
+    this.onSetStatus,
   });
 
   final MoneyTransactionEntity transaction;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onRefund;
+  final ValueChanged<MoneyTransactionStatus>? onSetStatus;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -139,6 +145,7 @@ class _TransactionDetailProviderDialog extends ConsumerWidget {
         onEdit: _closeDialogAndRun(context, onEdit),
         onDelete: _closeDialogAndRun(context, onDelete),
         onRefund: _closeDialogAndRun(context, onRefund),
+        onSetStatus: _closeDialogAndRunValue(context, onSetStatus),
       ),
     );
   }

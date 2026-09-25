@@ -14,12 +14,14 @@ import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/application/money_installment_schedule.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
@@ -1592,6 +1594,8 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
   final _interestController = TextEditingController(text: '0');
   final _periodsController = TextEditingController(text: '12');
   final _notesController = TextEditingController();
+  final _rateController = TextEditingController();
+  MoneyInstallmentCalcMethod _calcMethod = MoneyInstallmentCalcMethod.flat;
   MoneyAccountEntity? _account;
   String? _categoryId;
   String? _subCategoryId;
@@ -1627,6 +1631,7 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
     _principalController.addListener(_updateEstimate);
     _interestController.addListener(_updateEstimate);
     _periodsController.addListener(_updateEstimate);
+    _rateController.addListener(_updateEstimate);
   }
 
   @override
@@ -1634,11 +1639,13 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
     _principalController.removeListener(_updateEstimate);
     _interestController.removeListener(_updateEstimate);
     _periodsController.removeListener(_updateEstimate);
+    _rateController.removeListener(_updateEstimate);
     _nameController.dispose();
     _principalController.dispose();
     _interestController.dispose();
     _periodsController.dispose();
     _notesController.dispose();
+    _rateController.dispose();
     super.dispose();
   }
 
@@ -1646,19 +1653,50 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
     setState(() {});
   }
 
+  int get _interestRateBasisPoints {
+    if (!_calcMethod.usesInterestRate) {
+      return 0;
+    }
+    final value = double.tryParse(_rateController.text.trim());
+    if (value == null || value < 0) {
+      return 0;
+    }
+    return (value * 100).round();
+  }
+
   String? get _monthlyEstimateText {
     try {
       final principal = parseMoneyAmountToMinor(_principalController.text);
-      final interest = parseMoneyAmountToMinor(_interestController.text);
       final periods = int.tryParse(_periodsController.text.trim());
       if (principal <= 0 || periods == null || periods <= 0) {
         return null;
       }
       final currencyCode = _account?.currencyCode ?? 'CNY';
-      final totalMinor = principal + interest;
-      final perPeriodMinor = (totalMinor / periods).round();
-      return '每期约还 ${formatMoneyMinor(perPeriodMinor, currencyCode)}'
-          '${interest > 0 ? '（含利息 ${formatMoneyMinor(interest, currencyCode)}）' : ''}';
+      if (!_calcMethod.usesInterestRate) {
+        final interest = parseMoneyAmountToMinor(_interestController.text);
+        final totalMinor = principal + interest;
+        final perPeriodMinor = (totalMinor / periods).round();
+        return '每期约还 ${formatMoneyMinor(perPeriodMinor, currencyCode)}'
+            '${interest > 0 ? '（含利息 ${formatMoneyMinor(interest, currencyCode)}）' : ''}';
+      }
+      final schedule = buildInstallmentSchedule(
+        principalMinor: principal,
+        totalPeriods: periods,
+        calcMethod: _calcMethod,
+        interestRateBasisPoints: _interestRateBasisPoints,
+      );
+      if (schedule.isEmpty) {
+        return null;
+      }
+      final totalInterestMinor = schedule.fold<int>(
+        0,
+        (sum, entry) => sum + entry.interestMinor,
+      );
+      final firstAmountMinor = schedule.first.amountMinor;
+      final label = _calcMethod == MoneyInstallmentCalcMethod.equalPrincipal
+          ? '首期约还 ${formatMoneyMinor(firstAmountMinor, currencyCode)}，逐期递减'
+          : '每期约还 ${formatMoneyMinor(firstAmountMinor, currencyCode)}';
+      return '$label（总利息 ${formatMoneyMinor(totalInterestMinor, currencyCode)}）';
     } on MoneyAmountParseException {
       return null;
     }
@@ -1731,6 +1769,18 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
+            AppSlidingSegmentedControl<MoneyInstallmentCalcMethod>(
+              minSegmentWidth: 84,
+              value: _calcMethod,
+              onChanged: (value) => setState(() => _calcMethod = value),
+              segments: [
+                for (final method in MoneyInstallmentCalcMethod.values)
+                  AppSlidingSegment<MoneyInstallmentCalcMethod>(
+                    value: method,
+                    label: method.label,
+                  ),
+              ],
+            ),
             AppFormRow(
               compactBreakpoint: 420,
               flexes: const [3, 2],
@@ -1755,12 +1805,24 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
                 ),
               ],
             ),
-            AppAmountField(
-              controller: _interestController,
-              labelText: '总利息',
-              currencyCode: accountCurrencyCode,
-              validator: _validateNonNegativeAmount,
-            ),
+            if (_calcMethod.usesInterestRate)
+              AppTextFormField(
+                controller: _rateController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                labelText: '年利率',
+                prefixIcon: const Icon(Icons.percent_rounded),
+                suffixText: '%',
+                validator: _validateInterestRate,
+              )
+            else
+              AppAmountField(
+                controller: _interestController,
+                labelText: '总利息',
+                currencyCode: accountCurrencyCode,
+                validator: _validateNonNegativeAmount,
+              ),
             if (_monthlyEstimateText != null)
               AppFormHint(
                 text: _monthlyEstimateText!,
@@ -1805,15 +1867,29 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
         categoryId: categoryId,
         subCategoryId: _subCategoryId,
         totalPrincipalMinor: parseMoneyAmountToMinor(_principalController.text),
-        totalInterestMinor: parseMoneyAmountToMinor(_interestController.text),
+        totalInterestMinor: _calcMethod.usesInterestRate
+            ? 0
+            : parseMoneyAmountToMinor(_interestController.text),
         totalPeriods: int.parse(_periodsController.text.trim()),
         firstDueDate: _firstDueDate,
         currencyCode: account.currencyCode,
         notes: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
+        calcMethod: _calcMethod,
+        interestRateBasisPoints: _calcMethod.usesInterestRate
+            ? _interestRateBasisPoints
+            : null,
       ),
     );
+  }
+
+  String? _validateInterestRate(String? value) {
+    final parsed = double.tryParse(value?.trim() ?? '');
+    if (parsed == null || parsed < 0 || parsed > 100) {
+      return '请输入 0 到 100 之间的年利率';
+    }
+    return null;
   }
 
   String? _validatePositiveAmount(String? value) {

@@ -23,8 +23,10 @@ class MoneyLedgers extends Table {
   TextColumn get baseCurrencyCode =>
       text().references(MoneyCurrencies, #code)();
 
+  /// 预留：当前固定写入 'manual'，未参与结算计算。
   TextColumn get settlementCycle => text()();
 
+  /// 预留：当前固定写入 1，未参与结算计算。
   IntColumn get settlementDay => integer()();
 
   TextColumn get icon => text().nullable()();

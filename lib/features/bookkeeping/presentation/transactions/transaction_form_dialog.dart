@@ -6,6 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_form_hint.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
@@ -87,6 +88,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
   String? _subCategoryId;
   String? _ledgerId;
   MoneyPaymentMethod _paymentMethod = MoneyPaymentMethod.cash;
+  MoneyTransactionStatus _status = MoneyTransactionStatus.completed;
   MoneySplitConfigDraft? _splitConfig;
   int? _splitConfigAmountMinor;
   String? _errorText;
@@ -319,6 +321,28 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                     setState(() {});
                   },
           ),
+          if (!_isEditing && widget.type != MoneyTransactionType.transfer) ...[
+            AppSlidingSegmentedControl<MoneyTransactionStatus>(
+              minSegmentWidth: 80,
+              value: _status,
+              onChanged: (value) => setState(() => _status = value),
+              segments: const [
+                AppSlidingSegment(
+                  value: MoneyTransactionStatus.completed,
+                  label: '已完成',
+                ),
+                AppSlidingSegment(
+                  value: MoneyTransactionStatus.pending,
+                  label: '待处理',
+                ),
+              ],
+            ),
+            if (_status == MoneyTransactionStatus.pending)
+              const AppFormHint(
+                text: '待处理：暂不占用账户余额，也不计入统计；确认后才入账',
+                icon: Icons.info_outline_rounded,
+              ),
+          ],
           if (widget.type == MoneyTransactionType.expense)
             AppSurface(
               tone: AppSurfaceTone.subtle,
@@ -836,6 +860,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                     : _customPaymentNameCtrl.text.trim(),
                 tags: tags,
                 ledgerId: ledger?.id,
+                status: _status,
               ),
               splitConfig: widget.type == MoneyTransactionType.expense
                   ? _splitConfig

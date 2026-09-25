@@ -10,6 +10,7 @@ import 'package:miji/core/database/seed/money_seed_data.dart';
 import 'package:miji/core/sync/delta_sync/delta_conflict_models.dart';
 import 'package:miji/core/sync/delta_sync/delta_package_models.dart';
 import 'package:miji/core/sync/delta_sync/sync_change_logger.dart';
+import 'package:miji/features/bookkeeping/application/money_installment_schedule.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
@@ -1927,6 +1928,13 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
         MoneyRepositoryErrorCode.invalidInstallmentAmount,
       );
     }
+    if (draft.calcMethod.usesInterestRate &&
+        (draft.interestRateBasisPoints == null ||
+            draft.interestRateBasisPoints! < 0)) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.invalidInstallmentAmount,
+      );
+    }
   }
 
   String _budgetScopeJson({
@@ -2090,10 +2098,84 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     };
   }
 
+  /// 按周期类型推进 [steps] 个周期（日历加法，自动收敛月末天数）。
+  DateTime _advanceBudgetPeriod(
+    DateTime start,
+    MoneyBudgetPeriodType periodType,
+    int steps,
+  ) {
+    return switch (periodType) {
+      MoneyBudgetPeriodType.daily => start.add(Duration(days: steps)),
+      MoneyBudgetPeriodType.weekly => start.add(Duration(days: steps * 7)),
+      MoneyBudgetPeriodType.monthly ||
+      MoneyBudgetPeriodType.billingCycle => _addMonths(start, steps),
+      MoneyBudgetPeriodType.yearly => _addMonths(start, steps * 12),
+      MoneyBudgetPeriodType.oneTime => throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.unsupportedBudgetPeriod,
+      ),
+    };
+  }
+
+  /// 创建预算时的首个周期：起点对齐当前自然周期，长度按重复间隔展开。
+  ({DateTime start, DateTime end}) _firstBudgetPeriod(
+    MoneyBudgetPeriodType periodType,
+    int interval,
+  ) {
+    final step = interval <= 0 ? 1 : interval;
+    final base = _currentBudgetPeriod(periodType);
+    return (
+      start: base.start,
+      end: _advanceBudgetPeriod(base.start, periodType, step),
+    );
+  }
+
+  /// 运行期周期：以预算创建时的起点为锚，按重复间隔步进。
+  ({DateTime start, DateTime end}) _intervalBudgetPeriod(
+    MoneyBudgetPeriodType periodType,
+    DateTime anchor,
+    int interval,
+  ) {
+    final step = interval <= 0 ? 1 : interval;
+    final anchorDay = DateTime(anchor.year, anchor.month, anchor.day);
+    final now = _now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (!anchorDay.isBefore(today)) {
+      return (
+        start: anchorDay,
+        end: _advanceBudgetPeriod(anchorDay, periodType, step),
+      );
+    }
+
+    late DateTime start;
+    switch (periodType) {
+      case MoneyBudgetPeriodType.daily:
+        final days = today.difference(anchorDay).inDays;
+        start = anchorDay.add(Duration(days: (days ~/ step) * step));
+      case MoneyBudgetPeriodType.weekly:
+        final days = today.difference(anchorDay).inDays;
+        final block = step * 7;
+        start = anchorDay.add(Duration(days: (days ~/ block) * block));
+      case MoneyBudgetPeriodType.monthly:
+      case MoneyBudgetPeriodType.billingCycle:
+        final months =
+            (today.year - anchorDay.year) * 12 + today.month - anchorDay.month;
+        start = _addMonths(anchorDay, (months ~/ step) * step);
+      case MoneyBudgetPeriodType.yearly:
+        final years = today.year - anchorDay.year;
+        start = _addMonths(anchorDay, (years ~/ step) * step * 12);
+      case MoneyBudgetPeriodType.oneTime:
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.unsupportedBudgetPeriod,
+        );
+    }
+    return (start: start, end: _advanceBudgetPeriod(start, periodType, step));
+  }
+
   Future<({DateTime start, DateTime end})> _budgetPeriodForAccount({
     required String userId,
     required MoneyBudgetPeriodType periodType,
     required String? accountId,
+    required int interval,
     DateTime? startDate,
     DateTime? endDate,
   }) async {
@@ -2119,7 +2201,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       );
     }
     if (periodType != MoneyBudgetPeriodType.billingCycle) {
-      return _currentBudgetPeriod(periodType);
+      return _firstBudgetPeriod(periodType, interval);
     }
     if (accountId == null) {
       throw const MoneyRepositoryException(
@@ -2127,7 +2209,16 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       );
     }
     final account = await _getAccountForUser(userId, accountId);
-    return _currentBillingCyclePeriod(account);
+    final base = _currentBillingCyclePeriod(account);
+    final step = interval <= 0 ? 1 : interval;
+    return (
+      start: base.start,
+      end: _advanceBudgetPeriod(
+        base.start,
+        MoneyBudgetPeriodType.billingCycle,
+        step,
+      ),
+    );
   }
 
   Future<({DateTime start, DateTime end})> _budgetPeriodForBudget(
@@ -2142,15 +2233,37 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
         end: _dateFromKey(budget.endDate),
       );
     }
+    final isLegacy = budget.budgetType == _budgetTypeLegacySnapshot;
     if (periodType != MoneyBudgetPeriodType.billingCycle) {
-      return _currentBudgetPeriod(periodType);
+      if (isLegacy) {
+        return _currentBudgetPeriod(periodType);
+      }
+      return _intervalBudgetPeriod(
+        periodType,
+        _dateFromKey(budget.startDate),
+        budget.repeatInterval,
+      );
     }
     final accountId = _readBudgetScope(budget).accountId;
     if (accountId == null) {
-      return _currentBudgetPeriod(MoneyBudgetPeriodType.monthly);
+      return isLegacy
+          ? _currentBudgetPeriod(MoneyBudgetPeriodType.monthly)
+          : _intervalBudgetPeriod(
+              MoneyBudgetPeriodType.monthly,
+              _dateFromKey(budget.startDate),
+              budget.repeatInterval,
+            );
     }
     final account = await _getAccountForUser(budget.userId, accountId);
-    return _currentBillingCyclePeriod(account);
+    final interval = budget.repeatInterval <= 0 ? 1 : budget.repeatInterval;
+    if (isLegacy || interval <= 1) {
+      return _currentBillingCyclePeriod(account);
+    }
+    return _intervalBudgetPeriod(
+      MoneyBudgetPeriodType.billingCycle,
+      _dateFromKey(budget.startDate),
+      interval,
+    );
   }
 
   ({DateTime start, DateTime end}) _currentBillingCyclePeriod(
@@ -3489,9 +3602,11 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     }
     _assertTransactionAccountRules(draft.type, account);
 
-    final ledger = _MutableAccountLedger.fromAccount(account)
-      ..applyTransactionCreate(draft.type, draft.amountMinor)
-      ..validate();
+    final ledger = _MutableAccountLedger.fromAccount(account);
+    if (draft.status == MoneyTransactionStatus.completed) {
+      ledger.applyTransactionCreate(draft.type, draft.amountMinor);
+    }
+    ledger.validate();
 
     final now = DateTime.now().toUtc();
     final transactionId = _uuid.v4();
@@ -3502,7 +3617,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
             id: transactionId,
             userId: userId,
             type: draft.type.storageValue,
-            status: MoneyTransactionStatus.completed.storageValue,
+            status: draft.status.storageValue,
             transactionAt: draft.transactionAt.toUtc(),
             amountMinor: draft.amountMinor,
             currencyCode: draft.currencyCode,

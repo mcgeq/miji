@@ -158,6 +158,12 @@ abstract class MoneyRepository {
   /// 标签候选：历史交易标签 + 已有预算标签（去重、排序）。
   Stream<List<String>> watchTagCandidatesForUser(String userId);
 
+  /// 重命名标签：同步更新所有引用该标签的流水与预算，保证链接不断。
+  Future<void> renameTag(String userId, String oldName, String newName);
+
+  /// 删除标签：从所有流水与预算中移除该标签。
+  Future<void> deleteTag(String userId, String tagName);
+
   Stream<List<MoneyBudgetAllocationEntity>> watchBudgetAllocationsForUser(
     String userId,
     String budgetId,
@@ -300,6 +306,13 @@ abstract class MoneyRepository {
   );
 
   Future<void> deleteTransaction(String userId, String transactionId);
+
+  /// 变更流水状态：待处理 → 已完成（入账）/ 已作废；已完成 → 已作废（回滚余额）。
+  Future<MoneyTransactionEntity> setTransactionStatus(
+    String userId,
+    String transactionId,
+    MoneyTransactionStatus status,
+  );
 
   Future<MoneyBudgetEntity> createBudget(String userId, MoneyBudgetDraft draft);
 

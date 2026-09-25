@@ -19,6 +19,7 @@ import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/category_icon.dart';
+import 'package:miji/features/bookkeeping/presentation/tags/money_tag_manager_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
@@ -111,6 +112,13 @@ class _MoneyCategoriesSectionState
             // 原来的「新增分类」只存在于 categories 为空的 AppEmptyState 里，
             // 而种子数据总有分类，空态永远不会出现——用户因此永远无法新增分类。
             AppIconActionButton(
+              tooltip: '标签管理',
+              onPressed: () => _openTagManager(context),
+              icon: Icons.label_rounded,
+              variant: AppIconActionVariant.outlined,
+            ),
+            const SizedBox(width: 8),
+            AppIconActionButton(
               tooltip: '新增分类',
               onPressed: () => _openCategoryDialog(context),
               icon: Icons.add_rounded,
@@ -153,6 +161,14 @@ class _MoneyCategoriesSectionState
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _openTagManager(BuildContext context) async {
+    await showAppResponsiveDialog<void>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => const MoneyTagManagerDialog(),
     );
   }
 

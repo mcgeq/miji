@@ -314,6 +314,14 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           MoneyRepositoryErrorCode.invalidTransferAccounts,
         );
       }
+      final existingStatus = MoneyTransactionStatus.fromStorageValue(
+        existing.status,
+      );
+      if (existingStatus == MoneyTransactionStatus.voided) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.invalidTransactionStatus,
+        );
+      }
 
       final expectedCategoryKind = update.type == MoneyTransactionType.income
           ? MoneyCategoryKind.income
@@ -341,23 +349,28 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
       final refundAmountMinor = existing.refundAmountMinor > update.amountMinor
           ? update.amountMinor
           : existing.refundAmountMinor;
-      final oldLedger = _MutableAccountLedger.fromAccount(oldAccount)
-        ..applyTransactionRollback(
+      final appliesToBalance =
+          existingStatus == MoneyTransactionStatus.completed;
+      final oldLedger = _MutableAccountLedger.fromAccount(oldAccount);
+      if (appliesToBalance) {
+        oldLedger.applyTransactionRollback(
           existingType,
           _effectiveTransactionAmountMinor(existing),
         );
+      }
       final newLedger = oldAccount.id == newAccount.id
           ? oldLedger
           : _MutableAccountLedger.fromAccount(newAccount);
-      newLedger
-        ..applyTransactionCreate(
+      if (appliesToBalance) {
+        newLedger.applyTransactionCreate(
           update.type,
           _effectiveAmountMinor(
             amountMinor: update.amountMinor,
             refundAmountMinor: refundAmountMinor,
           ),
-        )
-        ..validate();
+        );
+      }
+      newLedger.validate();
       if (oldAccount.id != newAccount.id) {
         oldLedger.validate();
       }
@@ -716,6 +729,118 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
   }
 
   @override
+  Future<MoneyTransactionEntity> setTransactionStatus(
+    String userId,
+    String transactionId,
+    MoneyTransactionStatus status,
+  ) async {
+    try {
+      await ensureReadyForUser(userId);
+      final existing = await _getTransactionForUser(userId, transactionId);
+      if (_DriftMoneyRepositoryBase._isInstallmentPosting(existing)) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.invalidInstallmentStatus,
+        );
+      }
+      final type = MoneyTransactionType.fromStorageValue(existing.type);
+      if (type == MoneyTransactionType.transfer) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.invalidTransferAccounts,
+        );
+      }
+
+      final currentStatus = MoneyTransactionStatus.fromStorageValue(
+        existing.status,
+      );
+      if (currentStatus == status) {
+        return _mapTransaction(
+          existing,
+          tags: await _getTagsForTransaction(existing.id),
+        );
+      }
+      final allowed = switch (currentStatus) {
+        MoneyTransactionStatus.pending =>
+          status == MoneyTransactionStatus.completed ||
+              status == MoneyTransactionStatus.voided,
+        MoneyTransactionStatus.completed =>
+          status == MoneyTransactionStatus.voided,
+        MoneyTransactionStatus.voided => false,
+      };
+      if (!allowed) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.invalidTransactionStatus,
+        );
+      }
+
+      final account = await _getAccountForUser(userId, existing.accountId);
+      final ledger = _MutableAccountLedger.fromAccount(account);
+      final effectiveAmountMinor = _effectiveTransactionAmountMinor(existing);
+      if (status == MoneyTransactionStatus.completed) {
+        ledger.applyTransactionCreate(type, effectiveAmountMinor);
+      } else if (currentStatus == MoneyTransactionStatus.completed) {
+        ledger.applyTransactionRollback(type, effectiveAmountMinor);
+      }
+      ledger.validate();
+
+      final ledgerIds = await _ledgerIdsForTransaction(userId, existing.id);
+      final tags = await _getTagsForTransaction(existing.id);
+      final now = _utcNow();
+      await database.transaction(() async {
+        await _updateAccountLedger(userId, account.id, ledger, now);
+        await (database.update(database.moneyTransactions)..where(
+              (row) =>
+                  row.id.equals(transactionId) &
+                  row.userId.equals(userId) &
+                  row.isDeleted.equals(false),
+            ))
+            .write(
+              MoneyTransactionsCompanion(
+                status: Value(status.storageValue),
+                version: Value(existing.version + 1),
+                updatedAt: Value(now),
+              ),
+            );
+        await _recordTransactionChange(
+          userId: userId,
+          recordId: transactionId,
+          operation: SyncChangeOperation.update,
+          changedFields: {'status': status.storageValue},
+          beforeVersion: existing.version,
+          afterVersion: existing.version + 1,
+        );
+      });
+
+      await _refreshBudgetSnapshotsForTransactionImpacts(userId, [
+        _BudgetTransactionImpact(
+          type: type,
+          accountId: existing.accountId,
+          categoryId: existing.categoryId,
+          subCategoryId: existing.subCategoryId,
+          ledgerIds: ledgerIds,
+          tags: tags,
+        ),
+      ]);
+      await _syncCreditAccountRepaymentRemindersForAccounts(userId, [
+        existing.accountId,
+      ]);
+      await _tryRebuildUsageStatsForUser(userId);
+
+      return _mapTransaction(
+        await _getTransactionForUser(userId, transactionId),
+        tags: tags,
+      );
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  @override
   Future<void> deleteTransaction(String userId, String transactionId) async {
     try {
       final transaction = await _getTransactionForUser(userId, transactionId);
@@ -739,12 +864,17 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
       }
 
       final account = await _getAccountForUser(userId, transaction.accountId);
-      final ledger = _MutableAccountLedger.fromAccount(account)
-        ..applyTransactionRollback(
+      final transactionStatus = MoneyTransactionStatus.fromStorageValue(
+        transaction.status,
+      );
+      final ledger = _MutableAccountLedger.fromAccount(account);
+      if (transactionStatus == MoneyTransactionStatus.completed) {
+        ledger.applyTransactionRollback(
           MoneyTransactionType.fromStorageValue(transaction.type),
           _effectiveTransactionAmountMinor(transaction),
-        )
-        ..validate();
+        );
+      }
+      ledger.validate();
       final ledgerIds = await _ledgerIdsForTransaction(userId, transaction.id);
       final transactionTags = await _getTagsForTransaction(transaction.id);
       final now = _utcNow();

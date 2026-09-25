@@ -23,6 +23,27 @@ enum MoneyInstallmentPlanStatus {
   }
 }
 
+enum MoneyInstallmentCalcMethod {
+  flat('flat', '等额平摊'),
+  equalInstallment('equal_installment', '等额本息'),
+  equalPrincipal('equal_principal', '等额本金');
+
+  const MoneyInstallmentCalcMethod(this.storageValue, this.label);
+
+  final String storageValue;
+  final String label;
+
+  static MoneyInstallmentCalcMethod fromStorageValue(String value) {
+    return MoneyInstallmentCalcMethod.values.firstWhere(
+      (method) => method.storageValue == value,
+      orElse: () => MoneyInstallmentCalcMethod.flat,
+    );
+  }
+
+  /// 是否需要年利率输入（等额本息 / 等额本金）。
+  bool get usesInterestRate => this != MoneyInstallmentCalcMethod.flat;
+}
+
 enum MoneyInstallmentDetailStatus {
   pending('pending'),
   posted('posted'),
@@ -150,6 +171,8 @@ class MoneyInstallmentPlanDraft {
     this.subCategoryId,
     this.currencyCode = 'CNY',
     this.notes,
+    this.calcMethod = MoneyInstallmentCalcMethod.flat,
+    this.interestRateBasisPoints,
   });
 
   final String? ledgerId;
@@ -164,6 +187,12 @@ class MoneyInstallmentPlanDraft {
   final DateTime firstDueDate;
   final String currencyCode;
   final String? notes;
+
+  /// 计算方式（等额平摊 / 等额本息 / 等额本金）。
+  final MoneyInstallmentCalcMethod calcMethod;
+
+  /// 年利率（基础点，如 1200 = 12%）；等额平摊时可忽略。
+  final int? interestRateBasisPoints;
 }
 
 class MoneyInstallmentExecutionSummary {

@@ -267,19 +267,22 @@ class _UnusualBadge extends ConsumerWidget {
 
     final theme = Theme.of(context);
     final warning = theme.moneyColors.warning;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-      decoration: BoxDecoration(
-        color: warning.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        '偏高',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: warning,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0,
+    return Tooltip(
+      message: '该笔支出高于同分类当月平均值',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          color: warning.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          '偏高',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: warning,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
         ),
       ),
     );

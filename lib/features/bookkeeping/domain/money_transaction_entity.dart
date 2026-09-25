@@ -221,9 +221,13 @@ class MoneyTransactionDraft {
     this.ledgerId,
     this.sourceTemplateRunId,
     this.tags = const <String>[],
+    this.status = MoneyTransactionStatus.completed,
   });
 
   final MoneyTransactionType type;
+
+  /// 初始状态；待处理（pending）不占用账户余额、不计入统计。
+  final MoneyTransactionStatus status;
   final DateTime transactionAt;
   final int amountMinor;
   final String currencyCode;
