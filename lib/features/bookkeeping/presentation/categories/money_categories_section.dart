@@ -20,6 +20,7 @@ import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/category_icon.dart';
 import 'package:miji/features/bookkeeping/presentation/tags/money_tag_manager_dialog.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/money_transaction_actions.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
@@ -628,8 +629,10 @@ class _MoneyCategoriesSectionState
       }
       _showMessage('已记录');
       return null;
-    } on MoneyRepositoryException {
-      return '记录失败';
+    } on MoneyRepositoryException catch (error) {
+      // 以前一律显示「记录失败」，把「成员不可用 / 流水不支持分摊」
+      // 这类明确原因吞掉了，排查不到真正的失败点。
+      return moneyTransactionActionErrorText(error);
     }
   }
 

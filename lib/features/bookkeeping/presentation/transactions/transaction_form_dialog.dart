@@ -247,8 +247,15 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         : const <MoneyMemberEntity>[];
     final ledgerMemberCount = selectedLedgerMembers.length;
     final isFamilyLedger = selectedLedger?.isFamily ?? false;
+    // 待处理流水不计入统计、也不支持分摊。
+    final isSplitStatusAllowed = _status == MoneyTransactionStatus.completed;
     final canConfigureSplit =
-        isFamilyLedger && _canConfigureSplit(ledgerMemberCount);
+        isFamilyLedger &&
+        isSplitStatusAllowed &&
+        _canConfigureSplit(ledgerMemberCount);
+    final splitUnavailableText = !isSplitStatusAllowed
+        ? '待处理流水暂不支持分摊'
+        : '添加至少两位成员后可分摊';
     final showSplitConfig =
         !_isEditing &&
         widget.type == MoneyTransactionType.expense &&
@@ -303,6 +310,10 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                   }
                   setState(() {
                     _ledgerId = value;
+                    // 分摊配置绑定的是具体账本下的成员，换账本后必须重新设置，
+                    // 否则会带着旧账本的成员 id 提交，repository 会直接拒绝。
+                    _splitConfig = null;
+                    _splitConfigAmountMinor = null;
                   });
                 },
               ),
@@ -325,7 +336,14 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
             AppSlidingSegmentedControl<MoneyTransactionStatus>(
               minSegmentWidth: 80,
               value: _status,
-              onChanged: (value) => setState(() => _status = value),
+              onChanged: (value) => setState(() {
+                _status = value;
+                // 只有「已完成」的支出才能分摊，切到待处理时清掉分摊配置。
+                if (value == MoneyTransactionStatus.pending) {
+                  _splitConfig = null;
+                  _splitConfigAmountMinor = null;
+                }
+              }),
               segments: const [
                 AppSlidingSegment(
                   value: MoneyTransactionStatus.completed,
@@ -502,7 +520,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               config: _splitConfig,
               isStale: _isSplitConfigStale,
               enabled: canConfigureSplit,
-              unavailableText: '添加至少两位成员后可分摊',
+              unavailableText: splitUnavailableText,
               onConfigure: () =>
                   _openSplitConfigDialog(selectedLedger, selectedLedgerMembers),
               onClear: _splitConfig == null
@@ -836,6 +854,14 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         setState(() => _errorText = '金额变化后请重新设置分摊');
         return null;
       }
+      final splitConfig = widget.type == MoneyTransactionType.expense
+          ? _splitConfig
+          : null;
+      final splitError = _splitConfigError(splitConfig, ledger: ledger);
+      if (splitError != null) {
+        setState(() => _errorText = splitError);
+        return null;
+      }
       if (!mounted) {
         return null;
       }
@@ -862,9 +888,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                 ledgerId: ledger?.id,
                 status: _status,
               ),
-              splitConfig: widget.type == MoneyTransactionType.expense
-                  ? _splitConfig
-                  : null,
+              splitConfig: splitConfig,
             )
           : MoneyTransactionUpdate(
               id: transaction.id,
@@ -889,6 +913,48 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       setState(() => _errorText = '金额格式不正确');
       return null;
     }
+  }
+
+  /// 提交前校验分摊配置是否仍然适用于当前表单状态。
+  ///
+  /// 分摊的成员 id 属于某个具体账本、且只有「已完成」的支出能分摊。
+  /// 这里提前拦截，避免写入后在 repository 抛出笼统的「记录失败」。
+  String? _splitConfigError(
+    MoneySplitConfigDraft? config, {
+    required MoneyLedgerEntity? ledger,
+  }) {
+    if (config == null) {
+      return null;
+    }
+    if (_status != MoneyTransactionStatus.completed) {
+      return '只有已完成的支出才能分摊，请改为已完成或清除分摊';
+    }
+    if (ledger == null || !ledger.isFamily) {
+      return '分摊仅支持家庭账本，请先选择家庭账本或清除分摊';
+    }
+    if (config.ledgerId != ledger.id) {
+      return '分摊设置与当前账本不一致，请重新设置分摊';
+    }
+    final members = ref
+        .read(currentUserMoneyLedgerMembersProvider(ledger.id))
+        .maybeWhen<List<MoneyMemberEntity>?>(
+          data: (value) => value,
+          orElse: () => null,
+        );
+    if (members == null) {
+      // 成员还没加载出来，交给 repository 兜底校验，不在这里误报。
+      return null;
+    }
+    final memberIds = <String>{for (final member in members) member.id};
+    if (!memberIds.contains(config.payerMemberId)) {
+      return '垫款人已不在当前账本，请重新设置分摊';
+    }
+    for (final participant in config.participants) {
+      if (!memberIds.contains(participant.memberId)) {
+        return '有分摊成员已不在当前账本，请重新设置分摊';
+      }
+    }
+    return null;
   }
 
   MoneyAccountEntity? _selectedAccountFrom(

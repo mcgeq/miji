@@ -295,8 +295,11 @@ class MoneyQuickActionLauncher {
       MoneyRepositoryErrorCode.invalidInstallmentAccount => '请选择信用账户',
       MoneyRepositoryErrorCode.invalidInstallmentAmount => '请检查分期金额和期数',
       MoneyRepositoryErrorCode.invalidInstallmentStatus => '当前分期状态不可操作',
-      MoneyRepositoryErrorCode.ledgerNotFound => '账本不可用',
-      MoneyRepositoryErrorCode.invalidSplitAmount => '请检查分摊金额',
+      MoneyRepositoryErrorCode.ledgerNotFound => '分摊账本不可用',
+      MoneyRepositoryErrorCode.memberNotFound => '分摊成员不可用，请重新设置分摊',
+      MoneyRepositoryErrorCode.activeSplitAlreadyExists => '此流水已有分摊记录',
+      MoneyRepositoryErrorCode.invalidSplitTransaction => '只有已完成的支出才能分摊',
+      MoneyRepositoryErrorCode.invalidSplitAmount => '请检查分摊金额或比例',
       _ => fallback,
     };
   }

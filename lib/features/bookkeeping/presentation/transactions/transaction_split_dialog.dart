@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
+import 'package:miji/core/presentation/components/app_form_hint.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
@@ -213,6 +214,14 @@ class _TransactionSplitDialogState
                   ),
                 ],
               ),
+              // 垫款人可以不参与分摊（需求 BR-12.1.6），但必须让用户看清楚：
+              // 此时垫付的金额会全部落到其他成员头上。
+              if (_payerMemberId != null &&
+                  !_selectedMemberIds.contains(_payerMemberId))
+                const AppFormHint(
+                  text: '垫款人未参与分摊，金额将全部由其他成员承担',
+                  icon: Icons.info_outline_rounded,
+                ),
               if (value.length < 2)
                 Text(
                   '至少需要两个成员。可以先添加一个家人或朋友。',
@@ -267,7 +276,9 @@ class _TransactionSplitDialogState
             ),
             Expanded(
               child: Text(
-                member.name,
+                member.id == _payerMemberId
+                    ? '${member.name}（垫款人）'
+                    : member.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(

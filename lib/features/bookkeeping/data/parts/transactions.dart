@@ -25,7 +25,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
         );
         return transaction;
       });
-      await _refreshBudgetSnapshotsForTransactionImpacts(userId, [
+      await _tryRefreshBudgetSnapshotsForTransactionImpacts(userId, [
         _BudgetTransactionImpact(
           type: transaction.type,
           accountId: transaction.accountId,
@@ -35,7 +35,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           tags: transaction.tags,
         ),
       ]);
-      await _syncCreditAccountRepaymentRemindersForAccounts(userId, [
+      await _trySyncCreditAccountRepaymentRemindersForAccounts(userId, [
         transaction.accountId,
       ]);
       await _tryRebuildUsageStatsForUser(userId);
@@ -78,7 +78,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
         );
         return transaction;
       });
-      await _refreshBudgetSnapshotsForTransactionImpacts(userId, [
+      await _tryRefreshBudgetSnapshotsForTransactionImpacts(userId, [
         _BudgetTransactionImpact(
           type: transaction.type,
           accountId: transaction.accountId,
@@ -88,7 +88,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           tags: transaction.tags,
         ),
       ]);
-      await _syncCreditAccountRepaymentRemindersForAccounts(userId, [
+      await _trySyncCreditAccountRepaymentRemindersForAccounts(userId, [
         transaction.accountId,
       ]);
       await _tryRebuildUsageStatsForUser(userId);

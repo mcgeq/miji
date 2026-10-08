@@ -4323,6 +4323,35 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     }
   }
 
+  /// 事务已提交后的派生数据刷新。
+  ///
+  /// 预算快照属于派生缓存：流水与分摊已经落库后，它失败不能让整次记账
+  /// 变成「记录失败」，否则用户会看到流水已写入却没有分摊信息的状态。
+  Future<void> _tryRefreshBudgetSnapshotsForTransactionImpacts(
+    String userId,
+    List<_BudgetTransactionImpact> impacts,
+  ) async {
+    try {
+      await _refreshBudgetSnapshotsForTransactionImpacts(userId, impacts);
+    } catch (_) {
+      // Budget snapshots are derived data. A refresh failure must not fail
+      // an already committed transaction/split write.
+    }
+  }
+
+  /// 同上：信用卡还款提醒是派生数据，同步失败不影响已落库的写入。
+  Future<void> _trySyncCreditAccountRepaymentRemindersForAccounts(
+    String userId,
+    Iterable<String> accountIds,
+  ) async {
+    try {
+      await _syncCreditAccountRepaymentRemindersForAccounts(userId, accountIds);
+    } catch (_) {
+      // Repayment reminders are derived data. A sync failure must not fail
+      // an already committed transaction/split write.
+    }
+  }
+
   Future<void> _rebuildUsageStatsForUser(String userId) async {
     final rows =
         await (database.select(database.moneyTransactions)..where(

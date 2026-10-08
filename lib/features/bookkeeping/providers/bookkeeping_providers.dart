@@ -2525,8 +2525,15 @@ class CurrentUserMoneyTransactionActions {
           effectiveDraft,
           effectiveSplitConfig,
         );
-    await _rememberTransactionDefaults(userId, effectiveDraft);
-    _refresh(transactionId: transaction.id);
+    // 走到这里流水与分摊都已落库。「记住默认值」只是录入习惯缓存，
+    // 它失败既不能让界面报「记录失败」，也不能跳过 refresh ——
+    // 否则刚写入的分摊信息不会出现在界面上，看起来像分摊丢了。
+    try {
+      await _rememberTransactionDefaults(userId, effectiveDraft);
+    } catch (_) {
+      // Entry defaults are a best-effort cache.
+    }
+    _refresh(transactionId: transaction.id, ledgerId: ledgerId);
     return transaction;
   }
 
@@ -2669,7 +2676,11 @@ class CurrentUserMoneyTransactionActions {
       customPaymentMethodName: draft.customPaymentMethodName,
       actualPayerAccount: draft.actualPayerAccount,
       ledgerId: ledgerId,
+      sourceTemplateRunId: draft.sourceTemplateRunId,
       tags: draft.tags,
+      // 必须带上原始状态：以前这里漏掉 status，draft 会退回默认的 completed，
+      // 用户选「待处理」的流水会被静默记成已完成。
+      status: draft.status,
     );
   }
 
@@ -2726,10 +2737,20 @@ class CurrentUserMoneyTransactionActions {
     );
   }
 
-  void _refresh({String? transactionId}) {
+  void _refresh({String? transactionId, String? ledgerId}) {
     _ref
         .read(moneyDataRefreshCoordinatorProvider)
         .refreshAfterTransactionChanged(transactionId: transactionId);
+    if (ledgerId != null) {
+      // 分摊数据挂在账本维度，单独让分摊相关流失效，
+      // 否则新写入的分摊信息不会出现在界面上。
+      _ref
+          .read(moneyDataRefreshCoordinatorProvider)
+          .refreshAfterSplitChanged(
+            transactionId: transactionId,
+            ledgerId: ledgerId,
+          );
+    }
   }
 }
 
