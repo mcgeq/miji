@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 
@@ -69,6 +71,16 @@ class SuggestionAutocompleteField extends StatelessWidget {
       optionsViewBuilder: (context, onSelected, options) {
         final theme = Theme.of(context);
         final colorScheme = theme.colorScheme;
+        // 建议面板同样画在 overlay 里：按软键盘高度收缩，避免被输入法盖住。
+        final media = MediaQuery.of(context);
+        final usableHeight =
+            media.size.height -
+            media.padding.vertical -
+            media.viewInsets.bottom;
+        final maxOptionsHeight = math.min(
+          220.0,
+          math.max(usableHeight - 32, 96.0),
+        );
         return Align(
           alignment: Alignment.topLeft,
           child: Material(
@@ -77,7 +89,10 @@ class SuggestionAutocompleteField extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             clipBehavior: Clip.antiAlias,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 220, maxWidth: 420),
+              constraints: BoxConstraints(
+                maxHeight: maxOptionsHeight,
+                maxWidth: 420,
+              ),
               child: ListView.separated(
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,

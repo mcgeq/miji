@@ -14,16 +14,29 @@ class MoneyBillReminderNotificationService {
   final AppNotificationService notificationService;
   final DateTime Function()? _now;
 
+  /// [actionableReminderIds] 为「确实还需要打扰用户」的提醒 id 集合。
+  ///
+  /// 由调用方从提醒中心的待处理列表推导（那里已经排除了
+  /// 已完成 / 已忽略 / 尚未到延后期 的项）。传 null 表示不过滤（旧行为）。
+  ///
+  /// 存在原因：提醒表自身的 `status` 恒为 pending（`money_bill_reminders.status`
+  /// 从不被置为 done），`reminder.isActive` 因此永远为真，导致用户早在提醒中心
+  /// 处理掉的账单依然天天推送，逾期后还会因为 alertToken 里的逾期天数变化
+  /// 逐日重复推送。这里用上游已经算好的待处理集合做门禁。
   Future<void> scanAndNotify({
     required String userId,
     required List<MoneyBillReminderEntity> reminders,
     Map<String, MoneyAccountEntity> accountsById = const {},
+    Set<String>? actionableReminderIds,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final today = _dateOnly((_now ?? DateTime.now)());
     for (final reminder in reminders) {
       final storageKey = _storageKey(userId, reminder.id);
-      if (!reminder.isActive) {
+      if (!reminder.isActive ||
+          (actionableReminderIds != null &&
+              !actionableReminderIds.contains(reminder.id))) {
+        // 清掉 token：状态回退（例如延后期结束）后能重新推送。
         await prefs.remove(storageKey);
         continue;
       }

@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:miji/core/presentation/components/app_field_style.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
@@ -38,6 +41,10 @@ class FormDropdown<T> extends StatefulWidget {
 
 class _FormDropdownState<T> extends State<FormDropdown<T>> {
   static const double _defaultWidth = 180;
+  static const double _defaultMenuHeight = 280;
+  static const double _minMenuHeight = 120;
+  // 菜单上下各留一点余量，避免贴着屏幕边缘/键盘边缘。
+  static const double _menuViewportMargin = 32;
 
   final MenuController _menuController = MenuController();
   final TextEditingController _filterController = TextEditingController();
@@ -83,6 +90,16 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final controls = theme.controlTokens;
+    // 菜单画在 overlay 里，不会自动为软键盘让位：这里按「屏幕可用高度 -
+    // 键盘高度」收缩菜单，并借 MediaQuery 依赖让键盘弹起时重建菜单，
+    // 使 MenuAnchor 用新的 viewInsets 重新定位（把菜单挪到键盘上方）。
+    final media = MediaQuery.of(context);
+    final usableHeight =
+        media.size.height - media.padding.vertical - media.viewInsets.bottom;
+    final menuMaxHeight = math.min(
+      widget.menuHeight ?? _defaultMenuHeight,
+      math.max(usableHeight - _menuViewportMargin, _minMenuHeight),
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -112,7 +129,7 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
                   style: MenuStyle(
                     minimumSize: WidgetStatePropertyAll(Size(resolvedWidth, 0)),
                     maximumSize: WidgetStatePropertyAll(
-                      Size(resolvedWidth, widget.menuHeight ?? 280),
+                      Size(resolvedWidth, menuMaxHeight),
                     ),
                     padding: const WidgetStatePropertyAll(EdgeInsets.all(6)),
                     elevation: WidgetStatePropertyAll(widget.popupElevation),
@@ -135,7 +152,11 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
                       ),
                     ),
                   ),
-                  menuChildren: _menuChildren(context, resolvedWidth),
+                  menuChildren: _menuChildren(
+                    context,
+                    resolvedWidth,
+                    menuMaxHeight,
+                  ),
                   builder: (context, controller, child) {
                     return _DropdownTrigger(
                       label: _selectedEntry?.label ?? widget.label ?? '请选择',
@@ -178,10 +199,14 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
     return null;
   }
 
-  List<Widget> _menuChildren(BuildContext context, double menuWidth) {
+  List<Widget> _menuChildren(
+    BuildContext context,
+    double menuWidth,
+    double menuMaxHeight,
+  ) {
     final filteredEntries = _filteredEntries;
     final contentWidth = (menuWidth - 12).clamp(0, double.infinity).toDouble();
-    final maxContentHeight = ((widget.menuHeight ?? 280) - 12)
+    final maxContentHeight = (menuMaxHeight - 12)
         .clamp(44, double.infinity)
         .toDouble();
     final children = <Widget>[];
@@ -316,6 +341,11 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
       controller.close();
       return;
     }
+    // 移动端展开前先收起输入法：菜单画在 overlay 里，键盘一旦挡在前面，
+    // 展开的菜单会与触发器错位、且下半截被盖住。
+    if (!_autoFocusFilter) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
     controller.open();
   }
 
@@ -331,12 +361,27 @@ class _FormDropdownState<T> extends State<FormDropdown<T>> {
     if (widget.enableFilter) {
       _focusToRestore = FocusManager.instance.primaryFocus;
       _filterController.clear();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _filterFocusNode.requestFocus();
-        }
-      });
+      // 移动端不自动聚焦搜索框：一打开菜单就弹起软键盘，键盘会盖住
+      // 刚展开的菜单（overlay 面板不会给键盘让位，见 build 里的高度收缩）。
+      // 需要筛选时点一下搜索框即可，此时菜单会按键盘高度重新定位。
+      if (_autoFocusFilter) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _filterFocusNode.requestFocus();
+          }
+        });
+      }
     }
+  }
+
+  /// 桌面端（无软键盘）保持「打开即可输入」；移动端交给用户点击。
+  bool get _autoFocusFilter {
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android ||
+      TargetPlatform.iOS ||
+      TargetPlatform.fuchsia => false,
+      _ => true,
+    };
   }
 
   void _handleMenuClosed() {

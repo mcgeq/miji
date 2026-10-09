@@ -72,8 +72,11 @@ class MoneyReminderCenterItem {
     required this.actionType,
     this.ledgerId,
     this.accountId,
+    this.categoryId,
     this.remindBeforeDays = 0,
     this.isBudgetExceeded = false,
+    this.isRepeatable = false,
+    this.isAutoManaged = false,
     this.state = MoneyReminderCenterState.pending,
     this.snoozedUntil,
     this.processedAt,
@@ -88,8 +91,29 @@ class MoneyReminderCenterItem {
   final MoneyReminderCenterActionType actionType;
   final String? ledgerId;
   final String? accountId;
+
+  /// 源头提醒自带的分类。
+  ///
+  /// 只在生成待处理项时有效（不入 processing 表），用途是给「记账」表单预填，
+  /// 免得用户还要重新选一遍分类——账单提醒的分类本来就是用户建提醒时选的。
+  final String? categoryId;
+
   final int remindBeforeDays;
   final bool isBudgetExceeded;
+
+  /// 源头是否为周期性提醒。
+  ///
+  /// 周期性提醒被处理时**不能**把源头置为终态（否则下一期不再出现），
+  /// 它在下一期会因为有新的 dueDate 而生成新的 itemKey、重新进入待处理。
+  final bool isRepeatable;
+
+  /// 源头是否为自动托管的还款提醒。
+  ///
+  /// 这类提醒的状态由 `_syncCreditAccountRepaymentReminder` 独占管理：
+  /// 每次写流水都会把 status 改回 pending、把 relatedTransactionId 清成 null。
+  /// 外部写入会与它互踢（version 无意义递增），必须整体跳过。
+  final bool isAutoManaged;
+
   final MoneyReminderCenterState state;
   final DateTime? snoozedUntil;
   final DateTime? processedAt;
@@ -100,6 +124,24 @@ class MoneyReminderCenterItem {
         '${date.year.toString().padLeft(4, '0')}-'
         '${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  /// 分期提醒对应的明细 id。
+  ///
+  /// 分期提醒的 [sourceId] 形如 `planId:detailId`（见
+  /// `_installmentReminderCenterItems`）——保留这个复合 key 是为了不让历史
+  /// 处理记录失配，所以这里只做解析，不改动 [sourceId] 本身。
+  /// 拿到 detailId 后「记账」就能直接走 `postInstallmentDetail`，由它统一
+  /// 负责落流水、推进明细状态与刷新预算。
+  String? get installmentDetailId {
+    if (sourceType != MoneyReminderCenterSourceType.installment) {
+      return null;
+    }
+    final separator = sourceId.indexOf(':');
+    if (separator < 0 || separator == sourceId.length - 1) {
+      return null;
+    }
+    return sourceId.substring(separator + 1);
   }
 
   bool isPending({required DateTime today}) {
@@ -201,8 +243,11 @@ class MoneyReminderCenterItem {
     MoneyReminderCenterActionType? actionType,
     String? ledgerId,
     String? accountId,
+    String? categoryId,
     int? remindBeforeDays,
     bool? isBudgetExceeded,
+    bool? isRepeatable,
+    bool? isAutoManaged,
     MoneyReminderCenterState? state,
     DateTime? snoozedUntil,
     DateTime? processedAt,
@@ -217,8 +262,11 @@ class MoneyReminderCenterItem {
       actionType: actionType ?? this.actionType,
       ledgerId: ledgerId ?? this.ledgerId,
       accountId: accountId ?? this.accountId,
+      categoryId: categoryId ?? this.categoryId,
       remindBeforeDays: remindBeforeDays ?? this.remindBeforeDays,
       isBudgetExceeded: isBudgetExceeded ?? this.isBudgetExceeded,
+      isRepeatable: isRepeatable ?? this.isRepeatable,
+      isAutoManaged: isAutoManaged ?? this.isAutoManaged,
       state: state ?? this.state,
       snoozedUntil: snoozedUntil ?? this.snoozedUntil,
       processedAt: processedAt ?? this.processedAt,

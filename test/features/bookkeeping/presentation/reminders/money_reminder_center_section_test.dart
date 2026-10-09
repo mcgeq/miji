@@ -5,6 +5,7 @@ import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_filter_strip.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/core/theme/app_theme.dart';
+import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/reminders/money_reminder_center_section.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
@@ -136,7 +137,7 @@ void main() {
     expect(find.text('以后再说'), findsOneWidget);
   });
 
-  testWidgets('offers a create entry point and an inline complete action', (
+  testWidgets('offers a create entry point and an inline record action', (
     tester,
   ) async {
     await _pumpSection(
@@ -147,7 +148,28 @@ void main() {
 
     // 提醒中心以前只能「完成/延后/忽略」，无法新建账单提醒。
     expect(find.byTooltip('新增提醒'), findsOneWidget);
-    expect(find.byTooltip('标记完成'), findsOneWidget);
+    // 行内按钮从「标记完成」改成「记账」：处理必须落到一笔流水上。
+    expect(find.byTooltip('记账'), findsWidgets);
+    expect(find.text('标记完成'), findsNothing);
+  });
+
+  testWidgets('budget reminders cannot be recorded', (tester) async {
+    await _pumpSection(
+      tester,
+      pending: [
+        _item(
+          title: '餐饮预算',
+          state: MoneyReminderCenterState.pending,
+          actionType: MoneyReminderCenterActionType.viewBudget,
+          sourceType: MoneyReminderCenterSourceType.budget,
+        ),
+      ],
+      history: const [],
+    );
+
+    // 预算超支是结果不是待办，没有可以「结清」的动作。
+    expect(find.byTooltip('记账'), findsNothing);
+    expect(find.byTooltip('忽略'), findsOneWidget);
   });
 
   testWidgets('long press enters selection mode with a bulk action bar', (
@@ -166,7 +188,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('已选 1 项'), findsOneWidget);
-    expect(find.text('完成'), findsWidgets);
+    // 批量条只留「延后 / 忽略」：完成必然要走一次记账，连弹 N 个表单不成立。
+    // 所以要明说「忽略不产生流水」，否则用户会把它读成「稍后自己补记」。
+    expect(find.text('记账请逐条操作，忽略不会产生流水'), findsOneWidget);
+    expect(find.text('延后'), findsOneWidget);
+    expect(find.text('忽略'), findsOneWidget);
+    expect(find.text('完成'), findsNothing);
 
     // 多选模式下点另一条继续勾选。
     await tester.tap(find.text('信用卡还款'));
@@ -179,10 +206,8 @@ void main() {
     expect(find.text('已选 2 项'), findsNothing);
   });
 
-  testWidgets('bulk complete marks every selected reminder done', (
-    tester,
-  ) async {
-    final completed = <String>[];
+  testWidgets('bulk ignore dismisses every selected reminder', (tester) async {
+    final ignored = <String>[];
     await _pumpSection(
       tester,
       pending: [
@@ -190,7 +215,7 @@ void main() {
         _item(title: '信用卡还款', state: MoneyReminderCenterState.pending),
       ],
       history: const [],
-      onComplete: (item) => completed.add(item.title),
+      onIgnore: (item) => ignored.add(item.title),
     );
 
     await tester.longPress(find.text('房租提醒'));
@@ -198,14 +223,41 @@ void main() {
     await tester.tap(find.text('信用卡还款'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('完成'));
+    await tester.tap(find.text('忽略'));
     await tester.pumpAndSettle();
-    // 批量完成后会弹 toast，等它的定时器走完，避免 teardown 报 pending timer。
+    // 批量操作后会弹 toast，等它的定时器走完，避免 teardown 报 pending timer。
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
 
-    expect(completed, containsAll(<String>['房租提醒', '信用卡还款']));
+    expect(ignored, containsAll(<String>['房租提醒', '信用卡还款']));
     expect(find.text('已选 2 项'), findsNothing);
+  });
+  testWidgets('exposes an edit entry point only for bill reminders', (
+    tester,
+  ) async {
+    // 删掉不可达的 openReminder 分支后卡片点击变成了「记账」，
+    // 编辑只能从标题行的菜单进——预算/分期等派生提醒没有自己的表单，
+    // 不该给出这个入口，否则点了会弹空的编辑框。
+    await _pumpSection(
+      tester,
+      pending: [
+        _item(
+          title: '房租提醒',
+          state: MoneyReminderCenterState.pending,
+          sourceType: MoneyReminderCenterSourceType.billReminder,
+          actionType: MoneyReminderCenterActionType.recordTransaction,
+        ),
+        _item(title: '信用卡还款', state: MoneyReminderCenterState.pending),
+      ],
+      history: const [],
+      reminders: [_editableBillReminder],
+    );
+
+    expect(find.byTooltip('更多'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('更多'));
+    await tester.pumpAndSettle();
+    expect(find.text('编辑提醒'), findsOneWidget);
   });
 }
 
@@ -213,7 +265,9 @@ Future<void> _pumpSection(
   WidgetTester tester, {
   required List<MoneyReminderCenterItem> pending,
   required List<MoneyReminderCenterItem> history,
+  List<MoneyBillReminderEntity> reminders = const [],
   void Function(MoneyReminderCenterItem item)? onComplete,
+  void Function(MoneyReminderCenterItem item)? onIgnore,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -224,9 +278,15 @@ Future<void> _pumpSection(
         currentUserReminderCenterHistoryProvider.overrideWith(
           (ref) async => history,
         ),
-        if (onComplete != null)
+        currentUserBillRemindersProvider.overrideWith((ref) async* {
+          yield reminders;
+        }),
+        if (onComplete != null || onIgnore != null)
           currentUserReminderCenterActionsProvider.overrideWith((ref) {
-            return _FakeReminderActions(onComplete);
+            return _FakeReminderActions(
+              onComplete: onComplete,
+              onIgnore: onIgnore,
+            );
           }),
       ],
       child: MaterialApp(
@@ -251,30 +311,63 @@ MoneyReminderCenterItem _item({
   DateTime? dueDate,
   DateTime? snoozedUntil,
   DateTime? processedAt,
+  MoneyReminderCenterActionType actionType =
+      MoneyReminderCenterActionType.repay,
+  MoneyReminderCenterSourceType sourceType =
+      MoneyReminderCenterSourceType.creditCardBill,
 }) {
   return MoneyReminderCenterItem(
-    sourceType: MoneyReminderCenterSourceType.creditCardBill,
+    sourceType: sourceType,
     sourceId: 'src-$title',
     title: title,
     dueDate: dueDate ?? DateTime(2026, 9, 1),
     amountMinor: 10000,
     currencyCode: 'CNY',
-    actionType: MoneyReminderCenterActionType.repay,
+    actionType: actionType,
     state: state,
     snoozedUntil: snoozedUntil,
     processedAt: processedAt,
   );
 }
 
-/// 只关心「批量完成」写入了哪些项，其余动作留空。
-class _FakeReminderActions implements CurrentUserReminderCenterActions {
-  _FakeReminderActions(this.onComplete);
+/// 与 `_item(sourceType: billReminder)` 配对的源头提醒：
+/// sourceId 是 `src-<title>`，只有 id 对得上，卡片才会给出「编辑提醒」。
+final MoneyBillReminderEntity _editableBillReminder = MoneyBillReminderEntity(
+  id: 'src-房租提醒',
+  userId: 'user-1',
+  name: '房租',
+  amountMinor: 10000,
+  currencyCode: 'CNY',
+  dueDate: DateTime(2026, 9, 1),
+  remindBeforeDays: 0,
+  status: MoneyBillReminderStatus.pending,
+  sourceType: MoneyBillReminderSourceType.manual,
+  amountSource: MoneyBillReminderAmountSource.staticAmount,
+  autoManaged: false,
+  version: 1,
+  isDeleted: false,
+  createdAt: DateTime(2026, 1, 1),
+  updatedAt: DateTime(2026, 1, 1),
+);
 
-  final void Function(MoneyReminderCenterItem item) onComplete;
+/// 只关心「完成 / 忽略」写入了哪些项，其余动作留空。
+class _FakeReminderActions implements CurrentUserReminderCenterActions {
+  _FakeReminderActions({this.onComplete, this.onIgnore});
+
+  final void Function(MoneyReminderCenterItem item)? onComplete;
+  final void Function(MoneyReminderCenterItem item)? onIgnore;
 
   @override
-  Future<void> complete(MoneyReminderCenterItem item) async {
-    onComplete(item);
+  Future<void> complete(
+    MoneyReminderCenterItem item, {
+    String? transactionId,
+  }) async {
+    onComplete?.call(item);
+  }
+
+  @override
+  Future<void> ignore(MoneyReminderCenterItem item) async {
+    onIgnore?.call(item);
   }
 
   @override

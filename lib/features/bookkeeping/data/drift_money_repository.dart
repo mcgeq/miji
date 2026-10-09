@@ -4085,11 +4085,23 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       currencyCode: reminder.currencyCode,
       ledgerId: reminder.ledgerId,
       accountId: reminder.accountId,
+      categoryId: reminder.categoryId,
       remindBeforeDays: reminder.remindBeforeDays,
       actionType: actionType,
+      // 处理完成时要不要把源头置终态，取决于这两项，见
+      // CurrentUserReminderCenterActions._syncSource。
+      isRepeatable: reminder.repeatPeriodType != null,
+      isAutoManaged: reminder.autoManaged,
     );
   }
 
+  /// 把 processing 表里的一行还原成提醒项。
+  ///
+  /// **注意**：这里还原不出 `isRepeatable` / `isAutoManaged` / `categoryId`
+  /// ——processing 表不存这几列（它是当时用于显示的副本）。
+  /// 待处理列表不走这条路（`_applyReminderProcessing` 是在源项上 copyWith，
+  /// 标记都在），只有历史列表走这里，而历史卡片**不提供任何处理入口**。
+  /// 谁要给历史卡片加「撤销 / 重新处理」，必须先修这里。
   MoneyReminderCenterItem _mapReminderProcessingItem(
     MoneyReminderCenterProcessingData record,
   ) {

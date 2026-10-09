@@ -53,6 +53,11 @@ class TransactionFormDialog extends ConsumerStatefulWidget {
     this.subCategoryId,
     this.showCategorySelector = true,
     this.onSubmit,
+    this.initialAmountMinor,
+    this.initialAccountId,
+    this.initialDescription,
+    this.initialNotes,
+    this.initialTransactionAt,
   });
 
   final MoneyTransactionType type;
@@ -61,6 +66,16 @@ class TransactionFormDialog extends ConsumerStatefulWidget {
   final String? categoryId;
   final String? subCategoryId;
   final bool showCategorySelector;
+
+  /// 新建时的预填值（从提醒、模板等外部入口带入），编辑已有流水时一律忽略。
+  ///
+  /// 这些字段只影响初始状态：用户可以随时修改，
+  /// 「记住上次选择」的默认也不会覆盖已经预填好的值。
+  final int? initialAmountMinor;
+  final String? initialAccountId;
+  final String? initialDescription;
+  final String? initialNotes;
+  final DateTime? initialTransactionAt;
 
   /// 提交回调。
   ///
@@ -130,6 +145,23 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     if (transaction == null) {
       _categoryId = widget.categoryId;
       _subCategoryId = widget.subCategoryId;
+      final initialAmountMinor = widget.initialAmountMinor;
+      if (initialAmountMinor != null && initialAmountMinor > 0) {
+        _amountController.text = (initialAmountMinor / 100).toStringAsFixed(2);
+      }
+      final initialAccountId = widget.initialAccountId;
+      if (initialAccountId != null && initialAccountId.isNotEmpty) {
+        _accountId = initialAccountId;
+      }
+      final initialTransactionAt = widget.initialTransactionAt;
+      if (initialTransactionAt != null) {
+        _transactionAt = initialTransactionAt.toLocal();
+      }
+      final initialNotes = widget.initialNotes;
+      if (initialNotes != null && initialNotes.trim().isNotEmpty) {
+        _notesController.text = initialNotes;
+        _advancedExpanded = true;
+      }
       return;
     }
 
@@ -872,7 +904,9 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                 transactionAt: _transactionAt,
                 amountMinor: amountMinor,
                 currencyCode: selectedAccount.currencyCode,
-                description: widget.type.label,
+                // 外部入口（如提醒「记账」）会带上标题；没有的话退回类型名，
+                // 列表会把这类通用文案过滤掉，不会当成用户输入。
+                description: _resolvedDescription,
                 notes: notes,
                 merchant: merchant,
                 location: location,
@@ -971,6 +1005,14 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       }
     }
     return null;
+  }
+
+  String get _resolvedDescription {
+    final initialDescription = widget.initialDescription?.trim();
+    if (initialDescription != null && initialDescription.isNotEmpty) {
+      return initialDescription;
+    }
+    return widget.type.label;
   }
 
   String? _transactionRuleError({

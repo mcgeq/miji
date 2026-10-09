@@ -108,7 +108,6 @@ class _MoneyReminderCenterSectionState
           _BulkActionBar(
             selectedCount: _selectedKeys.length,
             busy: _busy,
-            onComplete: () => _runBulk(_BulkAction.complete, pending),
             onSnooze: () => _runBulk(_BulkAction.snooze, pending),
             onIgnore: () => _runBulk(_BulkAction.ignore, pending),
             onClear: () => setState(_selectedKeys.clear),
@@ -141,8 +140,6 @@ class _MoneyReminderCenterSectionState
     for (final item in targets) {
       try {
         switch (action) {
-          case _BulkAction.complete:
-            await actions.complete(item);
           case _BulkAction.snooze:
             await actions.snoozeOneDay(item);
           case _BulkAction.ignore:
@@ -172,6 +169,79 @@ class _MoneyReminderCenterSectionState
     }
   }
 
+  /// 处理一条提醒的唯一出口：**处理必然产生一笔流水**。
+  ///
+  /// 之前「完成」只是往 processing 表写一条状态，账本里什么都不发生——
+  /// 提醒从待处理消失了，钱却没有下落。现在按来源分流到各自的写账动作，
+  /// 写成功了才把提醒标记为已完成并把流水 id 回填到源头。
+  Future<void> _runRecordFlow(MoneyReminderCenterItem item) async {
+    if (_busy) {
+      return;
+    }
+    final toast = _toast ??= (FToast()..init(context));
+    final launcher = MoneyQuickActionLauncher(
+      context: context,
+      ref: ref,
+      ensureToast: () => toast,
+    );
+
+    setState(() => _busy = true);
+    var recorded = false;
+    String? transactionId;
+    try {
+      switch (item.actionType) {
+        case MoneyReminderCenterActionType.repay:
+          recorded = await launcher.recordRepaymentFromReminder(item);
+        case MoneyReminderCenterActionType.recordTransaction:
+        case MoneyReminderCenterActionType.openReminder:
+        case MoneyReminderCenterActionType.openInstallment:
+          if (item.sourceType == MoneyReminderCenterSourceType.installment) {
+            recorded = await launcher.postInstallmentFromReminder(item);
+          } else {
+            transactionId = await launcher.recordExpenseFromReminder(item);
+            recorded = transactionId != null;
+          }
+        case MoneyReminderCenterActionType.viewBudget:
+          // 预算超支是结果而不是待办：它随流水变化自动出现/消失，
+          // 没有可以「结清」的动作，只能忽略。
+          recorded = false;
+      }
+    } catch (_) {
+      if (mounted) {
+        AppToast.error(toast, context, '操作失败');
+      }
+      return;
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+    if (!recorded || !mounted) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserReminderCenterActionsProvider)
+          .complete(item, transactionId: transactionId);
+      HapticFeedback.mediumImpact();
+      if (!mounted) {
+        return;
+      }
+      final message = switch (item.sourceType) {
+        MoneyReminderCenterSourceType.installment => '${item.title} 已入账',
+        MoneyReminderCenterSourceType.creditCardBill => '还款已记账',
+        _ => '已记账',
+      };
+      AppToast.success(toast, context, message);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      AppToast.error(toast, context, '流水已记录，但更新提醒状态失败');
+    }
+  }
+
   void _startSelection(String itemKey) {
     setState(() => _selectedKeys.add(itemKey));
   }
@@ -184,26 +254,19 @@ class _MoneyReminderCenterSectionState
     });
   }
 
-  /// 根据提醒的动作类型跳转到对应入口。
+  /// 点击卡片：走到该提醒对应的处理入口。
   ///
-  /// 账单提醒（openReminder）保持原有「点进去编辑」的行为，
-  /// 其它派生提醒跳到产生它的面板或直接发起记账。
+  /// 账单 / 分期提醒会直接打开预填好的记账表单（或直接过账），
+  /// 预算提醒只能跳到预算面板查看——它没有可以「结清」的动作。
   void _handleItemAction(MoneyReminderCenterItem item) {
     switch (item.actionType) {
       case MoneyReminderCenterActionType.repay:
-        _goToBookkeepingSection('accounts');
+      case MoneyReminderCenterActionType.recordTransaction:
+      case MoneyReminderCenterActionType.openReminder:
+      case MoneyReminderCenterActionType.openInstallment:
+        _runRecordFlow(item);
       case MoneyReminderCenterActionType.viewBudget:
         _goToBookkeepingSection('budgets');
-      case MoneyReminderCenterActionType.openInstallment:
-        _goToBookkeepingSection('installments');
-      case MoneyReminderCenterActionType.recordTransaction:
-        MoneyQuickActionLauncher(
-          context: context,
-          ref: ref,
-          ensureToast: () => _toast ??= (FToast()..init(context)),
-        ).run(MoneyQuickAction.expense);
-      case MoneyReminderCenterActionType.openReminder:
-        _goToBookkeepingSection('reminders');
     }
   }
 
@@ -283,12 +346,15 @@ class _MoneyReminderCenterSectionState
                     selectionMode: _selectionMode,
                     onToggleSelect: () => _toggleSelection(item.itemKey),
                     onLongPress: () => _startSelection(item.itemKey),
-                    onOpen:
-                        _selectionMode ||
-                            item.actionType ==
-                                MoneyReminderCenterActionType.openReminder
+                    onOpen: _selectionMode
                         ? null
                         : () => _handleItemAction(item),
+                    onRecord: _selectionMode
+                        ? null
+                        : () => _runRecordFlow(item),
+                    // 删掉不可达的 openReminder 分支后，卡片点击变成了「记账」，
+                    // 于是「点进去改提醒」彻底没人认领。这里把它挂到右键菜单上：
+                    // 只有真正存在源头账单提醒的项才有这个功能。
                     onEditReminder: _selectionMode ? null : _openReminderForm,
                   ),
                   const SizedBox(height: 10),
@@ -505,15 +571,16 @@ class _PendingGroupHeader extends StatelessWidget {
 }
 
 enum _BulkAction {
-  complete,
+  // 批量里刻意没有「完成」：完成必然要落到一笔流水上，而连弹 N 个记账表单
+  // 不成立。真正的「不处理」出口是「忽略」。
   snooze,
   ignore;
 
   String doneLabel(int count) {
     return switch (this) {
-      _BulkAction.complete => '已完成 $count 项',
       _BulkAction.snooze => '已延后 $count 项',
-      _BulkAction.ignore => '已忽略 $count 项',
+      // 明确「没有记账」，避免用户把忽略理解成「稍后自己补记」。
+      _BulkAction.ignore => '已忽略 $count 项（未记账）',
     };
   }
 }
@@ -523,7 +590,6 @@ class _BulkActionBar extends StatelessWidget {
   const _BulkActionBar({
     required this.selectedCount,
     required this.busy,
-    required this.onComplete,
     required this.onSnooze,
     required this.onIgnore,
     required this.onClear,
@@ -531,7 +597,6 @@ class _BulkActionBar extends StatelessWidget {
 
   final int selectedCount;
   final bool busy;
-  final VoidCallback onComplete;
   final VoidCallback onSnooze;
   final VoidCallback onIgnore;
   final VoidCallback onClear;
@@ -550,15 +615,38 @@ class _BulkActionBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Row(
             children: [
-              Text(
-                '已选 $selectedCount 项',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: colorScheme.onInverseSurface,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '已选 $selectedCount 项',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onInverseSurface,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    // 批量条里刻意没有「完成」——完成必须先落到一笔流水上，
+                    // 而连弹 N 个记账表单不成立。所以这里要说清楚退路是什么，
+                    // 否则用户会把「忽略」理解成「稍后自己补记」。
+                    Text(
+                      '记账请逐条操作，忽略不会产生流水',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onInverseSurface.withValues(
+                          alpha: 0.62,
+                        ),
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const Spacer(),
               TextButton(
                 onPressed: busy ? null : onSnooze,
                 style: TextButton.styleFrom(
@@ -574,14 +662,6 @@ class _BulkActionBar extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                 ),
                 child: const Text('忽略'),
-              ),
-              TextButton(
-                onPressed: busy ? null : onComplete,
-                style: TextButton.styleFrom(
-                  foregroundColor: colorScheme.onInverseSurface,
-                  visualDensity: VisualDensity.compact,
-                ),
-                child: const Text('完成'),
               ),
               AppIconActionButton(
                 tooltip: '退出多选',
@@ -601,6 +681,7 @@ class _PendingReminderCard extends ConsumerWidget {
   const _PendingReminderCard({
     required this.item,
     this.onOpen,
+    this.onRecord,
     this.onEditReminder,
     this.onLongPress,
     this.onToggleSelect,
@@ -610,10 +691,13 @@ class _PendingReminderCard extends ConsumerWidget {
 
   final MoneyReminderCenterItem item;
 
-  /// 按动作类型跳转（还款 / 看预算 / 记一笔 / 看分期）。
+  /// 点击卡片：走到这条提醒的处理入口（记账 / 还款 / 分期入账 / 看预算）。
   final VoidCallback? onOpen;
 
-  /// 账单提醒可以点进去编辑；预算 / 分期 / 账单等派生提醒没有表单。
+  /// 行内「记账」：与点击卡片走同一个流程，只是按钮目标更明确。
+  final VoidCallback? onRecord;
+
+  /// 编辑源头账单提醒。预算 / 分期等派生提醒没有对应的表单，传 null 由卡片隐藏入口。
   final void Function(MoneyBillReminderEntity reminder)? onEditReminder;
 
   /// 长按进入多选。
@@ -626,7 +710,14 @@ class _PendingReminderCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final actions = ref.read(currentUserReminderCenterActionsProvider);
-    final editableReminder = _editableReminder(ref);
+    final effectiveOnRecord = switch (item.actionType) {
+      // 预算提醒没有可结清的动作：只能忽略，等超支状态自己消失。
+      MoneyReminderCenterActionType.viewBudget => null,
+      _ => onRecord,
+    };
+    final editableReminder = onEditReminder == null
+        ? null
+        : _editableReminder(ref);
     final child = AppListItemPanel(
       padding: const EdgeInsets.all(12),
       selected: selected,
@@ -647,31 +738,48 @@ class _PendingReminderCard extends ConsumerWidget {
           Expanded(
             child: _ReminderCardContent(
               item: item,
-              onComplete: selectionMode ? null : () => actions.complete(item),
+              onRecord: selectionMode ? null : effectiveOnRecord,
             ),
           ),
+          if (editableReminder != null)
+            PopupMenuButton<_ReminderCardMenuAction>(
+              tooltip: '更多',
+              padding: EdgeInsets.zero,
+              iconSize: 18,
+              icon: Icon(
+                Icons.more_vert_rounded,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              onSelected: (action) {
+                if (action == _ReminderCardMenuAction.edit) {
+                  onEditReminder!(editableReminder);
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem<_ReminderCardMenuAction>(
+                  value: _ReminderCardMenuAction.edit,
+                  child: Text('编辑提醒'),
+                ),
+              ],
+            ),
         ],
       ),
     );
 
     return AppSwipeActionTile(
       onLongPress: onLongPress,
-      onTap: selectionMode
-          ? onToggleSelect
-          : onOpen ??
-                (editableReminder == null || onEditReminder == null
-                    ? null
-                    : () => onEditReminder!(editableReminder)),
+      onTap: selectionMode ? onToggleSelect : onOpen,
       actions: selectionMode
           ? const <AppSwipeAction>[]
           : [
-              AppSwipeAction(
-                tooltip: '完成',
-                icon: Icons.check_circle_outline_rounded,
-                foreground: colorScheme.onTertiaryContainer,
-                background: colorScheme.tertiaryContainer,
-                onPressed: () => actions.complete(item),
-              ),
+              if (effectiveOnRecord != null)
+                AppSwipeAction(
+                  tooltip: '记账',
+                  icon: Icons.receipt_long_rounded,
+                  foreground: colorScheme.onTertiaryContainer,
+                  background: colorScheme.tertiaryContainer,
+                  onPressed: effectiveOnRecord,
+                ),
               AppSwipeAction(
                 tooltip: '延后一天',
                 icon: Icons.schedule_rounded,
@@ -691,7 +799,10 @@ class _PendingReminderCard extends ConsumerWidget {
     );
   }
 
-  /// 这条提醒是不是可编辑的账单提醒（而不是预算/分期派生的）。
+  /// 这条提醒背后是否有一个可编辑的账单提醒实体。
+  ///
+  /// 只有账单提醒（sourceType == billReminder）才存在表单；预算、信用卡账单、
+  /// 分期这些是从别的数据派生出来的，没有自己的提醒实体可编辑。
   MoneyBillReminderEntity? _editableReminder(WidgetRef ref) {
     if (item.sourceType != MoneyReminderCenterSourceType.billReminder) {
       return null;
@@ -711,16 +822,19 @@ class _PendingReminderCard extends ConsumerWidget {
   }
 }
 
+/// 卡片菜单项。只有「编辑」一项，先留枚举以便后续扩展（比如「查看管理列表」）。
+enum _ReminderCardMenuAction { edit }
+
 class _ReminderCardContent extends StatelessWidget {
-  const _ReminderCardContent({required this.item, this.onComplete});
+  const _ReminderCardContent({required this.item, this.onRecord});
 
   final MoneyReminderCenterItem item;
 
-  /// 行内「完成」。
+  /// 行内「记账」。
   ///
-  /// 原来「完成 / 延后 / 忽略」全在左滑里，没有任何视觉提示；
-  /// 最高频的「完成」提到行尾，左滑保留为快捷方式。
-  final VoidCallback? onComplete;
+  /// 原来这里是「标记完成」——点了之后提醒消失但账本没有任何变化。
+  /// 现在它和左滑第一项跑同一个流程：打开预填表单，写成功才算处理完。
+  final VoidCallback? onRecord;
 
   @override
   Widget build(BuildContext context) {
@@ -776,16 +890,16 @@ class _ReminderCardContent extends StatelessWidget {
             letterSpacing: 0,
           ),
         ),
-        if (onComplete != null) ...[
+        if (onRecord != null) ...[
           const SizedBox(width: 4),
           IconButton(
-            tooltip: '标记完成',
-            onPressed: onComplete,
+            tooltip: '记账',
+            onPressed: onRecord,
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
             icon: Icon(
-              Icons.check_circle_outline_rounded,
+              Icons.receipt_long_rounded,
               size: 20,
               color: colorScheme.secondary,
             ),

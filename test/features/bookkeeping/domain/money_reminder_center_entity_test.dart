@@ -92,4 +92,45 @@ void main() {
     expect(ignored.accountId, 'account-1');
     expect(ignored.actionType, MoneyReminderCenterActionType.repay);
   });
+
+  test('resolves the installment detail id from the composite source id', () {
+    MoneyReminderCenterItem build(
+      MoneyReminderCenterSourceType sourceType,
+      String sourceId,
+    ) {
+      return MoneyReminderCenterItem(
+        sourceType: sourceType,
+        sourceId: sourceId,
+        title: '分期第 2 期',
+        dueDate: DateTime(2026, 7, 22),
+        amountMinor: 30000,
+        currencyCode: 'CNY',
+        actionType: MoneyReminderCenterActionType.recordTransaction,
+      );
+    }
+
+    // 分期提醒的 sourceId 是 `planId:detailId`，「记账」要拿 detailId 去过账。
+    expect(
+      build(
+        MoneyReminderCenterSourceType.installment,
+        'plan-1:detail-2',
+      ).installmentDetailId,
+      'detail-2',
+    );
+    // 非分期来源不给结果，避免把账单提醒的 id 误当成明细 id。
+    expect(
+      build(
+        MoneyReminderCenterSourceType.billReminder,
+        'plan-1:detail-2',
+      ).installmentDetailId,
+      isNull,
+    );
+    expect(
+      build(
+        MoneyReminderCenterSourceType.installment,
+        'detail-2',
+      ).installmentDetailId,
+      isNull,
+    );
+  });
 }

@@ -166,6 +166,64 @@ void main() {
     expect(notifications.billReminders, hasLength(1));
   });
 
+  test('processed reminder stays muted even while overdue', () async {
+    final notifications = _FakeNotificationService();
+    final service = MoneyBillReminderNotificationService(
+      notificationService: notifications,
+      now: () => DateTime(2026, 7, 20, 10),
+    );
+
+    // 不传门禁时是旧行为：逾期照推。
+    await service.scanAndNotify(
+      userId: 'user-1',
+      reminders: [reminder(dueDate: DateTime(2026, 7, 19))],
+    );
+    expect(notifications.billReminders, hasLength(1));
+
+    // 用户已在提醒中心处理掉这条：虽然 reminder.status 仍是 pending
+    // （isActive 恒为真），且第二天逾期天数递增会换出新 token，也不再打扰。
+    await MoneyBillReminderNotificationService(
+      notificationService: notifications,
+      now: () => DateTime(2026, 7, 21, 10),
+    ).scanAndNotify(
+      userId: 'user-1',
+      reminders: [reminder(dueDate: DateTime(2026, 7, 19))],
+      actionableReminderIds: <String>{'some-other-reminder'},
+    );
+
+    expect(notifications.billReminders, hasLength(1));
+  });
+
+  test('muted reminder can re-fire once it becomes actionable again', () async {
+    final notifications = _FakeNotificationService();
+    final service = MoneyBillReminderNotificationService(
+      notificationService: notifications,
+      now: () => DateTime(2026, 7, 20, 10),
+    );
+
+    await service.scanAndNotify(
+      userId: 'user-1',
+      reminders: [reminder(dueDate: DateTime(2026, 7, 19))],
+      actionableReminderIds: <String>{'reminder-1'},
+    );
+    expect(notifications.billReminders, hasLength(1));
+
+    // 被静默时清掉 token，避免状态回退（例如延后期结束）后无法重新推送。
+    await service.scanAndNotify(
+      userId: 'user-1',
+      reminders: [reminder(dueDate: DateTime(2026, 7, 19))],
+      actionableReminderIds: <String>{},
+    );
+    expect(notifications.billReminders, hasLength(1));
+
+    await service.scanAndNotify(
+      userId: 'user-1',
+      reminders: [reminder(dueDate: DateTime(2026, 7, 19))],
+      actionableReminderIds: <String>{'reminder-1'},
+    );
+    expect(notifications.billReminders, hasLength(2));
+  });
+
   test('credit debt reminder skips when debt is zero', () async {
     final notifications = _FakeNotificationService();
     final service = MoneyBillReminderNotificationService(

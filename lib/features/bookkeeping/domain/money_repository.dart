@@ -214,6 +214,32 @@ abstract class MoneyRepository {
     MoneyReminderCenterState state, {
     DateTime? snoozedUntil,
   });
+
+  /// 把「已在提醒中心处理过（completed / ignored）但提醒行 status 仍是 pending」的
+  /// 账单提醒收敛为 `done`。幂等，可重复执行，返回本次实际修正的条数。
+  ///
+  /// `moneyBillReminders.status` 长期不被置终态，而 `MoneyBillReminderEntity.isActive`
+  /// 只看 status，于是已经处理掉的非重复提醒仍然:
+  /// 持续推送系统通知（逾期还会逐日重复）、并计入统计页「即将到期账单」。
+  ///
+  /// 刻意**排除**两类提醒，它们必须保持 pending:
+  /// * 周期性提醒（`repeatPeriodType != null`）：置终态会让下一期不再出现。
+  /// * 自动托管提醒（`autoManaged == true`）：`_syncCreditAccountRepaymentReminder`
+  ///   在每次流水写入时都会把 status 改回 pending，与本方法互踢会导致 version 抖动；
+  ///   这类提醒本就有自己的终止路径（欠款归零时被删除）。
+  Future<int> repairBillReminderProcessingStatuses(
+    String userId, {
+    String? ledgerId,
+  });
+
+  /// 把已经产生的流水 id 写回账单提醒（relatedTransactionId），使提醒 ↔ 流水双向可查。
+  ///
+  /// 同样只对非自动托管的提醒有意义：托管提醒的同步逻辑会把该字段清成 null。
+  Future<void> linkBillReminderTransaction(
+    String userId,
+    String reminderId,
+    String transactionId,
+  );
   Stream<List<MoneyInstallmentPlanEntity>> watchInstallmentPlansForUser(
     String userId, {
     String? ledgerId,

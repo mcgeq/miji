@@ -11,6 +11,7 @@ import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
@@ -143,6 +144,128 @@ class MoneyQuickActionLauncher {
     );
   }
 
+  /// 把表单结果写进账本并返回新流水（不负责 toast）。
+  Future<MoneyTransactionEntity> _writeTransaction(
+    TransactionCreateFormResult result,
+  ) {
+    final actions = ref.read(currentUserMoneyTransactionActionsProvider);
+    final splitConfig = result.splitConfig;
+    return splitConfig == null
+        ? actions.createTransaction(result.draft)
+        : actions.createTransactionWithSplit(result.draft, splitConfig);
+  }
+
+  /// 提醒中心的「记账」：从账单提醒直接记一笔支出。
+  ///
+  /// 金额 / 账户 / 标题 / 日期全部来自提醒本身——之前这条路径打开的是空白
+  /// 表单，用户记完后提醒还在待处理里，还得再点一次「完成」。现在写入成功
+  /// 才返回流水 id，由调用方把它连同「完成」一起回写源头。
+  /// null = 用户取消或写入失败。
+  Future<String?> recordExpenseFromReminder(
+    MoneyReminderCenterItem item,
+  ) async {
+    final result = await showAppResponsiveDialog<Object>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => TransactionFormDialog(
+        type: MoneyTransactionType.expense,
+        ledger: ref.read(currentUserEffectiveTransactionLedgerValueProvider),
+        initialAmountMinor: item.amountMinor,
+        initialAccountId: item.accountId,
+        initialDescription: item.title,
+        initialTransactionAt: item.dueDate,
+        categoryId: item.categoryId,
+      ),
+    );
+    if (!context.mounted || result is! TransactionCreateFormResult) {
+      return null;
+    }
+
+    // 成功提示交给调用方统一处理：提醒中心要按来源给不同文案，
+    // 这里再弹一次会连着冒出两条 toast。
+    try {
+      final transaction = await _writeTransaction(result);
+      return transaction.id;
+    } catch (error) {
+      if (!context.mounted) {
+        return null;
+      }
+      AppToast.error(ensureToast(), context, _errorText(error, '记录失败'));
+      return null;
+    }
+  }
+
+  /// 提醒中心的「还款」：资金账户 → 信用账户的转账。
+  ///
+  /// 金额取账单应还额、收款方锁死为提醒所指的信用账户，与账户详情页里的
+  /// 「记录还款」用的是同一个表单和预填方式。返回值表示是否成功写入。
+  Future<bool> recordRepaymentFromReminder(MoneyReminderCenterItem item) async {
+    final creditAccountId = item.accountId;
+    if (creditAccountId == null || creditAccountId.isEmpty) {
+      AppToast.error(ensureToast(), context, '该提醒没有关联的信用账户');
+      return false;
+    }
+
+    final result = await showAppResponsiveDialog<Object>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => TransferFormDialog(
+        initialToAccountId: creditAccountId,
+        initialAmountMinor: item.amountMinor,
+        initialNotes: '信用卡还款',
+      ),
+    );
+    if (!context.mounted || result is! MoneyTransferDraft) {
+      return false;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyTransactionActionsProvider)
+          .createTransfer(result);
+      return true;
+    } catch (error) {
+      if (!context.mounted) {
+        return false;
+      }
+      AppToast.error(ensureToast(), context, _errorText(error, '还款失败'));
+      return false;
+    }
+  }
+
+  /// 提醒中心的「分期入账」：直接过账当期明细。
+  ///
+  /// 分期不像普通账单那样还需要手填表单——金额、账户、分类、期数都在计划里，
+  /// `postInstallmentDetail` 会一次性完成「落流水 + 明细转已入账 + 推进计划
+  /// 进度 + 刷新预算」。这里不再重复 `createTransaction`，否则会出现两笔流水。
+  Future<bool> postInstallmentFromReminder(MoneyReminderCenterItem item) async {
+    final detailId = item.installmentDetailId;
+    if (detailId == null) {
+      AppToast.error(ensureToast(), context, '这条分期提醒已失效');
+      return false;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyInstallmentActionsProvider)
+          .postInstallmentDetail(detailId);
+      return true;
+    } catch (error) {
+      if (!context.mounted) {
+        return false;
+      }
+      AppToast.error(
+        ensureToast(),
+        context,
+        error is MoneyRepositoryException &&
+                error.code == MoneyRepositoryErrorCode.invalidInstallmentStatus
+            ? '该分期已入账或不可操作'
+            : '入账失败',
+      );
+      return false;
+    }
+  }
+
   /// 返回错误文案（null = 成功）。
   Future<String?> _createFromForm(
     MoneyTransactionType type,
@@ -152,16 +275,7 @@ class MoneyQuickActionLauncher {
       return null;
     }
     try {
-      final splitConfig = result.splitConfig;
-      if (splitConfig == null) {
-        await ref
-            .read(currentUserMoneyTransactionActionsProvider)
-            .createTransaction(result.draft);
-      } else {
-        await ref
-            .read(currentUserMoneyTransactionActionsProvider)
-            .createTransactionWithSplit(result.draft, splitConfig);
-      }
+      await _writeTransaction(result);
       if (!context.mounted) return null;
       AppToast.success(ensureToast(), context, '${type.label}已记录');
       return null;

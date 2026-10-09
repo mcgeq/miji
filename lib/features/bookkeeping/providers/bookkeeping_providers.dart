@@ -1145,6 +1145,15 @@ final currentUserBillRemindersProvider =
         return;
       }
 
+      // 先把「已在提醒中心完成/忽略、但 status 仍是 pending」的提醒收敛掉，
+      // 否则 isActive 恒为真会持续推送系统通知并把已付账单计入「即将到期」统计。
+      // 幂等，可重复执行（写法对齐 currentUserInstallmentPlansProvider 的
+      // repairInstallmentPlanStatuses）。
+      await repository.repairBillReminderProcessingStatuses(
+        userId,
+        ledgerId: ledger.id,
+      );
+
       yield* repository.watchBillRemindersForUser(userId, ledgerId: ledger.id);
     });
 
@@ -1605,6 +1614,19 @@ class CurrentUserBillReminderNotificationActions {
     }
 
     try {
+      // 先取待处理列表：它已经按提醒中心的完成/忽略/延后状态过滤过，
+      // 用来给通知做门禁，避免「用户早处理完了还天天推」。
+      // 取不到就不能继续——否则会把门禁当成「全部静默」，掩盖真实告警。
+      final pending = await _ref.read(
+        currentUserPendingReminderCenterItemsProvider.future,
+      );
+      final actionableReminderIds = <String>{
+        for (final item in pending)
+          if (item.sourceType == MoneyReminderCenterSourceType.billReminder ||
+              item.sourceType == MoneyReminderCenterSourceType.creditCardBill)
+            item.sourceId,
+      };
+
       final reminders = await _ref.read(
         currentUserBillRemindersProvider.future,
       );
@@ -1620,10 +1642,8 @@ class CurrentUserBillReminderNotificationActions {
             userId: userId,
             reminders: reminders,
             accountsById: accountsById,
+            actionableReminderIds: actionableReminderIds,
           );
-      final pending = await _ref.read(
-        currentUserPendingReminderCenterItemsProvider.future,
-      );
       await _ref
           .read(appNotificationServiceProvider)
           .scheduleDailyMoneyReminderDigest(pendingCount: pending.length);
@@ -1997,8 +2017,16 @@ class CurrentUserReminderCenterActions {
 
   final Ref _ref;
 
-  Future<void> complete(MoneyReminderCenterItem item) {
-    return _setState(item, MoneyReminderCenterState.completed);
+  /// 标记完成。
+  ///
+  /// [transactionId] 是这次完成所产生的流水——「完成 = 已经付了钱」，
+  /// 所以调用方应当先落流水再调这里，并把它回填到提醒上以便双向可查。
+  Future<void> complete(MoneyReminderCenterItem item, {String? transactionId}) {
+    return _setState(
+      item,
+      MoneyReminderCenterState.completed,
+      transactionId: transactionId,
+    );
   }
 
   Future<void> ignore(MoneyReminderCenterItem item) {
@@ -2018,6 +2046,7 @@ class CurrentUserReminderCenterActions {
     MoneyReminderCenterItem item,
     MoneyReminderCenterState state, {
     DateTime? snoozedUntil,
+    String? transactionId,
   }) async {
     final userId = _requireUnlockedUserId();
     await _ref
@@ -2028,7 +2057,51 @@ class CurrentUserReminderCenterActions {
           state,
           snoozedUntil: snoozedUntil,
         );
+    await _syncSource(userId, item, state, transactionId: transactionId);
     _refresh();
+  }
+
+  /// 把处理状态回写到源头，避免「提醒已处理、源头却仍是 pending」。
+  ///
+  /// 只处理 completed：忽略 / 延后都还得让源头继续存在。
+  /// 三类跳过：
+  /// * 周期性提醒 —— 置终态会杀死下一期；
+  /// * 自动托管提醒 —— 由 `_syncCreditAccountRepaymentReminder` 独占管理，
+  ///   外部写入会被下一次流水写入改回 pending，两边互踢会让 version 无意义递增；
+  /// * 分期 —— 由 `postInstallmentDetail` 负责推进明细状态，这里不能重复写。
+  Future<void> _syncSource(
+    String userId,
+    MoneyReminderCenterItem item,
+    MoneyReminderCenterState state, {
+    String? transactionId,
+  }) async {
+    if (state != MoneyReminderCenterState.completed) {
+      return;
+    }
+    switch (item.sourceType) {
+      case MoneyReminderCenterSourceType.billReminder:
+      case MoneyReminderCenterSourceType.creditCardBill:
+        if (item.isRepeatable || item.isAutoManaged) {
+          return;
+        }
+        final repository = _ref.read(moneyRepositoryProvider);
+        if (transactionId != null) {
+          await repository.linkBillReminderTransaction(
+            userId,
+            item.sourceId,
+            transactionId,
+          );
+        }
+        await repository.setBillReminderStatus(
+          userId,
+          item.sourceId,
+          MoneyBillReminderStatus.done,
+        );
+      case MoneyReminderCenterSourceType.installment:
+      case MoneyReminderCenterSourceType.budget:
+      case MoneyReminderCenterSourceType.recurringExpense:
+        return;
+    }
   }
 
   String _requireUnlockedUserId() {
@@ -2275,12 +2348,17 @@ class CurrentUserMoneyInstallmentActions {
     _refresh();
   }
 
-  Future<void> postInstallmentDetail(String detailId) async {
+  /// 过账一期分期，返回生成的流水。
+  ///
+  /// 返回 entity 而不是 void：提醒中心的「记账」要把这条流水作为
+  /// 「完成」的依据，调用方需要拿到它做后续关联。
+  Future<MoneyTransactionEntity> postInstallmentDetail(String detailId) async {
     final userId = _requireUnlockedUserId();
-    await _ref
+    final transaction = await _ref
         .read(moneyRepositoryProvider)
         .postInstallmentDetail(userId, detailId);
     _refresh();
+    return transaction;
   }
 
   String _requireUnlockedUserId() {

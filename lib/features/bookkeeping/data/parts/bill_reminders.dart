@@ -249,6 +249,146 @@ mixin _BillReminders on _DriftMoneyRepositoryBase {
   }
 
   @override
+  Future<int> repairBillReminderProcessingStatuses(
+    String userId, {
+    String? ledgerId,
+  }) async {
+    try {
+      await ensureReadyForUser(userId);
+      final resolvedLedgerId = ledgerId == null
+          ? null
+          : await _resolveLedgerId(userId, ledgerId);
+
+      // 只看「本该收敛却被漏掉」的行：未删除、非周期、非自动托管、仍是 pending。
+      // 周期性提醒必须保持 pending 才能在下一期重新出现；
+      // 自动托管提醒的同步逻辑每次写流水都会把 status 改回 pending，置终态会互踢。
+      final query = database.select(database.moneyBillReminders)
+        ..where(
+          (reminder) =>
+              reminder.userId.equals(userId) &
+              reminder.isDeleted.equals(false) &
+              reminder.status.equals(
+                MoneyBillReminderStatus.pending.storageValue,
+              ) &
+              reminder.autoManaged.equals(false) &
+              reminder.repeatPeriodType.isNull() &
+              (resolvedLedgerId == null
+                  ? const Constant(true)
+                  : (reminder.ledgerId.equals(resolvedLedgerId) |
+                        reminder.ledgerId.isNull())),
+        );
+      final candidates = await query.get();
+      if (candidates.isEmpty) {
+        return 0;
+      }
+
+      final itemKeys = <String, String>{
+        for (final reminder in candidates)
+          reminder.id: _billReminderCenterItem(reminder).itemKey,
+      };
+      final records =
+          await (database.select(database.moneyReminderCenterProcessing)..where(
+                (record) =>
+                    record.userId.equals(userId) &
+                    record.isDeleted.equals(false) &
+                    record.itemKey.isIn(
+                      itemKeys.values.toSet().toList(growable: false),
+                    ) &
+                    record.state.isIn([
+                      MoneyReminderCenterState.completed.storageValue,
+                      MoneyReminderCenterState.ignored.storageValue,
+                    ]),
+              ))
+              .get();
+      if (records.isEmpty) {
+        return 0;
+      }
+
+      final terminalKeys = records.map((record) => record.itemKey).toSet();
+      final now = _utcNow();
+      var repaired = 0;
+      for (final reminder in candidates) {
+        if (!terminalKeys.contains(itemKeys[reminder.id])) {
+          continue;
+        }
+        await (database.update(database.moneyBillReminders)..where(
+              (row) => row.id.equals(reminder.id) & row.userId.equals(userId),
+            ))
+            .write(
+              MoneyBillRemindersCompanion(
+                status: Value(MoneyBillReminderStatus.done.storageValue),
+                version: Value(reminder.version + 1),
+                updatedAt: Value(now),
+              ),
+            );
+        await _recordBillReminderChange(
+          userId: userId,
+          recordId: reminder.id,
+          operation: SyncChangeOperation.update,
+          changedFields: {'status': MoneyBillReminderStatus.done.storageValue},
+          beforeVersion: reminder.version,
+          afterVersion: reminder.version + 1,
+        );
+        repaired += 1;
+      }
+      return repaired;
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  @override
+  Future<void> linkBillReminderTransaction(
+    String userId,
+    String reminderId,
+    String transactionId,
+  ) async {
+    try {
+      await ensureReadyForUser(userId);
+      final existing = await _getBillReminderForUser(userId, reminderId);
+      if (existing.relatedTransactionId == transactionId) {
+        return;
+      }
+      final now = _utcNow();
+      await (database.update(database.moneyBillReminders)..where(
+            (reminder) =>
+                reminder.id.equals(reminderId) &
+                reminder.userId.equals(userId) &
+                reminder.isDeleted.equals(false),
+          ))
+          .write(
+            MoneyBillRemindersCompanion(
+              relatedTransactionId: Value<String?>(transactionId),
+              version: Value(existing.version + 1),
+              updatedAt: Value(now),
+            ),
+          );
+      await _recordBillReminderChange(
+        userId: userId,
+        recordId: reminderId,
+        operation: SyncChangeOperation.update,
+        changedFields: {'related_transaction_id': transactionId},
+        beforeVersion: existing.version,
+        afterVersion: existing.version + 1,
+      );
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  @override
   Future<MoneyBillReminderEntity> createBillReminder(
     String userId,
     MoneyBillReminderDraft draft,

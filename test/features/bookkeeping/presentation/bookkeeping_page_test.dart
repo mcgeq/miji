@@ -96,38 +96,41 @@ void main() {
     expect(find.text('还没有预算'), findsOneWidget);
   });
 
-  testWidgets('type tabs are not covered by the share button on narrow phones', (
-    tester,
-  ) async {
-    final database = AppDatabase(NativeDatabase.memory());
-    addTearDown(database.close);
+  testWidgets(
+    'type tabs are not covered by the share button on narrow phones',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
 
-    final router = _router();
-    addTearDown(router.dispose);
+      final router = _router();
+      addTearDown(router.dispose);
 
-    // 360dp 是主流窄屏宽度：56dp 最小段宽 * 4 = 224dp > 可用宽度，
-    // 曾经溢出到分享按钮下面（既被遮住又点不到）。
-    await _pump(tester, database, router, width: 360);
-    await tester.tap(find.text('流水'));
-    await tester.pumpAndSettle();
+      // 360dp 是主流窄屏宽度：56dp 最小段宽 * 4 = 224dp > 可用宽度，
+      // 曾经溢出到分享按钮下面（既被遮住又点不到）。
+      await _pump(tester, database, router, width: 360);
+      await tester.tap(find.text('流水'));
+      await tester.pumpAndSettle();
 
-    final transfer = tester.getRect(find.text('转账'));
-    final share = tester.getRect(find.byTooltip('导出流水'));
-    expect(
-      transfer.right,
-      lessThanOrEqualTo(share.left),
-      reason: '「转账」标签被分享按钮遮住',
-    );
+      final transfer = tester.getRect(find.text('转账'));
+      final share = tester.getRect(find.byTooltip('导出流水'));
+      expect(
+        transfer.right,
+        lessThanOrEqualTo(share.left),
+        reason: '「转账」标签被分享按钮遮住',
+      );
 
-    final control = tester.getRect(
-      find.byWidgetPredicate((widget) => widget is AppSlidingSegmentedControl),
-    );
-    expect(
-      transfer.right,
-      lessThanOrEqualTo(control.right),
-      reason: '「转账」标签超出了分段控件的可视区',
-    );
-  });
+      final control = tester.getRect(
+        find.byWidgetPredicate(
+          (widget) => widget is AppSlidingSegmentedControl,
+        ),
+      );
+      expect(
+        transfer.right,
+        lessThanOrEqualTo(control.right),
+        reason: '「转账」标签超出了分段控件的可视区',
+      );
+    },
+  );
 
   testWidgets('summary bar shows only amounts, labels live in semantics', (
     tester,

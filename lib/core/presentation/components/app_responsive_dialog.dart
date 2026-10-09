@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/components/app_dialog_keyboard_scroll.dart';
@@ -95,15 +97,27 @@ Future<T?> showAppResponsiveDialog<T>({
         final availableHeight =
             view.physicalSize.height / view.devicePixelRatio -
             media.padding.top;
-        final maxHeight = (availableHeight * 0.92)
-            .clamp(320.0, 760.0)
+        // 键盘弹出后可用高度骤减：仍按「无键盘」的 0.92 屏高封顶会把整个
+        // 面板顶出屏幕顶部，标题和正在编辑的字段全被切掉。
+        final maxHeight = math
+            .min(
+              (availableHeight * 0.92).clamp(320.0, 760.0).toDouble(),
+              math.max(availableHeight - keyboardInset, 240.0),
+            )
             .toDouble();
 
         final sheet = ClipRRect(
           borderRadius: BorderRadius.vertical(top: Radius.circular(radius.lg)),
-          child: _AppResponsiveDialogScope(
-            expandCompactSheet: false,
-            child: builder(context),
+          child: MediaQuery.removeViewInsets(
+            context: context,
+            // 外层已经用 AnimatedPadding 把面板顶到键盘上方；内层的
+            // AppDialogKeyboardScroll 会再减一次 viewInsets，造成双重避让
+            // （footer 悬在半空、内容区被压扁）。这里让避让只发生一次。
+            removeBottom: true,
+            child: _AppResponsiveDialogScope(
+              expandCompactSheet: false,
+              child: builder(context),
+            ),
           ),
         );
 
