@@ -3,6 +3,7 @@ import 'package:miji/core/sync/delta_sync/delta_package_models.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -520,12 +521,23 @@ abstract class MoneyRepository {
     DateTime? now,
   });
 
-  Future<int> getPendingAutoPostingAmountForBudget(
+  /// 单个预算在当前周期内被「未来义务」占用的额度。
+  ///
+  /// 判定依据是各来源的**记账日是否落在预算自己的周期内**，周期与
+  /// `usedAmountMinor` 用的是同一个区间（[MoneyBudgetEntity.periodStart] /
+  /// [MoneyBudgetEntity.periodEnd] 即由此得出）。
+  Future<MoneyBudgetCommitment> budgetCommitmentForBudget(
     String userId,
-    String budgetId,
-    DateTime periodStart,
-    DateTime periodEnd,
-  );
+    String budgetId, {
+    MoneyBudgetCommitmentOptions options = const MoneyBudgetCommitmentOptions(),
+  });
+
+  /// 批量版本：数据源只加载一次，避免逐个预算各查一遍退化成 N× 查询。
+  Future<Map<String, MoneyBudgetCommitment>> budgetCommitmentsForUser(
+    String userId, {
+    String? ledgerId,
+    MoneyBudgetCommitmentOptions options = const MoneyBudgetCommitmentOptions(),
+  });
 
   Future<void> deleteBudgetAllocation(String userId, String allocationId);
 

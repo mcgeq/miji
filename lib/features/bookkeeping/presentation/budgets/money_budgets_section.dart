@@ -23,6 +23,7 @@ import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/budgets/budget_allocation_summary.dart';
 import 'package:miji/features/bookkeeping/presentation/budgets/budget_allocation_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/budgets/budget_card.dart';
+import 'package:miji/features/bookkeeping/presentation/budgets/budget_commitment_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/budgets/budget_history_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/budgets/budget_form_dialog.dart';
 
@@ -215,6 +216,13 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
                                           accountsById: accountsById,
                                           ledger: currentLedger,
                                           allocationSummary: allocationSummary,
+                                          commitment: ref.watch(
+                                            moneyBudgetCommitmentProvider(
+                                              budget.id,
+                                            ),
+                                          ),
+                                          onViewCommitments: () =>
+                                              _openCommitmentSheet(budget),
                                           onViewTransactions:
                                               widget.onViewTransactions == null
                                               ? () {}
@@ -384,6 +392,16 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
     return showAppResponsiveDialog<void>(
       context: context,
       builder: (context) => BudgetHistorySheet(budget: budget),
+    );
+  }
+
+  Future<void> _openCommitmentSheet(MoneyBudgetEntity budget) {
+    return showAppResponsiveDialog<void>(
+      context: context,
+      builder: (context) => BudgetCommitmentSheet(
+        budget: budget,
+        commitment: ref.read(moneyBudgetCommitmentProvider(budget.id)),
+      ),
     );
   }
 

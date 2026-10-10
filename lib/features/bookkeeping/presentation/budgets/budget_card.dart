@@ -8,6 +8,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/application/money_budget_pace.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
@@ -21,6 +22,8 @@ class BudgetCard extends StatelessWidget {
     required this.accountsById,
     this.ledger,
     this.allocationSummary,
+    this.commitment,
+    this.onViewCommitments,
     required this.onViewTransactions,
     required this.onViewHistory,
     required this.onManageAllocations,
@@ -33,6 +36,11 @@ class BudgetCard extends StatelessWidget {
   final Map<String, MoneyAccountEntity> accountsById;
   final MoneyLedgerEntity? ledger;
   final BudgetAllocationSummary? allocationSummary;
+
+  /// 未来义务占用的额度；为 null 表示还没算出来（不展示这一档信息）。
+  final MoneyBudgetCommitment? commitment;
+  final VoidCallback? onViewCommitments;
+
   final VoidCallback onViewTransactions;
   final VoidCallback onViewHistory;
   final VoidCallback onManageAllocations;
@@ -171,6 +179,10 @@ class BudgetCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (_commitmentHint(context) case final hint?) ...[
+              const SizedBox(height: 6),
+              hint,
+            ],
             if (_paceHint(theme, MoneyPrivacy.of(context))
                 case final hint?) ...[
               const SizedBox(height: 8),
@@ -312,12 +324,79 @@ class BudgetCard extends StatelessWidget {
     );
   }
 
+  /// 「已预留 ¥X（N 项）· 还可花 ¥Y」，点进去能看到每一笔未来义务。
+  ///
+  /// 没有未来义务时整行不出现——凭空多一行只会让人以为又出错了。
+  /// 已预留**不并入**已用：它还没发生，混在一起既没法对账，也会把
+  /// 「还没花」渲染成「已经超支」。
+  Widget? _commitmentHint(BuildContext context) {
+    final commitment = this.commitment;
+    if (commitment == null || commitment.isEmpty) {
+      return null;
+    }
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final currencyCode = budget.currencyCode;
+    final count = commitment.items.length;
+    final available = budget.remainingAmountMinor - commitment.totalMinor;
+    final text = MoneyPrivacy.of(context)
+        ? '已预留 $count 项未来义务'
+        : '已预留 ${formatMoneyMinor(commitment.totalMinor, currencyCode)}'
+              '（$count 项）· 还可花 '
+              '${formatMoneyMinor(available < 0 ? 0 : available, currencyCode)}';
+    final onViewCommitments = this.onViewCommitments;
+
+    final style = theme.textTheme.labelSmall?.copyWith(
+      color: colorScheme.tertiary,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0,
+    );
+    if (onViewCommitments == null) {
+      return Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      );
+    }
+    return InkWell(
+      borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
+      onTap: onViewCommitments,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: style,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 14,
+              color: colorScheme.tertiary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// 「日均可用 / 还剩 N 天」这类决策信息。
   ///
   /// 卡片原本只给出「剩余 ¥464」，用户还得自己除以剩余天数。
   /// 计算逻辑在 [MoneyBudgetPace]，与统计页的预算执行卡共用同一份口径。
   (String, Color)? _paceHint(ThemeData theme, bool masked) {
-    final pace = MoneyBudgetPace.of(budget, DateTime.now());
+    final pace = MoneyBudgetPace.of(
+      budget,
+      DateTime.now(),
+      committedMinor: commitment?.totalMinor ?? 0,
+    );
     if (pace == null) {
       return null;
     }

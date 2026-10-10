@@ -211,12 +211,17 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
     );
   }
 
+  // 预算表本身不会因为「改了一个自动记账模板」而变化，只 watch
+  // currentUserBudgetsProvider 的话，预留额度会一直停在旧值上。
+  ref.watch(currentUserAutoPostingTemplatesProvider);
+  ref.watch(currentUserInstallmentPlansProvider);
+
   final repository = ref.watch(moneyRepositoryProvider);
-  final pendingAmount = await repository.getPendingAutoPostingAmountForBudget(
+  // 「已预留」与「已用」分开：前者只是未来义务，混进已用会让超支变成假警报，
+  // 用户也无法对账。周期由仓储按预算自己的周期判定，不按自然月另算一套。
+  final commitment = await repository.budgetCommitmentForBudget(
     session.userId!,
     budget.id,
-    scope.start,
-    scope.endExclusive,
   );
 
   final now = DateTime.now();
@@ -225,7 +230,10 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
     DateTime(now.year, now.month, now.day),
   );
 
-  final totalUsedMinor = budget.usedAmountMinor + pendingAmount;
+  final usedMinor = budget.usedAmountMinor;
+  final progress = budget.amountMinor <= 0
+      ? 0.0
+      : usedMinor / budget.amountMinor;
 
   return HomeMonthBudgetSummary(
     hasBudget: true,
@@ -233,15 +241,13 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
     budgetId: budget.id,
     budgetName: budget.name,
     totalMinor: budget.amountMinor,
-    usedMinor: totalUsedMinor,
-    remainingMinor: budget.amountMinor - totalUsedMinor,
-    progress: totalUsedMinor / budget.amountMinor,
+    usedMinor: usedMinor,
+    remainingMinor: budget.remainingAmountMinor,
+    committedMinor: commitment.totalMinor,
+    progress: progress,
     periodProgress: pace.periodProgress,
-    paceRatio: pace.paceRatioFor(totalUsedMinor / budget.amountMinor),
-    paceLabel: homeBudgetPaceLabelFor(
-      totalUsedMinor / budget.amountMinor,
-      pace.periodProgress,
-    ),
+    paceRatio: pace.paceRatioFor(progress),
+    paceLabel: homeBudgetPaceLabelFor(progress, pace.periodProgress),
     remainingDays: pace.remainingDays,
   );
 });

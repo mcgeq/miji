@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:miji/core/notifications/app_notification_service.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 
 class MoneyBudgetAlertNotificationService {
@@ -17,11 +18,13 @@ class MoneyBudgetAlertNotificationService {
   Future<void> scanAndNotify({
     required String userId,
     required List<MoneyBudgetEntity> budgets,
+    Map<String, MoneyBudgetCommitment> commitments =
+        const <String, MoneyBudgetCommitment>{},
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final today = _dateOnly((now ?? DateTime.now)());
     for (final budget in budgets) {
-      final alert = _budgetAlertFor(budget);
+      final alert = _budgetAlertFor(budget, commitments[budget.id]);
       final storageKey = _storageKey(userId, budget.id);
       if (alert == null) {
         await prefs.remove(storageKey);
@@ -74,10 +77,21 @@ class MoneyBudgetAlertNotificationService {
     await prefs.remove(_snoozeKey(userId, budgetId));
   }
 
-  _BudgetAlert? _budgetAlertFor(MoneyBudgetEntity budget) {
+  /// [commitment] 是本周期内被未来义务占掉的额度。
+  ///
+  /// 「已用 60%，额度其实已经被预留吃满」这种状态必须提醒，否则用户会在
+  /// 自动入账那天才发现早就没钱了。但**已超支的红线仍然只看已用**——
+  /// 没发生的支出不该被说成已经超支。
+  _BudgetAlert? _budgetAlertFor(
+    MoneyBudgetEntity budget,
+    MoneyBudgetCommitment? commitment,
+  ) {
     if (!budget.isActive || !budget.alertEnabled || budget.amountMinor <= 0) {
       return null;
     }
+    final committed = commitment?.totalMinor ?? 0;
+    final projectedUsed = budget.usedAmountMinor + committed;
+    final projectedProgress = projectedUsed / budget.amountMinor;
 
     if (budget.progress >= 1) {
       if (budget.isIncomeTarget) {
@@ -99,20 +113,44 @@ class MoneyBudgetAlertNotificationService {
       );
     }
 
+    // 还没超支，但已用 + 已预留已经吃满额度：提前一次说清楚，
+    // 而不是等自动入账当天突然跳「已超支」。
+    if (committed > 0 && projectedProgress >= 1) {
+      final reservedText =
+          '已用 ${formatMoneyMinor(budget.usedAmountMinor, budget.currencyCode)}，'
+          '未来义务还将占用 ${formatMoneyMinor(committed, budget.currencyCode)}，';
+      return _BudgetAlert(
+        stage: 'reserved',
+        title: budget.isIncomeTarget ? '收入目标额度已被占满' : '预算额度已被预留占满',
+        body:
+            '${budget.name} $reservedText'
+            '合计 ${formatMoneyMinor(projectedUsed, budget.currencyCode)}'
+            '${budget.isIncomeTarget ? '，目标' : '，预算'}'
+            ' ${formatMoneyMinor(budget.amountMinor, budget.currencyCode)}。',
+      );
+    }
+
     final threshold = budget.alertThresholdPercent;
     if (threshold == null ||
         threshold <= 0 ||
-        budget.progress * 100 < threshold) {
+        projectedProgress * 100 < threshold) {
       return null;
     }
+
+    // 只靠已用还没到提醒线、算上预留才到：必须写明「含已预留」，
+    // 否则用户一对账就发现数字对不上，会以为提醒算错了。
+    final reservedNote = committed > 0 && budget.progress * 100 < threshold
+        ? '（含已预留 ${formatMoneyMinor(committed, budget.currencyCode)}）'
+        : '';
 
     if (budget.isIncomeTarget) {
       return _BudgetAlert(
         stage: '$threshold',
         title: '收入目标已达 $threshold%',
         body:
-            '${budget.name} 已使用 ${_percentText(budget.progress)}，达到 $threshold% 提醒线。'
-            ' 当前已达 ${formatMoneyMinor(budget.usedAmountMinor, budget.currencyCode)}，'
+            '${budget.name} 已使用 ${_percentText(projectedProgress)}，达到 $threshold% 提醒线。'
+            ' 当前已达 ${formatMoneyMinor(budget.usedAmountMinor, budget.currencyCode)}'
+            '$reservedNote，'
             '目标 ${formatMoneyMinor(budget.amountMinor, budget.currencyCode)}。',
       );
     }
@@ -120,10 +158,16 @@ class MoneyBudgetAlertNotificationService {
       stage: '$threshold',
       title: '预算已达 $threshold%',
       body:
-          '${budget.name} 已使用 ${_percentText(budget.progress)}，达到 $threshold% 提醒线。'
-          ' 当前已用 ${formatMoneyMinor(budget.usedAmountMinor, budget.currencyCode)}，'
-          '剩余 ${formatMoneyMinor(budget.remainingAmountMinor, budget.currencyCode)}。',
+          '${budget.name} 已使用 ${_percentText(projectedProgress)}，达到 $threshold% 提醒线。'
+          ' 当前已用 ${formatMoneyMinor(budget.usedAmountMinor, budget.currencyCode)}'
+          '$reservedNote，'
+          '还可花 ${formatMoneyMinor(_availableMinor(budget, committed), budget.currencyCode)}。',
     );
+  }
+
+  int _availableMinor(MoneyBudgetEntity budget, int committedMinor) {
+    final available = budget.remainingAmountMinor - committedMinor;
+    return available < 0 ? 0 : available;
   }
 
   Future<bool> _isSnoozed(

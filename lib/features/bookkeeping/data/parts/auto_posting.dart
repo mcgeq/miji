@@ -467,76 +467,10 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
     await _tryRebuildUsageStatsForUser(userId);
   }
 
-  @override
-  Future<int> getPendingAutoPostingAmountForBudget(
-    String userId,
-    String budgetId,
-    DateTime periodStart,
-    DateTime periodEnd,
-  ) async {
-    await ensureReadyForUser(userId);
-    final budget = await _getBudgetForUser(userId, budgetId);
-    final scope = _readBudgetScope(budget);
-    final periodStartUtc = periodStart.toUtc();
-    final periodEndUtc = periodEnd.toUtc();
-
-    final templateRows =
-        await (database.select(database.moneyAutoPostingTemplates)..where(
-              (row) =>
-                  row.userId.equals(userId) &
-                  row.isActive.equals(true) &
-                  row.isDeleted.equals(false),
-            ))
-            .get();
-
-    var pendingAmount = 0;
-
-    for (final row in templateRows) {
-      final template = _mapAutoPostingTemplate(row);
-
-      if (!_autoPostingTemplateMatchesBudgetScope(template, scope)) {
-        continue;
-      }
-
-      final occurrences = _occurrencesWithinPeriod(
-        template,
-        periodStartUtc,
-        periodEndUtc,
-      );
-
-      for (final occurrence in occurrences) {
-        final run = await _getAutoPostingRunForOccurrence(
-          userId,
-          template.id,
-          occurrence.occurrenceKey,
-        );
-        if (run == null ||
-            run.status != MoneyAutoPostingRunStatus.posted.storageValue) {
-          pendingAmount += template.amountMinor;
-        }
-      }
-    }
-
-    return pendingAmount;
-  }
-
-  bool _autoPostingTemplateMatchesBudgetScope(
-    MoneyAutoPostingTemplateEntity template,
-    _BudgetScope scope,
-  ) {
-    if (scope.accountId != null && template.accountId != scope.accountId) {
-      return false;
-    }
-    if (scope.categoryId != null && template.categoryId != scope.categoryId) {
-      return false;
-    }
-    if (scope.subCategoryId != null &&
-        template.subCategoryId != scope.subCategoryId) {
-      return false;
-    }
-    return true;
-  }
-
+  /// 自动记账在 [periodStartUtc, periodEndUtc) 内的每一次执行计划。
+  ///
+  /// 预算「已预留」额度与首页概览都靠它展开未来义务，见
+  /// [_BudgetCommitments.budgetCommitmentForBudget]。
   Iterable<_AutoPostingOccurrence> _occurrencesWithinPeriod(
     MoneyAutoPostingTemplateEntity template,
     DateTime periodStartUtc,

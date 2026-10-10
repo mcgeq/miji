@@ -15,6 +15,7 @@ import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -38,6 +39,7 @@ part 'parts/statistics.dart';
 part 'parts/transactions.dart';
 part 'parts/categories.dart';
 part 'parts/budgets.dart';
+part 'parts/budget_commitments.dart';
 part 'parts/bill_reminders.dart';
 part 'parts/installments.dart';
 part 'parts/auto_posting.dart';
@@ -5215,6 +5217,9 @@ class DriftMoneyRepository extends _DriftMoneyRepositoryBase
         _BillReminders,
         _Installments,
         _AutoPosting,
+        // _BudgetCommitments 的 on 子句要求 _Budgets / _AutoPosting 已经混入，
+        // 所以它必须排在这两者之后。
+        _BudgetCommitments,
         _RemoteApply,
         _Reports,
         _AssetSnapshots {

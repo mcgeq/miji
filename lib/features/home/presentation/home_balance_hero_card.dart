@@ -283,16 +283,19 @@ class _MainRow extends StatelessWidget {
 
     if (hasBudget && summary != null) {
       final remaining = summary.remainingMinor;
+      final committed = summary.committedMinor;
       if (exceeded) {
         label = '本月已超支';
         amountMinor = -remaining;
       } else {
+        // 已预留的钱不算「已经花掉」，但它已经不是你能花的了。
         label = '本月还可花';
-        amountMinor = remaining;
+        amountMinor = summary.availableMinor < 0 ? 0 : summary.availableMinor;
       }
       breakdown = [
         ('预算', formatMoneyMinor(summary.totalMinor, currencyCode)),
         ('已用', formatMoneyMinor(summary.usedMinor, currencyCode)),
+        if (committed > 0) ('已预留', formatMoneyMinor(committed, currencyCode)),
         ('日均可花', formatMoneyMinor(summary.dailyAllowanceMinor, currencyCode)),
       ];
     } else {

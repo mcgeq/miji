@@ -10,6 +10,7 @@ HomeMonthBudgetSummary _budget({double progress = 1.2}) {
     totalMinor: 800000,
     usedMinor: (800000 * progress).round(),
     remainingMinor: 800000 - (800000 * progress).round(),
+    committedMinor: 0,
     progress: progress,
     periodProgress: 0.6,
     paceRatio: 2,

@@ -47,10 +47,17 @@ class MoneyBudgetPace {
 
   /// 计算 [budget] 在 [now] 时刻的节奏；不适用时返回 null。
   ///
+  /// [committedMinor] 是未来义务已经占掉的额度。「剩余 ¥2000、已预留 ¥2500」
+  /// 时日均可用必须是 0 而不是 ¥66，否则用户会照着这个数继续花钱。
+  ///
   /// 不适用的情况：收入目标（「日均可用」没有意义）、已完成（收入达标）、
   /// 周期已结束。周期结束仍返回对象，是为了让调用方能显示「已结束」而不是
   /// 整行消失——用户需要知道这个周期已经封账。
-  static MoneyBudgetPace? of(MoneyBudgetEntity budget, DateTime now) {
+  static MoneyBudgetPace? of(
+    MoneyBudgetEntity budget,
+    DateTime now, {
+    int committedMinor = 0,
+  }) {
     if (budget.isIncomeTarget || budget.isCompleted) {
       return null;
     }
@@ -59,6 +66,8 @@ class MoneyBudgetPace {
     final lastDay = DateTime(end.year, end.month, end.day);
     // +1：今天也算一天，今天剩下的额度今天就还能花。
     final daysLeft = lastDay.difference(today).inDays;
+    // 真正还能动的钱；被未来义务占满时为 0。
+    final availableMinor = budget.remainingAmountMinor - committedMinor;
 
     if (budget.isOverspent) {
       return MoneyBudgetPace._(
@@ -79,14 +88,14 @@ class MoneyBudgetPace {
     if (daysLeft == 0) {
       return MoneyBudgetPace._(
         daysLeft: 0,
-        dailyAvailableMinor: budget.remainingAmountMinor,
+        dailyAvailableMinor: availableMinor < 0 ? 0 : availableMinor,
         overspentMinor: 0,
         status: MoneyBudgetPaceStatus.lastDay,
       );
     }
     return MoneyBudgetPace._(
       daysLeft: daysLeft,
-      dailyAvailableMinor: budget.remainingAmountMinor ~/ daysLeft,
+      dailyAvailableMinor: availableMinor <= 0 ? 0 : availableMinor ~/ daysLeft,
       overspentMinor: 0,
       status: MoneyBudgetPaceStatus.onTrack,
     );

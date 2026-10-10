@@ -7,6 +7,7 @@ import 'package:miji/features/home/presentation/home_balance_hero_card.dart';
 HomeMonthBudgetSummary _budget({
   double progress = 0.57,
   int remainingMinor = 342050,
+  int committedMinor = 0,
 }) {
   return HomeMonthBudgetSummary(
     hasBudget: true,
@@ -16,6 +17,7 @@ HomeMonthBudgetSummary _budget({
     totalMinor: 800000,
     usedMinor: 800000 - remainingMinor,
     remainingMinor: remainingMinor,
+    committedMinor: committedMinor,
     progress: progress,
     periodProgress: 0.52,
     paceRatio: 1.1,

@@ -5,13 +5,21 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/application/money_budget_pace.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyBudgetExecutionCard extends StatelessWidget {
-  const MoneyBudgetExecutionCard({super.key, required this.budgets});
+  const MoneyBudgetExecutionCard({
+    super.key,
+    required this.budgets,
+    this.commitments = const <String, MoneyBudgetCommitment>{},
+  });
 
   final List<MoneyBudgetEntity> budgets;
+
+  /// budgetId → 已预留额度；与预算卡共用同一份口径。
+  final Map<String, MoneyBudgetCommitment> commitments;
 
   static const int _maxVisible = 5;
 
@@ -87,7 +95,8 @@ class MoneyBudgetExecutionCard extends StatelessWidget {
             overallRate: overallRate,
           ),
           const SizedBox(height: 2),
-          for (final budget in visible) _BudgetRow(budget: budget),
+          for (final budget in visible)
+            _BudgetRow(budget: budget, commitment: commitments[budget.id]),
           if (hidden > 0) ...[
             const SizedBox(height: 6),
             Text(
@@ -165,9 +174,10 @@ class _SummaryLine extends StatelessWidget {
 }
 
 class _BudgetRow extends StatelessWidget {
-  const _BudgetRow({required this.budget});
+  const _BudgetRow({required this.budget, this.commitment});
 
   final MoneyBudgetEntity budget;
+  final MoneyBudgetCommitment? commitment;
 
   @override
   Widget build(BuildContext context) {
@@ -247,6 +257,28 @@ class _BudgetRow extends StatelessWidget {
               ),
             ],
           ),
+          // 未来义务占掉的额度。不并进「已用」：那是硬事实，混在一起会让
+          // 没发生的支出看起来像已经超支。
+          if (commitment case final value? when value.totalMinor > 0) ...[
+            const SizedBox(height: 4),
+            Text(
+              maskedMoneyOr(
+                '已预留 ${formatMoneyMinor(value.totalMinor, budget.currencyCode)}'
+                '（${value.items.length} 项）· 还可花 '
+                '${formatMoneyMinor(_availableMinor(value), budget.currencyCode)}',
+                MoneyPrivacy.of(context),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: _availableMinor(value) <= 0
+                    ? moneyColors.warning
+                    : colorScheme.tertiary,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
+              ),
+            ),
+          ],
           // 「还剩 N 天，日均可用 ¥X」：只看「剩余 ¥464」还得自己除天数，
           // 而这正是决定今天能不能下馆子的那个数。周期已结束就不显示。
           if (_paceLine(context) case final line?) ...[
@@ -267,8 +299,17 @@ class _BudgetRow extends StatelessWidget {
     );
   }
 
+  int _availableMinor(MoneyBudgetCommitment commitment) {
+    final available = budget.remainingAmountMinor - commitment.totalMinor;
+    return available < 0 ? 0 : available;
+  }
+
   (String, Color)? _paceLine(BuildContext context) {
-    final pace = MoneyBudgetPace.of(budget, DateTime.now());
+    final pace = MoneyBudgetPace.of(
+      budget,
+      DateTime.now(),
+      committedMinor: commitment?.totalMinor ?? 0,
+    );
     if (pace == null) {
       return null;
     }

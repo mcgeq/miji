@@ -21,6 +21,7 @@ import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -1152,6 +1153,39 @@ final currentUserBudgetsProvider = StreamProvider<List<MoneyBudgetEntity>>((
   yield* repository.watchBudgetsForUser(userId, ledgerId: ledger.id);
 });
 
+/// 当前账本下所有预算的「已预留」额度。
+///
+/// 一次加载数据源、批量算出全部预算，避免每张卡各查一遍退化成 N× 查询。
+/// 必须显式 watch 自动记账模板与分期计划：这两张表变化时预算表不会动，
+/// 只依赖预算流的话预留额度会一直停在旧值上。
+final currentUserBudgetCommitmentsProvider =
+    FutureProvider.autoDispose<Map<String, MoneyBudgetCommitment>>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <String, MoneyBudgetCommitment>{};
+      }
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        return const <String, MoneyBudgetCommitment>{};
+      }
+      ref.watch(currentUserAutoPostingTemplatesProvider);
+      ref.watch(currentUserInstallmentPlansProvider);
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      return repository.budgetCommitmentsForUser(
+        session.userId!,
+        ledgerId: ledger.id,
+      );
+    });
+
+/// 单个预算的「已预留」额度；取不到就当作没有。
+final moneyBudgetCommitmentProvider = Provider.autoDispose
+    .family<MoneyBudgetCommitment, String>((ref, budgetId) {
+      final commitments = ref.watch(currentUserBudgetCommitmentsProvider).value;
+      return commitments?[budgetId] ?? MoneyBudgetCommitment.empty;
+    });
+
 final currentUserTagCandidatesProvider = StreamProvider<List<String>>((
   ref,
 ) async* {
@@ -1684,9 +1718,18 @@ class CurrentUserBudgetAlertNotificationActions {
       }
 
       final budgets = await _ref.read(currentUserBudgetsProvider.future);
+      // 带上已预留额度：房租还没入账时额度其实已经没了，只按已用算要等到
+      // 入账那天才提醒，等于没提醒。
+      final commitments = await _ref.read(
+        currentUserBudgetCommitmentsProvider.future,
+      );
       await _ref
           .read(moneyBudgetAlertNotificationServiceProvider)
-          .scanAndNotify(userId: userId, budgets: budgets);
+          .scanAndNotify(
+            userId: userId,
+            budgets: budgets,
+            commitments: commitments,
+          );
     } catch (error, stackTrace) {
       debugPrint('[budget-alert] 扫描失败: $error\n$stackTrace');
     }

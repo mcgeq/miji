@@ -17,6 +17,7 @@ import 'package:miji/features/bookkeeping/application/money_dashboard_layout.dar
 import 'package:miji/features/bookkeeping/application/money_report_period.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_spending_analysis_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
@@ -443,6 +444,12 @@ class _StatisticsAsyncBody extends ConsumerWidget {
                   .maybeWhen(
                     data: (value) => value,
                     orElse: () => const <MoneyBudgetEntity>[],
+                  ),
+              budgetCommitments: ref
+                  .watch(currentUserBudgetCommitmentsProvider)
+                  .maybeWhen(
+                    data: (value) => value,
+                    orElse: () => const <String, MoneyBudgetCommitment>{},
                   ),
               spendingAnalysis: spendingAnalysis.maybeWhen(
                 data: (value) => value,
@@ -899,6 +906,7 @@ class _StatisticsBody extends StatelessWidget {
     required this.dashboardLayout,
     required this.ledgerId,
     required this.budgets,
+    required this.budgetCommitments,
     required this.spendingAnalysis,
     required this.insights,
     required this.budgetHistoryTrend,
@@ -926,6 +934,7 @@ class _StatisticsBody extends StatelessWidget {
   final MoneyDashboardLayout dashboardLayout;
   final String? ledgerId;
   final List<MoneyBudgetEntity> budgets;
+  final Map<String, MoneyBudgetCommitment> budgetCommitments;
   final MoneySpendingAnalysis spendingAnalysis;
   final MoneyStatisticsInsights insights;
   final List<MoneyBudgetHistoryTrendPoint> budgetHistoryTrend;
@@ -1197,6 +1206,7 @@ class _StatisticsBody extends StatelessWidget {
       ),
       MoneyDashboardCard.budgetExecution => MoneyBudgetExecutionCard(
         budgets: budgets,
+        commitments: budgetCommitments,
       ),
       MoneyDashboardCard.budgetHistory => MoneyBudgetHistoryTrendCard(
         points: budgetHistoryTrend,

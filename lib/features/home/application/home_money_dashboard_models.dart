@@ -82,6 +82,7 @@ class HomeMonthBudgetSummary {
     required this.totalMinor,
     required this.usedMinor,
     required this.remainingMinor,
+    required this.committedMinor,
     required this.progress,
     required this.periodProgress,
     required this.paceRatio,
@@ -98,6 +99,7 @@ class HomeMonthBudgetSummary {
        totalMinor = 0,
        usedMinor = 0,
        remainingMinor = 0,
+       committedMinor = 0,
        progress = 0,
        periodProgress = 0,
        paceRatio = 0,
@@ -108,19 +110,27 @@ class HomeMonthBudgetSummary {
   final String? budgetId;
   final String? budgetName;
   final int totalMinor;
+
+  /// 已入账流水，硬事实。超支判定与历史口径都只看它。
   final int usedMinor;
   final int remainingMinor;
+
+  /// 未来义务占用的额度（自动记账 / 分期等），软事实。
+  final int committedMinor;
   final double progress;
   final double periodProgress;
   final double paceRatio;
   final String paceLabel;
   final int remainingDays;
 
+  /// 扣掉已预留之后真正还能花的钱，可以是负数（预留后必然超支）。
+  int get availableMinor => remainingMinor - committedMinor;
+
   int get dailyAllowanceMinor {
-    if (!hasBudget || remainingDays <= 0 || remainingMinor <= 0) {
+    if (!hasBudget || remainingDays <= 0 || availableMinor <= 0) {
       return 0;
     }
-    return remainingMinor ~/ remainingDays;
+    return availableMinor ~/ remainingDays;
   }
 }
 
