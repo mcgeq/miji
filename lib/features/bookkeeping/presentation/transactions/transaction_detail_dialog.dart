@@ -19,6 +19,7 @@ Future<void> showTransactionDetailDialog({
   VoidCallback? onEdit,
   VoidCallback? onDelete,
   VoidCallback? onRefund,
+  VoidCallback? onDuplicate,
   VoidCallback? onAddSplit,
   VoidCallback? onAddToFamilyLedger,
   ValueChanged<MoneyLedgerEntity>? onRemoveFromFamilyLedger,
@@ -38,6 +39,7 @@ Future<void> showTransactionDetailDialog({
           onEdit: _closeDialogAndRun(context, onEdit),
           onDelete: _closeDialogAndRun(context, onDelete),
           onRefund: _closeDialogAndRun(context, onRefund),
+          onDuplicate: _closeDialogAndRun(context, onDuplicate),
           onAddSplit: _closeDialogAndRun(context, onAddSplit),
           onAddToFamilyLedger: _closeDialogAndRun(context, onAddToFamilyLedger),
           onRemoveFromFamilyLedger: _closeDialogAndRunValue(
@@ -59,6 +61,7 @@ Future<void> showTransactionDetailProviderDialog({
   VoidCallback? onEdit,
   VoidCallback? onDelete,
   VoidCallback? onRefund,
+  VoidCallback? onDuplicate,
   ValueChanged<MoneyTransactionStatus>? onSetStatus,
 }) {
   return showDialog<void>(
@@ -69,6 +72,7 @@ Future<void> showTransactionDetailProviderDialog({
         onEdit: onEdit,
         onDelete: onDelete,
         onRefund: onRefund,
+        onDuplicate: onDuplicate,
         onSetStatus: onSetStatus,
       );
     },
@@ -81,6 +85,7 @@ class _TransactionDetailProviderDialog extends ConsumerWidget {
     this.onEdit,
     this.onDelete,
     this.onRefund,
+    this.onDuplicate,
     this.onSetStatus,
   });
 
@@ -88,6 +93,7 @@ class _TransactionDetailProviderDialog extends ConsumerWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onRefund;
+  final VoidCallback? onDuplicate;
   final ValueChanged<MoneyTransactionStatus>? onSetStatus;
 
   @override
@@ -145,6 +151,7 @@ class _TransactionDetailProviderDialog extends ConsumerWidget {
         onEdit: _closeDialogAndRun(context, onEdit),
         onDelete: _closeDialogAndRun(context, onDelete),
         onRefund: _closeDialogAndRun(context, onRefund),
+        onDuplicate: _closeDialogAndRun(context, onDuplicate),
         onSetStatus: _closeDialogAndRunValue(context, onSetStatus),
       ),
     );

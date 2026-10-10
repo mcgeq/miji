@@ -33,6 +33,7 @@ import 'package:miji/core/user/domain/user_entity.dart';
 import 'package:miji/core/user/providers/user_providers.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/settings/presentation/data_sync_section.dart';
+import 'package:miji/features/settings/presentation/money_reminder_settings_section.dart';
 import 'package:miji/shared/widgets/app_switch_field.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
@@ -120,15 +121,22 @@ class BookkeepingPreferenceSettingsPage extends ConsumerWidget {
     return _SettingsSubPageScaffold(
       title: '记账偏好',
       subtitle: '账户、交易和预算使用的默认参数',
-      child: preferences.when(
-        data: (value) => _BookkeepingPreferenceSection(preferences: value),
-        loading: () => const AppPlainPanel(
-          child: Center(child: CircularProgressIndicator()),
-        ),
-        error: (error, stackTrace) => AppErrorState(
-          title: '读取偏好失败',
-          onRetry: () => ref.invalidate(currentUserPreferencesProvider),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          preferences.when(
+            data: (value) => _BookkeepingPreferenceSection(preferences: value),
+            loading: () => const AppPlainPanel(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (error, stackTrace) => AppErrorState(
+              title: '读取偏好失败',
+              onRetry: () => ref.invalidate(currentUserPreferencesProvider),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const MoneyReminderSettingsSection(),
+        ],
       ),
     );
   }

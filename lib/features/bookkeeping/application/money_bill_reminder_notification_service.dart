@@ -64,7 +64,9 @@ class MoneyBillReminderNotificationService {
         id: _notificationId(userId, reminder.id),
         title: alert.title,
         body: alert.body,
-        payload: reminder.id,
+        // 带路由前缀的 payload 才能被点击回调识别；早期版本塞的是提醒 id，
+        // 点通知只会冷启动。
+        payload: NotificationPayloads.moneyReminder,
       );
       if (shown) {
         await prefs.setString(storageKey, token);

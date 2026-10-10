@@ -491,6 +491,59 @@ mixin _Accounts on _DriftMoneyRepositoryBase {
   }
 
   @override
+  Future<MoneyAccountEntity> adjustAccountBalance(
+    String userId,
+    String accountId,
+    int targetBalanceMinor,
+  ) async {
+    final existing = await _getAccountForUser(userId, accountId);
+    final type = MoneyAccountType.fromStorageValue(existing.type);
+    // 虚拟账户（他人代付的内部账户）没有真实余额可校；
+    // 信用账户的「余额」是可用额度，该走账单对账而不是改额度。
+    if (existing.isVirtual || type.isCreditLike) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.invalidAccountBalance,
+      );
+    }
+    if (targetBalanceMinor < 0) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.invalidAccountBalance,
+      );
+    }
+
+    final delta = targetBalanceMinor - existing.balanceMinor;
+    if (delta == 0) {
+      return _mapAccount(existing);
+    }
+    // 差额补进 initialBalanceMinor：updateAccount 会把同样的差额加到
+    // balanceMinor 上，于是账面直接等于目标值，且不产生任何流水。
+    final nextInitialBalanceMinor = existing.initialBalanceMinor + delta;
+    if (nextInitialBalanceMinor < 0) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.invalidAccountBalance,
+      );
+    }
+
+    return updateAccount(
+      userId,
+      MoneyAccountUpdate(
+        id: existing.id,
+        name: existing.name,
+        description: existing.description,
+        type: type,
+        currencyCode: existing.currencyCode,
+        initialBalanceMinor: nextInitialBalanceMinor,
+        color: existing.color,
+        icon: existing.icon,
+        statementDay: existing.statementDay,
+        budgetCycleStartDay: existing.budgetCycleStartDay,
+        repaymentDay: existing.repaymentDay,
+        autoRepaymentReminderEnabled: existing.autoRepaymentReminderEnabled,
+      ),
+    );
+  }
+
+  @override
   Future<void> setAccountActive(
     String userId,
     String accountId,

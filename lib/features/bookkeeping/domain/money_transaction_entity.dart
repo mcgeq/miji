@@ -262,6 +262,7 @@ class MoneyTransactionUpdate {
     required this.paymentMethod,
     this.customPaymentMethodName,
     this.tags = const <String>[],
+    this.description,
   });
 
   final String id;
@@ -269,6 +270,12 @@ class MoneyTransactionUpdate {
   final DateTime transactionAt;
   final int amountMinor;
   final String currencyCode;
+
+  /// 用户给这笔账起的名字（如「和老王吃饭」）。
+  ///
+  /// 为空时仓储会回退到类型名，保持与旧数据一致的兜底行为。
+  /// 独立成字段是为了让同步冲突合并也能带上它，否则远端一次更新就会把名字抹掉。
+  final String? description;
   final String? notes;
   final String? merchant;
   final String? location;
@@ -278,6 +285,36 @@ class MoneyTransactionUpdate {
   final MoneyPaymentMethod paymentMethod;
   final String? customPaymentMethodName;
   final List<String> tags;
+}
+
+/// 批量修改流水时的「部分字段」补丁。
+///
+/// 每个字段为 null 表示**不动**这一项——批量操作里用户往往只想改分类，
+/// 其余字段必须保持原样，所以不能复用要求全字段的 [MoneyTransactionUpdate]。
+///
+/// 分类要成对给：`categoryId` 非空时 `subCategoryId` 为 null 表示「只记到
+/// 父分类」（会把原有子分类清掉），这正是分类叶子选择器的语义。
+class MoneyTransactionBatchUpdate {
+  const MoneyTransactionBatchUpdate({
+    this.categoryId,
+    this.subCategoryId,
+    this.accountId,
+    this.tagsToAdd = const <String>[],
+    this.tagsToRemove = const <String>[],
+  });
+
+  final String? categoryId;
+  final String? subCategoryId;
+  final String? accountId;
+  final List<String> tagsToAdd;
+  final List<String> tagsToRemove;
+
+  bool get isEmpty {
+    return categoryId == null &&
+        accountId == null &&
+        tagsToAdd.isEmpty &&
+        tagsToRemove.isEmpty;
+  }
 }
 
 class MoneyTransferDraft {
@@ -359,6 +396,7 @@ class MoneyTransactionQuery {
     this.page = 1,
     this.pageSize = 20,
     this.type,
+    this.status,
     this.accountId,
     this.accountType,
     this.categoryId,
@@ -371,6 +409,7 @@ class MoneyTransactionQuery {
     this.keyword,
     this.ledgerId,
     this.budgetId,
+    this.tags = const <String>[],
     this.sortField = MoneyTransactionSortField.transactionAt,
     this.sortAscending = false,
   });
@@ -378,6 +417,12 @@ class MoneyTransactionQuery {
   final int page;
   final int pageSize;
   final MoneyTransactionType? type;
+
+  /// 流水状态筛选；`null` 表示不限制（已完成 / 待确认 / 已作废都算）。
+  ///
+  /// 待确认流水不占余额、不计入统计，但没有这个字段就查不出来，
+  /// 记完一笔 pending 之后等于丢进了黑洞。
+  final MoneyTransactionStatus? status;
   final String? accountId;
   final MoneyAccountType? accountType;
   final String? categoryId;
@@ -390,31 +435,57 @@ class MoneyTransactionQuery {
   final String? keyword;
   final String? ledgerId;
   final String? budgetId;
+
+  /// 标签筛选：命中任意一个即算匹配（OR 语义）。
+  ///
+  /// 标签一直是只能看不能筛的字段——标签排行就在统计页上，点下去却没有任何
+  /// 反应。这里补上后排行可以下钻，也顺带给未来的标签筛选入口留了口子。
+  final List<String> tags;
   final MoneyTransactionSortField sortField;
   final bool sortAscending;
 
-  /// 排序条件，用于判断「只有排序变了」时不需要重新拉第一页之后的逻辑。
   MoneyTransactionQuery copyWith({
     int? page,
+    int? pageSize,
+    MoneyTransactionType? type,
+    MoneyTransactionStatus? status,
+    String? accountId,
+    MoneyAccountType? accountType,
+    String? categoryId,
+    String? subCategoryId,
+    MoneyPaymentMethod? paymentMethod,
+    String? merchant,
+    String? customPaymentMethodName,
+    DateTime? dateStart,
+    DateTime? dateEnd,
+    String? keyword,
+    String? ledgerId,
+    String? budgetId,
+    List<String>? tags,
     MoneyTransactionSortField? sortField,
     bool? sortAscending,
+    bool clearStatus = false,
+    bool clearTags = false,
   }) {
     return MoneyTransactionQuery(
       page: page ?? this.page,
-      pageSize: pageSize,
-      type: type,
-      accountId: accountId,
-      accountType: accountType,
-      categoryId: categoryId,
-      subCategoryId: subCategoryId,
-      paymentMethod: paymentMethod,
-      merchant: merchant,
-      customPaymentMethodName: customPaymentMethodName,
-      dateStart: dateStart,
-      dateEnd: dateEnd,
-      keyword: keyword,
-      ledgerId: ledgerId,
-      budgetId: budgetId,
+      pageSize: pageSize ?? this.pageSize,
+      type: type ?? this.type,
+      status: clearStatus ? null : (status ?? this.status),
+      accountId: accountId ?? this.accountId,
+      accountType: accountType ?? this.accountType,
+      categoryId: categoryId ?? this.categoryId,
+      subCategoryId: subCategoryId ?? this.subCategoryId,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      merchant: merchant ?? this.merchant,
+      customPaymentMethodName:
+          customPaymentMethodName ?? this.customPaymentMethodName,
+      dateStart: dateStart ?? this.dateStart,
+      dateEnd: dateEnd ?? this.dateEnd,
+      keyword: keyword ?? this.keyword,
+      ledgerId: ledgerId ?? this.ledgerId,
+      budgetId: budgetId ?? this.budgetId,
+      tags: clearTags ? const <String>[] : (tags ?? this.tags),
       sortField: sortField ?? this.sortField,
       sortAscending: sortAscending ?? this.sortAscending,
     );
@@ -427,6 +498,7 @@ class MoneyTransactionQuery {
             page == other.page &&
             pageSize == other.pageSize &&
             type == other.type &&
+            status == other.status &&
             accountId == other.accountId &&
             accountType == other.accountType &&
             categoryId == other.categoryId &&
@@ -439,8 +511,24 @@ class MoneyTransactionQuery {
             keyword == other.keyword &&
             ledgerId == other.ledgerId &&
             budgetId == other.budgetId &&
+            _listEquals(tags, other.tags) &&
             sortField == other.sortField &&
             sortAscending == other.sortAscending;
+  }
+
+  static bool _listEquals(List<String> a, List<String> b) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a.length != b.length) {
+      return false;
+    }
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @override
@@ -449,6 +537,7 @@ class MoneyTransactionQuery {
       page,
       pageSize,
       type,
+      status,
       accountId,
       accountType,
       categoryId,
@@ -461,6 +550,7 @@ class MoneyTransactionQuery {
       keyword,
       ledgerId,
       budgetId,
+      Object.hashAll(tags),
       sortField,
       sortAscending,
     );

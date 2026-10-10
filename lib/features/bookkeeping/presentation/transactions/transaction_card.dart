@@ -22,12 +22,17 @@ class TransactionCard extends StatelessWidget {
     required this.installmentPlans,
     required this.ledgerMemberships,
     required this.currentLedger,
+    this.onConfirm,
     this.onEdit,
     this.onDelete,
     this.onRefund,
     this.onTap,
     this.isSelected = false,
     this.swipeCloseSignal,
+    this.onLongPress,
+    this.bulkSelectionMode = false,
+    this.bulkSelected = false,
+    this.onToggleBulkSelect,
   });
 
   final MoneyTransactionEntity transaction;
@@ -37,12 +42,21 @@ class TransactionCard extends StatelessWidget {
   final List<MoneyInstallmentPlanEntity> installmentPlans;
   final List<MoneyLedgerEntity> ledgerMemberships;
   final MoneyLedgerEntity? currentLedger;
+  final VoidCallback? onConfirm;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onRefund;
   final VoidCallback? onTap;
   final bool isSelected;
   final Object? swipeCloseSignal;
+
+  /// 长按进入多选模式（批量改分类 / 账户 / 标签 / 删除）。
+  final VoidCallback? onLongPress;
+
+  /// 多选模式下：点整行是勾选，左滑动作全部让位（否则会和勾选抢手势）。
+  final bool bulkSelectionMode;
+  final bool bulkSelected;
+  final VoidCallback? onToggleBulkSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -51,35 +65,46 @@ class TransactionCard extends StatelessWidget {
     final amountColor = _amountColor(theme);
     final iconColor = _iconColor(theme) ?? amountColor;
     final iconData = _iconData ?? _typeIcon;
-    final actions = <AppSwipeAction>[
-      if (onEdit != null)
-        AppSwipeAction(
-          tooltip: '编辑',
-          icon: Icons.edit_outlined,
-          foreground: colorScheme.onPrimaryContainer,
-          background: colorScheme.primaryContainer,
-          onPressed: onEdit!,
-        ),
-      if (onRefund != null)
-        AppSwipeAction(
-          tooltip: '退款',
-          icon: Icons.reply_rounded,
-          foreground: colorScheme.onSecondaryContainer,
-          background: colorScheme.secondaryContainer,
-          onPressed: onRefund!,
-        ),
-      if (onDelete != null)
-        AppSwipeAction(
-          tooltip: '删除',
-          icon: Icons.delete_outline_rounded,
-          foreground: colorScheme.onErrorContainer,
-          background: colorScheme.errorContainer,
-          onPressed: onDelete!,
-        ),
-    ];
+    final actions = bulkSelectionMode
+        ? const <AppSwipeAction>[]
+        : <AppSwipeAction>[
+            if (onConfirm != null)
+              AppSwipeAction(
+                tooltip: '确认入账',
+                icon: Icons.check_rounded,
+                foreground: colorScheme.onTertiaryContainer,
+                background: colorScheme.tertiaryContainer,
+                onPressed: onConfirm!,
+              ),
+            if (onEdit != null)
+              AppSwipeAction(
+                tooltip: '编辑',
+                icon: Icons.edit_outlined,
+                foreground: colorScheme.onPrimaryContainer,
+                background: colorScheme.primaryContainer,
+                onPressed: onEdit!,
+              ),
+            if (onRefund != null)
+              AppSwipeAction(
+                tooltip: '退款',
+                icon: Icons.reply_rounded,
+                foreground: colorScheme.onSecondaryContainer,
+                background: colorScheme.secondaryContainer,
+                onPressed: onRefund!,
+              ),
+            if (onDelete != null)
+              AppSwipeAction(
+                tooltip: '删除',
+                icon: Icons.delete_outline_rounded,
+                foreground: colorScheme.onErrorContainer,
+                background: colorScheme.errorContainer,
+                onPressed: onDelete!,
+              ),
+          ];
 
     return AppSwipeActionTile(
-      onTap: onTap,
+      onTap: bulkSelectionMode ? onToggleBulkSelect : onTap,
+      onLongPress: bulkSelectionMode ? null : onLongPress,
       actions: actions,
       closeSignal: swipeCloseSignal,
       child: AppListItemPanel(
@@ -114,7 +139,7 @@ class TransactionCard extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppListItemIcon(icon: iconData, color: iconColor, size: 28),
+                  _leading(iconData: iconData, iconColor: iconColor, size: 28),
                   const SizedBox(width: 12),
                   content,
                 ],
@@ -123,12 +148,36 @@ class TransactionCard extends StatelessWidget {
 
             return Row(
               children: [
-                AppListItemIcon(icon: iconData, color: iconColor),
+                _leading(iconData: iconData, iconColor: iconColor, size: 38),
                 const SizedBox(width: 12),
                 content,
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+
+  /// 多选模式下把分类图标换成勾选框：整行的点击目标保持一致，
+  /// 用户不需要去够一个小方块。
+  Widget _leading({
+    required IconData iconData,
+    required Color iconColor,
+    required double size,
+  }) {
+    final onToggle = onToggleBulkSelect;
+    if (!bulkSelectionMode || onToggle == null) {
+      return AppListItemIcon(icon: iconData, color: iconColor, size: size);
+    }
+    return SizedBox(
+      width: size,
+      height: size,
+      child: FittedBox(
+        child: Checkbox(
+          value: bulkSelected,
+          onChanged: (_) => onToggle(),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
     );
@@ -174,14 +223,17 @@ class TransactionCard extends StatelessWidget {
     final description = transaction.description.trim();
     final merchant = transaction.merchant?.trim();
     // Filter out generic type labels that get auto-filled as descriptions
+    // (历史数据的 description 恒为类型名，那时还没有名称输入框)。
     final isGeneric =
         description == '支出' ||
         description == '收入' ||
+        description == '转账' ||
         description == '转入' ||
         description == '转出';
+    // 名称在前：它是用户自己起的，比商家更能说明这笔是什么。
     final parts = <String>[
-      if (merchant != null && merchant.isNotEmpty) merchant,
       if (description.isNotEmpty && !isGeneric) description,
+      if (merchant != null && merchant.isNotEmpty) merchant,
     ];
     if (parts.isEmpty) return '';
     return parts.join(' · ');

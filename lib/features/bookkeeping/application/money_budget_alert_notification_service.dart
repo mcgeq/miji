@@ -40,7 +40,8 @@ class MoneyBudgetAlertNotificationService {
         id: _notificationId(userId, budget.id),
         title: alert.title,
         body: alert.body,
-        payload: budget.id,
+        // 预算超支是结果而不是待办，点进去看预算面板比看提醒中心有用。
+        payload: NotificationPayloads.moneyBudgets,
       );
       if (shown) {
         await prefs.setString(storageKey, alertToken);

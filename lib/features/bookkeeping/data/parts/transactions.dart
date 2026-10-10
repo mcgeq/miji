@@ -396,7 +396,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
                 transactionAt: Value(update.transactionAt.toUtc()),
                 amountMinor: Value(update.amountMinor),
                 currencyCode: Value(update.currencyCode),
-                description: Value(update.type.label),
+                description: Value(_transactionUpdateDescription(update)),
                 notes: Value<String?>(_blankToNull(update.notes)),
                 merchant: Value<String?>(_blankToNull(update.merchant)),
                 location: Value<String?>(_blankToNull(update.location)),
@@ -841,6 +841,440 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
   }
 
   @override
+  Future<int> setTransactionsStatus(
+    String userId,
+    List<String> transactionIds,
+    MoneyTransactionStatus status,
+  ) async {
+    final uniqueIds = _uniqueTransactionIds(transactionIds);
+    if (uniqueIds.isEmpty) {
+      return 0;
+    }
+
+    try {
+      await ensureReadyForUser(userId);
+      final impacts = <_BudgetTransactionImpact>[];
+      final accountIds = <String>{};
+      var applied = 0;
+      for (final transactionId in uniqueIds) {
+        final changed = await _applyTransactionStatus(
+          userId: userId,
+          transactionId: transactionId,
+          status: status,
+          impacts: impacts,
+          accountIds: accountIds,
+        );
+        if (changed) {
+          applied += 1;
+        }
+      }
+      if (applied == 0) {
+        return 0;
+      }
+      // 批量场景下把这些副作用攒到最后各跑一次：每条都刷一遍预算快照
+      // 会把「确认 20 笔待处理」拖成 20 次全量重算。
+      if (impacts.isNotEmpty) {
+        await _refreshBudgetSnapshotsForTransactionImpacts(userId, impacts);
+      }
+      if (accountIds.isNotEmpty) {
+        await _syncCreditAccountRepaymentRemindersForAccounts(
+          userId,
+          accountIds.toList(),
+        );
+      }
+      await _tryRebuildUsageStatsForUser(userId);
+      return applied;
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  /// 单条状态变更的核心逻辑，返回是否真的写入。
+  ///
+  /// 不合法的流转直接返回 false：批量操作里一条不合适不该让整批失败，
+  /// 单条场景的错误提示由 `setTransactionStatus` 负责抛出。
+  Future<bool> _applyTransactionStatus({
+    required String userId,
+    required String transactionId,
+    required MoneyTransactionStatus status,
+    required List<_BudgetTransactionImpact> impacts,
+    required Set<String> accountIds,
+  }) async {
+    final existing =
+        await (database.select(database.moneyTransactions)
+              ..where(
+                (row) =>
+                    row.id.equals(transactionId) &
+                    row.userId.equals(userId) &
+                    row.isDeleted.equals(false),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (existing == null) {
+      return false;
+    }
+    if (_DriftMoneyRepositoryBase._isInstallmentPosting(existing)) {
+      return false;
+    }
+    final type = MoneyTransactionType.fromStorageValue(existing.type);
+    if (type == MoneyTransactionType.transfer) {
+      return false;
+    }
+
+    final currentStatus = MoneyTransactionStatus.fromStorageValue(
+      existing.status,
+    );
+    if (currentStatus == status) {
+      return false;
+    }
+    final allowed = switch (currentStatus) {
+      MoneyTransactionStatus.pending =>
+        status == MoneyTransactionStatus.completed ||
+            status == MoneyTransactionStatus.voided,
+      MoneyTransactionStatus.completed =>
+        status == MoneyTransactionStatus.voided,
+      MoneyTransactionStatus.voided => false,
+    };
+    if (!allowed) {
+      return false;
+    }
+
+    final account = await _getAccountForUser(userId, existing.accountId);
+    final ledger = _MutableAccountLedger.fromAccount(account);
+    final effectiveAmountMinor = _effectiveTransactionAmountMinor(existing);
+    if (status == MoneyTransactionStatus.completed) {
+      ledger.applyTransactionCreate(type, effectiveAmountMinor);
+    } else if (currentStatus == MoneyTransactionStatus.completed) {
+      ledger.applyTransactionRollback(type, effectiveAmountMinor);
+    }
+    ledger.validate();
+
+    final ledgerIds = await _ledgerIdsForTransaction(userId, existing.id);
+    final tags = await _getTagsForTransaction(existing.id);
+    final now = _utcNow();
+    await database.transaction(() async {
+      await _updateAccountLedger(userId, account.id, ledger, now);
+      await (database.update(database.moneyTransactions)..where(
+            (row) =>
+                row.id.equals(transactionId) &
+                row.userId.equals(userId) &
+                row.isDeleted.equals(false),
+          ))
+          .write(
+            MoneyTransactionsCompanion(
+              status: Value(status.storageValue),
+              version: Value(existing.version + 1),
+              updatedAt: Value(now),
+            ),
+          );
+      await _recordTransactionChange(
+        userId: userId,
+        recordId: transactionId,
+        operation: SyncChangeOperation.update,
+        changedFields: {'status': status.storageValue},
+        beforeVersion: existing.version,
+        afterVersion: existing.version + 1,
+      );
+    });
+
+    impacts.add(
+      _BudgetTransactionImpact(
+        type: type,
+        accountId: existing.accountId,
+        categoryId: existing.categoryId,
+        subCategoryId: existing.subCategoryId,
+        ledgerIds: ledgerIds,
+        tags: tags,
+      ),
+    );
+    accountIds.add(existing.accountId);
+    return true;
+  }
+
+  @override
+  Future<int> updateTransactions(
+    String userId,
+    List<String> transactionIds,
+    MoneyTransactionBatchUpdate patch,
+  ) async {
+    final uniqueIds = _uniqueTransactionIds(transactionIds);
+    if (uniqueIds.isEmpty || patch.isEmpty) {
+      return 0;
+    }
+
+    try {
+      await ensureReadyForUser(userId);
+      final impacts = <_BudgetTransactionImpact>[];
+      final accountIds = <String>{};
+      var applied = 0;
+      for (final transactionId in uniqueIds) {
+        final changed = await _applyTransactionBatchUpdate(
+          userId: userId,
+          transactionId: transactionId,
+          patch: patch,
+          impacts: impacts,
+          accountIds: accountIds,
+        );
+        if (changed) {
+          applied += 1;
+        }
+      }
+      if (applied == 0) {
+        return 0;
+      }
+      if (impacts.isNotEmpty) {
+        await _refreshBudgetSnapshotsForTransactionImpacts(userId, impacts);
+      }
+      if (accountIds.isNotEmpty) {
+        await _syncCreditAccountRepaymentRemindersForAccounts(
+          userId,
+          accountIds.toList(),
+        );
+      }
+      await _tryRebuildUsageStatsForUser(userId);
+      return applied;
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  /// 单条批量补丁的核心逻辑，返回是否真的写入。
+  ///
+  /// 不合适的流水（分期入账 / 转账 / 已作废 / 找不到）返回 false：
+  /// 一条不合适不该让整批失败，条数差由调用方提示。
+  Future<bool> _applyTransactionBatchUpdate({
+    required String userId,
+    required String transactionId,
+    required MoneyTransactionBatchUpdate patch,
+    required List<_BudgetTransactionImpact> impacts,
+    required Set<String> accountIds,
+  }) async {
+    final existing =
+        await (database.select(database.moneyTransactions)
+              ..where(
+                (row) =>
+                    row.id.equals(transactionId) &
+                    row.userId.equals(userId) &
+                    row.isDeleted.equals(false),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (existing == null) {
+      return false;
+    }
+    if (_DriftMoneyRepositoryBase._isInstallmentPosting(existing)) {
+      return false;
+    }
+    final type = MoneyTransactionType.fromStorageValue(existing.type);
+    // 转账是一对两行（转出 / 转入），只改其中一行的账户或分类会让两行对不上。
+    if (type == MoneyTransactionType.transfer) {
+      return false;
+    }
+    final status = MoneyTransactionStatus.fromStorageValue(existing.status);
+    if (status == MoneyTransactionStatus.voided) {
+      return false;
+    }
+    final expectedCategoryKind = type == MoneyTransactionType.income
+        ? MoneyCategoryKind.income
+        : MoneyCategoryKind.expense;
+
+    String? nextCategoryId;
+    String? nextSubCategoryId;
+    final touchesCategory = patch.categoryId != null;
+    if (patch.categoryId != null) {
+      await _assertCategoryForUser(
+        userId,
+        patch.categoryId!,
+        expectedCategoryKind,
+      );
+      final nextSub = patch.subCategoryId;
+      if (nextSub != null) {
+        await _assertSubCategoryForUser(
+          userId,
+          patch.categoryId!,
+          nextSub,
+          expectedCategoryKind,
+        );
+      }
+      nextCategoryId = patch.categoryId;
+      nextSubCategoryId = nextSub;
+    }
+
+    final targetAccountId = patch.accountId;
+    var touchesAccount = false;
+    MoneyAccount? oldAccount;
+    MoneyAccount? newAccount;
+    if (targetAccountId != null && targetAccountId != existing.accountId) {
+      oldAccount = await _getAccountForUser(userId, existing.accountId);
+      newAccount = await _getWritableAccountForUser(userId, targetAccountId);
+      _assertTransactionAccountRules(type, newAccount);
+      touchesAccount = true;
+    }
+
+    final existingTags = await _getTagsForTransaction(existing.id);
+    final nextTags = _mergeTransactionTags(existingTags, patch);
+    final tagsChanged = !_sameTagSets(existingTags, nextTags);
+
+    if (!touchesCategory && !touchesAccount && !tagsChanged) {
+      return false;
+    }
+
+    final effectiveAmountMinor = _effectiveTransactionAmountMinor(existing);
+    final appliesToBalance = status == MoneyTransactionStatus.completed;
+    _MutableAccountLedger? oldLedger;
+    _MutableAccountLedger? newLedger;
+    if (touchesAccount && appliesToBalance) {
+      oldLedger = _MutableAccountLedger.fromAccount(oldAccount!)
+        ..applyTransactionRollback(type, effectiveAmountMinor);
+      newLedger = _MutableAccountLedger.fromAccount(newAccount!)
+        ..applyTransactionCreate(type, effectiveAmountMinor);
+      newLedger.validate();
+      oldLedger.validate();
+    }
+
+    final ledgerIds = await _ledgerIdsForTransaction(userId, existing.id);
+    final now = _utcNow();
+    final changedFields = <String, Object?>{
+      if (touchesAccount) 'account_id': targetAccountId,
+      if (touchesCategory) 'category_id': nextCategoryId ?? existing.categoryId,
+      if (touchesCategory) 'sub_category_id': nextSubCategoryId,
+      if (tagsChanged) 'tags': nextTags,
+    };
+    await database.transaction(() async {
+      if (touchesAccount && appliesToBalance) {
+        await _updateAccountLedger(userId, oldAccount!.id, oldLedger!, now);
+        await _updateAccountLedger(userId, newAccount!.id, newLedger!, now);
+      }
+      await (database.update(database.moneyTransactions)..where(
+            (row) =>
+                row.id.equals(transactionId) &
+                row.userId.equals(userId) &
+                row.isDeleted.equals(false),
+          ))
+          .write(
+            MoneyTransactionsCompanion(
+              accountId: touchesAccount
+                  ? Value(targetAccountId!)
+                  : const Value.absent(),
+              categoryId: touchesCategory
+                  ? Value(nextCategoryId ?? existing.categoryId)
+                  : const Value.absent(),
+              subCategoryId: touchesCategory
+                  ? Value<String?>(nextSubCategoryId)
+                  : const Value.absent(),
+              version: Value(existing.version + 1),
+              updatedAt: Value(now),
+            ),
+          );
+      if (tagsChanged) {
+        await _replaceTransactionTags(existing.id, nextTags);
+      }
+      await _recordTransactionChange(
+        userId: userId,
+        recordId: transactionId,
+        operation: SyncChangeOperation.update,
+        changedFields: changedFields,
+        beforeVersion: existing.version,
+        afterVersion: existing.version + 1,
+      );
+    });
+
+    final afterTags = tagsChanged ? nextTags : existingTags;
+    impacts.add(
+      _BudgetTransactionImpact(
+        type: type,
+        accountId: existing.accountId,
+        categoryId: existing.categoryId,
+        subCategoryId: existing.subCategoryId,
+        ledgerIds: ledgerIds,
+        tags: existingTags,
+      ),
+    );
+    // 同一条流水的前后两个状态都要重算预算快照：少了「改之前」这一条，
+    // 原分类 / 原账户下的额度不会被释放。
+    impacts.add(
+      _BudgetTransactionImpact(
+        type: type,
+        accountId: touchesAccount ? targetAccountId! : existing.accountId,
+        categoryId: nextCategoryId ?? existing.categoryId,
+        subCategoryId: touchesCategory
+            ? nextSubCategoryId
+            : existing.subCategoryId,
+        ledgerIds: ledgerIds,
+        tags: afterTags,
+      ),
+    );
+    accountIds.add(existing.accountId);
+    if (touchesAccount) {
+      accountIds.add(targetAccountId!);
+    }
+    return true;
+  }
+
+  @override
+  Future<int> deleteTransactions(
+    String userId,
+    List<String> transactionIds,
+  ) async {
+    final uniqueIds = _uniqueTransactionIds(transactionIds);
+    if (uniqueIds.isEmpty) {
+      return 0;
+    }
+
+    try {
+      await ensureReadyForUser(userId);
+      final impacts = <_BudgetTransactionImpact>[];
+      final accountIds = <String>{};
+      var applied = 0;
+      for (final transactionId in uniqueIds) {
+        final changed = await _applyTransactionDelete(
+          userId: userId,
+          transactionId: transactionId,
+          impacts: impacts,
+          accountIds: accountIds,
+        );
+        if (changed) {
+          applied += 1;
+        }
+      }
+      if (applied == 0) {
+        return 0;
+      }
+      if (impacts.isNotEmpty) {
+        await _refreshBudgetSnapshotsForTransactionImpacts(userId, impacts);
+      }
+      if (accountIds.isNotEmpty) {
+        await _syncCreditAccountRepaymentRemindersForAccounts(
+          userId,
+          accountIds.toList(),
+        );
+      }
+      await _tryRebuildUsageStatsForUser(userId);
+      return applied;
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  @override
   Future<void> deleteTransaction(String userId, String transactionId) async {
     try {
       final transaction = await _getTransactionForUser(userId, transactionId);
@@ -849,64 +1283,26 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
           MoneyRepositoryErrorCode.invalidInstallmentStatus,
         );
       }
-      if (MoneyTransactionType.fromStorageValue(transaction.type) ==
-          MoneyTransactionType.transfer) {
-        final pair = await _getTransferPair(userId, transaction);
-        final accountIds = [pair.outgoing.accountId, pair.incoming.accountId];
-        await database.transaction(() async {
-          await _deleteTransferPair(userId, transaction);
-        });
-        await _syncCreditAccountRepaymentRemindersForAccounts(
-          userId,
-          accountIds,
-        );
+      final impacts = <_BudgetTransactionImpact>[];
+      final accountIds = <String>{};
+      final deleted = await _applyTransactionDelete(
+        userId: userId,
+        transactionId: transactionId,
+        impacts: impacts,
+        accountIds: accountIds,
+      );
+      if (!deleted) {
         return;
       }
-
-      final account = await _getAccountForUser(userId, transaction.accountId);
-      final transactionStatus = MoneyTransactionStatus.fromStorageValue(
-        transaction.status,
-      );
-      final ledger = _MutableAccountLedger.fromAccount(account);
-      if (transactionStatus == MoneyTransactionStatus.completed) {
-        ledger.applyTransactionRollback(
-          MoneyTransactionType.fromStorageValue(transaction.type),
-          _effectiveTransactionAmountMinor(transaction),
+      if (impacts.isNotEmpty) {
+        await _refreshBudgetSnapshotsForTransactionImpacts(userId, impacts);
+      }
+      if (accountIds.isNotEmpty) {
+        await _syncCreditAccountRepaymentRemindersForAccounts(
+          userId,
+          accountIds.toList(),
         );
       }
-      ledger.validate();
-      final ledgerIds = await _ledgerIdsForTransaction(userId, transaction.id);
-      final transactionTags = await _getTagsForTransaction(transaction.id);
-      final now = _utcNow();
-      await database.transaction(() async {
-        await _updateAccountLedger(userId, account.id, ledger, now);
-        await _markTransactionDeleted(
-          userId,
-          transaction.id,
-          now,
-          beforeVersion: transaction.version,
-        );
-        if ((transaction.sourceTemplateRunId?.trim().isNotEmpty ?? false)) {
-          await _markAutoPostingRunUserDeleted(
-            userId: userId,
-            runId: transaction.sourceTemplateRunId!,
-            deletedAt: now,
-          );
-        }
-      });
-      await _refreshBudgetSnapshotsForTransactionImpacts(userId, [
-        _BudgetTransactionImpact(
-          type: MoneyTransactionType.fromStorageValue(transaction.type),
-          accountId: transaction.accountId,
-          categoryId: transaction.categoryId,
-          subCategoryId: transaction.subCategoryId,
-          ledgerIds: ledgerIds,
-          tags: transactionTags,
-        ),
-      ]);
-      await _syncCreditAccountRepaymentRemindersForAccounts(userId, [
-        transaction.accountId,
-      ]);
       await _tryRebuildUsageStatsForUser(userId);
     } catch (error) {
       if (error is MoneyRepositoryException) {
@@ -917,6 +1313,145 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
         error,
       );
     }
+  }
+
+  /// 单条删除的核心逻辑，返回是否真的删除。
+  ///
+  /// 与 [deleteTransaction] 的区别只在不抛「分期入账」而直接跳过——
+  /// 批量删除里混进一条分期流水不该让整批失败。
+  Future<bool> _applyTransactionDelete({
+    required String userId,
+    required String transactionId,
+    required List<_BudgetTransactionImpact> impacts,
+    required Set<String> accountIds,
+  }) async {
+    final transaction =
+        await (database.select(database.moneyTransactions)
+              ..where(
+                (row) =>
+                    row.id.equals(transactionId) &
+                    row.userId.equals(userId) &
+                    row.isDeleted.equals(false),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (transaction == null) {
+      return false;
+    }
+    if (_DriftMoneyRepositoryBase._isInstallmentPosting(transaction)) {
+      return false;
+    }
+
+    final type = MoneyTransactionType.fromStorageValue(transaction.type);
+    if (type == MoneyTransactionType.transfer) {
+      final pair = await _getTransferPair(userId, transaction);
+      await database.transaction(() async {
+        await _deleteTransferPair(userId, transaction);
+      });
+      accountIds.add(pair.outgoing.accountId);
+      accountIds.add(pair.incoming.accountId);
+      return true;
+    }
+
+    final account = await _getAccountForUser(userId, transaction.accountId);
+    final transactionStatus = MoneyTransactionStatus.fromStorageValue(
+      transaction.status,
+    );
+    final ledger = _MutableAccountLedger.fromAccount(account);
+    if (transactionStatus == MoneyTransactionStatus.completed) {
+      ledger.applyTransactionRollback(
+        type,
+        _effectiveTransactionAmountMinor(transaction),
+      );
+    }
+    ledger.validate();
+    final ledgerIds = await _ledgerIdsForTransaction(userId, transaction.id);
+    final transactionTags = await _getTagsForTransaction(transaction.id);
+    final now = _utcNow();
+    await database.transaction(() async {
+      await _updateAccountLedger(userId, account.id, ledger, now);
+      await _markTransactionDeleted(
+        userId,
+        transaction.id,
+        now,
+        beforeVersion: transaction.version,
+      );
+      if ((transaction.sourceTemplateRunId?.trim().isNotEmpty ?? false)) {
+        await _markAutoPostingRunUserDeleted(
+          userId: userId,
+          runId: transaction.sourceTemplateRunId!,
+          deletedAt: now,
+        );
+      }
+    });
+    impacts.add(
+      _BudgetTransactionImpact(
+        type: type,
+        accountId: transaction.accountId,
+        categoryId: transaction.categoryId,
+        subCategoryId: transaction.subCategoryId,
+        ledgerIds: ledgerIds,
+        tags: transactionTags,
+      ),
+    );
+    accountIds.add(transaction.accountId);
+    return true;
+  }
+
+  List<String> _uniqueTransactionIds(List<String> transactionIds) {
+    final uniqueIds = <String>[];
+    final seen = <String>{};
+    for (final id in transactionIds) {
+      final trimmed = id.trim();
+      if (trimmed.isEmpty || !seen.add(trimmed)) {
+        continue;
+      }
+      uniqueIds.add(trimmed);
+    }
+    return uniqueIds;
+  }
+
+  /// 在已有标签上应用「添加 / 移除」补丁（去重、去空、忽略重复添加）。
+  List<String> _mergeTransactionTags(
+    List<String> existingTags,
+    MoneyTransactionBatchUpdate patch,
+  ) {
+    final removeSet = <String>{
+      for (final tag in patch.tagsToRemove)
+        if (tag.trim().isNotEmpty) tag.trim(),
+    };
+    final merged = <String>[];
+    final seen = <String>{};
+    void append(String value) {
+      final tag = value.trim();
+      if (tag.isEmpty || removeSet.contains(tag) || !seen.add(tag)) {
+        return;
+      }
+      merged.add(tag);
+    }
+
+    for (final tag in existingTags) {
+      append(tag);
+    }
+    for (final tag in patch.tagsToAdd) {
+      append(tag);
+    }
+    return merged;
+  }
+
+  /// 只看集合是否相同：标签在库里按字典序存，补丁后的顺序是「旧 + 新增」，
+  /// 逐位比较会把「没变化」误判成「变了」。
+  bool _sameTagSets(List<String> left, List<String> right) {
+    if (left.length != right.length) {
+      return false;
+    }
+    final set = <String>{...left};
+    for (final tag in right) {
+      if (!set.contains(tag)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @override
@@ -1268,7 +1803,7 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
       'amount_minor': update.amountMinor,
       'refund_amount_minor': refundAmountMinor,
       'currency_code': update.currencyCode,
-      'description': update.type.label,
+      'description': _transactionUpdateDescription(update),
       'notes': _blankToNull(update.notes),
       'merchant': _blankToNull(update.merchant),
       'location': _blankToNull(update.location),
@@ -1583,6 +2118,10 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
               : table.id.isIn(transactionIds));
     }
 
+    final status = query.status;
+    if (status != null) {
+      predicate = predicate & table.status.equals(status.storageValue);
+    }
     final type = query.type;
     if (type != null) {
       predicate = predicate & table.type.equals(type.storageValue);
@@ -1649,14 +2188,29 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
     }
     final keyword = query.keyword?.trim();
     if (keyword != null && keyword.isNotEmpty) {
-      // 顶部搜索框的提示是「搜索备注、商家」，这里必须真的把 merchant 算进去，
-      // 否则按商家名搜不到（之前只 LIKE description / notes）。
+      // 顶部搜索框的提示是「搜索名称、备注、商家」，这里必须真的把 merchant
+      // 算进去，否则按商家名搜不到（之前只 LIKE description / notes）。
       final pattern = '%$keyword%';
       predicate =
           predicate &
           (table.description.like(pattern) |
               table.notes.like(pattern) |
               table.merchant.like(pattern));
+    }
+    final tags = query.tags
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty)
+        .toList();
+    if (tags.isNotEmpty) {
+      // 标签存在独立的表里，只能用 EXISTS 子查询关联。
+      // OR 语义：命中任意一个标签即可（AND 会让多选变成几乎查不出东西）。
+      final tagSubQuery = database.selectOnly(database.moneyTransactionTags)
+        ..addColumns([database.moneyTransactionTags.transactionId])
+        ..where(
+          database.moneyTransactionTags.transactionId.equalsExp(table.id) &
+              database.moneyTransactionTags.tag.isIn(tags),
+        );
+      predicate = predicate & existsQuery(tagSubQuery);
     }
 
     return predicate;

@@ -3,8 +3,25 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import 'package:miji/core/notifications/notification_tap_bus.dart';
+
+/// 通知点击 payload 的前缀约定。
+///
+/// 现有 payload 有三种形态：账单提醒 / 预算提醒塞的是实体 id，打卡模块塞的是
+/// planId。为了避免路由层靠「猜格式」区分来源，新增的记账通知统一带前缀。
+abstract final class NotificationPayloads {
+  /// 记账提醒（账单 / 还款 / 分期 / 预算），跳转到记账模块的提醒面板。
+  static const moneyReminder = 'miji://money/reminders';
+
+  /// 预算超支 / 达阈值提醒，跳转到预算面板（它没有可结清的动作）。
+  static const moneyBudgets = 'miji://money/budgets';
+
+  /// 每日记账提醒，跳转到记账并直接打开记一笔。
+  static const moneyDailyLog = 'miji://money/log';
+}
+
 class AppNotificationService {
-  AppNotificationService({FlutterLocalNotificationsPlugin? plugin})
+  AppNotificationService({FlutterLocalNotificationsPlugin? plugin, this.tapBus})
     : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   static const budgetAlertsChannelId = 'money_budget_alerts';
@@ -13,12 +30,26 @@ class AppNotificationService {
   static const billRemindersChannelId = 'money_bill_reminders';
   static const billRemindersChannelName = '账单提醒';
   static const billRemindersChannelDescription = '账单、还款和周期事项到期提醒';
+  static const dailyLogChannelId = 'money_daily_log';
+  static const dailyLogChannelName = '记账提醒';
+  static const dailyLogChannelDescription = '每天固定时间提醒记录当天收支';
   static const checkinRemindersChannelId = 'checkin_reminders';
   static const checkinRemindersChannelName = '打卡提醒';
   static const checkinRemindersChannelDescription = '每日计划和纪念日打卡提醒';
 
+  /// 通知点击的出口。为 null 时点击只做冷启动，不导航。
+  final NotificationTapBus? tapBus;
+
   final FlutterLocalNotificationsPlugin _plugin;
   Future<void>? _initializeFuture;
+
+  /// 本地通知只在移动平台可用。
+  ///
+  /// 桌面端（Windows / macOS / Linux）没有可靠的本地通知通道，
+  /// 保留这个判断而不是让调用方各写一遍平台分支。
+  bool get supportsNotifications =>
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
 
   Future<bool> showBudgetAlert({
     required int id,
@@ -54,6 +85,110 @@ class AppNotificationService {
     );
   }
 
+  /// 预约一条本地通知。
+  ///
+  /// [matchDateTimeComponents] 传 `DateTimeComponents.time` 表示每天这个时间
+  /// 重复，传 null 表示一次性。
+  Future<bool> schedule({
+    required int id,
+    required String title,
+    required String body,
+    required String channelId,
+    required String channelName,
+    required String channelDescription,
+    required tz.TZDateTime scheduledDate,
+    String? payload,
+    DateTimeComponents? matchDateTimeComponents,
+    Importance importance = Importance.defaultImportance,
+    Priority priority = Priority.defaultPriority,
+  }) async {
+    if (!supportsNotifications) {
+      return false;
+    }
+    final allowed = await ensureCanNotify();
+    if (!allowed) {
+      debugPrint('[notify] 通知权限未授予，跳过调度：channel=$channelId');
+      return false;
+    }
+
+    try {
+      await _plugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: _details(
+          channelId: channelId,
+          channelName: channelName,
+          channelDescription: channelDescription,
+          importance: importance,
+          priority: priority,
+        ),
+        payload: payload,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: matchDateTimeComponents,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('[notify] 通知调度失败: $error\n$stackTrace');
+      return false;
+    }
+    return true;
+  }
+
+  /// 取消一条预约通知。已弹出的通知不受影响。
+  Future<void> cancel(int id) async {
+    if (!supportsNotifications) {
+      return;
+    }
+    await _ensureInitialized();
+    try {
+      await _plugin.cancel(id: id);
+    } catch (error, stackTrace) {
+      debugPrint('[notify] 取消通知失败 id=$id: $error\n$stackTrace');
+    }
+  }
+
+  /// 批量取消。调度器每轮同步都先清掉上一轮的预约，再重新排布。
+  Future<void> cancelAll(Iterable<int> ids) async {
+    if (!supportsNotifications || ids.isEmpty) {
+      return;
+    }
+    await _ensureInitialized();
+    for (final id in ids) {
+      try {
+        await _plugin.cancel(id: id);
+      } catch (error, stackTrace) {
+        debugPrint('[notify] 取消通知失败 id=$id: $error\n$stackTrace');
+      }
+    }
+  }
+
+  /// 取消本插件排的所有通知。
+  Future<void> cancelEverything() async {
+    if (!supportsNotifications) {
+      return;
+    }
+    await _ensureInitialized();
+    try {
+      await _plugin.cancelAll();
+    } catch (error, stackTrace) {
+      debugPrint('[notify] 取消全部通知失败: $error\n$stackTrace');
+    }
+  }
+
+  /// 当前仍挂在系统上的预约通知（用于排查"该推没推"）。
+  Future<List<PendingNotificationRequest>> pendingNotifications() async {
+    if (!supportsNotifications) {
+      return const <PendingNotificationRequest>[];
+    }
+    await _ensureInitialized();
+    try {
+      return await _plugin.pendingNotificationRequests();
+    } catch (_) {
+      return const <PendingNotificationRequest>[];
+    }
+  }
+
   Future<bool> _showAndroidNotification({
     required int id,
     required String title,
@@ -63,7 +198,7 @@ class AppNotificationService {
     required String channelDescription,
     String? payload,
   }) async {
-    if (defaultTargetPlatform != TargetPlatform.android) {
+    if (!supportsNotifications) {
       return false;
     }
     final allowed = await ensureCanNotify();
@@ -77,14 +212,12 @@ class AppNotificationService {
         id: id,
         title: title,
         body: body,
-        notificationDetails: NotificationDetails(
-          android: AndroidNotificationDetails(
-            channelId,
-            channelName,
-            channelDescription: channelDescription,
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
+        notificationDetails: _details(
+          channelId: channelId,
+          channelName: channelName,
+          channelDescription: channelDescription,
+          importance: Importance.high,
+          priority: Priority.high,
         ),
         payload: payload,
       );
@@ -95,10 +228,34 @@ class AppNotificationService {
     return true;
   }
 
+  NotificationDetails _details({
+    required String channelId,
+    required String channelName,
+    required String channelDescription,
+    required Importance importance,
+    required Priority priority,
+  }) {
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        channelId,
+        channelName,
+        channelDescription: channelDescription,
+        importance: importance,
+        priority: priority,
+      ),
+      iOS: const DarwinNotificationDetails(),
+    );
+  }
+
   Future<bool> ensureCanNotify() async {
     await _ensureInitialized();
-    if (defaultTargetPlatform != TargetPlatform.android) {
+    if (!supportsNotifications) {
       return false;
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // iOS 的权限由初始化时的 DarwinInitializationSettings 请求，
+      // permission_handler 在 iOS 上没有 notification 权限的对应实现。
+      return true;
     }
 
     final status = await Permission.notification.status;
@@ -400,13 +557,50 @@ class AppNotificationService {
   }
 
   Future<void> _initialize() async {
-    if (defaultTargetPlatform != TargetPlatform.android) {
+    if (!supportsNotifications) {
       return;
     }
     await _plugin.initialize(
-      settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      settings: InitializationSettings(
+        android: const AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: const DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: false,
+          requestSoundPermission: true,
+        ),
       ),
+      onDidReceiveNotificationResponse: _onNotificationResponse,
     );
+    await _emitLaunchPayload();
+  }
+
+  /// 从「通知栏点击 → 冷启动」进来的场景。
+  ///
+  /// 这条路径不经过 `onDidReceiveNotificationResponse`（进程是被通知拉起来的，
+  /// 回调注册得太晚），必须显式读一次 launch details，否则点击通知只会打开首页。
+  Future<void> _emitLaunchPayload() async {
+    try {
+      final details = await _plugin.getNotificationAppLaunchDetails();
+      final response = details?.notificationResponse;
+      if (response == null) {
+        return;
+      }
+      _onNotificationResponse(response);
+    } catch (_) {
+      // 拿不到 launch details 不影响通知本身。
+    }
+  }
+
+  void _onNotificationResponse(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) {
+      return;
+    }
+    // 只对带 `miji://` 前缀的 payload 做导航：账单 / 预算提醒历史上塞的是实体 id，
+    // 直接拿去当路由会跳错地方。
+    if (!payload.startsWith('miji://')) {
+      return;
+    }
+    tapBus?.emit(payload);
   }
 }

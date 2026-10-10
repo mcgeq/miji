@@ -6,6 +6,7 @@ import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/application/money_budget_pace.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -314,47 +315,42 @@ class BudgetCard extends StatelessWidget {
   /// 「日均可用 / 还剩 N 天」这类决策信息。
   ///
   /// 卡片原本只给出「剩余 ¥464」，用户还得自己除以剩余天数。
-  /// 这里把它算好；收入目标 / 已完成 / 周期已结束的预算不展示。
+  /// 计算逻辑在 [MoneyBudgetPace]，与统计页的预算执行卡共用同一份口径。
   (String, Color)? _paceHint(ThemeData theme, bool masked) {
-    if (budget.isIncomeTarget || budget.isCompleted) {
-      return null;
-    }
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final end = budget.periodEnd;
-    final lastDay = DateTime(end.year, end.month, end.day);
-    final daysLeft = lastDay.difference(today).inDays;
-    if (daysLeft < 0) {
+    final pace = MoneyBudgetPace.of(budget, DateTime.now());
+    if (pace == null) {
       return null;
     }
     final moneyColors = theme.moneyColors;
-    if (budget.isOverspent) {
-      final overspentText = maskedMoneyOr(
-        formatMoneyMinor(-budget.remainingAmountMinor, budget.currencyCode),
-        masked,
-      );
-      return (
-        '已超支 $overspentText${daysLeft > 0 ? ' · 仅剩 $daysLeft 天' : ''}',
-        moneyColors.expense,
-      );
-    }
-    if (daysLeft == 0) {
-      return (
+    final currencyCode = budget.currencyCode;
+
+    return switch (pace.status) {
+      MoneyBudgetPaceStatus.ended => null,
+      MoneyBudgetPaceStatus.overspent => (
         maskedMoneyOr(
-          '周期最后一天 · 还可花 ${formatMoneyMinor(budget.remainingAmountMinor, budget.currencyCode)}',
+          '已超支 ${formatMoneyMinor(pace.overspentMinor, currencyCode)}'
+          '${pace.daysLeft > 0 ? ' · 仅剩 ${pace.daysLeft} 天' : ''}',
+          masked,
+        ),
+        moneyColors.expense,
+      ),
+      MoneyBudgetPaceStatus.lastDay => (
+        maskedMoneyOr(
+          '周期最后一天 · 还可花 '
+          '${formatMoneyMinor(pace.dailyAvailableMinor, currencyCode)}',
           masked,
         ),
         moneyColors.warning,
-      );
-    }
-    final perDay = budget.remainingAmountMinor ~/ daysLeft;
-    return (
-      maskedMoneyOr(
-        '日均可用 ${formatMoneyMinor(perDay, budget.currencyCode)} · 还剩 $daysLeft 天',
-        masked,
       ),
-      moneyColors.success,
-    );
+      MoneyBudgetPaceStatus.onTrack => (
+        maskedMoneyOr(
+          '日均可用 ${formatMoneyMinor(pace.dailyAvailableMinor, currencyCode)}'
+          ' · 还剩 ${pace.daysLeft} 天',
+          masked,
+        ),
+        moneyColors.success,
+      ),
+    };
   }
 
   String get _scopeLabel {

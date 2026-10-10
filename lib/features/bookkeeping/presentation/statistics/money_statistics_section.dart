@@ -6,12 +6,14 @@ import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/components/app_content_panel.dart';
 import 'package:miji/core/presentation/components/app_filter_sheet.dart';
+import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_surface.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/application/money_dashboard_layout.dart';
 import 'package:miji/features/bookkeeping/application/money_report_period.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
@@ -23,6 +25,8 @@ import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_account_distribution_chart.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_account_payment_method_list.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_account_type_distribution_chart.dart';
+import 'package:miji/features/bookkeeping/presentation/statistics/money_comparison_card.dart';
+import 'package:miji/features/bookkeeping/presentation/statistics/money_dashboard_editor_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_category_share_chart.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_member_participation_list.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_budget_execution_card.dart';
@@ -140,6 +144,13 @@ class MoneyStatisticsSection extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 8),
+            AppIconActionButton(
+              tooltip: '自定义看板',
+              onPressed: () => showMoneyDashboardEditorSheet(context),
+              icon: Icons.dashboard_customize_rounded,
+              variant: AppIconActionVariant.outlined,
+            ),
+            const SizedBox(width: 8),
             AppFilterSheetTrigger(
               title: '筛选统计',
               hasActiveFilters: filter.hasAnyFilter,
@@ -236,6 +247,7 @@ class MoneyStatisticsSection extends ConsumerWidget {
             filter: filter,
             range: range,
             groupBy: range.groupBy,
+            periodLabel: periodLabel,
             onOpenTransactions: onOpenTransactions,
           ),
         ),
@@ -253,6 +265,7 @@ class _StatisticsAsyncBody extends ConsumerWidget {
     required this.filter,
     required this.range,
     required this.groupBy,
+    required this.periodLabel,
     required this.onOpenTransactions,
   });
 
@@ -263,6 +276,7 @@ class _StatisticsAsyncBody extends ConsumerWidget {
   final MoneyStatisticsFilterState filter;
   final MoneyStatisticsDateRange range;
   final MoneyStatisticsGroupBy groupBy;
+  final String periodLabel;
   final void Function(
     MoneyTransactionQuery query,
     String title,
@@ -370,6 +384,24 @@ class _StatisticsAsyncBody extends ConsumerWidget {
             <MoneyNetWorthTrendPoint>[],
           );
 
+    // 对比卡要看「上期的分类结构」，光靠 summary.previousPeriod 不够——
+    // 它只有收入/支出两个总量。这里按同一套筛选再拉一次上期的统计，
+    // 区间算法与仓储内 previousPeriod 的实现保持一致，两个数字才对得上。
+    final previousRequest = _previousStatisticsRequest(
+      readyContext,
+      filter,
+      range,
+    );
+    final previousSummary = previousRequest == null
+        ? null
+        : ref
+              .watch(moneyStatisticsProvider(previousRequest))
+              .maybeWhen(data: (value) => value, orElse: () => null);
+
+    final dashboardLayout =
+        ref.watch(moneyDashboardLayoutProvider).value ??
+        MoneyDashboardLayout.defaults;
+
     return statistics.when(
       loading: () => const AppSkeletonPanel(lines: 4),
       error: (_, _) => AppPlainPanel(
@@ -400,8 +432,11 @@ class _StatisticsAsyncBody extends ConsumerWidget {
           Expanded(
             child: _StatisticsBody(
               summary: summary,
+              previousSummary: previousSummary,
               filter: filter,
               groupBy: groupBy,
+              periodLabel: periodLabel,
+              dashboardLayout: dashboardLayout,
               ledgerId: contextValue?.ledger?.id,
               budgets: ref
                   .watch(currentUserBudgetsProvider)
@@ -489,6 +524,41 @@ class _StatisticsAsyncBody extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// 构造「上一个周期」的统计请求。
+///
+/// 区间算法刻意与仓储里 `previousPeriod` 的实现一致：整月跨度按月回退，
+/// 其余按天数回退，结束点就是本期起点。否则对比卡上的「上期」和收支总览
+/// 里那两个「较前期」chip 会给出两个不同的数。
+MoneyStatisticsRequest? _previousStatisticsRequest(
+  MoneyStatisticsContext? context,
+  MoneyStatisticsFilterState filter,
+  MoneyStatisticsDateRange range,
+) {
+  if (context == null || !context.isReady) {
+    return null;
+  }
+  final start = range.start;
+  final end = range.endExclusive;
+  final monthSpan = (end.year - start.year) * 12 + (end.month - start.month);
+  final previousStart = monthSpan > 0
+      ? DateTime(start.year, start.month - monthSpan, start.day)
+      : start.subtract(end.difference(start));
+
+  return MoneyStatisticsRequest(
+    userId: context.userId!,
+    query: MoneyStatisticsQuery(
+      dateStart: previousStart,
+      dateEndExclusive: start,
+      groupBy: range.groupBy,
+      ledgerId: context.ledger!.id,
+      accountId: filter.accountId,
+      accountType: filter.accountType,
+      paymentMethod: filter.paymentMethod,
+      typeFocus: filter.typeFocus,
+    ),
+  );
 }
 
 class _StatisticsActiveFilterStrip extends StatelessWidget {
@@ -822,8 +892,11 @@ class _StatisticsFilterStrip extends StatelessWidget {
 class _StatisticsBody extends StatelessWidget {
   const _StatisticsBody({
     required this.summary,
+    required this.previousSummary,
     required this.filter,
     required this.groupBy,
+    required this.periodLabel,
+    required this.dashboardLayout,
     required this.ledgerId,
     required this.budgets,
     required this.spendingAnalysis,
@@ -844,8 +917,13 @@ class _StatisticsBody extends StatelessWidget {
   });
 
   final MoneyStatisticsSummary summary;
+
+  /// 上一个周期的统计，用于对比卡；还在加载时为 null。
+  final MoneyStatisticsSummary? previousSummary;
   final MoneyStatisticsFilterState filter;
   final MoneyStatisticsGroupBy groupBy;
+  final String periodLabel;
+  final MoneyDashboardLayout dashboardLayout;
   final String? ledgerId;
   final List<MoneyBudgetEntity> budgets;
   final MoneySpendingAnalysis spendingAnalysis;
@@ -887,89 +965,103 @@ class _StatisticsBody extends StatelessWidget {
         .toList();
   }
 
-  static const int _pageCount = 5;
-
   @override
   Widget build(BuildContext context) {
-    return _StatisticsPager(
-      pageCount: _pageCount,
-      onRefresh: onRefresh,
-      pageBuilder: (context, index) => _buildPageContent(context, index),
-    );
-  }
-
-  Widget _buildPageContent(BuildContext context, int index) {
-    return switch (index) {
-      0 => _overviewPage(context),
-      1 => _spendingPage(context),
-      2 => _channelsPage(context),
-      3 => _budgetPage(context),
-      _ => _accountsPage(context),
-    };
-  }
-
-  Widget _overviewPage(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _StatisticsTotals(summary: summary),
-        const SizedBox(height: 12),
-        AppContentPanel(
-          title: '收支趋势',
-          subtitle: _trendSubtitle,
-          child: MoneyTrendChart(
-            points: summary.trend,
-            currencyCode: summary.currencyCode,
-            typeFocus: filter.typeFocus,
-            groupBy: groupBy,
+    final pages = dashboardLayout.pages;
+    if (pages.isEmpty) {
+      return AppPlainPanel(
+        child: AppEmptyState(
+          icon: Icons.dashboard_customize_rounded,
+          title: '看板里没有显示任何卡片',
+          message: '打开右上角的「自定义看板」，把想看的卡片显示出来。',
+          action: OutlinedButton(
+            onPressed: () => showMoneyDashboardEditorSheet(context),
+            child: const Text('自定义看板'),
           ),
         ),
-        const SizedBox(height: 12),
-        MoneySpendingAnomalyCard(
-          analysis: spendingAnalysis,
-          minimumAmountMinor: filter.anomalyMinAmountMinor,
-          minimumGrowthPercent: filter.anomalyMinGrowthPercent,
-          onThresholdChanged: onAnomalyThresholdChanged,
-        ),
-        const SizedBox(height: 12),
-      ],
+      );
+    }
+
+    return _StatisticsPager(
+      labels: pages.map((page) => page.group).toList(growable: false),
+      pageCount: pages.length,
+      onRefresh: onRefresh,
+      pageBuilder: (context, index) {
+        final page = pages[index];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final card in page.cards) ...[
+              _buildCard(context, card),
+              const SizedBox(height: 12),
+            ],
+          ],
+        );
+      },
     );
   }
 
-  Widget _spendingPage(BuildContext context) {
+  /// 一张卡对应一个 widget。
+  ///
+  /// 之前卡是硬编码在 5 个固定分页方法里的，加一张卡要同时改分页数量、
+  /// 分支、标签文字三处；现在只在这里加一个 case。
+  Widget _buildCard(BuildContext context, MoneyDashboardCard card) {
     final theme = Theme.of(context);
     final showIncomeCategories =
         filter.typeFocus == MoneyStatisticsTypeFocus.income;
-    final categoryTitle = showIncomeCategories ? '收入分类' : '支出分类';
-    final categorySubtitle = showIncomeCategories ? '按分类汇总收入占比' : '按分类汇总支出占比';
-    final categorySlices = showIncomeCategories
-        ? summary.incomeCategories
-        : summary.expenseCategories;
-    final categoryColor = showIncomeCategories
-        ? theme.moneyColors.income
-        : theme.moneyColors.expense;
-    final subCategoryTitle = showIncomeCategories ? '收入二级分类' : '支出二级分类';
-    final subCategorySubtitle = showIncomeCategories
-        ? '更具体地看收入来源'
-        : '更具体地看支出流向';
-    final subCategorySlices = showIncomeCategories
-        ? summary.incomeSubCategories
-        : summary.expenseSubCategories;
-    final subCategoryEmptyTitle = showIncomeCategories
-        ? '暂无收入二级分类数据'
-        : '暂无支出二级分类数据';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppContentPanel(
-          title: categoryTitle,
-          subtitle: categorySubtitle,
+    return switch (card) {
+      MoneyDashboardCard.totals => _StatisticsTotals(summary: summary),
+      MoneyDashboardCard.trend => AppContentPanel(
+        title: '收支趋势',
+        subtitle: _trendSubtitle,
+        child: MoneyTrendChart(
+          points: summary.trend,
+          currencyCode: summary.currencyCode,
+          typeFocus: filter.typeFocus,
+          groupBy: groupBy,
+        ),
+      ),
+      MoneyDashboardCard.comparison => MoneyComparisonCard(
+        summary: summary,
+        previousSummary: previousSummary,
+        typeFocus: filter.typeFocus,
+        periodLabel: periodLabel,
+        onCategoryTap: onOpenTransactions == null
+            ? null
+            : (categoryId, categoryName) => _openTransactions(
+                query: MoneyTransactionQuery(
+                  ledgerId: ledgerId,
+                  type: _categoryTypeForFocus(),
+                  categoryId: categoryId,
+                ),
+                title: showIncomeCategories ? '收入分类流水' : '支出分类流水',
+                subtitle: categoryName,
+                contextLabel: null,
+              ),
+      ),
+      MoneyDashboardCard.anomaly => MoneySpendingAnomalyCard(
+        analysis: spendingAnalysis,
+        minimumAmountMinor: filter.anomalyMinAmountMinor,
+        minimumGrowthPercent: filter.anomalyMinGrowthPercent,
+        onThresholdChanged: onAnomalyThresholdChanged,
+      ),
+      MoneyDashboardCard.category => () {
+        final title = showIncomeCategories ? '收入分类' : '支出分类';
+        final subtitle = showIncomeCategories ? '按分类汇总收入占比' : '按分类汇总支出占比';
+        final slices = showIncomeCategories
+            ? summary.incomeCategories
+            : summary.expenseCategories;
+        return AppContentPanel(
+          title: title,
+          subtitle: subtitle,
           child: MoneyCategoryShareChart(
-            slices: categorySlices,
+            slices: slices,
             currencyCode: summary.currencyCode,
             emptyTitle: showIncomeCategories ? '暂无收入分类数据' : '暂无支出分类数据',
             centerLabel: showIncomeCategories ? '总收入' : '总支出',
-            baseColor: categoryColor,
+            baseColor: showIncomeCategories
+                ? theme.moneyColors.income
+                : theme.moneyColors.expense,
             onSliceTap: onOpenTransactions == null
                 ? null
                 : (slice) => _openTransactions(
@@ -978,20 +1070,26 @@ class _StatisticsBody extends StatelessWidget {
                       type: _categoryTypeForFocus(),
                       categoryId: slice.categoryId,
                     ),
-                    title: categoryTitle,
+                    title: title,
                     subtitle: slice.categoryName,
                     contextLabel: null,
                   ),
           ),
-        ),
-        const SizedBox(height: 12),
-        AppContentPanel(
-          title: subCategoryTitle,
-          subtitle: subCategorySubtitle,
+        );
+      }(),
+      MoneyDashboardCard.subCategory => () {
+        final title = showIncomeCategories ? '收入二级分类' : '支出二级分类';
+        final subtitle = showIncomeCategories ? '更具体地看收入来源' : '更具体地看支出流向';
+        final slices = showIncomeCategories
+            ? summary.incomeSubCategories
+            : summary.expenseSubCategories;
+        return AppContentPanel(
+          title: title,
+          subtitle: subtitle,
           child: MoneyStatisticsRankList(
-            slices: subCategorySlices,
+            slices: slices,
             currencyCode: summary.currencyCode,
-            emptyTitle: subCategoryEmptyTitle,
+            emptyTitle: showIncomeCategories ? '暂无收入二级分类数据' : '暂无支出二级分类数据',
             onSliceTap: onOpenTransactions == null
                 ? null
                 : (slice) => _openTransactions(
@@ -1000,182 +1098,190 @@ class _StatisticsBody extends StatelessWidget {
                       type: _categoryTypeForFocus(),
                       subCategoryId: slice.id,
                     ),
-                    title: subCategoryTitle,
+                    title: title,
                     subtitle: slice.name,
                     contextLabel: null,
                   ),
           ),
-        ),
-        const SizedBox(height: 12),
-        AppContentPanel(
-          title: '商家排行',
-          subtitle: '按商家汇总支出金额',
-          child: MoneyStatisticsRankList(
-            slices: summary.merchants,
-            currencyCode: summary.currencyCode,
-            emptyTitle: '暂无商家数据',
-            onSliceTap: onOpenTransactions == null
-                ? null
-                : (slice) => _openTransactions(
-                    query: MoneyTransactionQuery(
-                      ledgerId: ledgerId,
-                      type: MoneyTransactionType.expense,
-                      merchant: slice.name,
-                    ),
-                    title: '商家流水',
-                    subtitle: slice.name,
-                    contextLabel: null,
+        );
+      }(),
+      MoneyDashboardCard.merchant => AppContentPanel(
+        title: '商家排行',
+        subtitle: '按商家汇总支出金额',
+        child: MoneyStatisticsRankList(
+          slices: summary.merchants,
+          currencyCode: summary.currencyCode,
+          emptyTitle: '暂无商家数据',
+          onSliceTap: onOpenTransactions == null
+              ? null
+              : (slice) => _openTransactions(
+                  query: MoneyTransactionQuery(
+                    ledgerId: ledgerId,
+                    type: MoneyTransactionType.expense,
+                    merchant: slice.name,
                   ),
-          ),
+                  title: '商家流水',
+                  subtitle: slice.name,
+                  contextLabel: null,
+                ),
         ),
-        const SizedBox(height: 12),
-        AppContentPanel(
-          title: '标签排行',
-          subtitle: '按标签汇总支出金额',
-          child: MoneyStatisticsRankList(
-            slices: _toRankSlices(insights.tagSlices),
-            currencyCode: insights.currencyCode,
-            emptyTitle: '暂无标签数据',
-          ),
-        ),
-        const SizedBox(height: 12),
-      ],
-    );
-  }
-
-  Widget _channelsPage(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppContentPanel(
-          title: '支付渠道',
-          subtitle: '按支付方式汇总金额、占比和笔数',
-          child: MoneyPaymentMethodChart(
-            slices: summary.paymentMethods,
-            currencyCode: summary.currencyCode,
-            onSliceTap: onOpenTransactions == null
-                ? null
-                : (slice) => _openTransactions(
-                    query: MoneyTransactionQuery(
-                      ledgerId: ledgerId,
-                      type: _typeForFocus(),
-                      paymentMethod: slice.paymentMethod,
-                      customPaymentMethodName: slice.customPaymentMethodName,
-                    ),
-                    title: '渠道流水',
-                    subtitle: slice.label,
-                    contextLabel: null,
+      ),
+      MoneyDashboardCard.tag => AppContentPanel(
+        title: '标签排行',
+        subtitle: '按标签汇总支出金额',
+        child: MoneyStatisticsRankList(
+          slices: _toRankSlices(insights.tagSlices),
+          currencyCode: insights.currencyCode,
+          emptyTitle: '暂无标签数据',
+          onSliceTap: onOpenTransactions == null
+              ? null
+              : (slice) => _openTransactions(
+                  query: MoneyTransactionQuery(
+                    ledgerId: ledgerId,
+                    tags: <String>[slice.id],
                   ),
-          ),
+                  title: '标签流水',
+                  subtitle: slice.name,
+                  contextLabel: null,
+                ),
         ),
-        const SizedBox(height: 12),
-        AppContentPanel(
-          title: '账户渠道',
-          subtitle: '按账户和支付方式交叉汇总金额',
-          child: MoneyAccountPaymentMethodList(
-            slices: summary.accountPaymentMethods,
-            currencyCode: summary.currencyCode,
-            onSliceTap: onOpenTransactions == null
-                ? null
-                : (slice) => _openTransactions(
-                    query: MoneyTransactionQuery(
-                      ledgerId: ledgerId,
-                      type: _typeForFocus(),
-                      accountId: slice.accountId,
-                      paymentMethod: slice.paymentMethod,
-                    ),
-                    title: '账户渠道流水',
-                    subtitle:
-                        '${slice.accountName} · ${slice.paymentMethodLabel}',
-                    contextLabel: null,
+      ),
+      MoneyDashboardCard.paymentMethod => AppContentPanel(
+        title: '支付渠道',
+        subtitle: '按支付方式汇总金额、占比和笔数',
+        child: MoneyPaymentMethodChart(
+          slices: summary.paymentMethods,
+          currencyCode: summary.currencyCode,
+          onSliceTap: onOpenTransactions == null
+              ? null
+              : (slice) => _openTransactions(
+                  query: MoneyTransactionQuery(
+                    ledgerId: ledgerId,
+                    type: _typeForFocus(),
+                    paymentMethod: slice.paymentMethod,
+                    customPaymentMethodName: slice.customPaymentMethodName,
                   ),
-          ),
+                  title: '渠道流水',
+                  subtitle: slice.label,
+                  contextLabel: null,
+                ),
         ),
-        const SizedBox(height: 12),
-        MoneyTimeWeekdayPatternCard(insights: insights),
-        const SizedBox(height: 12),
-        MoneySourceBreakdownCard(insights: insights),
-        const SizedBox(height: 12),
-      ],
-    );
-  }
-
-  Widget _budgetPage(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        MoneyBudgetExecutionCard(budgets: budgets),
-        const SizedBox(height: 12),
-        MoneyBudgetHistoryTrendCard(points: budgetHistoryTrend),
-        const SizedBox(height: 12),
-      ],
-    );
-  }
-
-  Widget _accountsPage(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppContentPanel(
-          title: '账户分布',
-          subtitle: '当前活跃账户资产与负债',
-          child: MoneyAccountDistributionChart(
-            slices: summary.accounts,
-            onAccountTap: onOpenTransactions == null
-                ? null
-                : (slice) => _openTransactions(
-                    query: MoneyTransactionQuery(
-                      ledgerId: ledgerId,
-                      accountId: slice.accountId,
-                    ),
-                    title: '账户流水',
-                    subtitle: slice.accountName,
-                    contextLabel: null,
+      ),
+      MoneyDashboardCard.accountPaymentMethod => AppContentPanel(
+        title: '账户渠道',
+        subtitle: '按账户和支付方式交叉汇总金额',
+        child: MoneyAccountPaymentMethodList(
+          slices: summary.accountPaymentMethods,
+          currencyCode: summary.currencyCode,
+          onSliceTap: onOpenTransactions == null
+              ? null
+              : (slice) => _openTransactions(
+                  query: MoneyTransactionQuery(
+                    ledgerId: ledgerId,
+                    type: _typeForFocus(),
+                    accountId: slice.accountId,
+                    paymentMethod: slice.paymentMethod,
                   ),
-          ),
+                  title: '账户渠道流水',
+                  subtitle:
+                      '${slice.accountName} · ${slice.paymentMethodLabel}',
+                  contextLabel: null,
+                ),
         ),
-        const SizedBox(height: 12),
-        AppContentPanel(
-          title: '账户类型',
-          subtitle: '按账户类型汇总资产与负债',
-          child: MoneyAccountTypeDistributionChart(
-            slices: summary.accountTypes,
-          ),
+      ),
+      MoneyDashboardCard.weekdayPattern => MoneyTimeWeekdayPatternCard(
+        insights: insights,
+      ),
+      MoneyDashboardCard.sourceBreakdown => MoneySourceBreakdownCard(
+        insights: insights,
+      ),
+      MoneyDashboardCard.budgetExecution => MoneyBudgetExecutionCard(
+        budgets: budgets,
+      ),
+      MoneyDashboardCard.budgetHistory => MoneyBudgetHistoryTrendCard(
+        points: budgetHistoryTrend,
+      ),
+      MoneyDashboardCard.accountDistribution => AppContentPanel(
+        title: '账户分布',
+        subtitle: '当前活跃账户资产与负债',
+        child: MoneyAccountDistributionChart(
+          slices: summary.accounts,
+          onAccountTap: onOpenTransactions == null
+              ? null
+              : (slice) => _openTransactions(
+                  query: MoneyTransactionQuery(
+                    ledgerId: ledgerId,
+                    accountId: slice.accountId,
+                  ),
+                  title: '账户流水',
+                  subtitle: slice.accountName,
+                  contextLabel: null,
+                ),
         ),
-        const SizedBox(height: 12),
-        MoneyCreditUtilizationCard(insights: insights),
-        const SizedBox(height: 12),
-        MoneyNetWorthTrendCard(points: netWorthTrend),
-        const SizedBox(height: 12),
-        MoneyUpcomingBillsCard(
-          bills: billReminders,
-          accountsById: accountsById,
+      ),
+      MoneyDashboardCard.accountType => AppContentPanel(
+        title: '账户类型',
+        subtitle: '按账户类型汇总资产与负债',
+        child: MoneyAccountTypeDistributionChart(
+          slices: summary.accountTypes,
+          onSliceTap: onOpenTransactions == null
+              ? null
+              : (slice) => _openTransactions(
+                  query: MoneyTransactionQuery(
+                    ledgerId: ledgerId,
+                    accountType: slice.accountType,
+                  ),
+                  title: '账户类型流水',
+                  subtitle: slice.label,
+                  contextLabel: null,
+                ),
         ),
-        const SizedBox(height: 12),
-        MoneyUpcomingCashFlowCard(summary: upcomingCashFlow),
-        if (summary.familyMembers.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          AppContentPanel(
-            title: '成员参与',
-            subtitle: '按分摊记录汇总已付、参与和净额',
-            child: MoneyMemberParticipationList(
-              slices: summary.familyMembers,
-              currencyCode: summary.currencyCode,
-            ),
-          ),
-        ],
-        const SizedBox(height: 12),
-        MoneyReportCard(
-          ledgerId: ledgerId,
-          latestReport: latestReport,
-          isGenerating: isGenerating,
-          period: reportPeriod,
-          onPeriodChanged: onPeriodChanged,
-          onGenerate: onGenerateReport,
-        ),
-        const SizedBox(height: 12),
-      ],
-    );
+      ),
+      MoneyDashboardCard.creditUtilization => MoneyCreditUtilizationCard(
+        insights: insights,
+        onAccountTap: onOpenTransactions == null
+            ? null
+            : (accountId, accountName) => _openTransactions(
+                query: MoneyTransactionQuery(
+                  ledgerId: ledgerId,
+                  accountId: accountId,
+                ),
+                title: '账户流水',
+                subtitle: accountName,
+                contextLabel: null,
+              ),
+      ),
+      MoneyDashboardCard.netWorth => MoneyNetWorthTrendCard(
+        points: netWorthTrend,
+      ),
+      MoneyDashboardCard.upcomingBills => MoneyUpcomingBillsCard(
+        bills: billReminders,
+        accountsById: accountsById,
+      ),
+      MoneyDashboardCard.upcomingCashflow => MoneyUpcomingCashFlowCard(
+        summary: upcomingCashFlow,
+      ),
+      // 家庭账本才有成员分摊数据，个人账本下这张卡永远为空。
+      MoneyDashboardCard.memberParticipation =>
+        summary.familyMembers.isEmpty
+            ? const SizedBox.shrink()
+            : AppContentPanel(
+                title: '成员参与',
+                subtitle: '按分摊记录汇总已付、参与和净额',
+                child: MoneyMemberParticipationList(
+                  slices: summary.familyMembers,
+                  currencyCode: summary.currencyCode,
+                ),
+              ),
+      MoneyDashboardCard.report => MoneyReportCard(
+        ledgerId: ledgerId,
+        latestReport: latestReport,
+        isGenerating: isGenerating,
+        period: reportPeriod,
+        onPeriodChanged: onPeriodChanged,
+        onGenerate: onGenerateReport,
+      ),
+    };
   }
 
   String get _trendSubtitle {
@@ -1217,11 +1323,13 @@ class _StatisticsBody extends StatelessWidget {
 class _StatisticsPager extends StatefulWidget {
   const _StatisticsPager({
     required this.pageCount,
+    required this.labels,
     required this.pageBuilder,
     required this.onRefresh,
   });
 
   final int pageCount;
+  final List<String> labels;
   final Widget Function(BuildContext context, int index) pageBuilder;
   final Future<void> Function() onRefresh;
 
@@ -1232,6 +1340,21 @@ class _StatisticsPager extends StatefulWidget {
 class _StatisticsPagerState extends State<_StatisticsPager> {
   final PageController _controller = PageController();
   int _currentPage = 0;
+
+  @override
+  void didUpdateWidget(covariant _StatisticsPager oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 用户自定义看板后分页数会变（整组隐藏 / 跨组拖动改变分组顺序）。
+    // 不夹一次的话 PageView 会停在已经不存在的下标上，直接越界报错。
+    if (widget.pageCount > 0 && _currentPage >= widget.pageCount) {
+      _currentPage = widget.pageCount - 1;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_controller.hasClients) {
+          _controller.jumpToPage(_currentPage);
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -1258,6 +1381,7 @@ class _StatisticsPagerState extends State<_StatisticsPager> {
       children: [
         _StatisticsPageTabs(
           count: widget.pageCount,
+          labels: widget.labels,
           current: _currentPage,
           onTap: _goToPage,
         ),
@@ -1326,16 +1450,15 @@ class _KeepAliveStatisticsPageState extends State<_KeepAliveStatisticsPage>
 class _StatisticsPageTabs extends StatelessWidget {
   const _StatisticsPageTabs({
     required this.count,
+    required this.labels,
     required this.current,
     required this.onTap,
   });
 
   final int count;
+  final List<String> labels;
   final int current;
   final ValueChanged<int> onTap;
-
-  /// 与 [_StatisticsBody._buildPageContent] 的分支顺序一一对应。
-  static const _labels = <String>['概览', '消费', '渠道', '预算', '账户'];
 
   @override
   Widget build(BuildContext context) {
@@ -1372,7 +1495,7 @@ class _StatisticsPageTabs extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  index < _labels.length ? _labels[index] : '${index + 1}',
+                  index < labels.length ? labels[index] : '${index + 1}',
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: selected
                         ? colorScheme.onPrimary

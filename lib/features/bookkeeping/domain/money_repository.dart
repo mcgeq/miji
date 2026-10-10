@@ -291,6 +291,17 @@ abstract class MoneyRepository {
     MoneyAccountUpdate update,
   );
 
+  /// 把账户余额校正到 [targetBalanceMinor]（账面余额对不上实际余额时用）。
+  ///
+  /// 差额走的是 `initialBalanceMinor`——它不会产生任何流水，也就不会污染
+  /// 收支统计和分类排行。只支持资产类账户：信用账户的「余额」是可用额度，
+  /// 应该走账单对账（补记差额流水或还款），改初始余额等于改信用额度。
+  Future<MoneyAccountEntity> adjustAccountBalance(
+    String userId,
+    String accountId,
+    int targetBalanceMinor,
+  );
+
   Future<void> setAccountActive(String userId, String accountId, bool isActive);
 
   Future<void> deleteAccount(String userId, String accountId);
@@ -333,10 +344,35 @@ abstract class MoneyRepository {
 
   Future<void> deleteTransaction(String userId, String transactionId);
 
+  /// 批量修改流水的分类 / 账户 / 标签，返回实际写入的条数。
+  ///
+  /// 与单条 `updateTransaction` 共用同一套校验与余额处理；分期入账流水、
+  /// 转账流水（一对两行，改一行就会对不上）、已作废流水直接跳过，
+  /// 而不是让整批失败。副作用（预算快照 / 信用卡提醒 / 用量统计）只在最后
+  /// 各跑一次——每条都刷一遍会把「改 20 笔」拖成 20 次全量重算。
+  Future<int> updateTransactions(
+    String userId,
+    List<String> transactionIds,
+    MoneyTransactionBatchUpdate patch,
+  );
+
+  /// 批量删除流水，返回实际删除的条数（转账一对算 1 条）。
+  Future<int> deleteTransactions(String userId, List<String> transactionIds);
+
   /// 变更流水状态：待处理 → 已完成（入账）/ 已作废；已完成 → 已作废（回滚余额）。
   Future<MoneyTransactionEntity> setTransactionStatus(
     String userId,
     String transactionId,
+    MoneyTransactionStatus status,
+  );
+
+  /// 批量变更流水状态，返回实际写入的条数。
+  ///
+  /// 与单条版本共用同一套校验与余额处理；不合法的流转（已作废 → 已完成、
+  /// 转账流水、分期入账流水）直接跳过而不是让整批失败。
+  Future<int> setTransactionsStatus(
+    String userId,
+    List<String> transactionIds,
     MoneyTransactionStatus status,
   );
 

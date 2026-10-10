@@ -16,6 +16,7 @@ import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 import 'package:miji/shared/widgets/app_amount_field.dart';
 
+import 'package:miji/features/bookkeeping/application/money_amount_expression.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
@@ -30,6 +31,7 @@ import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_leaf_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/amount_calculator_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/suggestion_autocomplete_field.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_split_dialog.dart';
 
@@ -58,6 +60,7 @@ class TransactionFormDialog extends ConsumerStatefulWidget {
     this.initialDescription,
     this.initialNotes,
     this.initialTransactionAt,
+    this.template,
   });
 
   final MoneyTransactionType type;
@@ -66,6 +69,12 @@ class TransactionFormDialog extends ConsumerStatefulWidget {
   final String? categoryId;
   final String? subCategoryId;
   final bool showCategorySelector;
+
+  /// 「再来一笔」的样本流水：整笔复制成一份新草稿（不含 id、状态与分摊）。
+  ///
+  /// 与 [transaction] 互斥——传入 [transaction] 表示编辑已有流水，此时忽略本字段。
+  /// 只填字段不提交：用户仍然要过一遍确认，避免误把历史流水复制成一堆垃圾。
+  final MoneyTransactionEntity? template;
 
   /// 新建时的预填值（从提醒、模板等外部入口带入），编辑已有流水时一律忽略。
   ///
@@ -90,6 +99,7 @@ class TransactionFormDialog extends ConsumerStatefulWidget {
 }
 
 class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
+  final _descriptionController = TextEditingController();
   final _merchantController = TextEditingController();
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
@@ -109,6 +119,9 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
   String? _errorText;
   bool _defaultsLoaded = false;
   bool _advancedExpanded = false;
+
+  /// 支付方式已由外部确定（模板复制），别再被「记住上次选择」覆盖。
+  bool _paymentMethodPinned = false;
 
   bool _submitting = false;
 
@@ -145,6 +158,10 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     if (transaction == null) {
       _categoryId = widget.categoryId;
       _subCategoryId = widget.subCategoryId;
+      final template = widget.template;
+      if (template != null) {
+        _applyTemplate(template);
+      }
       final initialAmountMinor = widget.initialAmountMinor;
       if (initialAmountMinor != null && initialAmountMinor > 0) {
         _amountController.text = (initialAmountMinor / 100).toStringAsFixed(2);
@@ -162,14 +179,24 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         _notesController.text = initialNotes;
         _advancedExpanded = true;
       }
+      // 外部入口（如提醒「去记账」）带进来的标题要回填到名称框，
+      // 否则用户看到空框、实际存的又是别的值。
+      final initialDescription = widget.initialDescription?.trim();
+      if (initialDescription != null && initialDescription.isNotEmpty) {
+        _descriptionController.text = initialDescription;
+      }
       return;
     }
 
     _amountController.text = (transaction.amountMinor / 100).toStringAsFixed(2);
+    _descriptionController.text = _userFacingDescription(
+      transaction.description,
+    );
     _merchantController.text = transaction.merchant ?? '';
     _locationController.text = transaction.location ?? '';
     _notesController.text = transaction.notes ?? '';
     _advancedExpanded =
+        (_descriptionController.text.trim().isNotEmpty) ||
         (transaction.merchant?.trim().isNotEmpty ?? false) ||
         (transaction.location?.trim().isNotEmpty ?? false) ||
         (transaction.notes?.trim().isNotEmpty ?? false);
@@ -187,6 +214,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
   @override
   void dispose() {
     _amountController.dispose();
+    _descriptionController.dispose();
     _merchantController.dispose();
     _locationController.dispose();
     _notesController.dispose();
@@ -200,6 +228,11 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final ledgers = ref.watch(currentUserMoneyLedgersProvider);
+    final familyLedgers = ledgers.maybeWhen(
+      data: (items) =>
+          items.where((ledger) => ledger.isFamily).toList(growable: false),
+      orElse: () => const <MoneyLedgerEntity>[],
+    );
     final selectedLedger = _isEditing
         ? null
         : ledgers.maybeWhen(
@@ -316,41 +349,36 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       body: AppFormColumn(
         gap: 12,
         children: [
-          if (!_isEditing)
-            ledgers.when(
-              data: (items) => FormDropdown<String?>(
-                initialSelection: selectedLedger?.id,
-                label: '家庭账本',
-                leadingIcon: const Icon(Icons.menu_book_rounded),
-                width: double.infinity,
-                enableFilter: true,
-                entries: [
-                  const DropdownMenuEntry<String?>(
-                    value: null,
-                    label: '不加入家庭账本',
+          // 没有家庭账本时整块隐藏：个人账本用户不该为了「记一笔午饭」
+          // 先读一行与自己无关的下拉，再往下找金额框。
+          if (!_isEditing && familyLedgers.isNotEmpty)
+            FormDropdown<String?>(
+              initialSelection: selectedLedger?.id,
+              label: '家庭账本',
+              leadingIcon: const Icon(Icons.menu_book_rounded),
+              width: double.infinity,
+              enableFilter: true,
+              entries: [
+                const DropdownMenuEntry<String?>(value: null, label: '不加入家庭账本'),
+                for (final ledger in familyLedgers)
+                  DropdownMenuEntry<String?>(
+                    value: ledger.id,
+                    label: ledger.name,
+                    labelWidget: _TransactionLedgerMenuItem(ledger: ledger),
                   ),
-                  for (final ledger in items.where((ledger) => ledger.isFamily))
-                    DropdownMenuEntry<String?>(
-                      value: ledger.id,
-                      label: ledger.name,
-                      labelWidget: _TransactionLedgerMenuItem(ledger: ledger),
-                    ),
-                ],
-                onSelected: (value) {
-                  if (value == _ledgerId) {
-                    return;
-                  }
-                  setState(() {
-                    _ledgerId = value;
-                    // 分摊配置绑定的是具体账本下的成员，换账本后必须重新设置，
-                    // 否则会带着旧账本的成员 id 提交，repository 会直接拒绝。
-                    _splitConfig = null;
-                    _splitConfigAmountMinor = null;
-                  });
-                },
-              ),
-              loading: () => const AppFormHint(text: '家庭账本加载中...'),
-              error: (error, stackTrace) => const Text('家庭账本读取失败'),
+              ],
+              onSelected: (value) {
+                if (value == _ledgerId) {
+                  return;
+                }
+                setState(() {
+                  _ledgerId = value;
+                  // 分摊配置绑定的是具体账本下的成员，换账本后必须重新设置，
+                  // 否则会带着旧账本的成员 id 提交，repository 会直接拒绝。
+                  _splitConfig = null;
+                  _splitConfigAmountMinor = null;
+                });
+              },
             ),
           AppAmountField(
             controller: _amountController,
@@ -358,11 +386,20 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
             currencyCode: defaultMoneyCurrencyCode,
             autofocus: !_isEditing,
             prominent: true,
-            onChanged: _isEditing
-                ? null
-                : (_) {
-                    setState(() {});
-                  },
+            previewText: _amountPreviewText,
+            onCalculatorTap: _openAmountCalculator,
+            // 编辑态也要跟随重建：金额框里的算式预览、分期入口、分摊失效判断
+            // 都依赖当前金额文本。
+            onChanged: (_) {
+              setState(() {});
+            },
+          ),
+          AppTextField(
+            controller: _descriptionController,
+            labelText: '名称',
+            hintText: '可选，如：和老王吃饭、618 囤货',
+            prefixIcon: const Icon(Icons.title_rounded),
+            textInputAction: TextInputAction.next,
           ),
           if (!_isEditing && widget.type != MoneyTransactionType.transfer) ...[
             AppSlidingSegmentedControl<MoneyTransactionStatus>(
@@ -608,14 +645,40 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         );
   }
 
+  /// 「再来一笔」：把整笔历史流水铺进表单（id、状态、分摊不复制）。
+  ///
+  /// 账本归属不复制：流水与账本是多对多，表单里只有一个家庭账本下拉，
+  /// 拿不到完整的归属列表，强行带上会让用户以为已经选好了。
+  void _applyTemplate(MoneyTransactionEntity template) {
+    _amountController.text = (template.amountMinor / 100).toStringAsFixed(2);
+    _descriptionController.text = _userFacingDescription(template.description);
+    _merchantController.text = template.merchant ?? '';
+    _locationController.text = template.location ?? '';
+    _notesController.text = template.notes ?? '';
+    _tagController.text = template.tags.isEmpty ? '' : template.tags.first;
+    _accountId = template.accountId;
+    _categoryId = template.categoryId;
+    _subCategoryId = template.subCategoryId;
+    _paymentMethod = template.paymentMethod;
+    _paymentMethodPinned = true;
+    _customPaymentNameCtrl.text = template.customPaymentMethodName ?? '';
+    _advancedExpanded =
+        _descriptionController.text.trim().isNotEmpty ||
+        (template.merchant?.trim().isNotEmpty ?? false) ||
+        (template.location?.trim().isNotEmpty ?? false) ||
+        (template.notes?.trim().isNotEmpty ?? false);
+  }
+
   /// 提交成功后重置表单，用于「保存并继续」。
+  ///
+  /// 只清「这一笔特有」的字段（金额、名称、备注），
+  /// 商家、标签、分类、账户这些「连着记」时要沿用的上下文保留不动——
+  /// 之前全清导致在同一家店连记多笔反而更慢。
   void _resetAfterSubmit() {
     setState(() {
       _amountController.clear();
-      _merchantController.clear();
-      _locationController.clear();
+      _descriptionController.clear();
       _notesController.clear();
-      _tagController.clear();
       _splitConfig = null;
       _splitConfigAmountMinor = null;
       _errorText = null;
@@ -745,7 +808,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           _subCategoryId ??= widget.subCategoryId;
         }
         final paymentMethod = defaults.paymentMethod;
-        if (paymentMethod != null) {
+        if (paymentMethod != null && !_paymentMethodPinned) {
           _paymentMethod = paymentMethod;
         }
       });
@@ -930,6 +993,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               transactionAt: _transactionAt,
               amountMinor: amountMinor,
               currencyCode: transaction.currencyCode,
+              description: _typedDescription,
               notes: notes,
               merchant: merchant,
               location: location,
@@ -1007,12 +1071,59 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     return null;
   }
 
+  /// 历史数据的 description 恒为类型名（那时还没有名称输入框），
+  /// 回填到输入框里会显示成用户从没写过的「支出」。
+  static const _genericDescriptions = <String>{'支出', '收入', '转账', '转入', '转出'};
+
+  static String _userFacingDescription(String raw) {
+    final trimmed = raw.trim();
+    return _genericDescriptions.contains(trimmed) ? '' : trimmed;
+  }
+
   String get _resolvedDescription {
+    final typed = _descriptionController.text.trim();
+    if (typed.isNotEmpty) {
+      return typed;
+    }
     final initialDescription = widget.initialDescription?.trim();
     if (initialDescription != null && initialDescription.isNotEmpty) {
       return initialDescription;
     }
     return widget.type.label;
+  }
+
+  /// 名称框里用户自己填的内容；空则交给仓储回退到类型名。
+  String? get _typedDescription {
+    final typed = _descriptionController.text.trim();
+    return typed.isEmpty ? null : typed;
+  }
+
+  /// 金额框里是算式时给一行实时结果，避免用户提交前还得自己心算。
+  String? get _amountPreviewText {
+    final text = _amountController.text;
+    if (!MoneyAmountExpression.isExpression(text)) {
+      return null;
+    }
+    final minor = MoneyAmountExpression.tryEvaluateToMinor(text);
+    if (minor == null) {
+      return null;
+    }
+    return '= ${formatMoneyMinor(minor, defaultMoneyCurrencyCode)}';
+  }
+
+  Future<void> _openAmountCalculator() async {
+    final result = await showAmountCalculatorSheet(
+      context,
+      initialText: _amountController.text,
+      currencyCode: defaultMoneyCurrencyCode,
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _amountController.text = result;
+      _errorText = null;
+    });
   }
 
   String? _transactionRuleError({

@@ -150,6 +150,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => BookkeepingPage(
               initialSection: state.uri.queryParameters['section'],
               initialAccountId: state.uri.queryParameters['accountId'],
+              // 通知点击带来的动作（如「今天还没记账」→ 直接打开记一笔）。
+              initialAction: state.uri.queryParameters['action'],
             ),
           ),
           GoRoute(

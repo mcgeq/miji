@@ -85,6 +85,14 @@ class _MoneyReminderCenterSectionState
                 ),
               ),
             ),
+            // 提醒设置：推送时间与开关在「记账偏好」里，这里给个直达入口，
+            // 否则用户想改个提醒时间得先退出记账模块再翻设置。
+            AppIconActionButton(
+              tooltip: '提醒设置',
+              onPressed: _openReminderSettings,
+              icon: Icons.tune_rounded,
+            ),
+            const SizedBox(width: 6),
             // 常驻新增入口。
             //
             // 提醒中心之前只能「完成/延后/忽略」，而唯一能创建账单提醒的
@@ -268,6 +276,10 @@ class _MoneyReminderCenterSectionState
       case MoneyReminderCenterActionType.viewBudget:
         _goToBookkeepingSection('budgets');
     }
+  }
+
+  void _openReminderSettings() {
+    context.push(AppRoutes.settingsBookkeeping);
   }
 
   void _goToBookkeepingSection(String section) {

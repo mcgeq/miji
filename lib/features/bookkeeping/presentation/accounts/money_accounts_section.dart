@@ -29,6 +29,7 @@ import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/account_form_dialog.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/account_balance_adjustment_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/account_presentation_helpers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/credit_card_statement_reconciliation_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/money_account_grouping.dart';
@@ -369,6 +370,12 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
                     onToggleAmountHidden: () =>
                         _toggleAccountAmountHidden(account.id),
                     onEdit: () => _openEditDialog(context, ref, account),
+                    // 信用账户的「余额」是可用额度，改它等于改额度——
+                    // 那条路是账单对账，不是余额校正。
+                    onAdjustBalance:
+                        account.type.isAssetLike && !account.isVirtual
+                        ? () => _adjustAccountBalance(context, ref, account)
+                        : null,
                     onToggleActive: () =>
                         _toggleAccountActive(context, ref, account),
                     onDelete: () => _deleteAccount(context, ref, account),
@@ -597,6 +604,42 @@ class _MoneyAccountsContentState extends ConsumerState<_MoneyAccountsContent> {
           toast,
           context,
           _accountWriteErrorMessage(error, '更新账户失败'),
+        );
+      }
+    }
+  }
+
+  /// 余额校正：账面余额对不上银行实际余额时，直接把账面数对齐过去。
+  ///
+  /// 差额走初始余额而不是补一笔流水：漏记的小额支出逐笔补记不现实，
+  /// 而且补出来的流水会污染分类排行和收支统计。
+  Future<void> _adjustAccountBalance(
+    BuildContext context,
+    WidgetRef ref,
+    MoneyAccountEntity account,
+  ) async {
+    final targetMinor = await showAccountBalanceAdjustmentSheet(
+      context: context,
+      account: account,
+    );
+    if (targetMinor == null || !context.mounted) {
+      return;
+    }
+
+    final toast = FToast()..init(context);
+    try {
+      await ref
+          .read(currentUserMoneyAccountActionsProvider)
+          .adjustAccountBalance(account.id, targetMinor);
+      if (context.mounted) {
+        AppToast.success(toast, context, '余额已校正');
+      }
+    } catch (error) {
+      if (context.mounted) {
+        AppToast.error(
+          toast,
+          context,
+          _accountWriteErrorMessage(error, '余额校正失败'),
         );
       }
     }
@@ -1465,6 +1508,7 @@ class _AccountTile extends ConsumerWidget {
     required this.onToggleActive,
     required this.onDelete,
     required this.onViewTransactions,
+    this.onAdjustBalance,
   });
 
   final MoneyAccountEntity account;
@@ -1472,6 +1516,9 @@ class _AccountTile extends ConsumerWidget {
   final bool isAmountHidden;
   final VoidCallback onToggleAmountHidden;
   final VoidCallback onEdit;
+
+  /// 余额校正；信用 / 虚拟账户没有这个入口，传 null 由菜单隐藏。
+  final VoidCallback? onAdjustBalance;
   final VoidCallback onToggleActive;
   final VoidCallback onDelete;
   final VoidCallback? onViewTransactions;
@@ -1522,6 +1569,7 @@ class _AccountTile extends ConsumerWidget {
           onToggleAmountHidden: onToggleAmountHidden,
           onViewTransactions: onViewTransactions,
           onEdit: onEdit,
+          onAdjustBalance: onAdjustBalance,
           onToggleActive: onToggleActive,
           onDelete: onDelete,
         ),
@@ -2048,6 +2096,7 @@ class _AccountActionsMenu extends StatelessWidget {
     required this.onEdit,
     required this.onToggleActive,
     required this.onDelete,
+    this.onAdjustBalance,
   });
 
   final MoneyAccountEntity account;
@@ -2057,6 +2106,9 @@ class _AccountActionsMenu extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onToggleActive;
   final VoidCallback onDelete;
+
+  /// 余额校正（仅资产类账户）。
+  final VoidCallback? onAdjustBalance;
 
   @override
   Widget build(BuildContext context) {
@@ -2073,6 +2125,8 @@ class _AccountActionsMenu extends StatelessWidget {
             onViewTransactions?.call();
           case _AccountMenuAction.edit:
             onEdit();
+          case _AccountMenuAction.adjustBalance:
+            onAdjustBalance?.call();
           case _AccountMenuAction.toggleActive:
             onToggleActive();
           case _AccountMenuAction.delete:
@@ -2099,6 +2153,11 @@ class _AccountActionsMenu extends StatelessWidget {
           value: _AccountMenuAction.edit,
           child: _menuRow(context, Icons.edit_rounded, '编辑账户'),
         ),
+        if (onAdjustBalance != null)
+          PopupMenuItem(
+            value: _AccountMenuAction.adjustBalance,
+            child: _menuRow(context, Icons.sync_alt_rounded, '余额校正'),
+          ),
         PopupMenuItem(
           value: _AccountMenuAction.toggleActive,
           child: _menuRow(
@@ -2170,6 +2229,7 @@ enum _AccountMenuAction {
   toggleAmount,
   viewTransactions,
   edit,
+  adjustBalance,
   toggleActive,
   delete,
 }

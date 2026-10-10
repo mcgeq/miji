@@ -28,11 +28,13 @@ import 'package:miji/features/bookkeeping/application/money_export_service.dart'
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_summary_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/transaction_bulk_edit_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_card.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_panel.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
@@ -59,6 +61,7 @@ class MoneyTransactionsSection extends ConsumerStatefulWidget {
 class _BudgetAppliedFilterSnapshot {
   const _BudgetAppliedFilterSnapshot({
     required this.type,
+    required this.status,
     required this.accountId,
     required this.categoryId,
     required this.subCategoryId,
@@ -71,6 +74,7 @@ class _BudgetAppliedFilterSnapshot {
   });
 
   final MoneyTransactionType? type;
+  final MoneyTransactionStatus? status;
   final String? accountId;
   final String? categoryId;
   final String? subCategoryId;
@@ -97,8 +101,12 @@ class _MoneyTransactionsSectionState
   bool _hasMore = false;
   bool _isLoadingInitial = true;
   bool _isExporting = false;
+  bool _isConfirmingAll = false;
+  bool _isBulkBusy = false;
   Object? _loadError;
   MoneyTransactionType? _typeFilter;
+  MoneyTransactionStatus? _statusFilter;
+  List<String> _tagFilter = const <String>[];
   String? _budgetIdFilter;
   _BudgetAppliedFilterSnapshot? _budgetAppliedFilterSnapshot;
   String? _accountIdFilter;
@@ -116,6 +124,8 @@ class _MoneyTransactionsSectionState
 
   bool get _hasActiveFilters =>
       _typeFilter != null ||
+      _statusFilter != null ||
+      _tagFilter.isNotEmpty ||
       _budgetIdFilter != null ||
       _accountIdFilter != null ||
       _categoryIdFilter != null ||
@@ -128,6 +138,14 @@ class _MoneyTransactionsSectionState
 
   String? _selectedTransactionId;
   String? _activeLedgerId;
+
+  /// 多选模式下选中的流水 id。
+  ///
+  /// 只保留当前列表里还存在的 id：翻页 / 改筛选 / 批量删除之后，
+  /// 旧 id 如果留在集合里，操作条会一直报一个已经看不见的条数。
+  final Set<String> _bulkSelectedIds = <String>{};
+
+  bool get _isBulkMode => _bulkSelectedIds.isNotEmpty;
 
   bool get _isTypeLocked => widget.filterContext?.lockType ?? false;
 
@@ -163,6 +181,7 @@ class _MoneyTransactionsSectionState
       _isLoadingInitial = true;
       _loadError = null;
       _selectedTransactionId = null;
+      _bulkSelectedIds.clear();
       unawaited(_refreshTransactions());
     }
   }
@@ -221,6 +240,12 @@ class _MoneyTransactionsSectionState
       data: (value) => value,
       orElse: () => const <MoneyBudgetEntity>[],
     );
+    final tagCandidates = ref
+        .watch(currentUserTagCandidatesProvider)
+        .maybeWhen(data: (value) => value, orElse: () => const <String>[]);
+    final categoryUsage = ref
+        .watch(currentUserCategoryUsageStatsProvider)
+        .maybeWhen(data: (value) => value, orElse: () => null);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -229,7 +254,7 @@ class _MoneyTransactionsSectionState
         // 常驻搜索：原来关键词搜索在筛选抽屉第 8 位，要四步才能开始打字。
         AppTextField(
           controller: _keywordController,
-          hintText: '搜索备注、商家',
+          hintText: '搜索名称、备注、商家',
           prefixIcon: const Icon(Icons.search_rounded, size: 19),
           onChanged: _setKeywordFilterDebounced,
           suffixIcon: (_keywordFilter ?? '').isEmpty
@@ -336,6 +361,30 @@ class _MoneyTransactionsSectionState
           ],
         ),
         const SizedBox(height: 10),
+        _TransactionStatusChips(
+          status: _statusFilter,
+          pendingCount: ref
+              .watch(currentUserPendingTransactionCountProvider)
+              .maybeWhen(data: (value) => value, orElse: () => 0),
+          onChanged: _setStatusFilter,
+        ),
+        // 标签筛选目前只从统计页下钻带过来，没有独立的入口。
+        // 没有这个提示条的话，列表会安静地少掉一部分流水，用户只会以为数据丢了。
+        if (_tagFilter.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _TransactionTagChips(
+            tags: _tagFilter,
+            onRemove: (tag) {
+              setState(() {
+                _tagFilter = _tagFilter
+                    .where((item) => item != tag)
+                    .toList(growable: false);
+              });
+              _refreshFromFilterChange();
+            },
+          ),
+        ],
+        const SizedBox(height: 8),
         _TransactionDateChips(
           dateStart: _dateStartFilter,
           dateEnd: _dateEndFilter,
@@ -343,7 +392,37 @@ class _MoneyTransactionsSectionState
           onSelectPreset: _applyDatePreset,
         ),
         const SizedBox(height: 10),
+        if (_statusFilter == MoneyTransactionStatus.pending)
+          _PendingConfirmBanner(
+            count: ref
+                .watch(currentUserTransactionSummaryProvider(_summaryQuery))
+                .maybeWhen(data: (value) => value.count, orElse: () => 0),
+            busy: _isConfirmingAll,
+            onConfirmAll: _confirmAllPending,
+          ),
+        if (_statusFilter == MoneyTransactionStatus.pending)
+          const SizedBox(height: 10),
         _TransactionSummaryBar(query: _summaryQuery, onClear: _clearAllFilters),
+        if (_isBulkMode) ...[
+          const SizedBox(height: 10),
+          _TransactionBulkActionBar(
+            selectedCount: _bulkSelectedIds.length,
+            visibleCount: _transactions.length,
+            busy: _isBulkBusy,
+            onSelectAllVisible: _selectAllVisible,
+            onEdit: () => _openBulkEditSheet(
+              accounts: accountRows,
+              expenseCatalog: expenseCatalogValue,
+              incomeCatalog: incomeCatalogValue,
+              usage: categoryUsage,
+              tagCandidates: tagCandidates,
+            ),
+            onConfirm: () => _bulkSetStatus(MoneyTransactionStatus.completed),
+            onVoid: () => _bulkSetStatus(MoneyTransactionStatus.voided),
+            onDelete: _bulkDelete,
+            onClear: _clearBulkSelection,
+          ),
+        ],
         if (widget.filterContext?.account != null) ...[
           _AccountTransactionSummaryPanel(
             account: widget.filterContext!.account!,
@@ -427,6 +506,10 @@ class _MoneyTransactionsSectionState
                 currentLedger: currentLedger,
                 isSelected: isWide && transaction.id == _selectedTransactionId,
                 swipeCloseSignal: _selectedTransactionId,
+                bulkSelectionMode: _isBulkMode,
+                bulkSelected: _bulkSelectedIds.contains(transaction.id),
+                onLongPress: () => _startBulkSelection(transaction.id),
+                onToggleBulkSelect: () => _toggleBulkSelection(transaction.id),
                 onTap: () => _openTransactionDetail(
                   transaction: transaction,
                   isWide: isWide,
@@ -434,6 +517,12 @@ class _MoneyTransactionsSectionState
                   expenseCatalog: expenseCatalog,
                   incomeCatalog: incomeCatalog,
                 ),
+                onConfirm:
+                    detailPanelOpen ||
+                        transaction.isInstallmentPosting ||
+                        transaction.status != MoneyTransactionStatus.pending
+                    ? null
+                    : () => _confirmPending(transaction),
                 onEdit: detailPanelOpen || transaction.isInstallmentPosting
                     ? null
                     : () => _openEditDialog(transaction),
@@ -499,6 +588,11 @@ class _MoneyTransactionsSectionState
                         selectedTransaction.refundAmountMinor
                 ? null
                 : () => _openRefundDialog(selectedTransaction),
+            onDuplicate:
+                selectedTransaction.isInstallmentPosting ||
+                    selectedTransaction.type == MoneyTransactionType.transfer
+                ? null
+                : () => _openDuplicateDialog(selectedTransaction),
             onAddSplit: selectedTransaction.isInstallmentPosting
                 ? null
                 : () => _openSplitDialog(selectedTransaction),
@@ -577,6 +671,13 @@ class _MoneyTransactionsSectionState
           ? null
           : () {
               unawaited(_openRefundDialog(transaction));
+            },
+      onDuplicate:
+          transaction.isInstallmentPosting ||
+              transaction.type == MoneyTransactionType.transfer
+          ? null
+          : () {
+              unawaited(_openDuplicateDialog(transaction));
             },
       onAddSplit: transaction.isInstallmentPosting
           ? null
@@ -789,6 +890,7 @@ class _MoneyTransactionsSectionState
         if (_selectedTransactionId != null && _selectedTransaction == null) {
           _selectedTransactionId = null;
         }
+        _pruneBulkSelection();
         _page = page.page;
         _hasMore = page.hasMore;
         _loadError = null;
@@ -806,11 +908,22 @@ class _MoneyTransactionsSectionState
     }
   }
 
+  /// 丢掉已经不在列表里的选中项（翻页 / 改筛选 / 批量删除之后）。
+  void _pruneBulkSelection() {
+    if (_bulkSelectedIds.isEmpty) {
+      return;
+    }
+    final visible = <String>{for (final item in _transactions) item.id};
+    _bulkSelectedIds.retainWhere(visible.contains);
+  }
+
   MoneyTransactionQuery _currentQuery({required int page, int? pageSize}) {
     return MoneyTransactionQuery(
       page: page,
       pageSize: pageSize ?? _pageSize,
       type: _typeFilter,
+      status: _statusFilter,
+      tags: _tagFilter,
       accountId: _accountIdFilter,
       categoryId: _categoryIdFilter,
       subCategoryId: _subCategoryIdFilter,
@@ -858,6 +971,7 @@ class _MoneyTransactionsSectionState
         _isLoadingInitial = true;
         _loadError = null;
         _selectedTransactionId = null;
+        _bulkSelectedIds.clear();
       });
       unawaited(_refreshTransactions());
     });
@@ -868,6 +982,8 @@ class _MoneyTransactionsSectionState
     required bool updateController,
   }) {
     _typeFilter = query.type;
+    _statusFilter = query.status;
+    _tagFilter = query.tags;
     _budgetIdFilter = query.budgetId;
     _budgetAppliedFilterSnapshot = null;
     _accountIdFilter = query.accountId;
@@ -897,6 +1013,7 @@ class _MoneyTransactionsSectionState
       _isLoadingInitial = true;
       _loadError = null;
       _selectedTransactionId = null;
+      _bulkSelectedIds.clear();
     });
     unawaited(_refreshTransactions());
   }
@@ -913,6 +1030,247 @@ class _MoneyTransactionsSectionState
       _subCategoryIdFilter = null;
     });
     _refreshFromFilterChange();
+  }
+
+  /// 状态筛选（待确认 / 已作废）。
+  ///
+  /// 待确认流水不占余额也不进统计，之前记完就只能靠列表里的角标认出来，
+  /// 没有任何入口能把它们筛出来。
+  void _setStatusFilter(MoneyTransactionStatus? value) {
+    if (_statusFilter == value) {
+      return;
+    }
+    setState(() {
+      _statusFilter = value;
+      if (value != null) {
+        // 待确认 / 已作废往往横跨很久，留着日期区间多半查不到东西。
+        _budgetIdFilter = null;
+        _budgetAppliedFilterSnapshot = null;
+        if (!_isDateLocked) {
+          _dateStartFilter = null;
+          _dateEndFilter = null;
+        }
+      }
+    });
+    _refreshFromFilterChange();
+  }
+
+  /// 确认单笔待处理流水入账。
+  Future<void> _confirmPending(MoneyTransactionEntity transaction) async {
+    await _changeStatus(transaction, MoneyTransactionStatus.completed);
+  }
+
+  /// 把当前筛选下的所有待确认流水一次性入账。
+  ///
+  /// 走当前 query 而不是「全库 pending」：用户在某个账户/分类下点确认，
+  /// 不该把手伸到别的地方去。
+  Future<void> _confirmAllPending() async {
+    if (_isConfirmingAll) {
+      return;
+    }
+    setState(() => _isConfirmingAll = true);
+    final toast = _ensureToast();
+    try {
+      const pageSize = 500;
+      const maxRows = 5000;
+      final ids = <String>[];
+      var page = 1;
+      while (ids.length < maxRows) {
+        final result = await ref
+            .read(currentUserMoneyTransactionActionsProvider)
+            .listTransactions(_currentQuery(page: page, pageSize: pageSize));
+        ids.addAll(
+          result.items
+              .where((item) => item.status == MoneyTransactionStatus.pending)
+              .map((item) => item.id),
+        );
+        if (!result.hasMore) {
+          break;
+        }
+        page += 1;
+      }
+      if (!mounted) {
+        return;
+      }
+      if (ids.isEmpty) {
+        AppToast.error(toast, context, '当前筛选没有待确认的流水');
+        return;
+      }
+      final applied = await ref
+          .read(currentUserMoneyTransactionActionsProvider)
+          .setTransactionsStatus(ids, MoneyTransactionStatus.completed);
+      if (!mounted) {
+        return;
+      }
+      if (applied <= 0) {
+        AppToast.error(toast, context, '没有可确认的流水');
+        return;
+      }
+      AppToast.success(toast, context, '已确认入账 $applied 笔');
+      await _refreshTransactions();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      AppToast.error(toast, context, _errorText(error));
+    } finally {
+      if (mounted) {
+        setState(() => _isConfirmingAll = false);
+      }
+    }
+  }
+
+  /// 长按进入多选：顺手关掉右侧详情面板，否则「选中」和「打开详情」会打架。
+  void _startBulkSelection(String transactionId) {
+    setState(() {
+      _selectedTransactionId = null;
+      _bulkSelectedIds.add(transactionId);
+    });
+  }
+
+  void _toggleBulkSelection(String transactionId) {
+    setState(() {
+      if (!_bulkSelectedIds.remove(transactionId)) {
+        _bulkSelectedIds.add(transactionId);
+      }
+    });
+  }
+
+  void _clearBulkSelection() {
+    setState(() => _bulkSelectedIds.clear());
+  }
+
+  void _selectAllVisible() {
+    setState(() {
+      _bulkSelectedIds.addAll(_transactions.map((item) => item.id));
+    });
+  }
+
+  /// 批量操作统一入口：负责 busy 态、条数反馈与刷新。
+  ///
+  /// 实际写入条数可能少于选中条数（转账 / 分期入账 / 已作废会被跳过），
+  /// 这里把跳过数说清楚，否则用户会以为点错了。
+  Future<void> _applyBulk(
+    Future<int> Function(
+      CurrentUserMoneyTransactionActions actions,
+      List<String> ids,
+    )
+    run, {
+    required String label,
+  }) async {
+    if (_isBulkBusy) {
+      return;
+    }
+    final ids = _bulkSelectedIds.toList(growable: false);
+    if (ids.isEmpty) {
+      return;
+    }
+    setState(() => _isBulkBusy = true);
+    final toast = _ensureToast();
+    try {
+      final applied = await run(
+        ref.read(currentUserMoneyTransactionActionsProvider),
+        ids,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (applied <= 0) {
+        AppToast.error(toast, context, '没有符合条件的流水');
+        return;
+      }
+      final skipped = ids.length - applied;
+      AppToast.success(
+        toast,
+        context,
+        skipped > 0 ? '$label $applied 笔，跳过 $skipped 笔' : '$label $applied 笔',
+      );
+      setState(() => _bulkSelectedIds.clear());
+      await _refreshTransactions();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      AppToast.error(toast, context, _errorText(error));
+    } finally {
+      if (mounted) {
+        setState(() => _isBulkBusy = false);
+      }
+    }
+  }
+
+  Future<void> _bulkSetStatus(MoneyTransactionStatus status) {
+    return _applyBulk(
+      (actions, ids) => actions.setTransactionsStatus(ids, status),
+      label: status == MoneyTransactionStatus.completed ? '已确认入账' : '已作废',
+    );
+  }
+
+  Future<void> _bulkDelete() async {
+    final count = _bulkSelectedIds.length;
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: '删除流水',
+      message: '将删除选中的 $count 笔流水并回滚账户余额，确认继续？',
+      confirmLabel: '删除',
+      destructive: true,
+      icon: Icons.delete_outline_rounded,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+    await _applyBulk(
+      (actions, ids) => actions.deleteTransactions(ids),
+      label: '已删除',
+    );
+  }
+
+  /// 「批量修改」面板：改分类 / 改账户 / 加标签 / 移除标签。
+  Future<void> _openBulkEditSheet({
+    required List<MoneyAccountEntity> accounts,
+    required MoneyCategoryCatalog expenseCatalog,
+    required MoneyCategoryCatalog incomeCatalog,
+    required MoneyCategoryUsage? usage,
+    required List<String> tagCandidates,
+  }) async {
+    if (_isBulkBusy) {
+      return;
+    }
+    final selected = _transactions
+        .where((item) => _bulkSelectedIds.contains(item.id))
+        .toList(growable: false);
+    if (selected.isEmpty) {
+      return;
+    }
+    final types = <MoneyTransactionType>{
+      for (final item in selected) item.type,
+    };
+    if (types.length == 1 && types.single == MoneyTransactionType.transfer) {
+      AppToast.error(_ensureToast(), context, '转账流水不支持批量修改');
+      return;
+    }
+    final existingTags = <String>{
+      for (final item in selected) ...item.tags,
+    }.toList()..sort();
+
+    final patch = await showTransactionBulkEditSheet(
+      context: context,
+      selectedCount: selected.length,
+      type: types.length == 1 ? types.single : null,
+      expenseCatalog: expenseCatalog,
+      incomeCatalog: incomeCatalog,
+      usage: usage,
+      accounts: accounts,
+      tagCandidates: tagCandidates,
+      existingTags: existingTags,
+    );
+    if (patch == null || !mounted) {
+      return;
+    }
+    await _applyBulk(
+      (actions, ids) => actions.updateTransactions(ids, patch),
+      label: '已更新',
+    );
   }
 
   void _setAccountFilter(String? value) {
@@ -970,6 +1328,7 @@ class _MoneyTransactionsSectionState
         _budgetAppliedFilterSnapshot = null;
         if (snapshot != null) {
           _typeFilter = snapshot.type;
+          _statusFilter = snapshot.status;
           _accountIdFilter = snapshot.accountId;
           _categoryIdFilter = snapshot.categoryId;
           _subCategoryIdFilter = snapshot.subCategoryId;
@@ -983,6 +1342,7 @@ class _MoneyTransactionsSectionState
           _merchantController.text = snapshot.merchant ?? '';
         } else {
           _typeFilter = null;
+          _statusFilter = null;
           _accountIdFilter = null;
           _categoryIdFilter = null;
           _subCategoryIdFilter = null;
@@ -1015,6 +1375,7 @@ class _MoneyTransactionsSectionState
     setState(() {
       _budgetAppliedFilterSnapshot = _BudgetAppliedFilterSnapshot(
         type: _typeFilter,
+        status: _statusFilter,
         accountId: _accountIdFilter,
         categoryId: _categoryIdFilter,
         subCategoryId: _subCategoryIdFilter,
@@ -1029,6 +1390,8 @@ class _MoneyTransactionsSectionState
       _typeFilter = budget.isIncomeTarget
           ? MoneyTransactionType.income
           : MoneyTransactionType.expense;
+      // 预算只看已入账的流水：待确认还没占用额度，混进来会让执行率虚高。
+      _statusFilter = MoneyTransactionStatus.completed;
       _accountIdFilter = budget.accountId;
       _categoryIdFilter = budget.categoryId;
       _subCategoryIdFilter = budget.subCategoryId;
@@ -1100,6 +1463,8 @@ class _MoneyTransactionsSectionState
         _budgetIdFilter = null;
         _budgetAppliedFilterSnapshot = null;
       }
+      _statusFilter = null;
+      _tagFilter = const <String>[];
       if (!_isAccountLocked) {
         _accountIdFilter = null;
       }
@@ -1250,6 +1615,10 @@ class _MoneyTransactionsSectionState
 
   Future<void> _openRefundDialog(MoneyTransactionEntity transaction) async {
     await _transactionActions().refund(transaction);
+  }
+
+  Future<void> _openDuplicateDialog(MoneyTransactionEntity transaction) async {
+    await _transactionActions().duplicate(transaction);
   }
 
   Future<void> _openSplitDialog(MoneyTransactionEntity transaction) async {
@@ -2111,7 +2480,7 @@ class _TransactionFilterFields extends StatelessWidget {
                 controller: keywordController,
                 onChanged: onKeywordChanged,
                 textInputAction: TextInputAction.search,
-                hintText: '搜索备注',
+                hintText: '搜索名称 / 备注',
                 prefixIcon: const Icon(Icons.search_rounded),
                 compact: true,
               ),
@@ -2230,6 +2599,362 @@ class _TransactionsSortButton extends StatelessWidget {
   }
 }
 
+/// 流水状态筛选：待确认 / 已作废。
+///
+/// 这两类流水之前完全查不出来——查询模型里没有状态字段，而它们又
+/// 不占余额、不计入统计，等于记完就丢。
+class _TransactionStatusChips extends StatelessWidget {
+  const _TransactionStatusChips({
+    required this.status,
+    required this.pendingCount,
+    required this.onChanged,
+  });
+
+  final MoneyTransactionStatus? status;
+  final int pendingCount;
+  final ValueChanged<MoneyTransactionStatus?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final moneyColors = theme.moneyColors;
+
+    return SizedBox(
+      height: 32,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children:
+            [
+                  _buildFilterChip(
+                    context,
+                    label: '全部状态',
+                    selected: status == null,
+                    onTap: () => onChanged(null),
+                    accent: colorScheme.primary,
+                  ),
+                  _buildFilterChip(
+                    context,
+                    label: pendingCount > 0 ? '待确认 $pendingCount' : '待确认',
+                    selected: status == MoneyTransactionStatus.pending,
+                    onTap: () => onChanged(
+                      status == MoneyTransactionStatus.pending
+                          ? null
+                          : MoneyTransactionStatus.pending,
+                    ),
+                    accent: moneyColors.warning,
+                  ),
+                  _buildFilterChip(
+                    context,
+                    label: '已作废',
+                    selected: status == MoneyTransactionStatus.voided,
+                    onTap: () => onChanged(
+                      status == MoneyTransactionStatus.voided
+                          ? null
+                          : MoneyTransactionStatus.voided,
+                    ),
+                    accent: colorScheme.error,
+                  ),
+                ]
+                .map(
+                  (widget) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: widget,
+                  ),
+                )
+                .toList(),
+      ),
+    );
+  }
+}
+
+/// 已生效的标签筛选。
+///
+/// 点 chip 上的 ✕ 移除该标签；清空后回到不限制标签的状态。
+class _TransactionTagChips extends StatelessWidget {
+  const _TransactionTagChips({required this.tags, required this.onRemove});
+
+  final List<String> tags;
+  final ValueChanged<String> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return SizedBox(
+      height: 32,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Center(
+              child: Text(
+                '标签',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+          ),
+          for (final tag in tags)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildFilterChip(
+                context,
+                label: tag,
+                selected: true,
+                onTap: () => onRemove(tag),
+                trailing: '✕',
+                onTrailingTap: () => onRemove(tag),
+                accent: colorScheme.primary,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 待确认视图顶部的说明 + 批量入账。
+class _PendingConfirmBanner extends StatelessWidget {
+  const _PendingConfirmBanner({
+    required this.count,
+    required this.busy,
+    required this.onConfirmAll,
+  });
+
+  final int count;
+  final bool busy;
+  final VoidCallback onConfirmAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final moneyColors = theme.moneyColors;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+        border: Border.all(color: moneyColors.warning.withValues(alpha: 0.35)),
+        color: moneyColors.warning.withValues(alpha: 0.1),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.schedule_rounded, size: 18, color: moneyColors.warning),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '待确认的流水不占余额、不计入统计，确认入账后才生效。',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          TextButton.icon(
+            onPressed: busy || count == 0 ? null : onConfirmAll,
+            icon: busy
+                ? SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.check_rounded, size: 16),
+            label: Text('确认这 $count 笔'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 多选模式下的批量操作条。
+///
+/// 「改分类 / 改账户 / 改标签」合成一个入口（[onEdit]）：它们是一类操作，
+/// 拆成三个按钮在手机宽度上放不下，而用户一次通常也只想改其中一项。
+class _TransactionBulkActionBar extends StatelessWidget {
+  const _TransactionBulkActionBar({
+    required this.selectedCount,
+    required this.visibleCount,
+    required this.busy,
+    required this.onSelectAllVisible,
+    required this.onEdit,
+    required this.onConfirm,
+    required this.onVoid,
+    required this.onDelete,
+    required this.onClear,
+  });
+
+  final int selectedCount;
+  final int visibleCount;
+  final bool busy;
+  final VoidCallback onSelectAllVisible;
+  final VoidCallback onEdit;
+  final VoidCallback onConfirm;
+  final VoidCallback onVoid;
+  final VoidCallback onDelete;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Material(
+      color: colorScheme.inverseSurface,
+      borderRadius: BorderRadius.circular(theme.radiusTokens.lg),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                '已选 $selectedCount 笔',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: colorScheme.onInverseSurface,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+            if (selectedCount < visibleCount)
+              TextButton(
+                onPressed: busy ? null : onSelectAllVisible,
+                style: TextButton.styleFrom(
+                  foregroundColor: colorScheme.onInverseSurface,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: Text('全选 $visibleCount'),
+              ),
+            _barButton(
+              context,
+              tooltip: '批量修改',
+              icon: Icons.tune_rounded,
+              onPressed: onEdit,
+            ),
+            _barButton(
+              context,
+              tooltip: '确认入账',
+              icon: Icons.check_rounded,
+              onPressed: onConfirm,
+            ),
+            _barButton(
+              context,
+              tooltip: '作废',
+              icon: Icons.block_rounded,
+              onPressed: onVoid,
+            ),
+            _barButton(
+              context,
+              tooltip: '删除',
+              icon: Icons.delete_outline_rounded,
+              onPressed: onDelete,
+            ),
+            _barButton(
+              context,
+              tooltip: '退出多选',
+              icon: Icons.close_rounded,
+              onPressed: onClear,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 不用 AppIconActionButton：它的配色跟主题走，在 inverseSurface 的条上
+  /// 会变成深色叠深色。这里直接用 IconButton 指定前景色。
+  Widget _barButton(
+    BuildContext context, {
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: busy ? null : onPressed,
+      icon: Icon(icon, size: 19),
+      color: colorScheme.onInverseSurface,
+      visualDensity: VisualDensity.compact,
+      splashRadius: 18,
+    );
+  }
+}
+
+/// 日期 / 状态筛选共用的胶囊 chip。
+Widget _buildFilterChip(
+  BuildContext context, {
+  required String label,
+  required bool selected,
+  required VoidCallback onTap,
+  String? trailing,
+  VoidCallback? onTrailingTap,
+  Color? accent,
+}) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+  final highlight = accent ?? colorScheme.primary;
+
+  return Material(
+    color: selected
+        ? colorScheme.primaryContainer.withValues(alpha: 0.45)
+        : colorScheme.surfaceContainerLowest,
+    borderRadius: BorderRadius.circular(999),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected
+                ? highlight.withValues(alpha: 0.4)
+                : colorScheme.outlineVariant.withValues(alpha: 0.7),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: selected ? highlight : colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+            if (trailing != null) ...[
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: onTrailingTap,
+                child: Text(
+                  trailing,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: highlight,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 /// 日期快捷区间。覆盖绝大多数看账场景，不用每次开日期选择器。
 class _TransactionDateChips extends StatelessWidget {
   const _TransactionDateChips({
@@ -2255,7 +2980,7 @@ class _TransactionDateChips extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         children:
             [
-                  _chip(
+                  _buildFilterChip(
                     context,
                     label: '本周',
                     selected: _isSameRange(_weekRange()),
@@ -2264,7 +2989,7 @@ class _TransactionDateChips extends StatelessWidget {
                       onSelectPreset(range.$1, range.$2);
                     },
                   ),
-                  _chip(
+                  _buildFilterChip(
                     context,
                     label: '本月',
                     selected: _isSameRange(_monthRange(0)),
@@ -2273,7 +2998,7 @@ class _TransactionDateChips extends StatelessWidget {
                       onSelectPreset(range.$1, range.$2);
                     },
                   ),
-                  _chip(
+                  _buildFilterChip(
                     context,
                     label: '上月',
                     selected: _isSameRange(_monthRange(-1)),
@@ -2282,7 +3007,7 @@ class _TransactionDateChips extends StatelessWidget {
                       onSelectPreset(range.$1, range.$2);
                     },
                   ),
-                  _chip(
+                  _buildFilterChip(
                     context,
                     label: '近 90 天',
                     selected: false,
@@ -2294,7 +3019,7 @@ class _TransactionDateChips extends StatelessWidget {
                       );
                     },
                   ),
-                  _chip(
+                  _buildFilterChip(
                     context,
                     label: dateStart == null && dateEnd == null
                         ? '自定义…'
@@ -2351,69 +3076,6 @@ class _TransactionDateChips extends StatelessWidget {
     final first = DateTime(now.year, now.month + monthOffset);
     final last = DateTime(first.year, first.month + 1, 0);
     return (first, last);
-  }
-
-  Widget _chip(
-    BuildContext context, {
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-    String? trailing,
-    VoidCallback? onTrailingTap,
-    Color? accent,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final highlight = accent ?? colorScheme.primary;
-
-    return Material(
-      color: selected
-          ? colorScheme.primaryContainer.withValues(alpha: 0.45)
-          : colorScheme.surfaceContainerLowest,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: selected
-                  ? highlight.withValues(alpha: 0.4)
-                  : colorScheme.outlineVariant.withValues(alpha: 0.7),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: selected ? highlight : colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0,
-                ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: 6),
-                GestureDetector(
-                  onTap: onTrailingTap,
-                  child: Text(
-                    trailing,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: highlight,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -2555,6 +3217,7 @@ class _TransactionSummaryBar extends ConsumerWidget {
 
   static bool _hasAnyFilter(MoneyTransactionQuery query) {
     return query.type != null ||
+        query.status != null ||
         query.accountId != null ||
         query.categoryId != null ||
         query.subCategoryId != null ||

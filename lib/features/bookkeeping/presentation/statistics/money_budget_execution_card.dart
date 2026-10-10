@@ -4,6 +4,7 @@ import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/application/money_budget_pace.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 
@@ -246,8 +247,62 @@ class _BudgetRow extends StatelessWidget {
               ),
             ],
           ),
+          // 「还剩 N 天，日均可用 ¥X」：只看「剩余 ¥464」还得自己除天数，
+          // 而这正是决定今天能不能下馆子的那个数。周期已结束就不显示。
+          if (_paceLine(context) case final line?) ...[
+            const SizedBox(height: 4),
+            Text(
+              line.$1,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: line.$2,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  (String, Color)? _paceLine(BuildContext context) {
+    final pace = MoneyBudgetPace.of(budget, DateTime.now());
+    if (pace == null) {
+      return null;
+    }
+    final theme = Theme.of(context);
+    final moneyColors = theme.moneyColors;
+    final currencyCode = budget.currencyCode;
+    final masked = MoneyPrivacy.of(context);
+
+    return switch (pace.status) {
+      MoneyBudgetPaceStatus.ended => null,
+      MoneyBudgetPaceStatus.overspent => (
+        maskedMoneyOr(
+          '已超支 ${formatMoneyMinor(pace.overspentMinor, currencyCode)}'
+          '${pace.daysLeft > 0 ? ' · 仅剩 ${pace.daysLeft} 天' : ''}',
+          masked,
+        ),
+        moneyColors.expense,
+      ),
+      MoneyBudgetPaceStatus.lastDay => (
+        maskedMoneyOr(
+          '最后一天 · 还可花 '
+          '${formatMoneyMinor(pace.dailyAvailableMinor, currencyCode)}',
+          masked,
+        ),
+        moneyColors.warning,
+      ),
+      MoneyBudgetPaceStatus.onTrack => (
+        maskedMoneyOr(
+          '日均可用 ${formatMoneyMinor(pace.dailyAvailableMinor, currencyCode)}'
+          ' · 还剩 ${pace.daysLeft} 天',
+          masked,
+        ),
+        moneyColors.success,
+      ),
+    };
   }
 }

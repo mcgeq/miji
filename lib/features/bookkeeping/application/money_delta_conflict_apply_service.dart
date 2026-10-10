@@ -134,6 +134,7 @@ class MoneyDeltaConflictApplyService {
       transactionAt: _dateTime(snapshot, 'transaction_at'),
       amountMinor: _int(snapshot, 'amount_minor'),
       currencyCode: _string(snapshot, 'currency_code'),
+      description: _nullableString(snapshot, 'description'),
       notes: _nullableString(snapshot, 'notes'),
       merchant: _nullableString(snapshot, 'merchant'),
       location: _nullableString(snapshot, 'location'),

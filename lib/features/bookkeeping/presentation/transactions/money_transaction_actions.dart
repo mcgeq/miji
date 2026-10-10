@@ -105,6 +105,60 @@ class MoneyTransactionActions {
     }
   }
 
+  /// 「再来一笔」：以这条流水为模板开一张新表单，确认后写成一条新流水。
+  ///
+  /// 不做「一键静默复制」——那样手滑一下就多出一笔假账且很难发现。
+  /// 表单里的日期仍是今天，用户要改随时能改。
+  Future<void> duplicate(MoneyTransactionEntity transaction) async {
+    if (transaction.isInstallmentPosting) {
+      AppToast.error(ensureToast(), context, '分期入账流水只能查看');
+      return;
+    }
+    if (transaction.type == MoneyTransactionType.transfer) {
+      AppToast.error(ensureToast(), context, '转账暂不支持再来一笔');
+      return;
+    }
+
+    final result = await showAppResponsiveDialog<Object>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) =>
+          TransactionFormDialog(type: transaction.type, template: transaction),
+    );
+    if (result == null || !context.mounted || !isMounted()) {
+      return;
+    }
+    if (result is! TransactionCreateFormResult) {
+      return;
+    }
+
+    try {
+      final splitConfig = result.splitConfig;
+      if (splitConfig == null) {
+        await ref
+            .read(currentUserMoneyTransactionActionsProvider)
+            .createTransaction(result.draft);
+      } else {
+        await ref
+            .read(currentUserMoneyTransactionActionsProvider)
+            .createTransactionWithSplit(result.draft, splitConfig);
+      }
+      if (!context.mounted || !isMounted()) {
+        return;
+      }
+      await onChanged();
+      if (!context.mounted || !isMounted()) return;
+      AppToast.success(ensureToast(), context, '${transaction.type.label}已记录');
+    } catch (error) {
+      if (!context.mounted || !isMounted()) return;
+      AppToast.error(
+        ensureToast(),
+        context,
+        moneyTransactionActionErrorText(error),
+      );
+    }
+  }
+
   Future<void> refund(MoneyTransactionEntity transaction) async {
     if (transaction.type != MoneyTransactionType.expense ||
         transaction.status != MoneyTransactionStatus.completed) {

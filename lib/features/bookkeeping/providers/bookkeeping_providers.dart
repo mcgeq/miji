@@ -2,15 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/database/database_providers.dart';
 import 'package:miji/core/database/seed/seed_providers.dart';
-import 'package:miji/core/notifications/app_notification_service.dart';
+import 'package:miji/core/notifications/notification_providers.dart';
 import 'package:miji/core/sync/delta_sync/delta_sync_providers.dart';
 import 'package:miji/features/bookkeeping/application/money_bill_reminder_notification_service.dart';
 import 'package:miji/features/bookkeeping/application/money_budget_alert_notification_service.dart';
 import 'package:miji/features/bookkeeping/application/money_delta_conflict_apply_service.dart';
+import 'package:miji/features/bookkeeping/application/money_reminder_scheduler.dart';
+import 'package:miji/features/bookkeeping/application/money_reminder_settings.dart';
 import 'package:miji/features/bookkeeping/application/money_report_period.dart';
 import 'package:miji/features/bookkeeping/application/transaction_entry_defaults_store.dart';
 import 'package:miji/features/bookkeeping/data/drift_money_repository.dart';
@@ -49,10 +52,6 @@ final transactionEntryDefaultsStoreProvider =
       return const TransactionEntryDefaultsStore();
     });
 
-final appNotificationServiceProvider = Provider<AppNotificationService>((ref) {
-  return AppNotificationService();
-});
-
 final moneyBudgetAlertNotificationServiceProvider =
     Provider<MoneyBudgetAlertNotificationService>((ref) {
       return MoneyBudgetAlertNotificationService(
@@ -76,6 +75,87 @@ final currentUserBillReminderNotificationActionsProvider =
     Provider<CurrentUserBillReminderNotificationActions>((ref) {
       return CurrentUserBillReminderNotificationActions(ref);
     });
+
+final moneyReminderSchedulerProvider = Provider<MoneyReminderScheduler>((ref) {
+  return MoneyReminderScheduler(
+    notificationService: ref.watch(appNotificationServiceProvider),
+  );
+});
+
+/// 把提醒中心的待处理项同步成系统级预约通知。
+///
+/// 它是一个被 App 根组件长期 watch 的 provider，而不是手动在各个写入点调用的
+/// 动作：待处理列表、提醒设置、当天流水任一变化都会自动重排，不需要在每个
+/// 「完成 / 忽略 / 延后 / 记账」的出口补一句同步——那种写法漏一处就会出现
+/// 处理完了还在推的僵尸通知。
+///
+/// 同步前先比对签名，签名没变就直接返回，避免每次写流水都空跑一轮取消 + 重排。
+final moneyReminderScheduleSyncProvider = FutureProvider<void>((ref) async {
+  final session = ref.watch(authSessionControllerProvider);
+  final userId = session.userId;
+  if (!session.isUnlocked || userId == null || userId.isEmpty) {
+    return;
+  }
+  // 记一笔之后「今天是否已记账」会翻转，每日记账提醒必须重新判断。
+  ref.watch(moneyDataRefreshVersionProvider);
+
+  final pending = await ref.watch(
+    currentUserPendingReminderCenterItemsProvider.future,
+  );
+  final settings = await ref.watch(moneyReminderSettingsProvider.future);
+  final hasTransactionToday = await _hasTransactionToday(ref);
+
+  final signature = _reminderScheduleSignature(
+    pending: pending,
+    settings: settings,
+    hasTransactionToday: hasTransactionToday,
+  );
+  final prefs = await SharedPreferences.getInstance();
+  final signatureKey = 'money_reminder_schedule_sig_$userId';
+  if (prefs.getString(signatureKey) == signature) {
+    return;
+  }
+
+  await ref
+      .read(moneyReminderSchedulerProvider)
+      .sync(
+        userId: userId,
+        pending: pending,
+        settings: settings,
+        hasTransactionToday: hasTransactionToday,
+      );
+  // 只在同步成功后落签名：中途失败下一轮会重试。
+  await prefs.setString(signatureKey, signature);
+});
+
+String _reminderScheduleSignature({
+  required List<MoneyReminderCenterItem> pending,
+  required MoneyReminderSettings settings,
+  required bool hasTransactionToday,
+}) {
+  final keys = pending.map((item) => item.itemKey).join('|');
+  return '${settings.toJson()}::$hasTransactionToday::$keys';
+}
+
+/// 今天是否已经记过账。
+///
+/// 查不到时按「已记账」处理：每日记账提醒是主动打扰，宁可漏推也不要在用户
+/// 已经记完之后还去烦他。
+Future<bool> _hasTransactionToday(Ref ref) async {
+  try {
+    final current = DateTime.now();
+    final start = DateTime(current.year, current.month, current.day);
+    final end = start.add(const Duration(days: 1));
+    final page = await ref
+        .read(currentUserMoneyTransactionActionsProvider)
+        .listTransactions(
+          MoneyTransactionQuery(dateStart: start, dateEnd: end, pageSize: 1),
+        );
+    return page.items.isNotEmpty;
+  } catch (_) {
+    return true;
+  }
+}
 
 final currentUserAutoPostingExecutionProvider =
     FutureProvider<MoneyAutoPostingExecutionSummary>((ref) async {
@@ -275,6 +355,32 @@ final currentUserTransactionSummaryProvider = FutureProvider.autoDispose
       }
       final repository = ref.watch(moneyRepositoryProvider);
       return repository.summarizeTransactions(session.userId!, query);
+    });
+
+/// 当前账本里待确认（pending）流水的条数。
+///
+/// 待确认流水不占余额也不进统计，唯一能找到它的地方就是流水列表里那个
+/// 角标；给个独立计数，入口上就能直接显示「还有几笔没入账」。
+final currentUserPendingTransactionCountProvider =
+    FutureProvider.autoDispose<int>((ref) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return 0;
+      }
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        return 0;
+      }
+      final repository = ref.watch(moneyRepositoryProvider);
+      final summary = await repository.summarizeTransactions(
+        session.userId!,
+        MoneyTransactionQuery(
+          status: MoneyTransactionStatus.pending,
+          ledgerId: ledger.id,
+        ),
+      );
+      return summary.count;
     });
 
 final currentUserCreditCardBillViewProvider = FutureProvider.autoDispose
@@ -1581,22 +1687,8 @@ class CurrentUserBudgetAlertNotificationActions {
       await _ref
           .read(moneyBudgetAlertNotificationServiceProvider)
           .scanAndNotify(userId: userId, budgets: budgets);
-      await _syncDailyDigestSchedule();
     } catch (error, stackTrace) {
       debugPrint('[budget-alert] 扫描失败: $error\n$stackTrace');
-    }
-  }
-
-  Future<void> _syncDailyDigestSchedule() async {
-    try {
-      final pending = await _ref.read(
-        currentUserPendingReminderCenterItemsProvider.future,
-      );
-      await _ref
-          .read(appNotificationServiceProvider)
-          .scheduleDailyMoneyReminderDigest(pendingCount: pending.length);
-    } catch (_) {
-      // 汇总调度失败不影响数据流。
     }
   }
 }
@@ -1644,9 +1736,6 @@ class CurrentUserBillReminderNotificationActions {
             accountsById: accountsById,
             actionableReminderIds: actionableReminderIds,
           );
-      await _ref
-          .read(appNotificationServiceProvider)
-          .scheduleDailyMoneyReminderDigest(pendingCount: pending.length);
     } catch (_) {
       // Notification scan must not break foreground data flows.
     }
@@ -1866,6 +1955,18 @@ class CurrentUserMoneyAccountActions {
   Future<void> updateAccount(MoneyAccountUpdate update) async {
     final userId = _requireUnlockedUserId();
     await _ref.read(moneyRepositoryProvider).updateAccount(userId, update);
+    _refresh();
+  }
+
+  /// 余额校正：把账面余额直接对齐到实际余额（差额进初始余额，不产生流水）。
+  Future<void> adjustAccountBalance(
+    String accountId,
+    int targetBalanceMinor,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .adjustAccountBalance(userId, accountId, targetBalanceMinor);
     _refresh();
   }
 
@@ -2667,6 +2768,48 @@ class CurrentUserMoneyTransactionActions {
     _refresh(transactionId: transactionId);
   }
 
+  /// 批量变更状态，返回实际写入的条数（不合法的流转会被跳过）。
+  Future<int> setTransactionsStatus(
+    List<String> transactionIds,
+    MoneyTransactionStatus status,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final applied = await _ref
+        .read(moneyRepositoryProvider)
+        .setTransactionsStatus(userId, transactionIds, status);
+    if (applied > 0) {
+      _refresh();
+    }
+    return applied;
+  }
+
+  /// 批量改分类 / 账户 / 标签，返回实际写入的条数。
+  Future<int> updateTransactions(
+    List<String> transactionIds,
+    MoneyTransactionBatchUpdate patch,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final applied = await _ref
+        .read(moneyRepositoryProvider)
+        .updateTransactions(userId, transactionIds, patch);
+    if (applied > 0) {
+      _refresh();
+    }
+    return applied;
+  }
+
+  /// 批量删除，返回实际删除的条数。
+  Future<int> deleteTransactions(List<String> transactionIds) async {
+    final userId = _requireUnlockedUserId();
+    final applied = await _ref
+        .read(moneyRepositoryProvider)
+        .deleteTransactions(userId, transactionIds);
+    if (applied > 0) {
+      _refresh();
+    }
+    return applied;
+  }
+
   Future<MoneyTransactionPage> listTransactions(
     MoneyTransactionQuery query,
   ) async {
@@ -2794,25 +2937,16 @@ class CurrentUserMoneyTransactionActions {
     );
   }
 
+  /// 补上当前账本作为筛选条件。
+  ///
+  /// 之前这里是逐个字段手工重建 query，漏掉了 status / accountType /
+  /// customPaymentMethodName / 排序——也就是说「按金额排序」和自定义支付方式
+  /// 筛选一直是无效的。改成 copyWith，新增字段不会再被静默丢掉。
   MoneyTransactionQuery _queryWithLedger(
     MoneyTransactionQuery query,
     String ledgerId,
   ) {
-    return MoneyTransactionQuery(
-      page: query.page,
-      pageSize: query.pageSize,
-      type: query.type,
-      accountId: query.accountId,
-      categoryId: query.categoryId,
-      subCategoryId: query.subCategoryId,
-      paymentMethod: query.paymentMethod,
-      merchant: query.merchant,
-      dateStart: query.dateStart,
-      dateEnd: query.dateEnd,
-      keyword: query.keyword,
-      ledgerId: ledgerId,
-      budgetId: query.budgetId,
-    );
+    return query.copyWith(ledgerId: ledgerId);
   }
 
   void _refresh({String? transactionId, String? ledgerId}) {

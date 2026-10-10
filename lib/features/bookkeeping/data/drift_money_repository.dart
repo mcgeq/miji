@@ -3663,6 +3663,14 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
     return trimmed;
   }
 
+  /// 更新流水时的名称：用户没填就退回类型名。
+  ///
+  /// 类型名是历史数据的兜底值（列表会把它过滤掉不展示），
+  /// 不能让一次更新把它清成空字符串。
+  String _transactionUpdateDescription(MoneyTransactionUpdate update) {
+    return _blankToNull(update.description) ?? update.type.label;
+  }
+
   int? _draftStatementDay(MoneyAccountDraft draft) {
     return _billingDayFor(draft.type, draft.statementDay);
   }

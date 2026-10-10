@@ -8,9 +8,16 @@ import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyCreditUtilizationCard extends StatelessWidget {
-  const MoneyCreditUtilizationCard({super.key, required this.insights});
+  const MoneyCreditUtilizationCard({
+    super.key,
+    required this.insights,
+    this.onAccountTap,
+  });
 
   final MoneyStatisticsInsights insights;
+
+  /// 点击账户行时下钻到该信用账户的流水。
+  final void Function(String accountId, String accountName)? onAccountTap;
 
   static const _warningThreshold = 0.9;
 
@@ -130,6 +137,12 @@ class MoneyCreditUtilizationCard extends StatelessWidget {
               _AccountRow(
                 slice: insights.creditUtilization[i],
                 showDivider: i < insights.creditUtilization.length - 1,
+                onTap: onAccountTap == null
+                    ? null
+                    : () => onAccountTap!(
+                        insights.creditUtilization[i].accountId,
+                        insights.creditUtilization[i].accountName,
+                      ),
               ),
           ],
         ],
@@ -180,10 +193,15 @@ class _SummaryMetric extends StatelessWidget {
 }
 
 class _AccountRow extends StatelessWidget {
-  const _AccountRow({required this.slice, required this.showDivider});
+  const _AccountRow({
+    required this.slice,
+    required this.showDivider,
+    this.onTap,
+  });
 
   final MoneyStatisticsCreditUtilizationSlice slice;
   final bool showDivider;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -199,13 +217,40 @@ class _AccountRow extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
-                slice.accountName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 3,
+                      horizontal: 2,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            slice.accountName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ),
+                        if (onTap != null) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

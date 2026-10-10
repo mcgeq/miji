@@ -18,6 +18,7 @@ class TransactionDetailPanel extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.onRefund,
+    this.onDuplicate,
     this.onAddSplit,
     this.onAddToFamilyLedger,
     this.onRemoveFromFamilyLedger,
@@ -34,6 +35,7 @@ class TransactionDetailPanel extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onRefund;
+  final VoidCallback? onDuplicate;
   final VoidCallback? onAddSplit;
   final VoidCallback? onAddToFamilyLedger;
   final ValueChanged<MoneyLedgerEntity>? onRemoveFromFamilyLedger;
@@ -56,6 +58,7 @@ class TransactionDetailPanel extends StatelessWidget {
           onEdit: onEdit,
           onDelete: onDelete,
           onRefund: onRefund,
+          onDuplicate: onDuplicate,
           onAddSplit: onAddSplit,
           onAddToFamilyLedger: onAddToFamilyLedger,
           onRemoveFromFamilyLedger: onRemoveFromFamilyLedger,

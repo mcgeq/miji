@@ -29,6 +29,7 @@ class TransactionDetailContent extends ConsumerWidget {
     this.onEdit,
     this.onDelete,
     this.onRefund,
+    this.onDuplicate,
     this.onAddSplit,
     this.onAddToFamilyLedger,
     this.onRemoveFromFamilyLedger,
@@ -44,6 +45,9 @@ class TransactionDetailContent extends ConsumerWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onRefund;
+
+  /// 「再来一笔」：以这条流水为模板开一张新表单。
+  final VoidCallback? onDuplicate;
   final VoidCallback? onAddSplit;
   final VoidCallback? onAddToFamilyLedger;
   final ValueChanged<MoneyLedgerEntity>? onRemoveFromFamilyLedger;
@@ -111,6 +115,10 @@ class TransactionDetailContent extends ConsumerWidget {
                   transaction.amountMinor <= transaction.refundAmountMinor
               ? null
               : onRefund,
+          onDuplicate:
+              isReadOnly || transaction.type == MoneyTransactionType.transfer
+              ? null
+              : onDuplicate,
           onAddSplit: canAddSplit ? onAddSplit : null,
           onAddToFamilyLedger: !isReadOnly && _canManageLedgerMembership
               ? onAddToFamilyLedger
@@ -272,7 +280,16 @@ class TransactionDetailContent extends ConsumerWidget {
     };
   }
 
+  /// 历史数据的 description 恒为类型名（那时还没有名称输入框），
+  /// 不能当成用户起的标题展示。
+  static const _genericDescriptions = <String>{'支出', '收入', '转账', '转入', '转出'};
+
   String get _title {
+    // 名称优先；没有名称时退回备注——之前用户只能把标题塞进备注里。
+    final description = transaction.description.trim();
+    if (description.isNotEmpty && !_genericDescriptions.contains(description)) {
+      return description;
+    }
     final notes = transaction.notes?.trim();
     if (notes != null && notes.isNotEmpty) {
       return notes;
@@ -444,6 +461,7 @@ class _TransactionDetailSummary extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onRefund,
+    required this.onDuplicate,
     required this.onAddSplit,
     required this.onAddToFamilyLedger,
     required this.onConfirm,
@@ -460,6 +478,7 @@ class _TransactionDetailSummary extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onRefund;
+  final VoidCallback? onDuplicate;
   final VoidCallback? onAddSplit;
   final VoidCallback? onAddToFamilyLedger;
   final VoidCallback? onConfirm;
@@ -564,6 +583,13 @@ class _TransactionDetailSummary extends StatelessWidget {
                       tooltip: '退款',
                       onPressed: onRefund!,
                       icon: Icons.reply_rounded,
+                      variant: AppIconActionVariant.outlined,
+                    ),
+                  if (onDuplicate != null)
+                    AppIconActionButton(
+                      tooltip: '再来一笔',
+                      onPressed: onDuplicate!,
+                      icon: Icons.content_copy_rounded,
                       variant: AppIconActionVariant.outlined,
                     ),
                   if (onAddSplit != null)

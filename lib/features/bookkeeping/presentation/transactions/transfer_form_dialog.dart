@@ -9,6 +9,7 @@ import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 
+import 'package:miji/features/bookkeeping/application/money_amount_expression.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
@@ -18,6 +19,7 @@ import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/amount_calculator_sheet.dart';
 
 class TransferFormDialog extends ConsumerStatefulWidget {
   const TransferFormDialog({
@@ -49,6 +51,34 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
   String? _errorText;
 
   bool get _isEditing => widget.transaction != null;
+
+  /// 金额框里是算式时给一行实时结果（与记一笔表单保持同一套规则）。
+  String? get _amountPreviewText {
+    final text = _amountController.text;
+    if (!MoneyAmountExpression.isExpression(text)) {
+      return null;
+    }
+    final minor = MoneyAmountExpression.tryEvaluateToMinor(text);
+    if (minor == null) {
+      return null;
+    }
+    return '= ${formatMoneyMinor(minor, defaultMoneyCurrencyCode)}';
+  }
+
+  Future<void> _openAmountCalculator() async {
+    final result = await showAmountCalculatorSheet(
+      context,
+      initialText: _amountController.text,
+      currencyCode: defaultMoneyCurrencyCode,
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _amountController.text = result;
+      _errorText = null;
+    });
+  }
 
   @override
   void initState() {
@@ -103,6 +133,8 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
             labelText: '金额',
             currencyCode: defaultMoneyCurrencyCode,
             prominent: true,
+            previewText: _amountPreviewText,
+            onCalculatorTap: _openAmountCalculator,
             onChanged: (_) => setState(() {}),
           ),
           accounts.when(

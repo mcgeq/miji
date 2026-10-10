@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
@@ -20,31 +21,40 @@ import 'package:miji/features/bookkeeping/presentation/budgets/money_budgets_sec
 import 'package:miji/features/bookkeeping/presentation/categories/money_categories_section.dart';
 import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
 import 'package:miji/features/bookkeeping/presentation/ledgers/ledger_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/quick_actions/money_quick_action_launcher.dart';
 import 'package:miji/features/bookkeeping/presentation/reminders/money_reminder_center_section.dart';
 import 'package:miji/features/bookkeeping/presentation/statistics/money_statistics_section.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/money_transactions_section.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:flutter/services.dart';
 
-class BookkeepingPage extends StatefulWidget {
+class BookkeepingPage extends ConsumerStatefulWidget {
   const BookkeepingPage({
     super.key,
     this.initialSection,
     this.initialAccountId,
+    this.initialAction,
   });
 
   final String? initialSection;
   final String? initialAccountId;
 
+  /// 进入后立即执行的快捷动作，目前只有 `expense`（记一笔支出）。
+  ///
+  /// 通知带来的入口：点「今天还没记账」通知如果只落到流水列表，用户还得再
+  /// 找一遍按钮，通知就算白推了。
+  final String? initialAction;
+
   @override
-  State<BookkeepingPage> createState() => _BookkeepingPageState();
+  ConsumerState<BookkeepingPage> createState() => _BookkeepingPageState();
 }
 
-class _BookkeepingPageState extends State<BookkeepingPage> {
+class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
   _BookkeepingPanel _selectedPanel = _BookkeepingPanel.accounts;
   final Set<_BookkeepingPanel> _loadedPanels = <_BookkeepingPanel>{};
   MoneyTransactionQuery _transactionQuery = const MoneyTransactionQuery();
   MoneyTransactionFilterContext? _transactionFilterContext;
+  bool _initialActionConsumed = false;
 
   @override
   void initState() {
@@ -52,6 +62,28 @@ class _BookkeepingPageState extends State<BookkeepingPage> {
     _selectedPanel = _panelFromSection(widget.initialSection);
     _applyInitialTransactionQuery();
     _loadedPanels.add(_selectedPanel);
+  }
+
+  /// 首帧后消费一次性动作。
+  ///
+  /// 放在 `build` 里而不是 `initState`：动作需要 `context` 和已经就绪的
+  /// provider，首帧前两者都不可用。
+  void _consumeInitialAction() {
+    if (_initialActionConsumed || widget.initialAction != 'expense') {
+      _initialActionConsumed = true;
+      return;
+    }
+    _initialActionConsumed = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      MoneyQuickActionLauncher(
+        context: context,
+        ref: ref,
+        ensureToast: () => FToast()..init(context),
+      ).run(MoneyQuickAction.expense);
+    });
   }
 
   @override
@@ -75,6 +107,7 @@ class _BookkeepingPageState extends State<BookkeepingPage> {
 
   @override
   Widget build(BuildContext context) {
+    _consumeInitialAction();
     final showPageLedgerSelector = !AppResponsive.of(context).isCompact;
 
     return Stack(

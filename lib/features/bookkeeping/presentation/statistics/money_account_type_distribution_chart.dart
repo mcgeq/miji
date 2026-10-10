@@ -11,9 +11,19 @@ import 'package:flutter/services.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 
 class MoneyAccountTypeDistributionChart extends StatefulWidget {
-  const MoneyAccountTypeDistributionChart({super.key, required this.slices});
+  const MoneyAccountTypeDistributionChart({
+    super.key,
+    required this.slices,
+    this.onSliceTap,
+  });
 
   final List<MoneyStatisticsAccountTypeSlice> slices;
+
+  /// 点击列表行时下钻到该账户类型的流水。
+  ///
+  /// 与账户分布卡保持同一套交互：饼图点击 = 切换中心汇总，列表点击 = 下钻。
+  /// 给了回调后列表行就不再承担切换中心的功能。
+  final ValueChanged<MoneyStatisticsAccountTypeSlice>? onSliceTap;
 
   @override
   State<MoneyAccountTypeDistributionChart> createState() =>
@@ -104,7 +114,9 @@ class _MoneyAccountTypeDistributionChartState
               _AccountTypeRow(
                 slice: visibleSlices[index],
                 color: _sliceColor(context, index),
-                onTap: index >= topSlices.length
+                onTap: widget.onSliceTap != null
+                    ? () => widget.onSliceTap!(visibleSlices[index])
+                    : index >= topSlices.length
                     ? null
                     : () => _handleTap(index),
               ),

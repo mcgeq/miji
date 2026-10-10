@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import 'package:miji/features/bookkeeping/application/money_amount_expression.dart';
+
 class MoneyAmountParseException implements Exception {
   const MoneyAmountParseException(this.input);
 
@@ -18,11 +20,17 @@ int parseMoneyAmountToMinor(String input) {
   }
 
   final value = double.tryParse(normalized);
-  if (value == null) {
-    throw MoneyAmountParseException(input);
+  if (value != null) {
+    return (value * 100).round();
   }
 
-  return (value * 100).round();
+  // 不是纯数字：再按四则表达式试一次（合计小票：`12.5+38+6`）。
+  // 仍然解析不了才抛错，保持调用方原有的错误处理不变。
+  final evaluated = MoneyAmountExpression.tryEvaluateToMinor(normalized);
+  if (evaluated == null) {
+    throw MoneyAmountParseException(input);
+  }
+  return evaluated;
 }
 
 String formatMoneyMinor(int amountMinor, String currencyCode) {

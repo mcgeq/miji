@@ -7,9 +7,11 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/database/seed/seed_providers.dart';
+import 'package:miji/core/notifications/notification_providers.dart';
 import 'package:miji/core/preferences/domain/user_preferences_entity.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/router/app_router.dart';
+import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/core/sync/webdav/webdav_providers.dart';
 import 'package:miji/core/theme/app_theme.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
@@ -51,16 +53,48 @@ class MijiApp extends ConsumerStatefulWidget {
 }
 
 class _MijiAppState extends ConsumerState<MijiApp> with WidgetsBindingObserver {
+  StreamSubscription<String>? _tapSubscription;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _tapSubscription = ref
+        .read(notificationTapBusProvider)
+        .taps
+        .listen(_handleNotificationPayload);
   }
 
   @override
   void dispose() {
+    unawaited(_tapSubscription?.cancel());
+    _tapSubscription = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  /// 通知点击 → 路由。
+  ///
+  /// payload 统一 `miji://money/<target>`，这里只做一层映射，不解析实体 id：
+  /// 提醒的处理入口本来就集中在提醒面板，跳过去比跳某个具体实体更有用。
+  void _handleNotificationPayload(String payload) {
+    final router = ref.read(appRouterProvider);
+    final target = Uri.tryParse(payload)?.pathSegments;
+    final section = switch (target != null && target.length >= 2
+        ? target[1]
+        : '') {
+      'budgets' => 'budgets',
+      'log' => 'transactions',
+      _ => 'reminders',
+    };
+    final uri = Uri(
+      path: AppRoutes.bookkeeping,
+      queryParameters: <String, String>{
+        'section': section,
+        if (section == 'transactions') 'action': 'expense',
+      },
+    );
+    router.go(uri.toString());
   }
 
   @override
@@ -103,6 +137,9 @@ class _MijiAppState extends ConsumerState<MijiApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     ref.watch(globalDatabaseSeedProvider);
     ref.watch(webDavAutoSyncControllerProvider);
+    // 长期 watch：提醒中心的待处理项 / 提醒设置 / 当天流水任一变化都会
+    // 自动重排系统级预约通知，不打开记账模块也能按时收到账单项。
+    ref.watch(moneyReminderScheduleSyncProvider);
 
     ref.listen(authSessionControllerProvider, (_, next) {
       if (next.isUnlocked && next.userId != null) {
