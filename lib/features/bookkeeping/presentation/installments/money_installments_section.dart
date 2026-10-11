@@ -1,0 +1,2008 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
+import 'package:miji/core/preferences/providers/preferences_providers.dart';
+import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/theme/app_design_tokens.dart';
+import 'package:miji/core/presentation/components/app_skeleton.dart';
+import 'package:miji/core/presentation/app_responsive.dart';
+import 'package:miji/core/presentation/app_toast.dart';
+import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
+import 'package:miji/core/presentation/components/app_form_hint.dart';
+import 'package:miji/core/presentation/components/app_icon_action_button.dart';
+import 'package:miji/core/presentation/components/app_list_item.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
+import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
+import 'package:miji/core/router/app_routes.dart';
+import 'package:miji/shared/widgets/app_amount_field.dart';
+import 'package:miji/shared/widgets/app_form_layout.dart';
+import 'package:miji/shared/widgets/app_text_field.dart';
+import 'package:miji/shared/widgets/date_picker.dart';
+import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/application/money_installment_schedule.dart';
+import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_repository.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/account_form_dialog.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/auto_posting/auto_posting_conflict_sheet.dart';
+import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_panel_header.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
+import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+
+class MoneyInstallmentsSection extends ConsumerStatefulWidget {
+  const MoneyInstallmentsSection({super.key});
+
+  @override
+  ConsumerState<MoneyInstallmentsSection> createState() =>
+      _MoneyInstallmentsSectionState();
+}
+
+class _MoneyInstallmentsSectionState
+    extends ConsumerState<MoneyInstallmentsSection> {
+  FToast? _toast;
+
+  @override
+  Widget build(BuildContext context) {
+    final plans = ref.watch(currentUserInstallmentPlansProvider);
+    final currentLedger = ref.watch(currentUserCurrentLedgerValueProvider);
+    final accounts = currentLedger == null
+        ? const AsyncValue<List<MoneyAccountEntity>>.data(
+            <MoneyAccountEntity>[],
+          )
+        : ref.watch(currentUserMoneyLedgerAccountsProvider(currentLedger.id));
+    final catalog = ref.watch(
+      currentUserCategoryCatalogProvider(MoneyCategoryKind.expense),
+    );
+
+    return plans.when(
+      data: (value) => accounts.when(
+        data: (accountRows) => catalog.when(
+          data: (categoryCatalog) => _MoneyInstallmentsContent(
+            plans: value,
+            accounts: accountRows,
+            categoryCatalog: categoryCatalog,
+            onCreate: _showCreateDialog,
+            onCreateAccount: _createCreditAccount,
+            onManageCategories: _openCategoriesPanel,
+            onRefresh: () => refreshMoneyData(ref),
+            onCancel: _cancelPlan,
+            onPostDetail: _postDetail,
+          ),
+          loading: () => const AppSkeletonList(),
+          error: (error, stackTrace) => AppErrorState(
+            title: '读取分类失败',
+            onRetry: () => ref.invalidate(
+              currentUserCategoryCatalogProvider(MoneyCategoryKind.expense),
+            ),
+          ),
+        ),
+        loading: () => const AppSkeletonList(),
+        error: (error, stackTrace) => AppErrorState(
+          title: '读取账户失败',
+          onRetry: () {
+            final ledger = ref.read(currentUserCurrentLedgerValueProvider);
+            if (ledger == null) {
+              ref.invalidate(currentUserMoneyLedgersProvider);
+              return;
+            }
+            ref.invalidate(currentUserMoneyLedgerAccountsProvider(ledger.id));
+          },
+        ),
+      ),
+      loading: () => const AppSkeletonList(),
+      error: (error, stackTrace) => AppErrorState(
+        title: '读取分期失败',
+        onRetry: () => ref.invalidate(currentUserInstallmentPlansProvider),
+      ),
+    );
+  }
+
+  Future<void> _showCreateDialog(
+    List<MoneyAccountEntity> accounts,
+    MoneyCategoryCatalog categoryCatalog,
+  ) async {
+    final result = await showAppResponsiveDialog<MoneyInstallmentPlanDraft>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => InstallmentPlanFormDialog(
+        accounts: accounts,
+        categoryCatalog: categoryCatalog,
+      ),
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyInstallmentActionsProvider)
+          .createInstallmentPlan(result);
+      if (!mounted) return;
+      AppToast.success(_ensureToast(), context, '分期计划已创建');
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, _errorText(error));
+    }
+  }
+
+  Future<void> _cancelPlan(MoneyInstallmentPlanEntity plan) async {
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: '取消分期',
+      message: '取消后会释放尚未入账的冻结本金，确认继续？',
+      confirmLabel: '确认取消',
+      destructive: true,
+      icon: Icons.close_rounded,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyInstallmentActionsProvider)
+          .cancelInstallmentPlan(plan.id);
+      if (!mounted) return;
+      AppToast.success(_ensureToast(), context, '分期计划已取消');
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, _errorText(error));
+    }
+  }
+
+  /// 从「没有可用信用账户」空态直接新建一个信用账户。
+  Future<void> _createCreditAccount() async {
+    final defaultCurrencyCode = ref
+        .read(currentUserPreferencesProvider)
+        .maybeWhen(
+          data: (preferences) => preferences?.currencyCode,
+          orElse: () => null,
+        );
+    final result = await showAppResponsiveDialog<AccountFormResult>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => AccountFormDialog(
+        defaultCurrencyCode: defaultCurrencyCode,
+        initialType: MoneyAccountType.creditCard,
+      ),
+    );
+    if (!mounted || result?.draft == null) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyAccountActionsProvider)
+          .createAccount(result!.draft!);
+      if (!mounted) return;
+      AppToast.success(_ensureToast(), context, '信用账户已创建');
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, '创建信用账户失败');
+    }
+  }
+
+  /// 没有支出分类时，直接带用户去分类面板。
+  void _openCategoriesPanel() {
+    context.go(
+      Uri(
+        path: AppRoutes.bookkeeping,
+        queryParameters: const {'section': 'categories'},
+      ).toString(),
+    );
+  }
+
+  Future<void> _postDetail(MoneyInstallmentDetailEntity detail) async {
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: '分期入账',
+      message: '确认将第 ${detail.periodNumber} 期生成支出流水？',
+      confirmLabel: '确认入账',
+      icon: Icons.receipt_long_rounded,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyInstallmentActionsProvider)
+          .postInstallmentDetail(detail.id);
+      if (!mounted) return;
+      AppToast.success(_ensureToast(), context, '分期已入账');
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, _errorText(error));
+    }
+  }
+
+  FToast _ensureToast() {
+    return _toast ??= (FToast()..init(context));
+  }
+
+  String _errorText(Object error) {
+    if (error is MoneyRepositoryException) {
+      return switch (error.code) {
+        MoneyRepositoryErrorCode.invalidInstallmentAmount => '请检查分期金额和期数',
+        MoneyRepositoryErrorCode.invalidInstallmentAccount => '请选择信用账户',
+        MoneyRepositoryErrorCode.installmentPlanNotFound => '分期计划不可用',
+        MoneyRepositoryErrorCode.invalidInstallmentStatus => '当前分期状态不可操作',
+        MoneyRepositoryErrorCode.creditCardLimitExceeded => '信用账户占用额度不能超过信用额度',
+        MoneyRepositoryErrorCode.ledgerNotFound => '分摊账本不可用',
+        MoneyRepositoryErrorCode.memberNotFound => '分摊成员不可用',
+        MoneyRepositoryErrorCode.invalidSplitAmount => '请检查分摊金额或比例',
+        MoneyRepositoryErrorCode.invalidSplitTransaction => '当前流水不支持分摊',
+        MoneyRepositoryErrorCode.accountNotFound => '账户不可用',
+        MoneyRepositoryErrorCode.databaseReadFailed => '读取失败',
+        MoneyRepositoryErrorCode.databaseWriteFailed => '保存失败',
+        _ => '操作失败',
+      };
+    }
+    return '操作失败';
+  }
+}
+
+class _MoneyInstallmentsContent extends StatelessWidget {
+  const _MoneyInstallmentsContent({
+    required this.plans,
+    required this.accounts,
+    required this.categoryCatalog,
+    required this.onCreate,
+    required this.onCreateAccount,
+    required this.onManageCategories,
+    required this.onRefresh,
+    required this.onCancel,
+    required this.onPostDetail,
+  });
+
+  final List<MoneyInstallmentPlanEntity> plans;
+  final List<MoneyAccountEntity> accounts;
+  final MoneyCategoryCatalog categoryCatalog;
+  final void Function(List<MoneyAccountEntity>, MoneyCategoryCatalog) onCreate;
+  final VoidCallback onCreateAccount;
+  final VoidCallback onManageCategories;
+  final Future<void> Function() onRefresh;
+  final ValueChanged<MoneyInstallmentPlanEntity> onCancel;
+  final ValueChanged<MoneyInstallmentDetailEntity> onPostDetail;
+
+  @override
+  Widget build(BuildContext context) {
+    final creditAccounts = accounts
+        .where((account) => account.isActive && account.type.isCreditLike)
+        .toList();
+    final canCreate =
+        creditAccounts.isNotEmpty && categoryCatalog.categories.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 6),
+        // 常驻新增入口。
+        //
+        // 原来 _MoneyInstallmentsContent 声明了 required onCreate，
+        // 但 build 里从未引用，页面实际没有任何新增入口。
+        BookkeepingPanelHeader(
+          actions: [
+            AppIconActionButton(
+              tooltip: canCreate ? '新增分期' : '需要先有信用账户和支出分类',
+              onPressed: canCreate
+                  ? () => onCreate(accounts, categoryCatalog)
+                  : null,
+              icon: Icons.add_rounded,
+              variant: AppIconActionVariant.filled,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        // 分期自己会到期自动入账；用户若又为同一笔还款建了自动记账模板，
+        // 到期当天会记两遍账。两个页面都放提示，从哪边进来都能看到。
+        _InstallmentConflictBanner(),
+        if (creditAccounts.isEmpty)
+          Expanded(
+            child: AppEmptyState(
+              title: '还没有可用信用账户',
+              message: '分期只能挂在信用卡、花呗、白条等信用账户上',
+              icon: Icons.credit_card_rounded,
+              action: FilledButton.icon(
+                onPressed: onCreateAccount,
+                icon: const Icon(Icons.add_card_rounded, size: 18),
+                label: const Text('新建信用账户'),
+              ),
+            ),
+          )
+        else if (categoryCatalog.categories.isEmpty)
+          Expanded(
+            child: AppEmptyState(
+              title: '还没有支出分类',
+              message: '先创建支出分类，再回来设置分期',
+              icon: Icons.category_rounded,
+              action: OutlinedButton.icon(
+                onPressed: onManageCategories,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: const Text('去管理分类'),
+              ),
+            ),
+          )
+        else if (plans.isEmpty)
+          Expanded(
+            child: AppEmptyState(
+              title: '还没有分期计划',
+              message: '新增分期后会冻结信用账户本金，并按期生成支出',
+              icon: Icons.calendar_month_rounded,
+              action: FilledButton.icon(
+                onPressed: () => onCreate(accounts, categoryCatalog),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('新增分期'),
+              ),
+            ),
+          )
+        else
+          Expanded(
+            child: _InstallmentPlanList(
+              plans: plans,
+              accountForPlan: _accountForPlan,
+              categoryText: _categoryText,
+              onPostDetail: onPostDetail,
+              onCancel: onCancel,
+              onRefresh: onRefresh,
+            ),
+          ),
+      ],
+    );
+  }
+
+  MoneyAccountEntity? _accountForPlan(MoneyInstallmentPlanEntity plan) {
+    for (final account in accounts) {
+      if (account.id == plan.accountId) {
+        return account;
+      }
+    }
+    return null;
+  }
+
+  String _categoryText(MoneyInstallmentPlanEntity plan) {
+    final category = categoryCatalog.categoryById(plan.categoryId);
+    final subCategory = categoryCatalog.subCategoryById(plan.subCategoryId);
+    if (category == null) {
+      return '分类不可用';
+    }
+    if (subCategory == null) {
+      return category.name;
+    }
+    return '${category.name} / ${subCategory.name}';
+  }
+}
+
+class _InstallmentConflictBanner extends ConsumerWidget {
+  const _InstallmentConflictBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final conflicts = ref.watch(
+      currentUserAutoPostingInstallmentConflictsProvider,
+    );
+    final count = conflicts.maybeWhen(
+      data: (items) => items.length,
+      orElse: () => 0,
+    );
+    if (count == 0) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final radiusTokens = theme.radiusTokens;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: colorScheme.errorContainer.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(radiusTokens.md),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => showAutoPostingConflictSheet(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 18,
+                  color: colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '检测到 $count 处重复登记，同一笔还款会被记两遍账',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '去处理',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 分期列表：按状态分段（进行中 / 已结束折叠），避免已完成的老计划一直占首屏。
+class _InstallmentPlanList extends StatefulWidget {
+  const _InstallmentPlanList({
+    required this.plans,
+    required this.accountForPlan,
+    required this.categoryText,
+    required this.onPostDetail,
+    required this.onCancel,
+    required this.onRefresh,
+  });
+
+  final List<MoneyInstallmentPlanEntity> plans;
+  final MoneyAccountEntity? Function(MoneyInstallmentPlanEntity plan)
+  accountForPlan;
+  final String Function(MoneyInstallmentPlanEntity plan) categoryText;
+  final ValueChanged<MoneyInstallmentDetailEntity> onPostDetail;
+  final ValueChanged<MoneyInstallmentPlanEntity> onCancel;
+  final Future<void> Function() onRefresh;
+
+  @override
+  State<_InstallmentPlanList> createState() => _InstallmentPlanListState();
+}
+
+class _InstallmentPlanListState extends State<_InstallmentPlanList> {
+  bool _showFinished = false;
+  final _searchController = TextEditingController();
+  String _keyword = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final keyword = _keyword;
+    final visible = keyword.isEmpty
+        ? widget.plans
+        : widget.plans.where((plan) {
+            final haystack = [
+              plan.name,
+              widget.categoryText(plan),
+              widget.accountForPlan(plan)?.name ?? '',
+            ].join(' ').toLowerCase();
+            return haystack.contains(keyword);
+          }).toList();
+    final active = visible.where((plan) => plan.isActive).toList();
+    final finished = visible.where((plan) => !plan.isActive).toList();
+
+    Widget card(MoneyInstallmentPlanEntity plan) {
+      return _InstallmentPlanCard(
+        plan: plan,
+        account: widget.accountForPlan(plan),
+        categoryText: widget.categoryText(plan),
+        onPostDetail: widget.onPostDetail,
+        onCancel: plan.isActive ? () => widget.onCancel(plan) : null,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 12),
+        children: [
+          AppTextField(
+            controller: _searchController,
+            hintText: '搜索分期名称 / 分类 / 账户',
+            prefixIcon: const Icon(Icons.search_rounded, size: 19),
+            onChanged: (value) =>
+                setState(() => _keyword = value.trim().toLowerCase()),
+            suffixIcon: _keyword.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: '清除搜索',
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _keyword = '');
+                    },
+                  ),
+          ),
+          const SizedBox(height: 12),
+          if (visible.isEmpty)
+            const AppEmptyState(title: '没有匹配的分期计划')
+          else if (active.isNotEmpty)
+            _PlanSectionHeader(label: '进行中', count: active.length),
+          for (final plan in active) ...[
+            const SizedBox(height: 10),
+            card(plan),
+          ],
+          if (finished.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Material(
+              color: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.42,
+              ),
+              borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
+                onTap: () => setState(() => _showFinished = !_showFinished),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.task_alt_rounded,
+                        size: 17,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '已结束 ${finished.length} 个',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        _showFinished
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        size: 20,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (_showFinished)
+              for (final plan in finished) ...[
+                const SizedBox(height: 10),
+                card(plan),
+              ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanSectionHeader extends StatelessWidget {
+  const _PlanSectionHeader({required this.label, required this.count});
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 2, bottom: 2),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '$count',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InstallmentPlanCard extends ConsumerStatefulWidget {
+  const _InstallmentPlanCard({
+    required this.plan,
+    required this.account,
+    required this.categoryText,
+    required this.onPostDetail,
+    required this.onCancel,
+  });
+
+  final MoneyInstallmentPlanEntity plan;
+  final MoneyAccountEntity? account;
+  final String categoryText;
+  final ValueChanged<MoneyInstallmentDetailEntity> onPostDetail;
+  final VoidCallback? onCancel;
+
+  @override
+  ConsumerState<_InstallmentPlanCard> createState() =>
+      _InstallmentPlanCardState();
+}
+
+class _InstallmentPlanCardState extends ConsumerState<_InstallmentPlanCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final plan = widget.plan;
+    final details = ref.watch(currentUserInstallmentDetailsProvider(plan.id));
+    final status = _effectivePlanStatus(
+      plan,
+      details.maybeWhen(data: (rows) => rows, orElse: () => null),
+    );
+    final terminal =
+        status == MoneyInstallmentPlanStatus.completed ||
+        status == MoneyInstallmentPlanStatus.cancelled;
+
+    return AppSwipeActionTile(
+      actions: [
+        if (widget.onCancel != null)
+          AppSwipeAction(
+            tooltip: '取消分期',
+            icon: Icons.close_rounded,
+            foreground: colorScheme.onErrorContainer,
+            background: colorScheme.errorContainer,
+            onPressed: widget.onCancel!,
+          ),
+      ],
+      child: AppListItemPanel(
+        padding: const EdgeInsets.all(14),
+        child: details.when(
+          data: (rows) => _InstallmentPlanSummary(
+            plan: plan,
+            account: widget.account,
+            categoryText: widget.categoryText,
+            details: rows,
+            onOpenDetails: () => _showDetails(context),
+            showMetrics: !terminal || _expanded,
+            terminalMode: terminal,
+            onToggleMetrics: terminal
+                ? () => setState(() => _expanded = !_expanded)
+                : null,
+          ),
+          loading: () => _InstallmentPlanSummary(
+            plan: plan,
+            account: widget.account,
+            categoryText: widget.categoryText,
+            details: null,
+            onOpenDetails: () => _showDetails(context),
+            loadingDetails: true,
+            showMetrics: !terminal || _expanded,
+            terminalMode: terminal,
+            onToggleMetrics: terminal
+                ? () => setState(() => _expanded = !_expanded)
+                : null,
+          ),
+          error: (error, stackTrace) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _InstallmentPlanSummary(
+                plan: plan,
+                account: widget.account,
+                categoryText: widget.categoryText,
+                details: null,
+                onOpenDetails: () => _showDetails(context),
+                showMetrics: !terminal || _expanded,
+                terminalMode: terminal,
+                onToggleMetrics: terminal
+                    ? () => setState(() => _expanded = !_expanded)
+                    : null,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '读取明细失败',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.error,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showDetails(BuildContext context) {
+    return showAppResponsiveDialog<void>(
+      context: context,
+      builder: (context) => InstallmentDetailsDialog(
+        plan: widget.plan,
+        account: widget.account,
+        categoryText: widget.categoryText,
+        onPostDetail: widget.onPostDetail,
+      ),
+    );
+  }
+}
+
+class _InstallmentPlanSummary extends StatelessWidget {
+  const _InstallmentPlanSummary({
+    required this.plan,
+    required this.account,
+    required this.categoryText,
+    required this.details,
+    required this.onOpenDetails,
+    this.loadingDetails = false,
+    this.showMetrics = true,
+    this.terminalMode = false,
+    this.onToggleMetrics,
+  });
+
+  final MoneyInstallmentPlanEntity plan;
+  final MoneyAccountEntity? account;
+  final String categoryText;
+  final List<MoneyInstallmentDetailEntity>? details;
+  final VoidCallback onOpenDetails;
+  final bool loadingDetails;
+  final bool showMetrics;
+  final bool terminalMode;
+  final VoidCallback? onToggleMetrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final postedCount = _postedDetailCount(details);
+    final pendingCount = details == null
+        ? plan.remainingPeriods
+        : _pendingDetailCount(details);
+    final totalPeriods = plan.totalPeriods;
+    final progress = totalPeriods <= 0
+        ? 0.0
+        : (postedCount / totalPeriods).clamp(0.0, 1.0).toDouble();
+    final status = _effectivePlanStatus(plan, details);
+    final nextDetail = _nextPendingDetail(details);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final responsive = AppResponsive.of(
+          context,
+          width: constraints.maxWidth,
+        );
+        final compact = responsive.isCompact;
+        final metricGap = compact ? 8.0 : 10.0;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppListItemIcon(
+                  icon: Icons.event_repeat_rounded,
+                  color: colorScheme.primary,
+                  size: compact ? 36 : 40,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              plan.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _InstallmentStatusPill(status: status),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${account?.name ?? '账户不可用'} · $categoryText',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                AppIconActionButton(
+                  tooltip: '查看明细',
+                  onPressed: onOpenDetails,
+                  icon: Icons.format_list_bulleted_rounded,
+                  iconSize: 18,
+                ),
+                if (onToggleMetrics != null) ...[
+                  const SizedBox(width: 4),
+                  AppIconActionButton(
+                    tooltip: showMetrics ? '收起金额' : '展开金额',
+                    onPressed: onToggleMetrics,
+                    icon: showMetrics
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                    iconSize: 18,
+                    variant: AppIconActionVariant.outlined,
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '已入账 $postedCount/$totalPeriods 期',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${(progress * 100).round()}%',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                minHeight: 7,
+                value: loadingDetails ? null : progress,
+                backgroundColor: colorScheme.surfaceContainerHighest,
+              ),
+            ),
+            if (showMetrics) ...[
+              const SizedBox(height: 12),
+              if (terminalMode)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _InstallmentAmountLine(
+                      label: '总应还',
+                      amountMinor: plan.totalPayableMinor,
+                      currencyCode: plan.currencyCode,
+                      tone: MoneyAmountTone.expense,
+                    ),
+                    const SizedBox(height: 8),
+                    _InstallmentAmountLine(
+                      label: '本金',
+                      amountMinor: plan.totalPrincipalMinor,
+                      currencyCode: plan.currencyCode,
+                      tone: MoneyAmountTone.credit,
+                    ),
+                    const SizedBox(height: 8),
+                    _InstallmentAmountLine(
+                      label: '利息',
+                      amountMinor: plan.totalInterestMinor,
+                      currencyCode: plan.currencyCode,
+                      tone: MoneyAmountTone.warning,
+                    ),
+                  ],
+                )
+              else if (compact)
+                Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _InstallmentSummaryMetric(
+                            label: '每期',
+                            amountMinor: plan.periodAmountMinor,
+                            currencyCode: plan.currencyCode,
+                            tone: MoneyAmountTone.expense,
+                          ),
+                        ),
+                        SizedBox(width: metricGap),
+                        Expanded(
+                          child: _InstallmentSummaryMetric(
+                            label: '剩余',
+                            text: status == MoneyInstallmentPlanStatus.completed
+                                ? '0 期'
+                                : '$pendingCount 期',
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: metricGap),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _InstallmentSummaryMetric(
+                            label: '下一期',
+                            text: nextDetail == null
+                                ? status.label
+                                : _nextDueText(nextDetail.dueDate),
+                          ),
+                        ),
+                        SizedBox(width: metricGap),
+                        Expanded(
+                          child: _InstallmentSummaryMetric(
+                            label: '总应还',
+                            amountMinor: plan.totalPayableMinor,
+                            currencyCode: plan.currencyCode,
+                            tone: MoneyAmountTone.expense,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              else
+                Wrap(
+                  spacing: metricGap,
+                  runSpacing: metricGap,
+                  children: [
+                    _InstallmentSummaryMetric(
+                      label: '总应还',
+                      amountMinor: plan.totalPayableMinor,
+                      currencyCode: plan.currencyCode,
+                      tone: MoneyAmountTone.expense,
+                      width: 132,
+                    ),
+                    _InstallmentSummaryMetric(
+                      label: '本金',
+                      amountMinor: plan.totalPrincipalMinor,
+                      currencyCode: plan.currencyCode,
+                      tone: MoneyAmountTone.credit,
+                      width: 132,
+                    ),
+                    _InstallmentSummaryMetric(
+                      label: '利息',
+                      amountMinor: plan.totalInterestMinor,
+                      currencyCode: plan.currencyCode,
+                      tone: MoneyAmountTone.warning,
+                      width: 132,
+                    ),
+                    _InstallmentSummaryMetric(
+                      label: '下一期',
+                      text: nextDetail == null
+                          ? status.label
+                          : _nextDueText(nextDetail.dueDate),
+                      width: 132,
+                    ),
+                    _InstallmentSummaryMetric(
+                      label: '剩余',
+                      text: status == MoneyInstallmentPlanStatus.completed
+                          ? '0 期'
+                          : '$pendingCount 期',
+                      width: 96,
+                    ),
+                  ],
+                ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// 时间轴外壳：左侧一条轨道（圆点 + 连线），右侧是原本的明细行。
+class _InstallmentTimelineItem extends StatelessWidget {
+  const _InstallmentTimelineItem({
+    required this.child,
+    required this.isFirst,
+    required this.isLast,
+    required this.isCurrent,
+    required this.isPosted,
+  });
+
+  final Widget child;
+  final bool isFirst;
+  final bool isLast;
+  final bool isCurrent;
+  final bool isPosted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final dotColor = isCurrent
+        ? colorScheme.primary
+        : isPosted
+        ? theme.moneyColors.income
+        : colorScheme.outlineVariant;
+
+    // IntrinsicHeight：让轨道能随右侧内容高度拉伸，又不依赖父级给固定高度
+    // （弹窗里是 Column，高度不固定；直接用 stretch + Expanded 会触发约束断言）。
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 22,
+            child: Column(
+              children: [
+                // 首项上方不画线，末项下方不画线。
+                SizedBox(
+                  height: 14,
+                  child: isFirst
+                      ? null
+                      : Center(
+                          child: Container(
+                            width: 2,
+                            color: colorScheme.outlineVariant,
+                          ),
+                        ),
+                ),
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dotColor,
+                    boxShadow: isCurrent
+                        ? [
+                            BoxShadow(
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.24,
+                              ),
+                              blurRadius: 0,
+                              spreadRadius: 4,
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
+                Expanded(
+                  child: isLast
+                      ? const SizedBox.shrink()
+                      : Center(
+                          child: Container(
+                            width: 2,
+                            color: colorScheme.outlineVariant,
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: child,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InstallmentSummaryMetric extends StatelessWidget {
+  const _InstallmentSummaryMetric({
+    required this.label,
+    this.amountMinor,
+    this.currencyCode = 'CNY',
+    this.tone = MoneyAmountTone.neutral,
+    this.text,
+    this.width,
+  }) : assert(amountMinor != null || text != null);
+
+  final String label;
+  final int? amountMinor;
+  final String currencyCode;
+  final MoneyAmountTone tone;
+  final String? text;
+  final double? width;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return SizedBox(
+      width: width,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.36),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  letterSpacing: 0,
+                ),
+              ),
+              const SizedBox(height: 3),
+              if (amountMinor == null)
+                Text(
+                  text!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                )
+              else
+                MoneyText(
+                  amountMinor: amountMinor!,
+                  currencyCode: currencyCode,
+                  tone: tone,
+                  textStyle: theme.textTheme.titleSmall,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InstallmentStatusPill extends StatelessWidget {
+  const _InstallmentStatusPill({required this.status});
+
+  final MoneyInstallmentPlanStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final (foreground, background) = switch (status) {
+      MoneyInstallmentPlanStatus.active => (
+        colorScheme.primary,
+        colorScheme.primaryContainer.withValues(alpha: 0.52),
+      ),
+      MoneyInstallmentPlanStatus.completed => (
+        colorScheme.tertiary,
+        colorScheme.tertiaryContainer.withValues(alpha: 0.52),
+      ),
+      MoneyInstallmentPlanStatus.cancelled => (
+        colorScheme.onSurfaceVariant,
+        colorScheme.surfaceContainerHighest,
+      ),
+    };
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: Text(
+          status.label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: foreground,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class InstallmentDetailsDialog extends ConsumerWidget {
+  const InstallmentDetailsDialog({
+    super.key,
+    required this.plan,
+    required this.account,
+    required this.categoryText,
+    this.onPostDetail,
+  });
+
+  final MoneyInstallmentPlanEntity plan;
+  final MoneyAccountEntity? account;
+  final String categoryText;
+  final ValueChanged<MoneyInstallmentDetailEntity>? onPostDetail;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final details = ref.watch(currentUserInstallmentDetailsProvider(plan.id));
+
+    return AppDialogScaffold(
+      title: plan.name,
+      subtitle: '${account?.name ?? '账户不可用'} · $categoryText',
+      maxWidth: 560,
+      body: details.when(
+        data: (rows) {
+          if (rows.isEmpty) {
+            return const AppEmptyState(
+              title: '还没有分期明细',
+              message: '创建分期后会在这里展示每期入账安排',
+              icon: Icons.format_list_bulleted_rounded,
+            );
+          }
+          // 时间轴：把「已入账 / 当前 / 未来」画出来，用户一眼看出还多久还完
+          // （原来是一列同构的行，只能靠状态文字自己读）。
+          final currentIndex = rows.indexWhere(
+            (row) => row.status == MoneyInstallmentDetailStatus.pending,
+          );
+          return Column(
+            children: [
+              for (var index = 0; index < rows.length; index++) ...[
+                _InstallmentTimelineItem(
+                  isFirst: index == 0,
+                  isLast: index == rows.length - 1,
+                  isCurrent: index == currentIndex,
+                  isPosted:
+                      rows[index].status == MoneyInstallmentDetailStatus.posted,
+                  child: _InstallmentDetailRow(
+                    detail: rows[index],
+                    currencyCode: plan.currencyCode,
+                    onPost: onPostDetail == null
+                        ? null
+                        : _effectivePlanStatus(plan, rows) ==
+                                  MoneyInstallmentPlanStatus.active &&
+                              rows[index].status ==
+                                  MoneyInstallmentDetailStatus.pending
+                        ? () => onPostDetail!(rows[index])
+                        : null,
+                    onViewTransaction: rows[index].transactionId == null
+                        ? null
+                        : () =>
+                              _viewPostedTransaction(context, ref, rows[index]),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+        loading: () => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: AppSkeletonList(rows: 3, padding: EdgeInsets.zero),
+        ),
+        error: (error, stackTrace) => const AppEmptyState(
+          title: '读取明细失败',
+          message: '稍后重试或返回分期列表刷新',
+          icon: Icons.error_outline_rounded,
+        ),
+      ),
+      actions: [
+        AppIconActionButton(
+          tooltip: '关闭',
+          onPressed: () => Navigator.of(context).pop(),
+          icon: Icons.close_rounded,
+          variant: AppIconActionVariant.outlined,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _viewPostedTransaction(
+    BuildContext context,
+    WidgetRef ref,
+    MoneyInstallmentDetailEntity detail,
+  ) async {
+    final transactionId = detail.transactionId;
+    if (transactionId == null) {
+      return;
+    }
+    try {
+      final transaction = await ref.read(
+        currentUserTransactionProvider(transactionId).future,
+      );
+      if (!context.mounted) {
+        return;
+      }
+      await showTransactionDetailProviderDialog(
+        context: context,
+        transaction: transaction,
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      AppToast.error(FToast()..init(context), context, '读取流水失败');
+    }
+  }
+}
+
+class _InstallmentDetailRow extends StatelessWidget {
+  const _InstallmentDetailRow({
+    required this.detail,
+    required this.currencyCode,
+    required this.onPost,
+    this.onViewTransaction,
+  });
+
+  final MoneyInstallmentDetailEntity detail;
+  final String currencyCode;
+  final VoidCallback? onPost;
+  final VoidCallback? onViewTransaction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final pending = detail.status == MoneyInstallmentDetailStatus.pending;
+    final statusColor = pending
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
+    final viewable = onViewTransaction != null;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.42),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: viewable ? onViewTransaction : null,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.54),
+                    shape: BoxShape.circle,
+                  ),
+                  child: SizedBox.square(
+                    dimension: 34,
+                    child: Center(
+                      child: Text(
+                        detail.periodNumber.toString(),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '第 ${detail.periodNumber} 期',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            detail.status.label,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _dateText(detail.dueDate),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Wrap(
+                        spacing: 14,
+                        runSpacing: 5,
+                        children: [
+                          _InstallmentInlineAmount(
+                            label: '应还',
+                            amountMinor: detail.amountMinor,
+                            currencyCode: currencyCode,
+                            tone: MoneyAmountTone.expense,
+                          ),
+                          _InstallmentInlineAmount(
+                            label: '本金',
+                            amountMinor: detail.principalMinor,
+                            currencyCode: currencyCode,
+                            tone: MoneyAmountTone.credit,
+                          ),
+                          _InstallmentInlineAmount(
+                            label: '利息',
+                            amountMinor: detail.interestMinor,
+                            currencyCode: currencyCode,
+                            tone: MoneyAmountTone.warning,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (onPost != null) ...[
+                  const SizedBox(width: 6),
+                  AppIconActionButton(
+                    tooltip: '入账',
+                    onPressed: onPost,
+                    icon: Icons.receipt_long_rounded,
+                    iconSize: 18,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+int _postedDetailCount(List<MoneyInstallmentDetailEntity>? details) {
+  if (details == null) {
+    return 0;
+  }
+  return details
+      .where((detail) => detail.status == MoneyInstallmentDetailStatus.posted)
+      .length;
+}
+
+int _pendingDetailCount(List<MoneyInstallmentDetailEntity>? details) {
+  if (details == null) {
+    return 0;
+  }
+  return details
+      .where((detail) => detail.status == MoneyInstallmentDetailStatus.pending)
+      .length;
+}
+
+MoneyInstallmentDetailEntity? _nextPendingDetail(
+  List<MoneyInstallmentDetailEntity>? details,
+) {
+  if (details == null) {
+    return null;
+  }
+  final pending =
+      details
+          .where(
+            (detail) => detail.status == MoneyInstallmentDetailStatus.pending,
+          )
+          .toList()
+        ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+  return pending.isEmpty ? null : pending.first;
+}
+
+MoneyInstallmentPlanStatus _effectivePlanStatus(
+  MoneyInstallmentPlanEntity plan,
+  List<MoneyInstallmentDetailEntity>? details,
+) {
+  if (plan.status == MoneyInstallmentPlanStatus.cancelled) {
+    return MoneyInstallmentPlanStatus.cancelled;
+  }
+  if (details == null || details.isEmpty) {
+    return plan.status;
+  }
+  final allPosted = details.every(
+    (detail) => detail.status == MoneyInstallmentDetailStatus.posted,
+  );
+  return allPosted ? MoneyInstallmentPlanStatus.completed : plan.status;
+}
+
+class _InstallmentAmountLine extends StatelessWidget {
+  const _InstallmentAmountLine({
+    required this.label,
+    required this.amountMinor,
+    required this.currencyCode,
+    required this.tone,
+  });
+
+  final String label;
+  final int amountMinor;
+  final String currencyCode;
+  final MoneyAmountTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
+          ),
+        ),
+        const Spacer(),
+        MoneyText(
+          amountMinor: amountMinor,
+          currencyCode: currencyCode,
+          tone: tone,
+          textStyle: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InstallmentInlineAmount extends StatelessWidget {
+  const _InstallmentInlineAmount({
+    required this.label,
+    required this.amountMinor,
+    required this.currencyCode,
+    required this.tone,
+  });
+
+  final String label;
+  final int amountMinor;
+  final String currencyCode;
+  final MoneyAmountTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$label ',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
+          ),
+        ),
+        MoneyText(
+          amountMinor: amountMinor,
+          currencyCode: currencyCode,
+          tone: tone,
+          textStyle: theme.textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+}
+
+class InstallmentPlanFormDialog extends StatefulWidget {
+  const InstallmentPlanFormDialog({
+    super.key,
+    required this.accounts,
+    required this.categoryCatalog,
+    this.initialAccountId,
+    this.initialCategoryId,
+    this.initialSubCategoryId,
+    this.initialPrincipalMinor,
+    this.initialName,
+  });
+
+  final List<MoneyAccountEntity> accounts;
+  final MoneyCategoryCatalog categoryCatalog;
+  final String? initialAccountId;
+  final String? initialCategoryId;
+  final String? initialSubCategoryId;
+  final int? initialPrincipalMinor;
+  final String? initialName;
+
+  @override
+  State<InstallmentPlanFormDialog> createState() =>
+      _InstallmentPlanFormDialogState();
+}
+
+class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _principalController = TextEditingController();
+  final _interestController = TextEditingController(text: '0');
+  final _periodsController = TextEditingController(text: '12');
+  final _notesController = TextEditingController();
+  final _rateController = TextEditingController();
+  MoneyInstallmentCalcMethod _calcMethod = MoneyInstallmentCalcMethod.flat;
+  MoneyAccountEntity? _account;
+  String? _categoryId;
+  String? _subCategoryId;
+  String? _categoryErrorText;
+  DateTime _firstDueDate = DateTime.now().add(const Duration(days: 30));
+
+  @override
+  void initState() {
+    super.initState();
+    final accounts = widget.accounts;
+    if (widget.initialAccountId != null) {
+      for (final account in accounts) {
+        if (account.id == widget.initialAccountId) {
+          _account = account;
+          break;
+        }
+      }
+    }
+    _account ??= accounts.isEmpty ? null : accounts.first;
+    _categoryId = widget.initialCategoryId;
+    _subCategoryId = widget.initialSubCategoryId;
+    if (widget.initialName != null) {
+      _nameController.text = widget.initialName!;
+    }
+    if (widget.initialPrincipalMinor != null &&
+        widget.initialPrincipalMinor! > 0) {
+      final currencyCode = _account?.currencyCode ?? 'CNY';
+      _principalController.text = formatMoneyMinor(
+        widget.initialPrincipalMinor!,
+        currencyCode,
+      );
+    }
+    _principalController.addListener(_updateEstimate);
+    _interestController.addListener(_updateEstimate);
+    _periodsController.addListener(_updateEstimate);
+    _rateController.addListener(_updateEstimate);
+  }
+
+  @override
+  void dispose() {
+    _principalController.removeListener(_updateEstimate);
+    _interestController.removeListener(_updateEstimate);
+    _periodsController.removeListener(_updateEstimate);
+    _rateController.removeListener(_updateEstimate);
+    _nameController.dispose();
+    _principalController.dispose();
+    _interestController.dispose();
+    _periodsController.dispose();
+    _notesController.dispose();
+    _rateController.dispose();
+    super.dispose();
+  }
+
+  void _updateEstimate() {
+    setState(() {});
+  }
+
+  int get _interestRateBasisPoints {
+    if (!_calcMethod.usesInterestRate) {
+      return 0;
+    }
+    final value = double.tryParse(_rateController.text.trim());
+    if (value == null || value < 0) {
+      return 0;
+    }
+    return (value * 100).round();
+  }
+
+  String? get _monthlyEstimateText {
+    try {
+      final principal = parseMoneyAmountToMinor(_principalController.text);
+      final periods = int.tryParse(_periodsController.text.trim());
+      if (principal <= 0 || periods == null || periods <= 0) {
+        return null;
+      }
+      final currencyCode = _account?.currencyCode ?? 'CNY';
+      if (!_calcMethod.usesInterestRate) {
+        final interest = parseMoneyAmountToMinor(_interestController.text);
+        final totalMinor = principal + interest;
+        final perPeriodMinor = (totalMinor / periods).round();
+        return '每期约还 ${formatMoneyMinor(perPeriodMinor, currencyCode)}'
+            '${interest > 0 ? '（含利息 ${formatMoneyMinor(interest, currencyCode)}）' : ''}';
+      }
+      final schedule = buildInstallmentSchedule(
+        principalMinor: principal,
+        totalPeriods: periods,
+        calcMethod: _calcMethod,
+        interestRateBasisPoints: _interestRateBasisPoints,
+      );
+      if (schedule.isEmpty) {
+        return null;
+      }
+      final totalInterestMinor = schedule.fold<int>(
+        0,
+        (sum, entry) => sum + entry.interestMinor,
+      );
+      final firstAmountMinor = schedule.first.amountMinor;
+      final label = _calcMethod == MoneyInstallmentCalcMethod.equalPrincipal
+          ? '首期约还 ${formatMoneyMinor(firstAmountMinor, currencyCode)}，逐期递减'
+          : '每期约还 ${formatMoneyMinor(firstAmountMinor, currencyCode)}';
+      return '$label（总利息 ${formatMoneyMinor(totalInterestMinor, currencyCode)}）';
+    } on MoneyAmountParseException {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accountCurrencyCode = _account?.currencyCode ?? 'CNY';
+
+    return AppDialogScaffold(
+      title: '新增分期',
+      maxWidth: 460,
+      titleTextAlign: TextAlign.center,
+      actionsAlignment: WrapAlignment.center,
+      body: Form(
+        key: _formKey,
+        child: AppFormColumn(
+          children: [
+            AppFormRow(
+              compactBreakpoint: 420,
+              flexes: const [3, 2],
+              children: [
+                AppTextFormField(
+                  controller: _nameController,
+                  autofocus: true,
+                  labelText: '名称',
+                  prefixIcon: const Icon(Icons.edit_calendar_rounded),
+                  validator: (value) {
+                    final text = value?.trim() ?? '';
+                    if (text.isEmpty) return '请输入名称';
+                    if (text.length > 40) return '名称最多40个字符';
+                    return null;
+                  },
+                ),
+                DateTimePicker(
+                  selectedDate: _firstDueDate,
+                  showTime: false,
+                  labelText: '入账日',
+                  firstDate: DateTime.now().subtract(const Duration(days: 1)),
+                  lastDate: DateTime.now().add(const Duration(days: 3650)),
+                  onChanged: (value) => setState(() => _firstDueDate = value),
+                ),
+              ],
+            ),
+            AccountSelector(
+              accounts: widget.accounts,
+              selectedAccountId: _account?.id,
+              onChanged: (account) => setState(() => _account = account),
+              labelText: '信用账户',
+              emptyText: '暂无信用账户',
+            ),
+            CategorySelector(
+              catalog: widget.categoryCatalog,
+              selectedCategoryId: _categoryId,
+              selectedSubCategoryId: _subCategoryId,
+              categoryLabelText: '支出分类',
+              onChanged: (selection) {
+                setState(() {
+                  _categoryId = selection.category?.id;
+                  _subCategoryId = selection.subCategory?.id;
+                  _categoryErrorText = null;
+                });
+              },
+            ),
+            if (_categoryErrorText != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _categoryErrorText!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            AppSlidingSegmentedControl<MoneyInstallmentCalcMethod>(
+              minSegmentWidth: 84,
+              value: _calcMethod,
+              onChanged: (value) => setState(() => _calcMethod = value),
+              segments: [
+                for (final method in MoneyInstallmentCalcMethod.values)
+                  AppSlidingSegment<MoneyInstallmentCalcMethod>(
+                    value: method,
+                    label: method.label,
+                  ),
+              ],
+            ),
+            AppFormRow(
+              compactBreakpoint: 420,
+              flexes: const [3, 2],
+              children: [
+                AppAmountField(
+                  controller: _principalController,
+                  labelText: '本金',
+                  currencyCode: accountCurrencyCode,
+                  validator: _validatePositiveAmount,
+                ),
+                AppTextFormField(
+                  controller: _periodsController,
+                  keyboardType: TextInputType.number,
+                  labelText: '期数',
+                  prefixIcon: const Icon(Icons.format_list_numbered_rounded),
+                  validator: (value) {
+                    final periods = int.tryParse(value?.trim() ?? '');
+                    if (periods == null || periods <= 0) return '请输入有效期数';
+                    if (periods > 120) return '期数不能超过120';
+                    return null;
+                  },
+                ),
+              ],
+            ),
+            if (_calcMethod.usesInterestRate)
+              AppTextFormField(
+                controller: _rateController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                labelText: '年利率',
+                prefixIcon: const Icon(Icons.percent_rounded),
+                suffixText: '%',
+                validator: _validateInterestRate,
+              )
+            else
+              AppAmountField(
+                controller: _interestController,
+                labelText: '总利息',
+                currencyCode: accountCurrencyCode,
+                validator: _validateNonNegativeAmount,
+              ),
+            if (_monthlyEstimateText != null)
+              AppFormHint(
+                text: _monthlyEstimateText!,
+                icon: Icons.calculate_rounded,
+              ),
+            AppTextFormField(
+              controller: _notesController,
+              minLines: 2,
+              maxLines: 3,
+              labelText: '备注',
+              prefixIcon: const Icon(Icons.notes_rounded),
+            ),
+          ],
+        ),
+      ),
+      actions: appDialogIconActions(
+        onCancel: () => Navigator.of(context).pop(),
+        onConfirm: _submit,
+        confirmTooltip: '创建',
+      ),
+    );
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    final account = _account;
+    if (account == null) {
+      return;
+    }
+    final categoryId = _categoryId;
+    if (categoryId == null) {
+      setState(() => _categoryErrorText = '请选择支出分类');
+      return;
+    }
+
+    Navigator.of(context).pop(
+      MoneyInstallmentPlanDraft(
+        accountId: account.id,
+        name: _nameController.text.trim(),
+        categoryId: categoryId,
+        subCategoryId: _subCategoryId,
+        totalPrincipalMinor: parseMoneyAmountToMinor(_principalController.text),
+        totalInterestMinor: _calcMethod.usesInterestRate
+            ? 0
+            : parseMoneyAmountToMinor(_interestController.text),
+        totalPeriods: int.parse(_periodsController.text.trim()),
+        firstDueDate: _firstDueDate,
+        currencyCode: account.currencyCode,
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+        calcMethod: _calcMethod,
+        interestRateBasisPoints: _calcMethod.usesInterestRate
+            ? _interestRateBasisPoints
+            : null,
+      ),
+    );
+  }
+
+  String? _validateInterestRate(String? value) {
+    final parsed = double.tryParse(value?.trim() ?? '');
+    if (parsed == null || parsed < 0 || parsed > 100) {
+      return '请输入 0 到 100 之间的年利率';
+    }
+    return null;
+  }
+
+  String? _validatePositiveAmount(String? value) {
+    try {
+      if (parseMoneyAmountToMinor(value ?? '') <= 0) {
+        return '金额必须大于0';
+      }
+      return null;
+    } catch (_) {
+      return '请输入有效金额';
+    }
+  }
+
+  String? _validateNonNegativeAmount(String? value) {
+    try {
+      if (parseMoneyAmountToMinor(value ?? '') < 0) {
+        return '金额不能小于0';
+      }
+      return null;
+    } catch (_) {
+      return '请输入有效金额';
+    }
+  }
+}
+
+/// 「下一期 10-20 · 还剩 2 天」。
+///
+/// 只给裸日期用户还要自己算，这里把紧迫感直接写出来。
+String _nextDueText(DateTime dueDate) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
+  final daysLeft = due.difference(today).inDays;
+  if (daysLeft < 0) {
+    return '${_dateText(dueDate)} · 已逾期';
+  }
+  if (daysLeft == 0) {
+    return '${_dateText(dueDate)} · 今天';
+  }
+  return '${_dateText(dueDate)} · 还剩 $daysLeft 天';
+}
+
+String _dateText(DateTime date) {
+  final local = date.toLocal();
+  final year = local.year.toString().padLeft(4, '0');
+  final month = local.month.toString().padLeft(2, '0');
+  final day = local.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
+}

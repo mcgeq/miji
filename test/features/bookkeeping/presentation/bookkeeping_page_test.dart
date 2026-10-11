@@ -1,0 +1,345 @@
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:miji/core/database/app_database.dart';
+import 'package:miji/core/database/database_providers.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
+import 'package:miji/core/theme/app_theme.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/bookkeeping_page.dart';
+import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+
+/// 一级导航：原来是 8 个只有图标的横条（360dp 手机上放不下、没有文字），
+/// 现在收敛成「流水 / 账户 / 预算 / 统计 + 更多」。
+void main() {
+  testWidgets('shows four primary tabs plus more, defaulting to transactions', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+
+    for (final label in ['流水', '账户', '预算', '统计', '更多']) {
+      expect(find.text(label), findsWidgets, reason: '缺少 $label 标签');
+    }
+    // 默认落在最高频的流水面板：流水页常驻的搜索框与「转账」分段都可见，
+    // 账户页的空态不再出现。搜索框 / 分段不依赖流水是否加载完成，比断言
+    // 「还没有流水」更稳（锁态下流水会退化为「读取流水失败」）。
+    expect(find.text('搜索名称、备注、商家'), findsOneWidget);
+    expect(find.text('转账'), findsOneWidget);
+    expect(find.text('还没有账户'), findsNothing);
+  });
+
+  testWidgets('switching a tab writes the section back to the URL', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+
+    await tester.tap(find.text('预算'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('还没有预算'), findsOneWidget);
+    // 面板状态进 URL：系统返回键 / 深链才能正确工作。
+    expect(router.state.uri.queryParameters['section'], 'budgets');
+
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+    expect(router.state.uri.queryParameters['section'], 'transactions');
+  });
+
+  testWidgets('more tab opens the secondary grid and remembers the panel', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+
+    await tester.tap(find.text('更多'));
+    await tester.pumpAndSettle();
+
+    // 四个二级面板都在「更多」里。
+    expect(find.text('分类'), findsWidgets);
+    expect(find.text('分期'), findsWidgets);
+    expect(find.text('自动记账'), findsWidgets);
+    expect(find.text('提醒'), findsWidgets);
+
+    await tester.tap(find.text('分类').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂无分类'), findsOneWidget);
+    expect(router.state.uri.queryParameters['section'], 'categories');
+    // 二级面板激活时，「更多」标签显示当前面板名。
+    expect(find.text('分类'), findsWidgets);
+  });
+
+  testWidgets('deep link opens the section from the query parameter', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router(initialLocation: '/app/bookkeeping?section=budgets');
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+
+    expect(find.text('还没有预算'), findsOneWidget);
+  });
+
+  testWidgets(
+    'type tabs are not covered by the trailing buttons on narrow phones',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+
+      final router = _router();
+      addTearDown(router.dispose);
+
+      // 360dp 是主流窄屏宽度：56dp 最小段宽 * 4 = 224dp > 可用宽度，
+      // 曾经溢出到右侧图标按钮下面（既被遮住又点不到）。
+      await _pump(tester, database, router, width: 360);
+      await tester.tap(find.text('流水'));
+      await tester.pumpAndSettle();
+
+      final transfer = tester.getRect(find.text('转账'));
+      // 导出与回收站已收进 ⋯，操作行最右侧现在是它。
+      final trailing = tester.getRect(find.byTooltip('更多操作'));
+      expect(
+        transfer.right,
+        lessThanOrEqualTo(trailing.left),
+        reason: '「转账」标签被右侧按钮遮住',
+      );
+
+      final control = tester.getRect(
+        find.byWidgetPredicate(
+          (widget) => widget is AppSlidingSegmentedControl,
+        ),
+      );
+      expect(
+        transfer.right,
+        lessThanOrEqualTo(control.right),
+        reason: '「转账」标签超出了分段控件的可视区',
+      );
+    },
+  );
+
+  testWidgets('常用筛选条默认折叠，展开后才铺出状态与日期预设', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+
+    // 折叠态：状态与日期两组预设都不在，控制区只占两行。
+    // 它们只是「藏起来」不是「删掉」，展开后必须原样回来。
+    expect(find.text('全部状态'), findsNothing);
+    expect(find.text('本周'), findsNothing);
+
+    await tester.tap(find.text('筛选'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('全部状态'), findsOneWidget);
+    expect(find.text('本周'), findsOneWidget);
+  });
+
+  testWidgets('标签筛选有独立入口，选中后变成可移除的生效条件', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router, tagCandidates: const ['南京旅游']);
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+
+    // 折叠态不给标签入口（控制区保持两行）。
+    expect(find.text('标签'), findsNothing);
+
+    await tester.tap(find.text('筛选'));
+    await tester.pumpAndSettle();
+
+    // 展开后与状态 / 日期同级。在此之前，标签筛选只能从统计页下钻带过来，
+    // 列表里根本没有入口。
+    expect(find.text('标签'), findsOneWidget);
+    await tester.tap(find.text('南京旅游'));
+    await tester.pumpAndSettle();
+
+    // 选中后就变成生效条件里的一枚 chip，可单独移除。
+    expect(find.text('#南京旅游'), findsOneWidget);
+  });
+
+  testWidgets('筛选筛空时，空态给的是清除筛选而不是快速新增', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+
+    // 一笔都没记过 —— 该引导去记账。
+    expect(find.text('还没有流水'), findsOneWidget);
+
+    await tester.tap(find.text('支出'));
+    await tester.pumpAndSettle();
+
+    // 筛过之后查不到 —— 该给的是改条件。继续劝「快速新增」会让用户在已经
+    // 筛过的视图里记重复账，再疑惑「我刚记的那笔怎么不在列表里」。
+    expect(find.text('没有符合条件的流水'), findsOneWidget);
+    expect(find.text('还没有流水'), findsNothing);
+    expect(find.widgetWithText(FilledButton, '清除筛选'), findsOneWidget);
+  });
+
+  testWidgets('summary bar shows only amounts, labels live in semantics', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('共 0 笔'), findsOneWidget);
+
+    // 三格金额只靠颜色区分方向，所以「支出 / 收入 / 净」必须留在语义标签与
+    // 长按提示里，否则读屏用户与色觉缺陷用户拿不到方向信息。
+    final semantics = tester.ensureSemantics();
+    expect(find.bySemanticsLabel('支出 ¥0.00'), findsOneWidget);
+    // 收入默认遮罩：语义标签里的金额是 `****` 而不是真实数字。
+    // 收入金额外层还包了一个「显示金额」的点按语义，两者合并成同一个节点
+    //（`显示金额\n收入 ****`），所以用正则匹配其中的金额段。
+    expect(find.bySemanticsLabel(RegExp(r'收入 \*{4}')), findsOneWidget);
+    expect(find.bySemanticsLabel('净 +¥0.00'), findsOneWidget);
+    semantics.dispose();
+
+    expect(find.byTooltip('支出'), findsOneWidget);
+    expect(find.byTooltip('收入'), findsOneWidget);
+    expect(find.byTooltip('净'), findsOneWidget);
+
+    // 汇总条本身上不再有「支出 / 收入 / 净」文案（筛选条里的类型标签不算）。
+    // .first 取距「共 N 笔」最近的 Column，即汇总条自己的 Column；用搜索框
+    // 反证它不是更外层的页面 Column，否则这个断言会变成假阳性。
+    final bar = find
+        .ancestor(of: find.text('共 0 笔'), matching: find.byType(Column))
+        .first;
+    expect(
+      find.descendant(of: bar, matching: find.byType(TextField)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: bar, matching: find.byTooltip('支出')),
+      findsOneWidget,
+    );
+    for (final label in ['支出', '收入', '净']) {
+      expect(
+        find.descendant(of: bar, matching: find.text(label)),
+        findsNothing,
+        reason: '汇总条里不应再有「$label」文案',
+      );
+    }
+  });
+}
+
+/// 把流水的列表查询替换成空页。
+///
+/// 流水页的 `listTransactions` 是动作调用，要经过「已解锁用户 → 当前账本」
+/// 才能查到，测试里既没用户也没账本，直接查会抛 `读取流水失败` 而不是展示
+/// 空态。这里只顶掉列表查询；汇总条走的是另一个 provider，锁态下优雅返回空。
+class _FakeTransactionActions extends CurrentUserMoneyTransactionActions {
+  _FakeTransactionActions(super.ref);
+
+  @override
+  Future<MoneyTransactionPage> listTransactions(
+    MoneyTransactionQuery query,
+  ) async {
+    return MoneyTransactionPage(
+      items: const <MoneyTransactionEntity>[],
+      page: query.page,
+      pageSize: query.pageSize,
+      hasMore: false,
+      total: 0,
+    );
+  }
+}
+
+GoRouter _router({String initialLocation = '/app/bookkeeping'}) {
+  return GoRouter(
+    initialLocation: initialLocation,
+    routes: [
+      GoRoute(
+        path: '/app/bookkeeping',
+        // 真实外壳（AppShellPage）也把页面包在 Scaffold 里；测试必须提供
+        // Material / Scaffold 祖先，否则 InkWell / TextField 会直接断言失败。
+        builder: (context, state) => Scaffold(
+          body: BookkeepingPage(
+            initialSection: state.uri.queryParameters['section'],
+            initialAccountId: state.uri.queryParameters['accountId'],
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+Future<void> _pump(
+  WidgetTester tester,
+  AppDatabase database,
+  GoRouter router, {
+  double width = 390,
+  List<String>? tagCandidates,
+}) async {
+  tester.view.physicalSize = Size(width * 3, 844 * 3);
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        currentUserMoneyTransactionActionsProvider.overrideWith(
+          (ref) => _FakeTransactionActions(ref),
+        ),
+        if (tagCandidates != null)
+          currentUserTagCandidatesProvider.overrideWith(
+            (ref) => Stream.value(tagCandidates),
+          ),
+      ],
+      child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
+    ),
+  );
+
+  // 页面里有一个分三批 Future.delayed 的预取器（120/80/80ms），
+  // 必须把时钟推过这些定时器，否则测试结束时会报「Timer is still pending」。
+  for (var index = 0; index < 10; index++) {
+    await tester.pump(const Duration(milliseconds: 120));
+  }
+  await tester.pumpAndSettle();
+  expect(tester.takeException(), isNull);
+}

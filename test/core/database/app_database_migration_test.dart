@@ -1,0 +1,440 @@
+import 'dart:io';
+
+import 'package:drift/drift.dart' show Value;
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:miji/core/database/app_database.dart';
+
+/// Reproduces the phone upgrade path: an existing database from a previous
+/// release (schema v15/v16/v17/v18/v20) is opened by the current v21 code.
+///
+/// The old database is simulated by creating the current schema, dropping the
+/// todo tables (which did not exist at v15) or the V1.1 columns (v16), then
+/// rewinding `user_version`.
+
+/// V1.5 给分类表加了业务顺序列。伪造 v21 及更早版本时同样要先删掉，
+/// 否则 `addColumn` 会因重复列失败。
+Future<void> _dropV15SortOrderColumns(AppDatabase db) async {
+  await db.customStatement(
+    'ALTER TABLE money_categories DROP COLUMN sort_order',
+  );
+  await db.customStatement(
+    'ALTER TABLE money_sub_categories DROP COLUMN sort_order',
+  );
+}
+
+/// V1.6（v24）给自动记账模板加了「被分期接管」列。伪造 v23 及更早版本时同样
+/// 要先删掉，否则迁移里的 `addColumn` 会因重复列失败。
+Future<void> _dropTakenOverByPlanColumn(AppDatabase db) async {
+  await db.customStatement(
+    'ALTER TABLE money_auto_posting_templates '
+    'DROP COLUMN taken_over_by_plan_id',
+  );
+}
+
+/// V1.4 给 `user_preferences` 增加了两列。迁移测试通过「建当前 schema →
+/// 删列 → 回退 user_version」来伪造旧库，所以伪造 v20 及更早版本时
+/// 必须把这两列一并删掉，否则迁移会因重复列而失败。
+/// v23 删掉了 theme_seed_color（死配置）。模拟 v23 之前的库时要先把这列加回来 ——
+/// 迁移测试的做法是「从当前 schema 减列」，不减的话这一列本来就不在。
+Future<void> _restoreThemeSeedColorColumn(AppDatabase db) async {
+  await db.customStatement(
+    'ALTER TABLE user_preferences '
+    'ADD COLUMN theme_seed_color INTEGER NOT NULL DEFAULT 0',
+  );
+}
+
+Future<void> _dropV14PreferenceColumns(AppDatabase db) async {
+  await db.customStatement(
+    'ALTER TABLE user_preferences DROP COLUMN mask_money_amounts',
+  );
+  await db.customStatement(
+    'ALTER TABLE user_preferences DROP COLUMN show_home_health_strip',
+  );
+}
+
+void main() {
+  late Directory tempDir;
+  late File dbFile;
+
+  setUp(() {
+    tempDir = Directory.systemTemp.createTempSync('miji_migration_test');
+    dbFile = File('${tempDir.path}/miji.sqlite');
+  });
+
+  tearDown(() {
+    tempDir.deleteSync(recursive: true);
+  });
+
+  test('v15 -> v18 upgrade succeeds and keeps existing data', () async {
+    final now = DateTime.now().toUtc();
+
+    final v18db = AppDatabase(NativeDatabase(dbFile));
+    await v18db
+        .into(v18db.users)
+        .insert(
+          UsersCompanion.insert(
+            id: 'user-1',
+            username: 'demo',
+            email: 'demo@example.com',
+            displayName: 'Demo',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+    // Simulate the v15 release: no todo tables, user_version = 15.
+    await v18db.customStatement('DROP TABLE IF EXISTS todo_task_tags');
+    await v18db.customStatement('DROP TABLE IF EXISTS todo_tags');
+    await v18db.customStatement('DROP TABLE IF EXISTS todo_recurrence_rules');
+    await v18db.customStatement('DROP TABLE IF EXISTS todo_tasks');
+    await v18db.customStatement('DROP TABLE IF EXISTS todo_categories');
+    await v18db.customStatement(
+      'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
+    );
+    await _dropV14PreferenceColumns(v18db);
+    await _dropV15SortOrderColumns(v18db);
+    await _restoreThemeSeedColorColumn(v18db);
+    await _dropTakenOverByPlanColumn(v18db);
+    await v18db.customStatement('PRAGMA user_version = 15');
+    await v18db.close();
+
+    // Reopen with the current schema: this runs the 15 -> 21 migration.
+    final db = AppDatabase(NativeDatabase(dbFile));
+    await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+    final user = await (db.select(
+      db.users,
+    )..where((row) => row.id.equals('user-1'))).getSingleOrNull();
+    expect(user, isNotNull);
+    expect(user!.displayName, 'Demo');
+
+    // todo tables must exist with the full current schema.
+    expect(await (db.select(db.todoTasks)).get(), isEmpty);
+    expect(await (db.select(db.todoCategories)).get(), isEmpty);
+    expect(await (db.select(db.todoTags)).get(), isEmpty);
+    expect(await (db.select(db.todoTaskTags)).get(), isEmpty);
+    expect(await (db.select(db.todoRecurrenceRules)).get(), isEmpty);
+    expect(await (db.select(db.todoTasks)).get(), isA<List<dynamic>>());
+    await db.close();
+  });
+
+  test('v16 -> v18 upgrade adds the V1.1 columns', () async {
+    final now = DateTime.now().toUtc();
+
+    final v18db = AppDatabase(NativeDatabase(dbFile));
+    await v18db
+        .into(v18db.users)
+        .insert(
+          UsersCompanion.insert(
+            id: 'user-1',
+            username: 'demo',
+            email: 'demo@example.com',
+            displayName: 'Demo',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+    // Simulate a v16 release: drop the V1.1/V1.2 columns that v16 lacked
+    // (indexes referencing them must be dropped first, as in a real v16 DB).
+    await v18db.customStatement(
+      'DROP INDEX IF EXISTS todo_tasks_user_recurrence',
+    );
+    await v18db.customStatement(
+      'DROP INDEX IF EXISTS todo_tasks_user_occurrence',
+    );
+    await v18db.customStatement(
+      'ALTER TABLE todo_tasks DROP COLUMN is_recurrence_template',
+    );
+    await v18db.customStatement(
+      'ALTER TABLE todo_tasks DROP COLUMN recurrence_rule_id',
+    );
+    await v18db.customStatement(
+      'ALTER TABLE todo_tasks DROP COLUMN occurrence_date',
+    );
+    await v18db.customStatement(
+      'ALTER TABLE todo_tasks DROP COLUMN reminder_at',
+    );
+    await v18db.customStatement(
+      'ALTER TABLE todo_tasks DROP COLUMN markdown_body',
+    );
+    await v18db.customStatement(
+      'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
+    );
+    await _dropV14PreferenceColumns(v18db);
+    await _dropV15SortOrderColumns(v18db);
+    await v18db.customStatement('DROP TABLE IF EXISTS todo_task_tags');
+    await v18db.customStatement('DROP TABLE IF EXISTS todo_tags');
+    await v18db.customStatement('DROP TABLE IF EXISTS todo_recurrence_rules');
+    await _restoreThemeSeedColorColumn(v18db);
+    await _dropTakenOverByPlanColumn(v18db);
+    await v18db.customStatement('PRAGMA user_version = 16');
+    await v18db.close();
+
+    // Reopen with the current schema: this runs the 16 -> 21 migration.
+    final db = AppDatabase(NativeDatabase(dbFile));
+    await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+    // V1.1 columns must exist after the migration.
+    final columns = await db
+        .customSelect('PRAGMA table_info(todo_tasks)')
+        .get()
+        .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+    expect(
+      columns,
+      containsAll([
+        'is_recurrence_template',
+        'occurrence_date',
+        'markdown_body',
+      ]),
+    );
+    await db.close();
+  });
+
+  test('v17 -> v18 upgrade adds markdown_body only', () async {
+    final now = DateTime.now().toUtc();
+
+    final v18db = AppDatabase(NativeDatabase(dbFile));
+    await v18db
+        .into(v18db.users)
+        .insert(
+          UsersCompanion.insert(
+            id: 'user-1',
+            username: 'demo',
+            email: 'demo@example.com',
+            displayName: 'Demo',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+    // Simulate a v17 release: drop the V1.2 column that v17 lacked.
+    await v18db.customStatement(
+      'ALTER TABLE todo_tasks DROP COLUMN markdown_body',
+    );
+    await v18db.customStatement(
+      'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
+    );
+    await _dropV14PreferenceColumns(v18db);
+    await _dropV15SortOrderColumns(v18db);
+    await _restoreThemeSeedColorColumn(v18db);
+    await _dropTakenOverByPlanColumn(v18db);
+    await v18db.customStatement('PRAGMA user_version = 17');
+    await v18db.close();
+
+    final db = AppDatabase(NativeDatabase(dbFile));
+    await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+    final columns = await db
+        .customSelect('PRAGMA table_info(todo_tasks)')
+        .get()
+        .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+    expect(columns, contains('markdown_body'));
+    await db.close();
+  });
+
+  test('fresh install still creates every table', () async {
+    final db = AppDatabase(NativeDatabase(dbFile));
+    expect(await (db.select(db.todoTasks)).get(), isEmpty);
+    expect(await (db.select(db.todoCategories)).get(), isEmpty);
+    expect(await (db.select(db.todoTags)).get(), isEmpty);
+    await db.close();
+  });
+
+  test(
+    'v18 -> v19 upgrade adds show_home_today_action with default true',
+    () async {
+      final now = DateTime.now().toUtc();
+
+      final v19db = AppDatabase(NativeDatabase(dbFile));
+      await v19db
+          .into(v19db.users)
+          .insert(
+            UsersCompanion.insert(
+              id: 'user-1',
+              username: 'demo',
+              email: 'demo@example.com',
+              displayName: 'Demo',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await v19db
+          .into(v19db.userPreferences)
+          .insert(
+            UserPreferencesCompanion.insert(
+              userId: 'user-1',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      // Simulate a v18 release: drop the V1.3 column that v18 lacked.
+      await v19db.customStatement(
+        'ALTER TABLE user_preferences DROP COLUMN show_home_today_action',
+      );
+      await _dropV14PreferenceColumns(v19db);
+      await _dropV15SortOrderColumns(v19db);
+      await _restoreThemeSeedColorColumn(v19db);
+      await _dropTakenOverByPlanColumn(v19db);
+      await v19db.customStatement('PRAGMA user_version = 18');
+      await v19db.close();
+
+      // Reopen with the current schema: this runs the 18 -> 21 migration.
+      final db = AppDatabase(NativeDatabase(dbFile));
+      await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+      final columns = await db
+          .customSelect('PRAGMA table_info(user_preferences)')
+          .get()
+          .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+      expect(columns, contains('show_home_today_action'));
+
+      // Existing rows keep data and the new column defaults to true.
+      final preferences = await (db.select(db.userPreferences)).getSingle();
+      expect(preferences.userId, 'user-1');
+      expect(preferences.showHomeTodayAction, isTrue);
+      await db.close();
+    },
+  );
+
+  test(
+    'v21 -> v22 upgrade adds category sort_order and backfills the seed order',
+    () async {
+      final now = DateTime.now().toUtc();
+
+      final v21db = AppDatabase(NativeDatabase(dbFile));
+      await v21db
+          .into(v21db.users)
+          .insert(
+            UsersCompanion.insert(
+              id: 'user-1',
+              username: 'demo',
+              email: 'demo@example.com',
+              displayName: 'Demo',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      // 一个内置分类 + 一个用户自建分类。
+      await v21db
+          .into(v21db.moneyCategories)
+          .insert(
+            MoneyCategoriesCompanion.insert(
+              id: 'expense_food',
+              name: '餐饮',
+              kind: 'expense',
+              isSystem: const Value(true),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await v21db
+          .into(v21db.moneyCategories)
+          .insert(
+            MoneyCategoriesCompanion.insert(
+              id: 'custom-1',
+              userId: const Value<String?>('user-1'),
+              name: '我的分类',
+              kind: 'expense',
+              isSystem: const Value(false),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      // Simulate a v21 release: no sort_order columns.
+      await _dropV15SortOrderColumns(v21db);
+      await _restoreThemeSeedColorColumn(v21db);
+      await _dropTakenOverByPlanColumn(v21db);
+      await v21db.customStatement('PRAGMA user_version = 21');
+      await v21db.close();
+
+      // Reopen with the current schema: this runs the 21 -> 22 migration.
+      final db = AppDatabase(NativeDatabase(dbFile));
+      await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+      final categoryColumns = await db
+          .customSelect('PRAGMA table_info(money_categories)')
+          .get()
+          .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+      expect(categoryColumns, contains('sort_order'));
+
+      final subCategoryColumns = await db
+          .customSelect('PRAGMA table_info(money_sub_categories)')
+          .get()
+          .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+      expect(subCategoryColumns, contains('sort_order'));
+
+      final rows = await (db.select(db.moneyCategories)).get();
+      final byId = {for (final row in rows) row.id: row};
+      // 内置分类按种子声明顺序回填（餐饮是第 1 个）。
+      expect(byId['expense_food']!.sortOrder, 1);
+      expect(byId['expense_food']!.name, '餐饮');
+      // 用户自建分类保持 0：排序时视为最后，不会插到内置分类前面。
+      expect(byId['custom-1']!.sortOrder, 0);
+
+      await db.close();
+    },
+  );
+
+  test(
+    'v20 -> v21 upgrade adds the home preference columns with safe defaults',
+    () async {
+      final now = DateTime.now().toUtc();
+
+      final v20db = AppDatabase(NativeDatabase(dbFile));
+      await v20db
+          .into(v20db.users)
+          .insert(
+            UsersCompanion.insert(
+              id: 'user-1',
+              username: 'demo',
+              email: 'demo@example.com',
+              displayName: 'Demo',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await v20db
+          .into(v20db.userPreferences)
+          .insert(
+            UserPreferencesCompanion.insert(
+              userId: 'user-1',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      // Simulate a v20 release: drop the V1.4 columns that v20 lacked.
+      await _dropV14PreferenceColumns(v20db);
+      await _dropV15SortOrderColumns(v20db);
+      await _restoreThemeSeedColorColumn(v20db);
+      await _dropTakenOverByPlanColumn(v20db);
+      await v20db.customStatement('PRAGMA user_version = 20');
+      await v20db.close();
+
+      // Reopen with the current schema: this runs the 20 -> 21 migration.
+      final db = AppDatabase(NativeDatabase(dbFile));
+      await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+      final columns = await db
+          .customSelect('PRAGMA table_info(user_preferences)')
+          .get()
+          .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+      expect(
+        columns,
+        containsAll(['mask_money_amounts', 'show_home_health_strip']),
+      );
+
+      // 老用户默认不隐藏金额、不显示健康条。
+      final preferences = await (db.select(db.userPreferences)).getSingle();
+      expect(preferences.userId, 'user-1');
+      expect(preferences.maskMoneyAmounts, isFalse);
+      expect(preferences.showHomeHealthStrip, isFalse);
+      await db.close();
+    },
+  );
+}

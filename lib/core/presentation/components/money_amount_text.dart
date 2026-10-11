@@ -1,0 +1,67 @@
+import 'package:flutter/material.dart';
+import 'package:miji/core/theme/app_design_tokens.dart';
+import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+
+enum MoneyAmountTone { neutral, income, expense, transfer, credit, warning }
+
+class MoneyAmountText extends StatelessWidget {
+  const MoneyAmountText({
+    super.key,
+    required this.amountMinor,
+    this.currencyCode = 'CNY',
+    this.tone = MoneyAmountTone.neutral,
+    this.hidden = false,
+    this.maskedPlaceholder = '••••',
+    this.textStyle,
+    this.color,
+    this.showSign = false,
+    this.textAlign,
+  });
+
+  final int amountMinor;
+  final String currencyCode;
+  final MoneyAmountTone tone;
+  final bool hidden;
+
+  /// 遮罩态渲染的占位文本（全局遮罩 `••••`，收入遮罩 `****`）。
+  final String maskedPlaceholder;
+  final TextStyle? textStyle;
+  final Color? color;
+  final bool showSign;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final resolvedColor = color ?? _colorFor(theme);
+    final sign = showSign && amountMinor > 0 ? '+' : '';
+    final text = hidden
+        ? maskedPlaceholder
+        : '$sign${formatMoneyMinor(amountMinor, currencyCode)}';
+
+    return Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: textAlign,
+      style: (textStyle ?? theme.textTheme.titleMedium)?.copyWith(
+        color: resolvedColor,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0,
+      ),
+    );
+  }
+
+  Color _colorFor(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
+    final moneyColors = theme.moneyColors;
+    return switch (tone) {
+      MoneyAmountTone.neutral => colorScheme.onSurface,
+      MoneyAmountTone.income => moneyColors.income,
+      MoneyAmountTone.expense => moneyColors.expense,
+      MoneyAmountTone.transfer => moneyColors.transfer,
+      MoneyAmountTone.credit => moneyColors.credit,
+      MoneyAmountTone.warning => moneyColors.warning,
+    };
+  }
+}

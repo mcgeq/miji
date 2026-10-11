@@ -1,0 +1,97 @@
+import java.util.Properties
+
+plugins {
+    id("com.android.application")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = listOf(
+    rootProject.file("key.properties"),
+    rootProject.file("keystore.properties"),
+).firstOrNull { it.exists() }
+val hasReleaseSigningConfig = keystorePropertiesFile != null
+if (keystorePropertiesFile != null) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+}
+
+fun signingProperty(name: String, legacyName: String? = null): String {
+    return keystoreProperties.getProperty(name)
+        ?: legacyName?.let { keystoreProperties.getProperty(it) }
+        ?: error("Missing Android signing property: $name")
+}
+
+android {
+    namespace = "com.mcgeq.miji"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.mcgeq.miji"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+        // 仅保留中英文 Android 资源，剔除第三方库携带的其它语言字符串。
+        resourceConfigurations += listOf("zh", "en")
+    }
+
+    signingConfigs {
+        create("release") {
+            if (hasReleaseSigningConfig) {
+                keyAlias = signingProperty("keyAlias")
+                keyPassword = signingProperty("keyPassword", legacyName = "password")
+                storeFile = file(signingProperty("storeFile"))
+                storePassword = signingProperty(
+                    "storePassword",
+                    legacyName = "password",
+                )
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = if (hasReleaseSigningConfig) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+            // 压缩安装包：移除未使用的 Java/Kotlin 代码与资源。
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // ML Kit 文字识别的默认包只带拉丁字母模型，中文必须显式引入这个语言包，
+    // 否则支付截图上的中文会被识别成空白或乱码（Dart 侧对应
+    // TextRecognitionScript.chinese）。模型随包发布，识别过程不联网。
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+flutter {
+    source = "../.."
+}

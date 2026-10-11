@@ -1,0 +1,3160 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:miji/core/auth/application/auth_session_controller.dart';
+import 'package:miji/core/database/database_providers.dart';
+import 'package:miji/core/database/seed/seed_providers.dart';
+import 'package:miji/core/notifications/notification_providers.dart';
+import 'package:miji/core/sync/delta_sync/delta_sync_providers.dart';
+import 'package:miji/features/bookkeeping/application/money_bill_reminder_notification_service.dart';
+import 'package:miji/features/bookkeeping/application/money_budget_alert_notification_service.dart';
+import 'package:miji/features/bookkeeping/application/money_delta_conflict_apply_service.dart';
+import 'package:miji/features/bookkeeping/application/money_reminder_scheduler.dart';
+import 'package:miji/features/bookkeeping/application/money_reminder_settings.dart';
+import 'package:miji/features/bookkeeping/application/money_report_period.dart';
+import 'package:miji/features/bookkeeping/application/transaction_entry_defaults_store.dart';
+import 'package:miji/features/bookkeeping/data/drift_money_repository.dart';
+import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
+import 'package:miji/features/bookkeeping/application/auto_posting_conflict_ignore_store.dart';
+import 'package:miji/features/bookkeeping/domain/money_auto_posting_conflict_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
+import 'package:miji/features/bookkeeping/domain/money_credit_card_bill_view.dart';
+import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
+import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_ledger_scope.dart';
+import 'package:miji/features/bookkeeping/domain/money_repository.dart';
+import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_spending_analysis_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_net_worth_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_summary_entity.dart';
+
+final moneyRepositoryProvider = Provider<MoneyRepository>((ref) {
+  return DriftMoneyRepository(
+    database: ref.watch(appDatabaseProvider),
+    seedRunner: ref.watch(databaseSeedRunnerProvider),
+    syncChangeLogger: ref.watch(syncChangeLoggerProvider),
+  );
+});
+
+final transactionEntryDefaultsStoreProvider =
+    Provider<TransactionEntryDefaultsStore>((ref) {
+      return const TransactionEntryDefaultsStore();
+    });
+
+final moneyBudgetAlertNotificationServiceProvider =
+    Provider<MoneyBudgetAlertNotificationService>((ref) {
+      return MoneyBudgetAlertNotificationService(
+        notificationService: ref.watch(appNotificationServiceProvider),
+      );
+    });
+
+final moneyBillReminderNotificationServiceProvider =
+    Provider<MoneyBillReminderNotificationService>((ref) {
+      return MoneyBillReminderNotificationService(
+        notificationService: ref.watch(appNotificationServiceProvider),
+      );
+    });
+
+final currentUserBudgetAlertNotificationActionsProvider =
+    Provider<CurrentUserBudgetAlertNotificationActions>((ref) {
+      return CurrentUserBudgetAlertNotificationActions(ref);
+    });
+
+final currentUserBillReminderNotificationActionsProvider =
+    Provider<CurrentUserBillReminderNotificationActions>((ref) {
+      return CurrentUserBillReminderNotificationActions(ref);
+    });
+
+final moneyReminderSchedulerProvider = Provider<MoneyReminderScheduler>((ref) {
+  return MoneyReminderScheduler(
+    notificationService: ref.watch(appNotificationServiceProvider),
+  );
+});
+
+/// 把提醒中心的待处理项同步成系统级预约通知。
+///
+/// 它是一个被 App 根组件长期 watch 的 provider，而不是手动在各个写入点调用的
+/// 动作：待处理列表、提醒设置、当天流水任一变化都会自动重排，不需要在每个
+/// 「完成 / 忽略 / 延后 / 记账」的出口补一句同步——那种写法漏一处就会出现
+/// 处理完了还在推的僵尸通知。
+///
+/// 同步前先比对签名，签名没变就直接返回，避免每次写流水都空跑一轮取消 + 重排。
+final moneyReminderScheduleSyncProvider = FutureProvider<void>((ref) async {
+  final session = ref.watch(authSessionControllerProvider);
+  final userId = session.userId;
+  if (!session.isUnlocked || userId == null || userId.isEmpty) {
+    return;
+  }
+  // 记一笔之后「今天是否已记账」会翻转，每日记账提醒必须重新判断。
+  ref.watch(moneyDataRefreshVersionProvider);
+
+  final pending = await ref.watch(
+    currentUserPendingReminderCenterItemsProvider.future,
+  );
+  final settings = await ref.watch(moneyReminderSettingsProvider.future);
+  final hasTransactionToday = await _hasTransactionToday(ref);
+
+  final signature = _reminderScheduleSignature(
+    pending: pending,
+    settings: settings,
+    hasTransactionToday: hasTransactionToday,
+  );
+  final prefs = await SharedPreferences.getInstance();
+  final signatureKey = 'money_reminder_schedule_sig_$userId';
+  if (prefs.getString(signatureKey) == signature) {
+    return;
+  }
+
+  await ref
+      .read(moneyReminderSchedulerProvider)
+      .sync(
+        userId: userId,
+        pending: pending,
+        settings: settings,
+        hasTransactionToday: hasTransactionToday,
+      );
+  // 只在同步成功后落签名：中途失败下一轮会重试。
+  await prefs.setString(signatureKey, signature);
+});
+
+String _reminderScheduleSignature({
+  required List<MoneyReminderCenterItem> pending,
+  required MoneyReminderSettings settings,
+  required bool hasTransactionToday,
+}) {
+  final keys = pending.map((item) => item.itemKey).join('|');
+  return '${settings.toJson()}::$hasTransactionToday::$keys';
+}
+
+/// 今天是否已经记过账。
+///
+/// 查不到时按「已记账」处理：每日记账提醒是主动打扰，宁可漏推也不要在用户
+/// 已经记完之后还去烦他。
+Future<bool> _hasTransactionToday(Ref ref) async {
+  try {
+    final current = DateTime.now();
+    final start = DateTime(current.year, current.month, current.day);
+    final end = start.add(const Duration(days: 1));
+    final page = await ref
+        .read(currentUserMoneyTransactionActionsProvider)
+        .listTransactions(
+          MoneyTransactionQuery(dateStart: start, dateEnd: end, pageSize: 1),
+        );
+    return page.items.isNotEmpty;
+  } catch (_) {
+    return true;
+  }
+}
+
+final currentUserAutoPostingExecutionProvider =
+    FutureProvider<MoneyAutoPostingExecutionSummary>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return MoneyAutoPostingExecutionSummary.empty;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      final summary = await repository.executeDueAutoPostings(userId);
+      // 分期到期自动入账与自动记账同入口执行。
+      final installmentSummary = await repository.executeDueInstallmentPostings(
+        userId,
+      );
+      // 自动记账/分期补录产生新流水后必须整体刷新记账与首页数据，
+      // 否则在补录完成前构建的概览/预算/首页会停留在旧数据上。
+      // 再次构建时执行逻辑幂等返回空结果，不会循环执行。
+      if (summary.postedCount > 0 || installmentSummary.postedCount > 0) {
+        ref.read(moneyDataRefreshCoordinatorProvider).refreshAllMoneyData();
+      }
+      return summary;
+    });
+
+final moneyDeltaConflictApplyServiceProvider =
+    Provider<MoneyDeltaConflictApplyService>((ref) {
+      return MoneyDeltaConflictApplyService(
+        repository: ref.watch(moneyRepositoryProvider),
+        conflictStore: ref.watch(deltaConflictStoreProvider),
+      );
+    });
+
+final currentUserVisibleAccountsProvider =
+    StreamProvider.autoDispose<List<MoneyAccountEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyAccountEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      yield* repository.watchVisibleAccountsForUser(userId);
+    });
+
+final currentUserDeletedAccountsProvider =
+    FutureProvider<List<MoneyAccountEntity>>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyAccountEntity>[];
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      return repository.getDeletedAccountsForUser(userId);
+    });
+
+final currentUserMoneyLedgerAccountsProvider = StreamProvider.autoDispose
+    .family<List<MoneyAccountEntity>, String>((ref, ledgerId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyAccountEntity>[];
+        return;
+      }
+
+      yield* ref
+          .watch(moneyRepositoryProvider)
+          .watchAccountsForLedger(session.userId!, ledgerId);
+    });
+
+final currentUserMoneyTransferAccountsProvider = StreamProvider.autoDispose
+    .family<List<MoneyAccountEntity>, String>((ref, ledgerId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyAccountEntity>[];
+        return;
+      }
+
+      yield* ref
+          .watch(moneyRepositoryProvider)
+          .watchTransferAccountsForLedger(session.userId!, ledgerId);
+    });
+
+/// 系统默认创建的唯一内部虚拟账户（他人代付），仅供记账弹窗选择，
+/// 不出现在总资产/统计/账户列表与预算账户范围。
+final currentUserMoneyInternalAccountsProvider =
+    StreamProvider.autoDispose<List<MoneyAccountEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyAccountEntity>[];
+        return;
+      }
+
+      yield* ref
+          .watch(moneyRepositoryProvider)
+          .watchSystemInternalAccountsForUser(session.userId!);
+    });
+
+final currentUserAccountMonthlySummariesProvider =
+    FutureProvider<Map<String, MoneyAccountMonthlySummary>>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <String, MoneyAccountMonthlySummary>{};
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      return repository.getAccountMonthlySummariesForUser(userId);
+    });
+
+/// 账户在某个区间的收入 / 支出合计（余额对账时反推「期初余额」用）。
+final currentUserAccountPeriodFlowsProvider = FutureProvider.autoDispose
+    .family<
+      MoneyAccountPeriodFlows,
+      ({String accountId, DateTime from, DateTime to})
+    >((ref, key) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const MoneyAccountPeriodFlows.empty();
+      }
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      return repository.getAccountFlowsForPeriod(
+        userId,
+        key.accountId,
+        from: key.from,
+        to: key.to,
+      );
+    });
+
+final currentUserCreditCardStatementProvider = FutureProvider.autoDispose
+    .family<MoneyCreditCardStatement?, String>((ref, accountId) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return null;
+      }
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      return repository.getCreditCardStatementForAccount(userId, accountId);
+    });
+
+/// 净资产 = 资产账户余额 − 信用/负债账户已用额度。
+///
+/// 只统计启用中的账户，并统一用账本基准币种；`internal` 类型账户
+/// 不在 `currentUserVisibleAccountsProvider` 里，天然被排除。
+final currentUserNetWorthSummaryProvider = FutureProvider<MoneyNetWorthSummary>(
+  (ref) async {
+    ref.watch(moneyDataRefreshVersionProvider);
+    final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+    final currencyCode = ledger?.baseCurrencyCode ?? 'CNY';
+    final accounts = await ref.watch(currentUserVisibleAccountsProvider.future);
+
+    var assetMinor = 0;
+    var liabilityMinor = 0;
+    for (final account in accounts) {
+      if (!account.isActive) {
+        continue;
+      }
+      if (account.type.isCreditLike) {
+        liabilityMinor += account.usedCreditMinor;
+      } else {
+        assetMinor += account.balanceMinor;
+      }
+    }
+
+    return MoneyNetWorthSummary(
+      currencyCode: currencyCode,
+      assetMinor: assetMinor,
+      liabilityMinor: liabilityMinor,
+    );
+  },
+);
+
+/// 当前筛选条件下的全量汇总（不受列表分页影响）。
+///
+/// 列表是滚动分页的，用户看到的只是已加载的部分；「这段时间一共花了多少」
+/// 需要单独一次聚合查询，否则数字会随着滚动一直变。
+final currentUserTransactionSummaryProvider = FutureProvider.autoDispose
+    .family<MoneyTransactionSummary, MoneyTransactionQuery>((ref, query) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const MoneyTransactionSummary.empty();
+      }
+      final repository = ref.watch(moneyRepositoryProvider);
+      return repository.summarizeTransactions(session.userId!, query);
+    });
+
+/// 当前账本里待确认（pending）流水的条数。
+///
+/// 待确认流水不占余额也不进统计，唯一能找到它的地方就是流水列表里那个
+/// 角标；给个独立计数，入口上就能直接显示「还有几笔没入账」。
+final currentUserPendingTransactionCountProvider =
+    FutureProvider.autoDispose<int>((ref) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return 0;
+      }
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        return 0;
+      }
+      final repository = ref.watch(moneyRepositoryProvider);
+      final summary = await repository.summarizeTransactions(
+        session.userId!,
+        MoneyTransactionQuery(
+          status: MoneyTransactionStatus.pending,
+          ledgerId: ledger.id,
+        ),
+      );
+      return summary.count;
+    });
+
+/// 回收站：最近 30 天被删除的流水。
+///
+/// 必须 watch 刷新版本号——删除与恢复都不会动流水表之外的表，
+/// 只靠数据自身的 watch 是不会重跑的。
+final currentUserDeletedTransactionsProvider =
+    FutureProvider.autoDispose<List<MoneyTransactionEntity>>((ref) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyTransactionEntity>[];
+      }
+      return ref
+          .watch(currentUserMoneyTransactionActionsProvider)
+          .listDeletedTransactions();
+    });
+
+final currentUserCreditCardBillViewProvider = FutureProvider.autoDispose
+    .family<MoneyCreditCardBillView?, String>((ref, accountId) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return null;
+      }
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      return repository.getCurrentCreditCardBillViewForAccount(
+        userId,
+        accountId,
+      );
+    });
+
+final currentMoneyLedgerIdProvider =
+    NotifierProvider<CurrentMoneyLedgerIdController, String?>(
+      CurrentMoneyLedgerIdController.new,
+    );
+
+class CurrentMoneyLedgerIdController extends Notifier<String?> {
+  @override
+  String? build() {
+    ref.watch(
+      authSessionControllerProvider.select((session) => session.userId),
+    );
+    return null;
+  }
+
+  void set(String ledgerId) {
+    final previous = state;
+    if (previous != ledgerId) {
+      state = ledgerId;
+      // 账户/类型/支付方式筛选是账本局部的，切账本后重置，
+      // 避免统计仍按旧账本账户过滤（跨账本账户无效）。
+      ref.read(moneyStatisticsFilterProvider.notifier).resetForLedgerChange();
+    }
+  }
+
+  void clear() {
+    state = null;
+  }
+}
+
+final currentUserMoneyLedgersProvider =
+    StreamProvider.autoDispose<List<MoneyLedgerEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyLedgerEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      yield* repository.watchLedgersForUser(userId);
+    });
+
+final currentUserTransactionLedgersProvider = StreamProvider.autoDispose
+    .family<List<MoneyLedgerEntity>, String>((ref, transactionId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyLedgerEntity>[];
+        return;
+      }
+
+      yield* ref
+          .watch(moneyRepositoryProvider)
+          .watchLedgersForTransaction(session.userId!, transactionId);
+    });
+
+final currentUserCurrentLedgerValueProvider = Provider<MoneyLedgerEntity?>((
+  ref,
+) {
+  final session = ref.watch(authSessionControllerProvider);
+  if (!session.isUnlocked || session.userId == null) {
+    return null;
+  }
+
+  final selectedLedgerId = ref.watch(currentMoneyLedgerIdProvider);
+  final ledgers = ref
+      .watch(currentUserMoneyLedgersProvider)
+      .maybeWhen(data: (items) => items, orElse: () => null);
+  if (ledgers == null) {
+    return null;
+  }
+  if (ledgers.isEmpty) {
+    return null;
+  }
+
+  final selected = _findLedgerById(ledgers, selectedLedgerId);
+  if (selected != null) {
+    return selected;
+  }
+
+  for (final ledger in ledgers) {
+    if (ledger.isPersonal) {
+      return ledger;
+    }
+  }
+  return ledgers.first;
+});
+
+final currentUserCurrentLedgerProvider = FutureProvider<MoneyLedgerEntity?>((
+  ref,
+) async {
+  _watchMoneyDataRefresh(ref);
+  final session = ref.watch(authSessionControllerProvider);
+  if (!session.isUnlocked || session.userId == null) {
+    return null;
+  }
+
+  final selectedLedgerId = ref.watch(currentMoneyLedgerIdProvider);
+  final ledgers = await ref.watch(currentUserMoneyLedgersProvider.future);
+  return _resolveCurrentLedgerFromList(ledgers, selectedLedgerId);
+});
+
+final currentUserMoneyLedgerScopeProvider = FutureProvider<MoneyLedgerScope?>((
+  ref,
+) async {
+  final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+  if (ledger == null) {
+    return null;
+  }
+  return MoneyLedgerScope.fromLedger(ledger);
+});
+
+final currentUserMoneyLedgerScopeValueProvider = Provider<MoneyLedgerScope?>((
+  ref,
+) {
+  final ledger = ref.watch(currentUserCurrentLedgerValueProvider);
+  if (ledger == null) {
+    return null;
+  }
+  return MoneyLedgerScope.fromLedger(ledger);
+});
+
+final currentUserEffectiveTransactionLedgerValueProvider =
+    Provider<MoneyLedgerEntity?>((ref) {
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return null;
+      }
+
+      final selectedLedgerId = ref.watch(currentMoneyLedgerIdProvider);
+      final ledgers = ref
+          .watch(currentUserMoneyLedgersProvider)
+          .maybeWhen(data: (items) => items, orElse: () => null);
+      if (ledgers == null || ledgers.isEmpty) {
+        return null;
+      }
+
+      final selected = _findLedgerById(ledgers, selectedLedgerId);
+      if (selected != null && selected.isFamily) {
+        return selected;
+      }
+
+      for (final ledger in ledgers) {
+        if (ledger.isPersonal) {
+          return ledger;
+        }
+      }
+      return ledgers.first;
+    });
+
+final currentUserEffectiveTransactionLedgerProvider =
+    FutureProvider<MoneyLedgerEntity?>((ref) async {
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return null;
+      }
+
+      final selectedLedgerId = ref.watch(currentMoneyLedgerIdProvider);
+      final ledgers = await ref.watch(currentUserMoneyLedgersProvider.future);
+      if (ledgers.isEmpty) {
+        return null;
+      }
+
+      final selected = _findLedgerById(ledgers, selectedLedgerId);
+      if (selected != null && selected.isFamily) {
+        return selected;
+      }
+
+      for (final ledger in ledgers) {
+        if (ledger.isPersonal) {
+          return ledger;
+        }
+      }
+      return ledgers.first;
+    });
+
+final currentUserCurrentLedgerMembersProvider =
+    StreamProvider.autoDispose<List<MoneyMemberEntity>>((ref) {
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return Stream.value(const <MoneyMemberEntity>[]);
+      }
+
+      final ledger = ref.watch(currentUserCurrentLedgerValueProvider);
+      if (ledger == null) {
+        return Stream.value(const <MoneyMemberEntity>[]);
+      }
+
+      final controller = StreamController<List<MoneyMemberEntity>>();
+      final subscription = ref
+          .watch(moneyRepositoryProvider)
+          .watchMembersForLedger(session.userId!, ledger.id)
+          .listen(
+            controller.add,
+            onError: controller.addError,
+            onDone: controller.close,
+          );
+      ref.onDispose(() {
+        subscription.cancel();
+        controller.close();
+      });
+      return controller.stream;
+    });
+
+final moneyStatisticsFilterProvider =
+    NotifierProvider<
+      MoneyStatisticsFilterController,
+      MoneyStatisticsFilterState
+    >(MoneyStatisticsFilterController.new);
+
+final moneyStatisticsContextProvider = FutureProvider<MoneyStatisticsContext>((
+  ref,
+) async {
+  _watchMoneyDataRefresh(ref);
+  final session = ref.watch(authSessionControllerProvider);
+  if (!session.isUnlocked || session.userId == null) {
+    return const MoneyStatisticsContext.empty();
+  }
+
+  final userId = session.userId!;
+  final repository = ref.watch(moneyRepositoryProvider);
+  final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+  if (ledger == null) {
+    return const MoneyStatisticsContext.empty();
+  }
+  final accounts = await repository.watchVisibleAccountsForUser(userId).first;
+
+  return MoneyStatisticsContext(
+    userId: userId,
+    ledger: ledger,
+    accounts: accounts,
+  );
+});
+
+class MoneyStatisticsContext {
+  const MoneyStatisticsContext({
+    required this.userId,
+    required this.ledger,
+    required this.accounts,
+  });
+
+  const MoneyStatisticsContext.empty()
+    : userId = null,
+      ledger = null,
+      accounts = const <MoneyAccountEntity>[];
+
+  final String? userId;
+  final MoneyLedgerEntity? ledger;
+  final List<MoneyAccountEntity> accounts;
+
+  bool get isReady => userId != null && ledger != null;
+}
+
+class MoneyStatisticsFilterState {
+  const MoneyStatisticsFilterState({
+    this.periodPreset = MoneyStatisticsPeriodPreset.thisMonth,
+    this.accountId,
+    this.accountType,
+    this.paymentMethod,
+    this.typeFocus = MoneyStatisticsTypeFocus.balance,
+    this.anchorDate,
+    this.customStart,
+    this.customEnd,
+    this.anomalyMinAmountMinor = 5000,
+    this.anomalyMinGrowthPercent = 20,
+  });
+
+  final MoneyStatisticsPeriodPreset periodPreset;
+  final String? accountId;
+  final MoneyAccountType? accountType;
+  final MoneyPaymentMethod? paymentMethod;
+  final MoneyStatisticsTypeFocus typeFocus;
+  final DateTime? anchorDate;
+  final DateTime? customStart;
+  final DateTime? customEnd;
+  final int anomalyMinAmountMinor;
+  final double anomalyMinGrowthPercent;
+
+  /// 除了「周期 / 类型」这两个总是有值的选择外的主动筛选。
+  bool get hasAnyFilter =>
+      accountId != null ||
+      accountType != null ||
+      paymentMethod != null ||
+      typeFocus != MoneyStatisticsTypeFocus.balance ||
+      periodPreset != MoneyStatisticsPeriodPreset.thisMonth;
+
+  MoneyStatisticsFilterState copyWith({
+    MoneyStatisticsPeriodPreset? periodPreset,
+    String? accountId,
+    bool clearAccountId = false,
+    MoneyAccountType? accountType,
+    bool clearAccountType = false,
+    MoneyPaymentMethod? paymentMethod,
+    bool clearPaymentMethod = false,
+    MoneyStatisticsTypeFocus? typeFocus,
+    DateTime? anchorDate,
+    bool clearAnchorDate = false,
+    DateTime? customStart,
+    bool clearCustomStart = false,
+    DateTime? customEnd,
+    bool clearCustomEnd = false,
+    int? anomalyMinAmountMinor,
+    double? anomalyMinGrowthPercent,
+  }) {
+    return MoneyStatisticsFilterState(
+      periodPreset: periodPreset ?? this.periodPreset,
+      accountId: clearAccountId ? null : accountId ?? this.accountId,
+      accountType: clearAccountType ? null : accountType ?? this.accountType,
+      paymentMethod: clearPaymentMethod
+          ? null
+          : paymentMethod ?? this.paymentMethod,
+      typeFocus: typeFocus ?? this.typeFocus,
+      anchorDate: clearAnchorDate ? null : anchorDate ?? this.anchorDate,
+      customStart: clearCustomStart ? null : customStart ?? this.customStart,
+      customEnd: clearCustomEnd ? null : customEnd ?? this.customEnd,
+      anomalyMinAmountMinor:
+          anomalyMinAmountMinor ?? this.anomalyMinAmountMinor,
+      anomalyMinGrowthPercent:
+          anomalyMinGrowthPercent ?? this.anomalyMinGrowthPercent,
+    );
+  }
+}
+
+class MoneyStatisticsFilterController
+    extends Notifier<MoneyStatisticsFilterState> {
+  @override
+  MoneyStatisticsFilterState build() {
+    ref.watch(
+      authSessionControllerProvider.select((session) => session.userId),
+    );
+    return const MoneyStatisticsFilterState();
+  }
+
+  /// 切换账本后重置账本局部筛选（账户/类型/支付方式）。
+  void resetForLedgerChange() {
+    final current = state;
+    if (current.accountId != null ||
+        current.accountType != null ||
+        current.paymentMethod != null) {
+      state = current.copyWith(
+        clearAccountId: true,
+        clearAccountType: true,
+        clearPaymentMethod: true,
+      );
+    }
+  }
+
+  /// 一键重置全部筛选（保留用户自己设的「消费变化」阈值）。
+  void resetFilters() {
+    final current = state;
+    state = MoneyStatisticsFilterState(
+      anomalyMinAmountMinor: current.anomalyMinAmountMinor,
+      anomalyMinGrowthPercent: current.anomalyMinGrowthPercent,
+    );
+  }
+
+  void setPeriod(MoneyStatisticsPeriodPreset value) {
+    if (value != MoneyStatisticsPeriodPreset.custom) {
+      state = state.copyWith(
+        periodPreset: value,
+        clearCustomStart: true,
+        clearCustomEnd: true,
+      );
+    } else {
+      final now = DateTime.now();
+      state = state.copyWith(
+        periodPreset: value,
+        customStart: DateTime(now.year),
+        customEnd: DateTime(now.year + 1),
+      );
+    }
+  }
+
+  void setCustomRange(DateTime start, DateTime end) {
+    state = state.copyWith(
+      periodPreset: MoneyStatisticsPeriodPreset.custom,
+      customStart: start,
+      customEnd: end,
+    );
+  }
+
+  void setAccountId(String? value) {
+    state = state.copyWith(accountId: value, clearAccountId: value == null);
+  }
+
+  void setTypeFocus(MoneyStatisticsTypeFocus value) {
+    state = state.copyWith(typeFocus: value);
+  }
+
+  void setPaymentMethod(MoneyPaymentMethod? value) {
+    state = state.copyWith(
+      paymentMethod: value,
+      clearPaymentMethod: value == null,
+    );
+  }
+
+  void setAnomalyThresholds({
+    required int minimumAmountMinor,
+    required double minimumGrowthPercent,
+  }) {
+    state = state.copyWith(
+      anomalyMinAmountMinor: minimumAmountMinor,
+      anomalyMinGrowthPercent: minimumGrowthPercent,
+    );
+  }
+
+  void setAccountType(MoneyAccountType? value) {
+    state = state.copyWith(accountType: value, clearAccountType: value == null);
+  }
+}
+
+final moneySpendingAnalysisProvider = FutureProvider.autoDispose
+    .family<MoneySpendingAnalysis, MoneySpendingAnalysisRequest>((
+      ref,
+      request,
+    ) {
+      _watchMoneyDataRefresh(ref);
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getSpendingAnalysisForUser(request.userId, request.query);
+    });
+
+class MoneySpendingAnalysisRequest {
+  const MoneySpendingAnalysisRequest({
+    required this.userId,
+    required this.query,
+  });
+
+  final String userId;
+  final MoneySpendingAnalysisQuery query;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is MoneySpendingAnalysisRequest &&
+            userId == other.userId &&
+            query.currentMonth == other.query.currentMonth &&
+            query.ledgerId == other.query.ledgerId &&
+            query.accountId == other.query.accountId &&
+            query.accountType == other.query.accountType &&
+            query.paymentMethod == other.query.paymentMethod &&
+            query.baselineMonthCount == other.query.baselineMonthCount &&
+            query.windowMonthCount == other.query.windowMonthCount &&
+            query.minimumAmountMinor == other.query.minimumAmountMinor &&
+            query.minimumGrowthPercent == other.query.minimumGrowthPercent;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      userId,
+      query.currentMonth,
+      query.ledgerId,
+      query.accountId,
+      query.accountType,
+      query.paymentMethod,
+      query.baselineMonthCount,
+      query.windowMonthCount,
+      query.minimumAmountMinor,
+      query.minimumGrowthPercent,
+    );
+  }
+}
+
+final moneyStatisticsProvider = FutureProvider.autoDispose
+    .family<MoneyStatisticsSummary, MoneyStatisticsRequest>((ref, request) {
+      _watchMoneyDataRefresh(ref);
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getStatisticsForUser(request.userId, request.query);
+    });
+
+/// 本月 = 每个分类的金额与占比。
+///
+/// 分类管理页需要「这个分类本月花了多少」才能判断要不要停用/调整。
+/// 这里复用 [moneyStatisticsProvider] 的同一个请求（本月份 + 当前账本 + 无筛选），
+/// 所以**不会**多出一次查询：统计页已经用过这个 key 时会直接命中缓存，
+/// 也保证了两个页面的数字完全一致。
+/// 分类 / 子分类的「常用」数据：历史次数 + 最近使用时间。
+///
+/// 排序用这个，不用「本月金额」——月初或某分类本月刚好没用过时会全部归零，
+/// 把真正常用的项挤出常用格。展示「本月花了多少」仍走
+/// [currentUserMonthCategoryUsageProvider]。
+final currentUserCategoryUsageStatsProvider =
+    FutureProvider.autoDispose<MoneyCategoryUsage>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const MoneyCategoryUsage.empty();
+      }
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getCategoryUsageStatsForUser(session.userId!);
+    });
+
+final currentUserMonthCategoryUsageProvider = FutureProvider.autoDispose
+    .family<MoneyCategoryUsage, MoneyCategoryKind>((ref, kind) async {
+      final context = await ref.watch(moneyStatisticsContextProvider.future);
+      if (!context.isReady) {
+        return const MoneyCategoryUsage.empty();
+      }
+
+      final range = MoneyStatisticsDateRange.resolve(
+        MoneyStatisticsPeriodPreset.thisMonth,
+        DateTime.now(),
+      );
+      final summary = await ref.watch(
+        moneyStatisticsProvider(
+          MoneyStatisticsRequest(
+            userId: context.userId!,
+            query: MoneyStatisticsQuery(
+              dateStart: range.start,
+              dateEndExclusive: range.endExclusive,
+              groupBy: range.groupBy,
+              ledgerId: context.ledger!.id,
+            ),
+          ),
+        ).future,
+      );
+
+      final isIncome = kind == MoneyCategoryKind.income;
+      return MoneyCategoryUsage.fromSlices(
+        slices: isIncome ? summary.incomeCategories : summary.expenseCategories,
+        subSlices: isIncome
+            ? summary.incomeSubCategories
+            : summary.expenseSubCategories,
+        currencyCode: summary.currencyCode,
+      );
+    });
+
+class MoneyStatisticsRequest {
+  const MoneyStatisticsRequest({required this.userId, required this.query});
+
+  final String userId;
+  final MoneyStatisticsQuery query;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is MoneyStatisticsRequest &&
+            userId == other.userId &&
+            query.dateStart == other.query.dateStart &&
+            query.dateEndExclusive == other.query.dateEndExclusive &&
+            query.groupBy == other.query.groupBy &&
+            query.ledgerId == other.query.ledgerId &&
+            query.accountId == other.query.accountId &&
+            query.accountType == other.query.accountType &&
+            query.paymentMethod == other.query.paymentMethod &&
+            query.typeFocus == other.query.typeFocus;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      userId,
+      query.dateStart,
+      query.dateEndExclusive,
+      query.groupBy,
+      query.ledgerId,
+      query.accountId,
+      query.accountType,
+      query.paymentMethod,
+      query.typeFocus,
+    );
+  }
+}
+
+final moneyStatisticsInsightsProvider = FutureProvider.autoDispose
+    .family<MoneyStatisticsInsights, MoneyStatisticsRequest>((ref, request) {
+      _watchMoneyDataRefresh(ref);
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getStatisticsInsightsForUser(request.userId, request.query);
+    });
+
+final currentUserMoneyLedgerMembersProvider = StreamProvider.autoDispose
+    .family<List<MoneyMemberEntity>, String>((ref, ledgerId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyMemberEntity>[];
+        return;
+      }
+
+      yield* ref
+          .watch(moneyRepositoryProvider)
+          .watchMembersForLedger(session.userId!, ledgerId);
+    });
+
+MoneyLedgerEntity? _findLedgerById(
+  List<MoneyLedgerEntity> ledgers,
+  String? ledgerId,
+) {
+  if (ledgerId == null) {
+    return null;
+  }
+  for (final ledger in ledgers) {
+    if (ledger.id == ledgerId) {
+      return ledger;
+    }
+  }
+  return null;
+}
+
+MoneyLedgerEntity? _resolveCurrentLedgerFromList(
+  List<MoneyLedgerEntity> ledgers,
+  String? selectedLedgerId,
+) {
+  if (ledgers.isEmpty) {
+    return null;
+  }
+
+  final selected = _findLedgerById(ledgers, selectedLedgerId);
+  if (selected != null) {
+    return selected;
+  }
+
+  for (final ledger in ledgers) {
+    if (ledger.isPersonal) {
+      return ledger;
+    }
+  }
+  return ledgers.first;
+}
+
+final currentUserCategoryCatalogProvider = StreamProvider.autoDispose
+    .family<MoneyCategoryCatalog, MoneyCategoryKind>((ref, kind) {
+      // 使用 StreamController + ref.onDispose 避免 async* generator 在
+      // provider dispose 后恢复时 ref.watch 抛 StateError。
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return Stream.value(const MoneyCategoryCatalog.empty());
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final controller = StreamController<MoneyCategoryCatalog>();
+
+      final subscription = repository
+          .watchCategoryCatalogForUser(session.userId!, kind)
+          .listen(
+            controller.add,
+            onError: controller.addError,
+            onDone: controller.close,
+          );
+
+      ref.onDispose(() {
+        subscription.cancel();
+        controller.close();
+      });
+
+      return controller.stream;
+    });
+
+final currentUserCategoryManagementCatalogProvider = StreamProvider.autoDispose
+    .family<MoneyCategoryCatalog, MoneyCategoryKind>((ref, kind) {
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return Stream.value(const MoneyCategoryCatalog.empty());
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final controller = StreamController<MoneyCategoryCatalog>();
+
+      final subscription = repository
+          .watchCategoryCatalogForUser(
+            session.userId!,
+            kind,
+            includeDeleted: true,
+          )
+          .listen(
+            controller.add,
+            onError: controller.addError,
+            onDone: controller.close,
+          );
+
+      ref.onDispose(() {
+        subscription.cancel();
+        controller.close();
+      });
+
+      return controller.stream;
+    });
+
+final currentUserPaymentMethodUsageRanksProvider =
+    FutureProvider<Map<MoneyPaymentMethod, int>>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyPaymentMethod, int>{};
+      }
+
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getPaymentMethodUsageRanksForUser(session.userId!);
+    });
+
+final currentUserEntrySuggestionsProvider =
+    FutureProvider<MoneyEntrySuggestions>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const MoneyEntrySuggestions.empty();
+      }
+
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getEntrySuggestionsForUser(session.userId!);
+    });
+
+final currentUserBudgetsProvider = StreamProvider<List<MoneyBudgetEntity>>((
+  ref,
+) async* {
+  // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+  // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+  if (!ref.mounted) {
+    return;
+  }
+  _watchMoneyDataRefresh(ref);
+  final session = ref.watch(authSessionControllerProvider);
+  if (!session.isUnlocked || session.userId == null) {
+    yield const <MoneyBudgetEntity>[];
+    return;
+  }
+
+  final repository = ref.watch(moneyRepositoryProvider);
+  final userId = session.userId!;
+  final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+  if (ledger == null) {
+    yield const <MoneyBudgetEntity>[];
+    return;
+  }
+
+  await repository.refreshBudgetSnapshotsForUser(userId);
+  yield* repository.watchBudgetsForUser(userId, ledgerId: ledger.id);
+});
+
+/// 当前账本下所有预算的「已预留」额度。
+///
+/// 一次加载数据源、批量算出全部预算，避免每张卡各查一遍退化成 N× 查询。
+/// 必须显式 watch 自动记账模板与分期计划：这两张表变化时预算表不会动，
+/// 只依赖预算流的话预留额度会一直停在旧值上。
+final currentUserBudgetCommitmentsProvider =
+    FutureProvider.autoDispose<Map<String, MoneyBudgetCommitment>>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <String, MoneyBudgetCommitment>{};
+      }
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        return const <String, MoneyBudgetCommitment>{};
+      }
+      ref.watch(currentUserAutoPostingTemplatesProvider);
+      ref.watch(currentUserInstallmentPlansProvider);
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      return repository.budgetCommitmentsForUser(
+        session.userId!,
+        ledgerId: ledger.id,
+      );
+    });
+
+/// 单个预算的「已预留」额度；取不到就当作没有。
+final moneyBudgetCommitmentProvider = Provider.autoDispose
+    .family<MoneyBudgetCommitment, String>((ref, budgetId) {
+      final commitments = ref.watch(currentUserBudgetCommitmentsProvider).value;
+      return commitments?[budgetId] ?? MoneyBudgetCommitment.empty;
+    });
+
+final currentUserTagCandidatesProvider = StreamProvider<List<String>>((
+  ref,
+) async* {
+  // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+  // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+  if (!ref.mounted) {
+    return;
+  }
+  _watchMoneyDataRefresh(ref);
+  final session = ref.watch(authSessionControllerProvider);
+  if (!session.isUnlocked || session.userId == null) {
+    yield const <String>[];
+    return;
+  }
+
+  final repository = ref.watch(moneyRepositoryProvider);
+  yield* repository.watchTagCandidatesForUser(session.userId!);
+});
+
+final currentUserBudgetAllocationsProvider = StreamProvider.autoDispose
+    .family<List<MoneyBudgetAllocationEntity>, String>((ref, budgetId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyBudgetAllocationEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      yield* repository.watchBudgetAllocationsForUser(userId, budgetId);
+    });
+
+final currentUserBudgetSnapshotsProvider = StreamProvider.autoDispose
+    .family<List<MoneyBudgetHistorySnapshotEntity>, String>((
+      ref,
+      budgetId,
+    ) async* {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyBudgetHistorySnapshotEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      await repository.ensureBudgetSnapshotForBudget(userId, budgetId);
+      yield* repository.watchBudgetSnapshotsForUser(userId, budgetId: budgetId);
+    });
+
+final currentUserBudgetAllocationSnapshotsProvider = StreamProvider.autoDispose
+    .family<List<MoneyBudgetAllocationHistorySnapshotEntity>, String>((
+      ref,
+      budgetId,
+    ) async* {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyBudgetAllocationHistorySnapshotEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      await repository.ensureBudgetSnapshotForBudget(userId, budgetId);
+      yield* repository.watchBudgetAllocationSnapshotsForUser(userId, budgetId);
+    });
+
+final currentUserBillRemindersProvider =
+    StreamProvider.autoDispose<List<MoneyBillReminderEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyBillReminderEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        yield const <MoneyBillReminderEntity>[];
+        return;
+      }
+
+      // 先把「已在提醒中心完成/忽略、但 status 仍是 pending」的提醒收敛掉，
+      // 否则 isActive 恒为真会持续推送系统通知并把已付账单计入「即将到期」统计。
+      // 幂等，可重复执行（写法对齐 currentUserInstallmentPlansProvider 的
+      // repairInstallmentPlanStatuses）。
+      await repository.repairBillReminderProcessingStatuses(
+        userId,
+        ledgerId: ledger.id,
+      );
+
+      yield* repository.watchBillRemindersForUser(userId, ledgerId: ledger.id);
+    });
+
+final currentUserAutoPostingTemplatesProvider =
+    StreamProvider.autoDispose<List<MoneyAutoPostingTemplateEntity>>((
+      ref,
+    ) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyAutoPostingTemplateEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        yield const <MoneyAutoPostingTemplateEntity>[];
+        return;
+      }
+
+      yield* repository.watchAutoPostingTemplatesForUser(
+        userId,
+        ledgerId: ledger.id,
+      );
+    });
+
+final currentUserAutoPostingRunsProvider = StreamProvider.autoDispose
+    .family<List<MoneyAutoPostingRunEntity>, String>((ref, templateId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyAutoPostingRunEntity>[];
+        return;
+      }
+
+      yield* ref
+          .watch(moneyRepositoryProvider)
+          .watchAutoPostingRunsForTemplate(session.userId!, templateId);
+    });
+
+/// 当前账本里「同一笔还款既登记成分期、又登记成自动记账」的冲突。
+///
+/// 已忽略（用户标记过「这是两笔不同支出」）的不再返回；已接管的模板 isActive
+/// 为 false，仓储层查不到，也不会出现在这里——所以列表天然只剩待处置的。
+final currentUserAutoPostingInstallmentConflictsProvider =
+    FutureProvider.autoDispose<List<MoneyAutoPostingInstallmentConflict>>((
+      ref,
+    ) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyAutoPostingInstallmentConflict>[];
+      }
+
+      final ignored =
+          ref.watch(autoPostingConflictIgnoreProvider).value ??
+          const <String>{};
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      final conflicts = await ref
+          .watch(moneyRepositoryProvider)
+          .findAutoPostingInstallmentConflicts(session.userId!);
+
+      return conflicts
+          .where((item) => !ignored.contains(item.conflictKey))
+          .where((item) => ledger == null || item.ledgerId == ledger.id)
+          .toList(growable: false);
+    });
+
+final moneyBudgetHistoryTrendProvider = FutureProvider.autoDispose
+    .family<List<MoneyBudgetHistoryTrendPoint>, String>((ref, ledgerId) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyBudgetHistoryTrendPoint>[];
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      return repository.getBudgetHistoryTrendForUser(userId, ledgerId);
+    });
+
+final moneyUpcomingCashFlowProvider = FutureProvider.autoDispose
+    .family<MoneyUpcomingCashFlowSummary, String>((ref, ledgerId) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const MoneyUpcomingCashFlowSummary.empty();
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      return repository.getUpcomingCashFlowForUser(userId, ledgerId: ledgerId);
+    });
+
+final currentUserLatestReportProvider = FutureProvider.autoDispose
+    .family<MoneyAnalysisReportEntity?, (String, String)>((ref, params) async {
+      final (ledgerId, reportPeriod) = params;
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return null;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      return repository.getLatestReportForUser(userId, ledgerId, reportPeriod);
+    });
+
+/// 当前分析报表选中的周期（weekly / monthly / quarterly / yearly）。
+final moneyReportPeriodProvider =
+    NotifierProvider<MoneyReportPeriodController, String>(
+      MoneyReportPeriodController.new,
+    );
+
+class MoneyReportPeriodController extends Notifier<String> {
+  @override
+  String build() => 'monthly';
+
+  void set(String value) {
+    state = value;
+  }
+}
+
+/// 按账本配置自动生成报表。
+///
+/// 进入统计页时检查一次：每个开启的周期若「当前周期还没有已生成的报表」
+/// 就补生成一份。已存在当前周期报表时跳过，因此重复进入不会重复生成。
+/// 注意：不 watch 报表 Provider，避免生成后自我触发形成循环。
+final currentUserReportAutoGenerationProvider = FutureProvider<void>((
+  ref,
+) async {
+  final session = ref.watch(authSessionControllerProvider);
+  if (!session.isUnlocked || session.userId == null) {
+    return;
+  }
+  final userId = session.userId!;
+  final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+  if (ledger == null) {
+    return;
+  }
+  final repository = ref.watch(moneyRepositoryProvider);
+  final config = await repository.getReportGenerationConfig(userId, ledger.id);
+  final enabled = <String>[
+    if (config.autoGenerateWeekly) 'weekly',
+    if (config.autoGenerateMonthly) 'monthly',
+    if (config.autoGenerateQuarterly) 'quarterly',
+    if (config.autoGenerateYearly) 'yearly',
+  ];
+  if (enabled.isEmpty) {
+    return;
+  }
+
+  final now = DateTime.now();
+  for (final period in enabled) {
+    try {
+      final range = resolveMoneyReportPeriodRange(period, now);
+      final latest = await repository.getLatestReportForUser(
+        userId,
+        ledger.id,
+        period,
+      );
+      if (latest != null &&
+          latest.isCompleted &&
+          !latest.periodStart.isBefore(range.start)) {
+        continue;
+      }
+      await repository.generateReportForUser(
+        userId,
+        MoneyAnalysisReportRequest(
+          ledgerId: ledger.id,
+          reportPeriod: period,
+          periodStart: range.start,
+          periodEnd: range.endExclusive,
+        ),
+      );
+    } catch (_) {
+      // 自动生成失败不影响页面，用户可手动生成。
+    }
+  }
+});
+
+final currentUserNetWorthTrendProvider = FutureProvider.autoDispose
+    .family<List<MoneyNetWorthTrendPoint>, (String, int)>((ref, params) async {
+      final (ledgerId, days) = params;
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyNetWorthTrendPoint>[];
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.captureAssetSnapshotsForUser(userId);
+      return repository.getNetWorthTrendForUser(userId, days: days);
+    });
+
+final currentUserPendingReminderCenterItemsProvider =
+    FutureProvider<List<MoneyReminderCenterItem>>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyReminderCenterItem>[];
+      }
+
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        return const <MoneyReminderCenterItem>[];
+      }
+
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getPendingReminderCenterItems(session.userId!, ledgerId: ledger.id);
+    });
+
+final currentUserReminderCenterHistoryProvider =
+    FutureProvider<List<MoneyReminderCenterItem>>((ref) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyReminderCenterItem>[];
+      }
+
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        return const <MoneyReminderCenterItem>[];
+      }
+
+      return ref
+          .watch(moneyRepositoryProvider)
+          .getReminderCenterHistory(session.userId!, ledgerId: ledger.id);
+    });
+final currentUserInstallmentPlansProvider =
+    StreamProvider.autoDispose<List<MoneyInstallmentPlanEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      // async* generator 是惰性的：provider 可能在生成器真正开始执行之前
+      // 就被 dispose，这时 ref 已经失效，任何 ref.watch 都会抛出
+      // 「Cannot use the Ref ... after it has been disposed」。
+      if (!ref.mounted) {
+        return;
+      }
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyInstallmentPlanEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      if (ledger == null) {
+        yield const <MoneyInstallmentPlanEntity>[];
+        return;
+      }
+      await repository.repairInstallmentPlanStatuses(
+        userId,
+        ledgerId: ledger.id,
+      );
+      yield* repository.watchInstallmentPlansForUser(
+        userId,
+        ledgerId: ledger.id,
+      );
+    });
+
+final currentUserInstallmentDetailsProvider = StreamProvider.autoDispose
+    .family<List<MoneyInstallmentDetailEntity>, String>((ref, planId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyInstallmentDetailEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      yield* repository.watchInstallmentDetailsForPlan(userId, planId);
+    });
+
+final currentUserTransactionProvider = FutureProvider.autoDispose
+    .family<MoneyTransactionEntity, String>((ref, transactionId) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        throw const MoneyRepositoryException(
+          MoneyRepositoryErrorCode.databaseReadFailed,
+        );
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      await repository.ensureReadyForUser(session.userId!);
+      return repository.getTransactionForUser(session.userId!, transactionId);
+    });
+
+final currentUserSplitRulesProvider = StreamProvider.autoDispose
+    .family<List<MoneySplitRuleEntity>, String>((ref, ledgerId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneySplitRuleEntity>[];
+        return;
+      }
+
+      yield* ref
+          .watch(moneyRepositoryProvider)
+          .watchSplitRulesForLedger(session.userId!, ledgerId);
+    });
+
+final currentUserMoneyMembersProvider =
+    StreamProvider.autoDispose<List<MoneyMemberEntity>>((ref) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneyMemberEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      yield* repository.watchMembersForUser(userId);
+    });
+
+final currentUserSplitRecordsForTransactionProvider = StreamProvider.autoDispose
+    .family<List<MoneySplitRecordEntity>, String>((ref, transactionId) async* {
+      // 惰性 generator：provider 可能在生成器开始执行前就被 dispose，
+      // 此时 ref 已失效，任何 ref.watch 都会抛未捕获异常。
+      if (!ref.mounted) {
+        return;
+      }
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        yield const <MoneySplitRecordEntity>[];
+        return;
+      }
+
+      final repository = ref.watch(moneyRepositoryProvider);
+      final userId = session.userId!;
+      await repository.ensureReadyForUser(userId);
+      yield* repository.watchSplitRecordsForTransaction(userId, transactionId);
+    });
+
+final currentUserMoneyAccountActionsProvider =
+    Provider<CurrentUserMoneyAccountActions>((ref) {
+      return CurrentUserMoneyAccountActions(ref);
+    });
+
+final currentUserMoneyTransactionActionsProvider =
+    Provider<CurrentUserMoneyTransactionActions>((ref) {
+      return CurrentUserMoneyTransactionActions(ref);
+    });
+
+final moneyDataRefreshVersionProvider =
+    NotifierProvider<MoneyDataRefreshVersionController, int>(
+      MoneyDataRefreshVersionController.new,
+    );
+
+class MoneyDataRefreshVersionController extends Notifier<int> {
+  @override
+  int build() {
+    return 0;
+  }
+
+  void bump() {
+    state++;
+  }
+}
+
+/// 下拉刷新：bump 一次全局刷新版本号，所有挂在 [_watchMoneyDataRefresh]
+/// 上的 provider 都会重新取数（记账模块的列表页共用这一个入口）。
+///
+/// 末尾的短延时只是为了让刷新指示器有时间转一下，避免「刚出现就消失」。
+Future<void> refreshMoneyData(WidgetRef ref) async {
+  ref.read(moneyDataRefreshVersionProvider.notifier).bump();
+  await Future<void>.delayed(const Duration(milliseconds: 260));
+}
+
+void _watchMoneyDataRefresh(Ref ref) {
+  // StreamProvider.autoDispose 的 async* generator 在 dispose 后恢复时会抛异常。
+  // Ref 失效时 ref.watch 会抛 Error，用 catch 安全降级。
+  try {
+    ref.watch(moneyDataRefreshVersionProvider);
+  } catch (_) {
+    // Provider 已 dispose，忽略。
+  }
+}
+
+class CurrentUserBudgetAlertNotificationActions {
+  CurrentUserBudgetAlertNotificationActions(this._ref);
+
+  final Ref _ref;
+  bool _running = false;
+  bool _pending = false;
+
+  Future<void> scanNow() async {
+    if (_running) {
+      // 扫描期间数据可能又变了（如刚记账），标记待重扫，结束后补一次，
+      // 避免用旧预算数据扫描而漏掉通知。
+      _pending = true;
+      return;
+    }
+    _running = true;
+    try {
+      do {
+        _pending = false;
+        await _scanOnce();
+      } while (_pending);
+    } finally {
+      _running = false;
+    }
+  }
+
+  Future<void> _scanOnce() async {
+    try {
+      final session = _ref.read(authSessionControllerProvider);
+      final userId = session.userId;
+      if (!session.isUnlocked || userId == null || userId.isEmpty) {
+        return;
+      }
+
+      final budgets = await _ref.read(currentUserBudgetsProvider.future);
+      // 带上已预留额度：房租还没入账时额度其实已经没了，只按已用算要等到
+      // 入账那天才提醒，等于没提醒。
+      final commitments = await _ref.read(
+        currentUserBudgetCommitmentsProvider.future,
+      );
+      await _ref
+          .read(moneyBudgetAlertNotificationServiceProvider)
+          .scanAndNotify(
+            userId: userId,
+            budgets: budgets,
+            commitments: commitments,
+          );
+    } catch (error, stackTrace) {
+      debugPrint('[budget-alert] 扫描失败: $error\n$stackTrace');
+    }
+  }
+}
+
+class CurrentUserBillReminderNotificationActions {
+  CurrentUserBillReminderNotificationActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> scanNow() async {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      return;
+    }
+
+    try {
+      // 先取待处理列表：它已经按提醒中心的完成/忽略/延后状态过滤过，
+      // 用来给通知做门禁，避免「用户早处理完了还天天推」。
+      // 取不到就不能继续——否则会把门禁当成「全部静默」，掩盖真实告警。
+      final pending = await _ref.read(
+        currentUserPendingReminderCenterItemsProvider.future,
+      );
+      final actionableReminderIds = <String>{
+        for (final item in pending)
+          if (item.sourceType == MoneyReminderCenterSourceType.billReminder ||
+              item.sourceType == MoneyReminderCenterSourceType.creditCardBill)
+            item.sourceId,
+      };
+
+      final reminders = await _ref.read(
+        currentUserBillRemindersProvider.future,
+      );
+      final accounts = await _ref.read(
+        currentUserVisibleAccountsProvider.future,
+      );
+      final accountsById = {
+        for (final account in accounts) account.id: account,
+      };
+      await _ref
+          .read(moneyBillReminderNotificationServiceProvider)
+          .scanAndNotify(
+            userId: userId,
+            reminders: reminders,
+            accountsById: accountsById,
+            actionableReminderIds: actionableReminderIds,
+          );
+    } catch (_) {
+      // Notification scan must not break foreground data flows.
+    }
+  }
+}
+
+final moneyDataRefreshCoordinatorProvider =
+    Provider<MoneyDataRefreshCoordinator>((ref) {
+      return MoneyDataRefreshCoordinator(ref);
+    });
+
+class MoneyDataRefreshCoordinator {
+  MoneyDataRefreshCoordinator(this._ref);
+
+  final Ref _ref;
+  bool _bumpScheduled = false;
+
+  void refreshAfterLedgerChanged({String? ledgerId}) {
+    _bumpTransactions();
+  }
+
+  void refreshAfterAccountChanged({String? ledgerId}) {
+    _bumpTransactions();
+  }
+
+  void refreshAfterBudgetChanged({String? budgetId}) {
+    _bumpTransactions();
+    _scheduleBudgetAlertScan();
+  }
+
+  void refreshAfterReminderChanged() {
+    _bumpTransactions();
+    _scheduleBillReminderScan();
+  }
+
+  void refreshAfterInstallmentChanged() {
+    _bumpTransactions();
+  }
+
+  void refreshAfterAutoPostingChanged() {
+    _bumpTransactions();
+  }
+
+  void refreshAfterSplitChanged({String? transactionId, String? ledgerId}) {
+    _bumpTransactions();
+  }
+
+  void refreshAfterSplitRuleChanged({String? ledgerId}) {
+    _bumpTransactions();
+  }
+
+  void refreshAfterTransactionChanged({String? transactionId}) {
+    _bumpTransactions();
+    _scheduleBudgetAlertScan();
+    // 信用卡/账单债务金额随交易变化，债务类提醒也必须重扫，
+    // 否则旧 token 会阻止新一轮提醒。
+    _scheduleBillReminderScan();
+  }
+
+  void refreshAllMoneyData({bool clearLedgerSelection = false}) {
+    if (clearLedgerSelection) {
+      _ref.read(currentMoneyLedgerIdProvider.notifier).clear();
+    }
+    _bumpTransactions();
+    _scheduleBudgetAlertScan();
+    _scheduleBillReminderScan();
+  }
+
+  void refreshHome() {
+    _bumpTransactions();
+  }
+
+  void _bumpTransactions() {
+    // 同一事件循环内的连续 bump（如批量导入、预算+分配操作链）
+    // 合并为一次，避免整轮全量重建风暴。
+    if (_bumpScheduled) {
+      return;
+    }
+    _bumpScheduled = true;
+    scheduleMicrotask(() {
+      _bumpScheduled = false;
+      _ref.read(moneyDataRefreshVersionProvider.notifier).bump();
+    });
+  }
+
+  void _scheduleBudgetAlertScan() {
+    unawaited(
+      Future<void>.microtask(
+        () => _ref
+            .read(currentUserBudgetAlertNotificationActionsProvider)
+            .scanNow(),
+      ),
+    );
+  }
+
+  void _scheduleBillReminderScan() {
+    unawaited(
+      Future<void>.microtask(
+        () => _ref
+            .read(currentUserBillReminderNotificationActionsProvider)
+            .scanNow(),
+      ),
+    );
+  }
+}
+
+final currentUserMoneyBudgetActionsProvider =
+    Provider<CurrentUserMoneyBudgetActions>((ref) {
+      return CurrentUserMoneyBudgetActions(ref);
+    });
+
+final currentUserMoneyBillReminderActionsProvider =
+    Provider<CurrentUserMoneyBillReminderActions>((ref) {
+      return CurrentUserMoneyBillReminderActions(ref);
+    });
+
+final currentUserMoneyAutoPostingActionsProvider =
+    Provider<CurrentUserMoneyAutoPostingActions>((ref) {
+      return CurrentUserMoneyAutoPostingActions(ref);
+    });
+
+final currentUserReminderCenterActionsProvider =
+    Provider<CurrentUserReminderCenterActions>((ref) {
+      return CurrentUserReminderCenterActions(ref);
+    });
+final currentUserMoneyInstallmentActionsProvider =
+    Provider<CurrentUserMoneyInstallmentActions>((ref) {
+      return CurrentUserMoneyInstallmentActions(ref);
+    });
+
+final currentUserMoneySplitActionsProvider =
+    Provider<CurrentUserMoneySplitActions>((ref) {
+      return CurrentUserMoneySplitActions(ref);
+    });
+
+final currentUserTagActionsProvider = Provider<CurrentUserTagActions>((ref) {
+  return CurrentUserTagActions(ref);
+});
+
+final currentUserMoneyLedgerActionsProvider =
+    Provider<CurrentUserMoneyLedgerActions>((ref) {
+      return CurrentUserMoneyLedgerActions(ref);
+    });
+
+class CurrentUserMoneyLedgerActions {
+  const CurrentUserMoneyLedgerActions(this._ref);
+
+  final Ref _ref;
+
+  Future<MoneyLedgerEntity> createLedger(MoneyLedgerDraft draft) async {
+    final userId = _requireUnlockedUserId();
+    final ledger = await _ref
+        .read(moneyRepositoryProvider)
+        .createLedger(userId, draft);
+    _refresh();
+    return ledger;
+  }
+
+  Future<void> addAccountToLedger({
+    required String ledgerId,
+    required String accountId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .addAccountToLedger(userId, ledgerId, accountId);
+    _refresh(ledgerId: ledgerId);
+  }
+
+  Future<void> removeAccountFromLedger({
+    required String ledgerId,
+    required String accountId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .removeAccountFromLedger(userId, ledgerId, accountId);
+    _refresh(ledgerId: ledgerId);
+  }
+
+  Future<void> deleteLedger(String ledgerId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).deleteLedger(userId, ledgerId);
+    _refresh();
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+
+    return userId;
+  }
+
+  void _refresh({String? ledgerId}) {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterLedgerChanged(ledgerId: ledgerId);
+  }
+}
+
+class CurrentUserMoneyAccountActions {
+  const CurrentUserMoneyAccountActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> createAccount(MoneyAccountDraft draft) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).createAccount(userId, draft);
+    _refresh();
+  }
+
+  Future<void> updateAccount(MoneyAccountUpdate update) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).updateAccount(userId, update);
+    _refresh();
+  }
+
+  /// 余额校正：把账面余额直接对齐到实际余额（差额进初始余额，不产生流水）。
+  Future<void> adjustAccountBalance(
+    String accountId,
+    int targetBalanceMinor,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .adjustAccountBalance(userId, accountId, targetBalanceMinor);
+    _refresh();
+  }
+
+  Future<void> setAccountActive(String accountId, bool isActive) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .setAccountActive(userId, accountId, isActive);
+    _refresh();
+  }
+
+  Future<void> deleteAccount(String accountId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).deleteAccount(userId, accountId);
+    _refresh();
+  }
+
+  Future<void> restoreAccount(String accountId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).restoreAccount(userId, accountId);
+    _refresh();
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+
+    return userId;
+  }
+
+  void _refresh() {
+    _ref.read(moneyDataRefreshCoordinatorProvider).refreshAfterAccountChanged();
+  }
+}
+
+class CurrentUserMoneyBudgetActions {
+  const CurrentUserMoneyBudgetActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> createBudget(MoneyBudgetDraft draft) async {
+    final userId = _requireUnlockedUserId();
+    final ledgerId = draft.ledgerId ?? await _requireCurrentLedgerId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .createBudget(userId, _draftWithLedger(draft, ledgerId));
+    _refresh();
+  }
+
+  Future<void> updateBudget(MoneyBudgetUpdate update) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).updateBudget(userId, update);
+    _refresh();
+  }
+
+  Future<void> createBudgetAllocation(MoneyBudgetAllocationDraft draft) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .createBudgetAllocation(userId, draft);
+    _refresh(budgetId: draft.budgetId);
+  }
+
+  Future<void> updateBudgetAllocation(
+    MoneyBudgetAllocationUpdate update,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final allocation = await _ref
+        .read(moneyRepositoryProvider)
+        .updateBudgetAllocation(userId, update);
+    _refresh(budgetId: allocation.budgetId);
+  }
+
+  Future<void> deleteBudgetAllocation(
+    String allocationId,
+    String budgetId,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .deleteBudgetAllocation(userId, allocationId);
+    _refresh(budgetId: budgetId);
+  }
+
+  Future<void> deleteBudget(String budgetId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).deleteBudget(userId, budgetId);
+    _refresh();
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+
+    return userId;
+  }
+
+  void _refresh({String? budgetId}) {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterBudgetChanged(budgetId: budgetId);
+  }
+
+  Future<String> _requireCurrentLedgerId() async {
+    final ledger = await _ref.read(currentUserCurrentLedgerProvider.future);
+    if (ledger == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.ledgerNotFound,
+      );
+    }
+    return ledger.id;
+  }
+
+  MoneyBudgetDraft _draftWithLedger(MoneyBudgetDraft draft, String ledgerId) {
+    return MoneyBudgetDraft(
+      name: draft.name,
+      amountMinor: draft.amountMinor,
+      ledgerId: ledgerId,
+      scopeType: draft.scopeType,
+      trackingType: draft.trackingType,
+      periodType: draft.periodType,
+      repeatInterval: draft.repeatInterval,
+      categoryId: draft.categoryId,
+      subCategoryId: draft.subCategoryId,
+      accountId: draft.accountId,
+      description: draft.description,
+      currencyCode: draft.currencyCode,
+      alertEnabled: draft.alertEnabled,
+      alertThresholdPercent: draft.alertThresholdPercent,
+      autoRollover: draft.autoRollover,
+      color: draft.color,
+      tag: draft.tag,
+    );
+  }
+}
+
+class CurrentUserReminderCenterActions {
+  CurrentUserReminderCenterActions(this._ref);
+
+  final Ref _ref;
+
+  /// 标记完成。
+  ///
+  /// [transactionId] 是这次完成所产生的流水——「完成 = 已经付了钱」，
+  /// 所以调用方应当先落流水再调这里，并把它回填到提醒上以便双向可查。
+  Future<void> complete(MoneyReminderCenterItem item, {String? transactionId}) {
+    return _setState(
+      item,
+      MoneyReminderCenterState.completed,
+      transactionId: transactionId,
+    );
+  }
+
+  Future<void> ignore(MoneyReminderCenterItem item) {
+    return _setState(item, MoneyReminderCenterState.ignored);
+  }
+
+  Future<void> snoozeOneDay(MoneyReminderCenterItem item) {
+    final tomorrow = DateTime.now().toLocal().add(const Duration(days: 1));
+    return _setState(
+      item,
+      MoneyReminderCenterState.snoozed,
+      snoozedUntil: DateTime(tomorrow.year, tomorrow.month, tomorrow.day),
+    );
+  }
+
+  Future<void> _setState(
+    MoneyReminderCenterItem item,
+    MoneyReminderCenterState state, {
+    DateTime? snoozedUntil,
+    String? transactionId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .setReminderCenterState(
+          userId,
+          item,
+          state,
+          snoozedUntil: snoozedUntil,
+        );
+    await _syncSource(userId, item, state, transactionId: transactionId);
+    _refresh();
+  }
+
+  /// 把处理状态回写到源头，避免「提醒已处理、源头却仍是 pending」。
+  ///
+  /// 只处理 completed：忽略 / 延后都还得让源头继续存在。
+  /// 三类跳过：
+  /// * 周期性提醒 —— 置终态会杀死下一期；
+  /// * 自动托管提醒 —— 由 `_syncCreditAccountRepaymentReminder` 独占管理，
+  ///   外部写入会被下一次流水写入改回 pending，两边互踢会让 version 无意义递增；
+  /// * 分期 —— 由 `postInstallmentDetail` 负责推进明细状态，这里不能重复写。
+  Future<void> _syncSource(
+    String userId,
+    MoneyReminderCenterItem item,
+    MoneyReminderCenterState state, {
+    String? transactionId,
+  }) async {
+    if (state != MoneyReminderCenterState.completed) {
+      return;
+    }
+    switch (item.sourceType) {
+      case MoneyReminderCenterSourceType.billReminder:
+      case MoneyReminderCenterSourceType.creditCardBill:
+        if (item.isRepeatable || item.isAutoManaged) {
+          return;
+        }
+        final repository = _ref.read(moneyRepositoryProvider);
+        if (transactionId != null) {
+          await repository.linkBillReminderTransaction(
+            userId,
+            item.sourceId,
+            transactionId,
+          );
+        }
+        await repository.setBillReminderStatus(
+          userId,
+          item.sourceId,
+          MoneyBillReminderStatus.done,
+        );
+      case MoneyReminderCenterSourceType.installment:
+      case MoneyReminderCenterSourceType.budget:
+      case MoneyReminderCenterSourceType.recurringExpense:
+        return;
+    }
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+
+    return userId;
+  }
+
+  void _refresh() {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterReminderChanged();
+  }
+}
+
+class CurrentUserMoneyBillReminderActions {
+  CurrentUserMoneyBillReminderActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> createReminder(MoneyBillReminderDraft draft) async {
+    final userId = _requireUnlockedUserId();
+    final ledgerId = await _requireCurrentLedgerId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .createBillReminder(userId, _draftWithLedger(draft, ledgerId));
+    _refresh();
+  }
+
+  Future<void> updateReminder(MoneyBillReminderUpdate update) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).updateBillReminder(userId, update);
+    _refresh();
+  }
+
+  Future<void> setReminderStatus(
+    String reminderId,
+    MoneyBillReminderStatus status,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .setBillReminderStatus(userId, reminderId, status);
+    _refresh();
+  }
+
+  Future<void> deleteReminder(String reminderId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .deleteBillReminder(userId, reminderId);
+    _refresh();
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+
+    return userId;
+  }
+
+  void _refresh() {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterReminderChanged();
+  }
+
+  Future<String> _requireCurrentLedgerId() async {
+    final ledger = await _ref.read(currentUserCurrentLedgerProvider.future);
+    if (ledger == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.ledgerNotFound,
+      );
+    }
+    return ledger.id;
+  }
+
+  MoneyBillReminderDraft _draftWithLedger(
+    MoneyBillReminderDraft draft,
+    String ledgerId,
+  ) {
+    return MoneyBillReminderDraft(
+      name: draft.name,
+      amountMinor: draft.amountMinor,
+      dueDate: draft.dueDate,
+      remindBeforeDays: draft.remindBeforeDays,
+      repeatPeriodType: draft.repeatPeriodType,
+      repeatInterval: draft.repeatInterval,
+      accountId: draft.accountId,
+      ledgerId: ledgerId,
+      categoryId: draft.categoryId,
+      relatedTransactionId: draft.relatedTransactionId,
+      sourceType: draft.sourceType,
+      sourceKey: draft.sourceKey,
+      amountSource: draft.amountSource,
+      autoManaged: draft.autoManaged,
+      currencyCode: draft.currencyCode,
+      notes: draft.notes,
+    );
+  }
+}
+
+class CurrentUserMoneyAutoPostingActions {
+  const CurrentUserMoneyAutoPostingActions(this._ref);
+
+  final Ref _ref;
+
+  Future<MoneyAutoPostingTemplateEntity> createTemplate(
+    MoneyAutoPostingTemplateDraft draft,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final ledgerId = await _requireCurrentLedgerId();
+    final template = await _ref
+        .read(moneyRepositoryProvider)
+        .createAutoPostingTemplate(userId, _draftWithLedger(draft, ledgerId));
+    _refresh();
+    return template;
+  }
+
+  Future<MoneyAutoPostingTemplateEntity> updateTemplate(
+    MoneyAutoPostingTemplateUpdate update,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final template = await _ref
+        .read(moneyRepositoryProvider)
+        .updateAutoPostingTemplate(userId, update);
+    _refresh();
+    return template;
+  }
+
+  Future<void> deleteTemplate(String templateId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .deleteAutoPostingTemplate(userId, templateId);
+    _refresh();
+  }
+
+  Future<MoneyAutoPostingExecutionSummary> runTemplateNow(
+    String templateId,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final summary = await _ref
+        .read(moneyRepositoryProvider)
+        .executeAutoPostingTemplateNow(userId, templateId);
+    _refresh();
+    return summary;
+  }
+
+  Future<void> resetRun(String runId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).resetAutoPostingRun(userId, runId);
+    _refresh();
+  }
+
+  /// 把模板交给分期计划独占：模板停用，不再入账也不再占预算。
+  Future<void> takeOverByInstallment(String templateId, String planId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .takeOverAutoPostingTemplate(userId, templateId, planId);
+    _refresh();
+  }
+
+  /// 交还给模板：重新启用，恢复独立入账。
+  Future<void> releaseTakeOver(String templateId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .releaseAutoPostingTakeOver(userId, templateId);
+    _refresh();
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+
+    return userId;
+  }
+
+  void _refresh() {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterAutoPostingChanged();
+  }
+
+  Future<String> _requireCurrentLedgerId() async {
+    final ledger = await _ref.read(currentUserCurrentLedgerProvider.future);
+    if (ledger == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.ledgerNotFound,
+      );
+    }
+    return ledger.id;
+  }
+
+  MoneyAutoPostingTemplateDraft _draftWithLedger(
+    MoneyAutoPostingTemplateDraft draft,
+    String ledgerId,
+  ) {
+    return MoneyAutoPostingTemplateDraft(
+      name: draft.name,
+      type: draft.type,
+      amountMinor: draft.amountMinor,
+      currencyCode: draft.currencyCode,
+      description: draft.description,
+      notes: draft.notes,
+      merchant: draft.merchant,
+      accountId: draft.accountId,
+      categoryId: draft.categoryId,
+      subCategoryId: draft.subCategoryId,
+      paymentMethod: draft.paymentMethod,
+      customPaymentMethodName: draft.customPaymentMethodName,
+      actualPayerAccount: draft.actualPayerAccount,
+      ledgerId: ledgerId,
+      frequency: draft.frequency,
+      dayOfMonth: draft.dayOfMonth,
+      weekday: draft.weekday,
+      timeOfDayMinutes: draft.timeOfDayMinutes,
+      startsOn: draft.startsOn,
+      endsOn: draft.endsOn,
+      isActive: draft.isActive,
+    );
+  }
+}
+
+class CurrentUserMoneyInstallmentActions {
+  const CurrentUserMoneyInstallmentActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> createInstallmentPlan(MoneyInstallmentPlanDraft draft) async {
+    final userId = _requireUnlockedUserId();
+    final ledgerId = await _requireCurrentLedgerId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .createInstallmentPlan(userId, _draftWithLedger(draft, ledgerId));
+    _refresh();
+  }
+
+  Future<void> cancelInstallmentPlan(String planId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .cancelInstallmentPlan(userId, planId);
+    _refresh();
+  }
+
+  /// 过账一期分期，返回生成的流水。
+  ///
+  /// 返回 entity 而不是 void：提醒中心的「记账」要把这条流水作为
+  /// 「完成」的依据，调用方需要拿到它做后续关联。
+  Future<MoneyTransactionEntity> postInstallmentDetail(String detailId) async {
+    final userId = _requireUnlockedUserId();
+    final transaction = await _ref
+        .read(moneyRepositoryProvider)
+        .postInstallmentDetail(userId, detailId);
+    _refresh();
+    return transaction;
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+
+    return userId;
+  }
+
+  Future<String> _requireCurrentLedgerId() async {
+    final ledger = await _ref.read(currentUserCurrentLedgerProvider.future);
+    if (ledger == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.ledgerNotFound,
+      );
+    }
+    return ledger.id;
+  }
+
+  MoneyInstallmentPlanDraft _draftWithLedger(
+    MoneyInstallmentPlanDraft draft,
+    String ledgerId,
+  ) {
+    return MoneyInstallmentPlanDraft(
+      ledgerId: ledgerId,
+      accountId: draft.accountId,
+      name: draft.name,
+      categoryId: draft.categoryId,
+      totalPrincipalMinor: draft.totalPrincipalMinor,
+      totalInterestMinor: draft.totalInterestMinor,
+      totalPeriods: draft.totalPeriods,
+      firstDueDate: draft.firstDueDate,
+      description: draft.description,
+      subCategoryId: draft.subCategoryId,
+      currencyCode: draft.currencyCode,
+      notes: draft.notes,
+      calcMethod: draft.calcMethod,
+      interestRateBasisPoints: draft.interestRateBasisPoints,
+    );
+  }
+
+  void _refresh() {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterInstallmentChanged();
+  }
+}
+
+class CurrentUserMoneySplitActions {
+  const CurrentUserMoneySplitActions(this._ref);
+
+  final Ref _ref;
+
+  Future<MoneySplitRuleEntity> createSplitRule(
+    MoneySplitRuleDraft draft,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final rule = await _ref
+        .read(moneyRepositoryProvider)
+        .createSplitRule(userId, draft);
+    _refreshRule(ledgerId: draft.ledgerId);
+    return rule;
+  }
+
+  Future<MoneySplitRuleEntity> updateSplitRule(
+    MoneySplitRuleUpdate update, {
+    required String ledgerId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    final rule = await _ref
+        .read(moneyRepositoryProvider)
+        .updateSplitRule(userId, update);
+    _refreshRule(ledgerId: ledgerId);
+    return rule;
+  }
+
+  Future<void> deleteSplitRule({
+    required String ruleId,
+    required String ledgerId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).deleteSplitRule(userId, ruleId);
+    _refreshRule(ledgerId: ledgerId);
+  }
+
+  Future<MoneyMemberEntity> createMember(
+    MoneyMemberDraft draft, {
+    required String ledgerId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    final member = await _ref
+        .read(moneyRepositoryProvider)
+        .createMember(userId, draft, ledgerId: ledgerId);
+    _refresh(ledgerId: ledgerId);
+    return member;
+  }
+
+  Future<MoneyMemberEntity> updateMember(
+    MoneyMemberUpdate update, {
+    required String ledgerId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    final member = await _ref
+        .read(moneyRepositoryProvider)
+        .updateMember(userId, update, ledgerId: ledgerId);
+    _refresh(ledgerId: ledgerId);
+    return member;
+  }
+
+  Future<void> deleteMember({
+    required String memberId,
+    required String ledgerId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .deleteMember(userId, memberId, ledgerId: ledgerId);
+    _refresh(ledgerId: ledgerId);
+  }
+
+  Future<MoneySplitRecordEntity> createSplitForTransaction(
+    MoneySplitDraft draft,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final split = await _ref
+        .read(moneyRepositoryProvider)
+        .createSplitForTransaction(userId, draft);
+    _refresh(transactionId: draft.transactionId);
+    return split;
+  }
+
+  Future<void> linkTransactionToLedger({
+    required String transactionId,
+    required String ledgerId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .linkTransactionToLedger(userId, transactionId, ledgerId);
+    _refresh(transactionId: transactionId, ledgerId: ledgerId);
+  }
+
+  Future<void> unlinkTransactionFromLedger({
+    required String transactionId,
+    required String ledgerId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .unlinkTransactionFromLedger(userId, transactionId, ledgerId);
+    _refresh(transactionId: transactionId, ledgerId: ledgerId);
+  }
+
+  Future<MoneySplitRecordEntity> replaceSplitForTransaction(
+    MoneySplitDraft draft,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final split = await _ref
+        .read(moneyRepositoryProvider)
+        .replaceSplitForTransaction(userId, draft);
+    _refresh(transactionId: draft.transactionId, ledgerId: draft.ledgerId);
+    return split;
+  }
+
+  Future<void> cancelSplitRecord({
+    required String splitRecordId,
+    required String transactionId,
+    required String ledgerId,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .cancelSplitRecord(userId, splitRecordId);
+    _refresh(transactionId: transactionId, ledgerId: ledgerId);
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+
+    return userId;
+  }
+
+  void _refresh({String? transactionId, String? ledgerId}) {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterSplitChanged(
+          transactionId: transactionId,
+          ledgerId: ledgerId,
+        );
+  }
+
+  void _refreshRule({String? ledgerId}) {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterSplitRuleChanged(ledgerId: ledgerId);
+  }
+}
+
+class CurrentUserMoneyTransactionActions {
+  const CurrentUserMoneyTransactionActions(this._ref);
+
+  final Ref _ref;
+
+  Future<MoneyTransactionEntity> createTransaction(
+    MoneyTransactionDraft draft, {
+    bool rememberDefaults = true,
+  }) async {
+    final userId = _requireUnlockedUserId();
+    final transaction = await _ref
+        .read(moneyRepositoryProvider)
+        .createTransaction(userId, draft);
+    if (rememberDefaults) {
+      await _rememberTransactionDefaults(userId, draft);
+    }
+    _refresh();
+    return transaction;
+  }
+
+  Future<MoneyTransactionEntity> createTransactionWithSplit(
+    MoneyTransactionDraft draft,
+    MoneySplitConfigDraft splitConfig,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final ledgerId = splitConfig.ledgerId;
+    final effectiveDraft = _draftWithLedger(draft, ledgerId);
+    final effectiveSplitConfig = _splitConfigWithLedger(splitConfig, ledgerId);
+    final transaction = await _ref
+        .read(moneyRepositoryProvider)
+        .createTransactionWithSplit(
+          userId,
+          effectiveDraft,
+          effectiveSplitConfig,
+        );
+    // 走到这里流水与分摊都已落库。「记住默认值」只是录入习惯缓存，
+    // 它失败既不能让界面报「记录失败」，也不能跳过 refresh ——
+    // 否则刚写入的分摊信息不会出现在界面上，看起来像分摊丢了。
+    try {
+      await _rememberTransactionDefaults(userId, effectiveDraft);
+    } catch (_) {
+      // Entry defaults are a best-effort cache.
+    }
+    _refresh(transactionId: transaction.id, ledgerId: ledgerId);
+    return transaction;
+  }
+
+  Future<void> createTransfer(MoneyTransferDraft draft) async {
+    final userId = _requireUnlockedUserId();
+    final ledgerId =
+        draft.ledgerId ?? await _requireEffectiveTransactionLedgerId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .createTransfer(userId, _transferDraftWithLedger(draft, ledgerId));
+    _refresh();
+  }
+
+  Future<void> updateTransaction(MoneyTransactionUpdate update) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).updateTransaction(userId, update);
+    _refresh();
+  }
+
+  Future<void> updateTransfer(MoneyTransferUpdate update) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).updateTransfer(userId, update);
+    _refresh();
+  }
+
+  Future<void> deleteTransaction(String transactionId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .deleteTransaction(userId, transactionId);
+    _refresh();
+  }
+
+  Future<void> recordTransactionRefund(
+    String transactionId,
+    int refundAmountMinor,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .recordTransactionRefund(userId, transactionId, refundAmountMinor);
+    _refresh();
+  }
+
+  Future<void> setTransactionStatus(
+    String transactionId,
+    MoneyTransactionStatus status,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .setTransactionStatus(userId, transactionId, status);
+    _refresh(transactionId: transactionId);
+  }
+
+  /// 批量变更状态，返回实际写入的条数（不合法的流转会被跳过）。
+  Future<int> setTransactionsStatus(
+    List<String> transactionIds,
+    MoneyTransactionStatus status,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final applied = await _ref
+        .read(moneyRepositoryProvider)
+        .setTransactionsStatus(userId, transactionIds, status);
+    if (applied > 0) {
+      _refresh();
+    }
+    return applied;
+  }
+
+  /// 批量改分类 / 账户 / 标签，返回实际写入的条数。
+  Future<int> updateTransactions(
+    List<String> transactionIds,
+    MoneyTransactionBatchUpdate patch,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final applied = await _ref
+        .read(moneyRepositoryProvider)
+        .updateTransactions(userId, transactionIds, patch);
+    if (applied > 0) {
+      _refresh();
+    }
+    return applied;
+  }
+
+  /// 批量删除，返回实际删除的条数。
+  Future<int> deleteTransactions(List<String> transactionIds) async {
+    final userId = _requireUnlockedUserId();
+    final applied = await _ref
+        .read(moneyRepositoryProvider)
+        .deleteTransactions(userId, transactionIds);
+    if (applied > 0) {
+      _refresh();
+    }
+    return applied;
+  }
+
+  /// 撤销删除，返回实际恢复的条数。
+  Future<int> restoreTransactions(List<String> transactionIds) async {
+    final userId = _requireUnlockedUserId();
+    final applied = await _ref
+        .read(moneyRepositoryProvider)
+        .restoreTransactions(userId, transactionIds);
+    if (applied > 0) {
+      _refresh();
+    }
+    return applied;
+  }
+
+  /// 回收站内容；[within] 之外的更早记录不再展示。
+  Future<List<MoneyTransactionEntity>> listDeletedTransactions({
+    Duration within = const Duration(days: 30),
+  }) async {
+    final userId = _requireUnlockedUserId();
+    return _ref
+        .read(moneyRepositoryProvider)
+        .listDeletedTransactions(
+          userId,
+          deletedAfter: DateTime.now().toUtc().subtract(within),
+          limit: 100,
+        );
+  }
+
+  Future<MoneyTransactionPage> listTransactions(
+    MoneyTransactionQuery query,
+  ) async {
+    final userId = _requireUnlockedUserId();
+    final ledgerId = query.ledgerId ?? await _requireCurrentLedgerId();
+    return _ref
+        .read(moneyRepositoryProvider)
+        .listTransactions(userId, _queryWithLedger(query, ledgerId));
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+
+    return userId;
+  }
+
+  Future<String> _requireCurrentLedgerId() async {
+    final ledger = await _ref.read(currentUserCurrentLedgerProvider.future);
+    if (ledger == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.ledgerNotFound,
+      );
+    }
+    return ledger.id;
+  }
+
+  Future<String> _requireEffectiveTransactionLedgerId() async {
+    final ledger = await _ref.read(
+      currentUserEffectiveTransactionLedgerProvider.future,
+    );
+    if (ledger == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.ledgerNotFound,
+      );
+    }
+    return ledger.id;
+  }
+
+  Future<void> _rememberTransactionDefaults(
+    String userId,
+    MoneyTransactionDraft draft,
+  ) async {
+    if (draft.type != MoneyTransactionType.expense &&
+        draft.type != MoneyTransactionType.income) {
+      return;
+    }
+    await _ref
+        .read(transactionEntryDefaultsStoreProvider)
+        .saveDefaults(
+          userId: userId,
+          ledgerId: draft.ledgerId,
+          type: draft.type,
+          defaults: TransactionEntryDefaults(
+            accountId: draft.accountId,
+            categoryId: draft.categoryId,
+            subCategoryId: draft.subCategoryId,
+            paymentMethod: draft.paymentMethod,
+          ),
+        );
+  }
+
+  MoneyTransactionDraft _draftWithLedger(
+    MoneyTransactionDraft draft,
+    String ledgerId,
+  ) {
+    return MoneyTransactionDraft(
+      type: draft.type,
+      transactionAt: draft.transactionAt,
+      amountMinor: draft.amountMinor,
+      currencyCode: draft.currencyCode,
+      description: draft.description,
+      notes: draft.notes,
+      merchant: draft.merchant,
+      location: draft.location,
+      accountId: draft.accountId,
+      categoryId: draft.categoryId,
+      subCategoryId: draft.subCategoryId,
+      paymentMethod: draft.paymentMethod,
+      customPaymentMethodName: draft.customPaymentMethodName,
+      actualPayerAccount: draft.actualPayerAccount,
+      ledgerId: ledgerId,
+      sourceTemplateRunId: draft.sourceTemplateRunId,
+      tags: draft.tags,
+      // 必须带上原始状态：以前这里漏掉 status，draft 会退回默认的 completed，
+      // 用户选「待处理」的流水会被静默记成已完成。
+      status: draft.status,
+    );
+  }
+
+  MoneySplitConfigDraft _splitConfigWithLedger(
+    MoneySplitConfigDraft splitConfig,
+    String ledgerId,
+  ) {
+    return MoneySplitConfigDraft(
+      ledgerId: ledgerId,
+      splitType: splitConfig.splitType,
+      payerMemberId: splitConfig.payerMemberId,
+      participants: splitConfig.participants,
+      notes: splitConfig.notes,
+    );
+  }
+
+  MoneyTransferDraft _transferDraftWithLedger(
+    MoneyTransferDraft draft,
+    String ledgerId,
+  ) {
+    return MoneyTransferDraft(
+      transactionAt: draft.transactionAt,
+      amountMinor: draft.amountMinor,
+      currencyCode: draft.currencyCode,
+      description: draft.description,
+      notes: draft.notes,
+      fromAccountId: draft.fromAccountId,
+      toAccountId: draft.toAccountId,
+      subCategoryId: draft.subCategoryId,
+      paymentMethod: draft.paymentMethod,
+      customPaymentMethodName: draft.customPaymentMethodName,
+      ledgerId: ledgerId,
+    );
+  }
+
+  /// 补上当前账本作为筛选条件。
+  ///
+  /// 之前这里是逐个字段手工重建 query，漏掉了 status / accountType /
+  /// customPaymentMethodName / 排序——也就是说「按金额排序」和自定义支付方式
+  /// 筛选一直是无效的。改成 copyWith，新增字段不会再被静默丢掉。
+  MoneyTransactionQuery _queryWithLedger(
+    MoneyTransactionQuery query,
+    String ledgerId,
+  ) {
+    return query.copyWith(ledgerId: ledgerId);
+  }
+
+  void _refresh({String? transactionId, String? ledgerId}) {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterTransactionChanged(transactionId: transactionId);
+    if (ledgerId != null) {
+      // 分摊数据挂在账本维度，单独让分摊相关流失效，
+      // 否则新写入的分摊信息不会出现在界面上。
+      _ref
+          .read(moneyDataRefreshCoordinatorProvider)
+          .refreshAfterSplitChanged(
+            transactionId: transactionId,
+            ledgerId: ledgerId,
+          );
+    }
+  }
+}
+
+/// 标签管理动作：重命名 / 删除，均级联更新流水与预算。
+class CurrentUserTagActions {
+  const CurrentUserTagActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> renameTag(String oldName, String newName) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .renameTag(userId, oldName, newName);
+    _refresh();
+  }
+
+  Future<void> deleteTag(String tagName) async {
+    final userId = _requireUnlockedUserId();
+    await _ref.read(moneyRepositoryProvider).deleteTag(userId, tagName);
+    _refresh();
+  }
+
+  String _requireUnlockedUserId() {
+    final session = _ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      throw const MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+      );
+    }
+    return userId;
+  }
+
+  void _refresh() {
+    _ref
+        .read(moneyDataRefreshCoordinatorProvider)
+        .refreshAfterTransactionChanged();
+  }
+}

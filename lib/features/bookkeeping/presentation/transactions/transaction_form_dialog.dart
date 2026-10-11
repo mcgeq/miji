@@ -1,0 +1,1685 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:miji/core/auth/application/auth_session_controller.dart';
+import 'package:miji/core/presentation/app_toast.dart';
+import 'package:miji/core/presentation/components/app_form_hint.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
+import 'package:miji/core/presentation/components/app_icon_action_button.dart';
+import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
+import 'package:miji/core/presentation/components/app_surface.dart';
+import 'package:miji/shared/widgets/app_form_layout.dart';
+import 'package:miji/shared/widgets/app_text_field.dart';
+import 'package:miji/shared/widgets/date_picker.dart';
+import 'package:miji/shared/widgets/form_dropdown.dart';
+import 'package:miji/shared/widgets/app_amount_field.dart';
+
+import 'package:miji/features/bookkeeping/application/money_amount_expression.dart';
+import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
+import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
+import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_repository.dart';
+import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
+import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/categories/components/category_leaf_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/amount_calculator_sheet.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/suggestion_autocomplete_field.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/transaction_split_dialog.dart';
+
+/// 表单提交回调：返回错误文案（null = 成功）。
+typedef TransactionFormSubmit = Future<String?> Function(Object result);
+
+class TransactionCreateFormResult {
+  const TransactionCreateFormResult({required this.draft, this.splitConfig});
+
+  final MoneyTransactionDraft draft;
+  final MoneySplitConfigDraft? splitConfig;
+}
+
+class TransactionFormDialog extends ConsumerStatefulWidget {
+  const TransactionFormDialog({
+    super.key,
+    required this.type,
+    this.ledger,
+    this.transaction,
+    this.categoryId,
+    this.subCategoryId,
+    this.showCategorySelector = true,
+    this.onSubmit,
+    this.initialAmountMinor,
+    this.initialAccountId,
+    this.initialDescription,
+    this.initialNotes,
+    this.initialTransactionAt,
+    this.initialPaymentMethod,
+    this.template,
+  });
+
+  final MoneyTransactionType type;
+  final MoneyLedgerEntity? ledger;
+  final MoneyTransactionEntity? transaction;
+  final String? categoryId;
+  final String? subCategoryId;
+  final bool showCategorySelector;
+
+  /// 「再来一笔」的样本流水：整笔复制成一份新草稿（不含 id、状态与分摊）。
+  ///
+  /// 与 [transaction] 互斥——传入 [transaction] 表示编辑已有流水，此时忽略本字段。
+  /// 只填字段不提交：用户仍然要过一遍确认，避免误把历史流水复制成一堆垃圾。
+  final MoneyTransactionEntity? template;
+
+  /// 新建时的预填值（从提醒、模板等外部入口带入），编辑已有流水时一律忽略。
+  ///
+  /// 这些字段只影响初始状态：用户可以随时修改，
+  /// 「记住上次选择」的默认也不会覆盖已经预填好的值。
+  final int? initialAmountMinor;
+  final String? initialAccountId;
+  final String? initialDescription;
+  final String? initialNotes;
+  final DateTime? initialTransactionAt;
+
+  /// 预填支付方式（截图识别等外部入口带入）。
+  ///
+  /// 给了值就不再让「记住上次选择」的默认覆盖它——识别出来的支付方式
+  /// 比历史偏好更可信。
+  final MoneyPaymentMethod? initialPaymentMethod;
+
+  /// 提交回调。
+  ///
+  /// 传入时表单不再把结果 pop 给调用方，而是自己调用 [onSubmit] 完成写入：
+  /// 成功则关闭（或「保存并继续」保持打开），失败把错误文案回显在表单上。
+  /// 返回 null 表示成功。
+  final TransactionFormSubmit? onSubmit;
+
+  @override
+  ConsumerState<TransactionFormDialog> createState() =>
+      _TransactionFormDialogState();
+}
+
+class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
+  final _descriptionController = TextEditingController();
+  final _merchantController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _notesController = TextEditingController();
+  final _customPaymentNameCtrl = TextEditingController();
+  final _tagController = TextEditingController();
+  DateTime _transactionAt = DateTime.now();
+  String? _accountId;
+  bool _paidByOthers = false;
+  bool _paidByOthersTouched = false;
+  String? _categoryId;
+  String? _subCategoryId;
+  String? _ledgerId;
+  MoneyPaymentMethod _paymentMethod = MoneyPaymentMethod.cash;
+  MoneyTransactionStatus _status = MoneyTransactionStatus.completed;
+  MoneySplitConfigDraft? _splitConfig;
+  int? _splitConfigAmountMinor;
+  String? _errorText;
+  bool _defaultsLoaded = false;
+  bool _advancedExpanded = false;
+
+  /// 支付方式已由外部确定（模板复制），别再被「记住上次选择」覆盖。
+  bool _paymentMethodPinned = false;
+
+  bool _submitting = false;
+
+  final _amountController = TextEditingController();
+
+  bool get _isEditing => widget.transaction != null;
+
+  bool _canConfigureSplit(int ledgerMemberCount) {
+    return !_isEditing &&
+        widget.type == MoneyTransactionType.expense &&
+        ledgerMemberCount >= 2;
+  }
+
+  bool get _isSplitConfigStale {
+    if (_splitConfig == null || _splitConfigAmountMinor == null) {
+      return false;
+    }
+    try {
+      return parseMoneyAmountToMinor(_amountController.text) !=
+          _splitConfigAmountMinor;
+    } on MoneyAmountParseException {
+      return true;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final transaction = widget.transaction;
+    final initialLedger = widget.ledger;
+    _ledgerId = initialLedger != null && initialLedger.isFamily
+        ? initialLedger.id
+        : null;
+    if (transaction == null) {
+      _categoryId = widget.categoryId;
+      _subCategoryId = widget.subCategoryId;
+      final template = widget.template;
+      if (template != null) {
+        _applyTemplate(template);
+      }
+      final initialAmountMinor = widget.initialAmountMinor;
+      if (initialAmountMinor != null && initialAmountMinor > 0) {
+        _amountController.text = (initialAmountMinor / 100).toStringAsFixed(2);
+      }
+      final initialAccountId = widget.initialAccountId;
+      if (initialAccountId != null && initialAccountId.isNotEmpty) {
+        _accountId = initialAccountId;
+      }
+      final initialTransactionAt = widget.initialTransactionAt;
+      if (initialTransactionAt != null) {
+        _transactionAt = initialTransactionAt.toLocal();
+      }
+      final initialNotes = widget.initialNotes;
+      if (initialNotes != null && initialNotes.trim().isNotEmpty) {
+        _notesController.text = initialNotes;
+        _advancedExpanded = true;
+      }
+      // 外部入口（如提醒「去记账」）带进来的标题要回填到名称框，
+      // 否则用户看到空框、实际存的又是别的值。
+      final initialDescription = widget.initialDescription?.trim();
+      if (initialDescription != null && initialDescription.isNotEmpty) {
+        _descriptionController.text = initialDescription;
+      }
+      final initialPaymentMethod = widget.initialPaymentMethod;
+      if (initialPaymentMethod != null) {
+        _paymentMethod = initialPaymentMethod;
+        _paymentMethodPinned = true;
+      }
+      return;
+    }
+
+    _amountController.text = (transaction.amountMinor / 100).toStringAsFixed(2);
+    _descriptionController.text = _userFacingDescription(
+      transaction.description,
+    );
+    _merchantController.text = transaction.merchant ?? '';
+    _locationController.text = transaction.location ?? '';
+    _notesController.text = transaction.notes ?? '';
+    _advancedExpanded =
+        (_descriptionController.text.trim().isNotEmpty) ||
+        (transaction.merchant?.trim().isNotEmpty ?? false) ||
+        (transaction.location?.trim().isNotEmpty ?? false) ||
+        (transaction.notes?.trim().isNotEmpty ?? false);
+    _transactionAt = transaction.transactionAt.toLocal();
+    _accountId = transaction.accountId;
+    _categoryId = transaction.categoryId;
+    _subCategoryId = transaction.subCategoryId;
+    _paymentMethod = transaction.paymentMethod;
+    _customPaymentNameCtrl.text = transaction.customPaymentMethodName ?? '';
+    _tagController.text = transaction.tags.isEmpty
+        ? ''
+        : transaction.tags.first;
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _descriptionController.dispose();
+    _merchantController.dispose();
+    _locationController.dispose();
+    _notesController.dispose();
+    _customPaymentNameCtrl.dispose();
+    _tagController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final ledgers = ref.watch(currentUserMoneyLedgersProvider);
+    final familyLedgers = ledgers.maybeWhen(
+      data: (items) =>
+          items.where((ledger) => ledger.isFamily).toList(growable: false),
+      orElse: () => const <MoneyLedgerEntity>[],
+    );
+    final selectedLedger = _isEditing
+        ? null
+        : ledgers.maybeWhen(
+            data: _selectedLedgerFrom,
+            orElse: () {
+              final initialLedger = widget.ledger;
+              return initialLedger != null && initialLedger.isFamily
+                  ? initialLedger
+                  : null;
+            },
+          );
+    final accounts = _isEditing || selectedLedger == null
+        ? ref.watch(currentUserVisibleAccountsProvider)
+        : ref.watch(currentUserMoneyLedgerAccountsProvider(selectedLedger.id));
+    final internalAccounts = ref
+        .watch(currentUserMoneyInternalAccountsProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const <MoneyAccountEntity>[],
+        );
+    // 编辑他人代付（内部账户）交易时默认保持勾选，用户手动切换后不再跟随。
+    if (!_paidByOthersTouched && _isEditing) {
+      final editingTransaction = widget.transaction;
+      if (editingTransaction != null &&
+          internalAccounts.any(
+            (account) => account.id == editingTransaction.accountId,
+          )) {
+        _paidByOthers = true;
+      }
+    }
+    final accountRows = accounts.maybeWhen(
+      data: (value) => [
+        ...value.where((account) => account.isActive),
+        ...internalAccounts.where((account) => account.isActive),
+      ],
+      orElse: () => internalAccounts
+          .where((account) => account.isActive)
+          .toList(growable: false),
+    );
+    final selectableAccounts = _selectableAccountsForType(accountRows);
+    final selectedAccount = _paidByOthers
+        ? null
+        : _selectedAccountFrom(selectableAccounts);
+    final accountRuleHint = _accountRuleHint(selectedAccount);
+    final lockedPaymentMethod = _lockedPaymentMethodForAccount(selectedAccount);
+    final availablePaymentMethods = _availablePaymentMethodsForAccount(
+      selectedAccount,
+    );
+    final paymentMethodUsageRanks = ref
+        .watch(currentUserPaymentMethodUsageRanksProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const <MoneyPaymentMethod, int>{},
+        );
+    final entrySuggestions = ref
+        .watch(currentUserEntrySuggestionsProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const MoneyEntrySuggestions.empty(),
+        );
+    final sortedPaymentMethods = _sortPaymentMethodsByUsage(
+      availablePaymentMethods,
+      paymentMethodUsageRanks,
+    );
+    final effectivePaymentMethod = _effectivePaymentMethodForAccount(
+      selectedAccount,
+    );
+    final selectedLedgerMembers = _isEditing || selectedLedger == null
+        ? const <MoneyMemberEntity>[]
+        : selectedLedger.isFamily
+        ? ref
+              .watch(currentUserMoneyLedgerMembersProvider(selectedLedger.id))
+              .maybeWhen(
+                data: (value) => value,
+                orElse: () => const <MoneyMemberEntity>[],
+              )
+        : const <MoneyMemberEntity>[];
+    final ledgerMemberCount = selectedLedgerMembers.length;
+    final isFamilyLedger = selectedLedger?.isFamily ?? false;
+    // 待处理流水不计入统计、也不支持分摊。
+    final isSplitStatusAllowed = _status == MoneyTransactionStatus.completed;
+    final canConfigureSplit =
+        isFamilyLedger &&
+        isSplitStatusAllowed &&
+        _canConfigureSplit(ledgerMemberCount);
+    final splitUnavailableText = !isSplitStatusAllowed
+        ? '待处理流水暂不支持分摊'
+        : '添加至少两位成员后可分摊';
+    final showSplitConfig =
+        !_isEditing &&
+        widget.type == MoneyTransactionType.expense &&
+        isFamilyLedger;
+    final kind = widget.type == MoneyTransactionType.income
+        ? MoneyCategoryKind.income
+        : MoneyCategoryKind.expense;
+    final catalog = ref.watch(currentUserCategoryCatalogProvider(kind));
+    final tagCandidates = ref
+        .watch(currentUserTagCandidatesProvider)
+        .maybeWhen(data: (value) => value, orElse: () => const <String>[]);
+    final hasMultipleLegacyTags =
+        _isEditing && (widget.transaction?.tags.length ?? 0) > 1;
+    final installmentAmountMinor = _installmentEntryAmountMinor;
+    final showInstallmentEntry =
+        installmentAmountMinor != null &&
+        installmentAmountMinor > 0 &&
+        selectedAccount?.type.isCreditLike == true;
+    _loadRememberedDefaultsOnce(selectedLedger?.id);
+
+    return AppDialogScaffold(
+      title: _dialogTitle,
+      maxWidth: 460,
+      titleTextAlign: TextAlign.center,
+      actionsAlignment: WrapAlignment.center,
+      body: AppFormColumn(
+        gap: 12,
+        children: [
+          // 没有家庭账本时整块隐藏：个人账本用户不该为了「记一笔午饭」
+          // 先读一行与自己无关的下拉，再往下找金额框。
+          if (!_isEditing && familyLedgers.isNotEmpty)
+            FormDropdown<String?>(
+              initialSelection: selectedLedger?.id,
+              label: '家庭账本',
+              leadingIcon: const Icon(Icons.menu_book_rounded),
+              width: double.infinity,
+              enableFilter: true,
+              entries: [
+                const DropdownMenuEntry<String?>(value: null, label: '不加入家庭账本'),
+                for (final ledger in familyLedgers)
+                  DropdownMenuEntry<String?>(
+                    value: ledger.id,
+                    label: ledger.name,
+                    labelWidget: _TransactionLedgerMenuItem(ledger: ledger),
+                  ),
+              ],
+              onSelected: (value) {
+                if (value == _ledgerId) {
+                  return;
+                }
+                setState(() {
+                  _ledgerId = value;
+                  // 分摊配置绑定的是具体账本下的成员，换账本后必须重新设置，
+                  // 否则会带着旧账本的成员 id 提交，repository 会直接拒绝。
+                  _splitConfig = null;
+                  _splitConfigAmountMinor = null;
+                });
+              },
+            ),
+          AppAmountField(
+            controller: _amountController,
+            labelText: '金额',
+            currencyCode: defaultMoneyCurrencyCode,
+            autofocus: !_isEditing,
+            prominent: true,
+            previewText: _amountPreviewText,
+            onCalculatorTap: _openAmountCalculator,
+            // 编辑态也要跟随重建：金额框里的算式预览、分期入口、分摊失效判断
+            // 都依赖当前金额文本。
+            onChanged: (_) {
+              setState(() {});
+            },
+          ),
+          // 字段顺序按使用频次重排：
+          // 金额 → 分类 → 支付方式 → 账户 → 日期 → 名称 → 备注。
+          // 原来「名称」排在第 3 位，早于账户 / 分类 / 日期，而它恰恰是这些字段里
+          // 最少用的一个——多数流水靠分类与账户就能说清楚。
+          // 支付方式原本压在表单末尾，现在提到账户之前：账户一选定就会**反过来
+          // 锁定**支付方式（支付宝账户→支付宝、微信账户→微信支付），排在账户
+          // 后面等于让用户对着一个已经由账户决定的下拉，还要往下滚很久才看得到。
+          catalog.when(
+            data: (value) => widget.showCategorySelector
+                ? CategoryLeafSelector(
+                    catalog: value,
+                    selectedCategoryId: _categoryId,
+                    selectedSubCategoryId: _subCategoryId,
+                    usage: _categoryUsage,
+                    enabled: !_submitting,
+                    onChanged: (categoryId, subCategoryId) =>
+                        _onCategoryChanged(
+                          MoneyCategorySelection(
+                            category: value.categoryById(categoryId),
+                            subCategory: value.subCategoryById(subCategoryId),
+                          ),
+                        ),
+                  )
+                : _CategorySelectionSummary(
+                    catalog: value,
+                    categoryId: _categoryId,
+                    subCategoryId: _subCategoryId,
+                  ),
+            loading: () => const LinearProgressIndicator(),
+            error: (error, stackTrace) => const Text('分类读取失败'),
+          ),
+          // 支付方式紧跟分类：它是仅次于分类的高频选择，而原来被排在表单末尾
+          // （名称 / 备注 / 状态之后），每次记账都要多滚一屏。
+          FormDropdown<MoneyPaymentMethod>(
+            initialSelection: effectivePaymentMethod,
+            label: '支付方式',
+            leadingIcon: const Icon(Icons.credit_card_rounded),
+            enabled: lockedPaymentMethod == null,
+            enableFilter: true,
+            onSelected: (value) {
+              if (value == null) return;
+              setState(() {
+                _paymentMethod = value;
+              });
+            },
+            entries: sortedPaymentMethods
+                .map(
+                  (method) =>
+                      DropdownMenuEntry(value: method, label: method.label),
+                )
+                .toList(),
+          ),
+          if (effectivePaymentMethod == MoneyPaymentMethod.other)
+            SuggestionAutocompleteField(
+              controller: _customPaymentNameCtrl,
+              suggestions: entrySuggestions.customPaymentMethods,
+              labelText: '支付方式名称',
+              hintText: '如：美团月付、抖音月付、京东支付',
+              prefixIcon: const Icon(Icons.payment_rounded),
+              textInputAction: TextInputAction.done,
+            ),
+          // 他人代付：不选具体账户，保存时落到系统内部账户。
+          // 原来是一整块「标题 + 副标题 + 复选框」的卡片，比它要替代的账户
+          // 选择器还高，视觉上却和主字段一样重。改成单行开关：副标题的语义
+          // 交给图标和开启后的说明条，关闭时只占一行。
+          if (widget.type == MoneyTransactionType.expense)
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              secondary: Icon(
+                Icons.handshake_rounded,
+                size: 20,
+                color: colorScheme.primary,
+              ),
+              title: Text(
+                '他人代付',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                ),
+              ),
+              value: _paidByOthers,
+              onChanged: (checked) {
+                setState(() {
+                  _paidByOthersTouched = true;
+                  _paidByOthers = checked;
+                });
+              },
+            ),
+          if (_paidByOthers)
+            const AppFormHint(
+              text: '保存后记入系统内部账户，由对方承担',
+              icon: Icons.info_outline_rounded,
+            )
+          else
+            accounts.when(
+              data: (value) => AccountSelector(
+                accounts: _selectableAccountsForType(
+                  value.where((account) => account.isActive).toList(),
+                ),
+                selectedAccountId: _accountId,
+                emptyText: widget.type == MoneyTransactionType.income
+                    ? '暂无可用于收入的账户'
+                    : '暂无可选账户',
+                onChanged: (account) {
+                  setState(() {
+                    _accountId = account?.id;
+                    final lockedMethod = _lockedPaymentMethodForAccount(
+                      account,
+                    );
+                    if (lockedMethod != null) {
+                      _paymentMethod = lockedMethod;
+                    } else {
+                      final methods = _availablePaymentMethodsForAccount(
+                        account,
+                      );
+                      if (!methods.contains(_paymentMethod)) {
+                        _paymentMethod = methods.first;
+                      }
+                    }
+                  });
+                },
+              ),
+              loading: () => const LinearProgressIndicator(),
+              error: (error, stackTrace) => const Text('账户读取失败'),
+            ),
+          if (accountRuleHint != null) AppFormHint(text: accountRuleHint),
+          if (showInstallmentEntry)
+            _InstallmentPaymentEntry(
+              onTap: () => _openInstallmentFromExpense(
+                accountRows: accountRows,
+                catalog: catalog.maybeWhen(
+                  data: (value) => value,
+                  orElse: () => const MoneyCategoryCatalog.empty(),
+                ),
+              ),
+            ),
+          DateTimePicker(
+            selectedDate: _transactionAt,
+            // 与转账表单同一口径：编辑态也显示快捷项。
+            // 改一笔记错日期的流水时，「今天 / 昨天」恰恰是最常用的修正方式。
+            showQuickOptions: true,
+            onChanged: (value) {
+              setState(() => _transactionAt = value);
+            },
+          ),
+          AppTextField(
+            controller: _descriptionController,
+            labelText: '名称',
+            hintText: '可选，如：和老王吃饭、618 囤货',
+            prefixIcon: const Icon(Icons.title_rounded),
+            textInputAction: TextInputAction.next,
+          ),
+          // 备注从「更多信息」提到顶层：它是流水里第二常用的自由文本，
+          // 原来要展开「更多信息」再找到它，两步起。行数随内容增长，
+          // 空着时只占一行。
+          AppTextField(
+            controller: _notesController,
+            minLines: 1,
+            maxLines: 3,
+            labelText: '备注',
+            prefixIcon: const Icon(Icons.notes_rounded),
+          ),
+          if (!_isEditing && widget.type != MoneyTransactionType.transfer) ...[
+            AppSlidingSegmentedControl<MoneyTransactionStatus>(
+              minSegmentWidth: 80,
+              value: _status,
+              onChanged: (value) => setState(() {
+                _status = value;
+                // 只有「已完成」的支出才能分摊，切到待处理时清掉分摊配置。
+                if (value == MoneyTransactionStatus.pending) {
+                  _splitConfig = null;
+                  _splitConfigAmountMinor = null;
+                }
+              }),
+              segments: const [
+                AppSlidingSegment(
+                  value: MoneyTransactionStatus.completed,
+                  label: '已完成',
+                ),
+                AppSlidingSegment(
+                  value: MoneyTransactionStatus.pending,
+                  label: '待处理',
+                ),
+              ],
+            ),
+            if (_status == MoneyTransactionStatus.pending)
+              const AppFormHint(
+                text: '待处理：暂不占用账户余额，也不计入统计；确认后才入账',
+                icon: Icons.info_outline_rounded,
+              ),
+          ],
+          _AdvancedTransactionFields(
+            initiallyExpanded: _advancedExpanded,
+            merchantController: _merchantController,
+            merchantSuggestions: entrySuggestions.merchants,
+            locationController: _locationController,
+            tagController: _tagController,
+            tagSuggestions: tagCandidates,
+            legacyTagHint: hasMultipleLegacyTags,
+            onExpansionChanged: (value) {
+              setState(() {
+                _advancedExpanded = value;
+              });
+            },
+          ),
+          if (showSplitConfig)
+            _SplitConfigSummary(
+              config: _splitConfig,
+              isStale: _isSplitConfigStale,
+              enabled: canConfigureSplit,
+              unavailableText: splitUnavailableText,
+              onConfigure: () =>
+                  _openSplitConfigDialog(selectedLedger, selectedLedgerMembers),
+              onClear: _splitConfig == null
+                  ? null
+                  : () => setState(() {
+                      _splitConfig = null;
+                      _splitConfigAmountMinor = null;
+                    }),
+            ),
+        ],
+      ),
+      errorText: _errorText,
+      actions: [
+        ...appDialogIconActions(
+          onCancel: () => Navigator.of(context).pop(),
+          onConfirm: _submitting ? null : () => _submit(),
+          confirmTooltip: _isEditing ? '保存' : '创建',
+        ),
+        if (widget.onSubmit != null && !_isEditing)
+          AppIconActionButton(
+            tooltip: '保存并继续',
+            onPressed: _submitting ? null : () => _submit(keepOpen: true),
+            icon: Icons.playlist_add_rounded,
+            variant: AppIconActionVariant.filledTonal,
+          ),
+      ],
+    );
+  }
+
+  /// 网格选分类后回填，并在只选了父分类时补上「记住的子分类」。
+  void _onCategoryChanged(MoneyCategorySelection selection) {
+    final nextCategoryId = selection.category?.id;
+    final nextSubCategoryId = selection.subCategory?.id;
+    setState(() {
+      _categoryId = nextCategoryId;
+      _subCategoryId = nextSubCategoryId;
+    });
+    if (nextCategoryId != null && nextSubCategoryId == null) {
+      unawaited(_fillRememberedSubCategory(nextCategoryId));
+    }
+  }
+
+  /// 「常用」排序数据：历史次数 + 最近使用时间（覆盖全时段）。
+  ///
+  /// 不用「本月金额」排序：月初或某个分类本月刚好没用过时会全部归零，
+  /// 把真正常用的项挤出常用格。
+  MoneyCategoryUsage get _categoryUsage {
+    return ref
+        .watch(currentUserCategoryUsageStatsProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const MoneyCategoryUsage.empty(),
+        );
+  }
+
+  /// 「再来一笔」：把整笔历史流水铺进表单（id、状态、分摊不复制）。
+  ///
+  /// 账本归属不复制：流水与账本是多对多，表单里只有一个家庭账本下拉，
+  /// 拿不到完整的归属列表，强行带上会让用户以为已经选好了。
+  void _applyTemplate(MoneyTransactionEntity template) {
+    _amountController.text = (template.amountMinor / 100).toStringAsFixed(2);
+    _descriptionController.text = _userFacingDescription(template.description);
+    _merchantController.text = template.merchant ?? '';
+    _locationController.text = template.location ?? '';
+    _notesController.text = template.notes ?? '';
+    _tagController.text = template.tags.isEmpty ? '' : template.tags.first;
+    _accountId = template.accountId;
+    _categoryId = template.categoryId;
+    _subCategoryId = template.subCategoryId;
+    _paymentMethod = template.paymentMethod;
+    _paymentMethodPinned = true;
+    _customPaymentNameCtrl.text = template.customPaymentMethodName ?? '';
+    _advancedExpanded =
+        _descriptionController.text.trim().isNotEmpty ||
+        (template.merchant?.trim().isNotEmpty ?? false) ||
+        (template.location?.trim().isNotEmpty ?? false) ||
+        (template.notes?.trim().isNotEmpty ?? false);
+  }
+
+  /// 提交成功后重置表单，用于「保存并继续」。
+  ///
+  /// 只清「这一笔特有」的字段（金额、名称、备注），
+  /// 商家、标签、分类、账户这些「连着记」时要沿用的上下文保留不动——
+  /// 之前全清导致在同一家店连记多笔反而更慢。
+  void _resetAfterSubmit() {
+    setState(() {
+      _amountController.clear();
+      _descriptionController.clear();
+      _notesController.clear();
+      _splitConfig = null;
+      _splitConfigAmountMinor = null;
+      _errorText = null;
+    });
+  }
+
+  String get _dialogTitle {
+    final action = _isEditing ? '编辑' : '记';
+    return '$action${widget.type.label}';
+  }
+
+  int? get _installmentEntryAmountMinor {
+    if (_isEditing || widget.type != MoneyTransactionType.expense) {
+      return null;
+    }
+    try {
+      return parseMoneyAmountToMinor(_amountController.text);
+    } on MoneyAmountParseException {
+      return null;
+    }
+  }
+
+  Future<void> _openInstallmentFromExpense({
+    required List<MoneyAccountEntity> accountRows,
+    required MoneyCategoryCatalog catalog,
+  }) async {
+    final amountMinor = _installmentEntryAmountMinor;
+    final accountId = _accountId;
+    if (amountMinor == null || accountId == null || !mounted) {
+      return;
+    }
+
+    final category = catalog.categoryById(_categoryId);
+    final subCategory = catalog.subCategoryById(_subCategoryId);
+    final initialName = switch ((category, subCategory)) {
+      (null, _) => null,
+      (_, null) => category!.name,
+      _ => '${category!.name}/${subCategory!.name}',
+    };
+
+    final result = await showAppResponsiveDialog<MoneyInstallmentPlanDraft>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => InstallmentPlanFormDialog(
+        accounts: accountRows,
+        categoryCatalog: catalog,
+        initialAccountId: accountId,
+        initialCategoryId: _categoryId,
+        initialSubCategoryId: _subCategoryId,
+        initialPrincipalMinor: amountMinor,
+        initialName: initialName,
+      ),
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyInstallmentActionsProvider)
+          .createInstallmentPlan(result);
+      if (!mounted) return;
+      AppToast.success(_ensureToast(), context, '分期计划已创建');
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, _installmentErrorText(error));
+    }
+  }
+
+  FToast? _toast;
+
+  FToast _ensureToast() {
+    return _toast ??= (FToast()..init(context));
+  }
+
+  String _installmentErrorText(Object error) {
+    if (error is MoneyRepositoryException) {
+      return switch (error.code) {
+        MoneyRepositoryErrorCode.invalidInstallmentAmount => '请检查分期金额和期数',
+        MoneyRepositoryErrorCode.invalidInstallmentAccount => '请选择信用账户',
+        MoneyRepositoryErrorCode.installmentPlanNotFound => '分期计划不可用',
+        MoneyRepositoryErrorCode.invalidInstallmentStatus => '当前分期状态不可操作',
+        MoneyRepositoryErrorCode.creditCardLimitExceeded => '信用账户占用额度不能超过信用额度',
+        MoneyRepositoryErrorCode.accountNotFound => '账户不可用',
+        MoneyRepositoryErrorCode.databaseReadFailed => '读取失败',
+        MoneyRepositoryErrorCode.databaseWriteFailed => '保存失败',
+        _ => '操作失败',
+      };
+    }
+    return '操作失败';
+  }
+
+  void _loadRememberedDefaultsOnce(String? selectedLedgerId) {
+    if (_defaultsLoaded || _isEditing) {
+      return;
+    }
+    _defaultsLoaded = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      final session = ref.read(authSessionControllerProvider);
+      final userId = session.userId;
+      if (!session.isUnlocked || userId == null) {
+        return;
+      }
+      final defaults = await ref
+          .read(transactionEntryDefaultsStoreProvider)
+          .readDefaults(
+            userId: userId,
+            ledgerId: selectedLedgerId,
+            type: widget.type,
+          );
+      if (!mounted || defaults == null) {
+        return;
+      }
+      setState(() {
+        if (!_paidByOthers) {
+          _accountId ??= defaults.accountId;
+        }
+        if (widget.showCategorySelector) {
+          _categoryId ??= defaults.categoryId;
+          _subCategoryId ??= defaults.subCategoryId;
+        } else {
+          _categoryId ??= widget.categoryId;
+          _subCategoryId ??= widget.subCategoryId;
+        }
+        final paymentMethod = defaults.paymentMethod;
+        if (paymentMethod != null && !_paymentMethodPinned) {
+          _paymentMethod = paymentMethod;
+        }
+      });
+    });
+  }
+
+  Future<void> _fillRememberedSubCategory(String categoryId) async {
+    final session = ref.read(authSessionControllerProvider);
+    final userId = session.userId;
+    if (!session.isUnlocked || userId == null) {
+      return;
+    }
+    final subCategoryId = await ref
+        .read(transactionEntryDefaultsStoreProvider)
+        .readSubCategoryForCategory(
+          userId: userId,
+          ledgerId: _ledgerId,
+          type: widget.type,
+          categoryId: categoryId,
+        );
+    if (!mounted ||
+        subCategoryId == null ||
+        _subCategoryId != null ||
+        _categoryId != categoryId) {
+      return;
+    }
+    setState(() {
+      _subCategoryId = subCategoryId;
+    });
+  }
+
+  Future<void> _submit({bool keepOpen = false}) async {
+    final result = _buildResult();
+    if (result == null) {
+      return;
+    }
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      // 未提供回调：保持原有「把结果 pop 给调用方」的契约。
+      Navigator.of(context).pop(result);
+      return;
+    }
+
+    setState(() => _submitting = true);
+    String? error;
+    try {
+      error = await submit(result);
+    } catch (_) {
+      error = '保存失败，请稍后重试';
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _submitting = false;
+      _errorText = error;
+    });
+    if (error != null) {
+      return;
+    }
+    if (keepOpen) {
+      _resetAfterSubmit();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  /// 校验并组装 draft / update。校验失败返回 null 并把错误写进 [_errorText]。
+  Object? _buildResult() {
+    try {
+      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
+      if (amountMinor <= 0) {
+        setState(() => _errorText = '请输入大于 0 的金额');
+        return null;
+      }
+      final transaction = widget.transaction;
+      final ledger = transaction == null ? _selectedLedgerForSubmit() : null;
+      final accounts = transaction != null || ledger == null
+          ? ref.read(currentUserVisibleAccountsProvider)
+          : ref.read(currentUserMoneyLedgerAccountsProvider(ledger.id));
+      final internalAccounts = ref
+          .read(currentUserMoneyInternalAccountsProvider)
+          .maybeWhen(
+            data: (value) => value,
+            orElse: () => const <MoneyAccountEntity>[],
+          );
+      final effectiveAccountId = _paidByOthers
+          ? (internalAccounts.where((account) => account.isActive).isEmpty
+                ? null
+                : internalAccounts.firstWhere((account) => account.isActive).id)
+          : _accountId;
+      if (effectiveAccountId == null) {
+        setState(() => _errorText = _paidByOthers ? '内部账户不可用，请稍后重试' : '请选择账户');
+        return null;
+      }
+      final selectedAccount = _selectedAccountFrom(
+        _selectableAccountsForType([
+          ...accounts.maybeWhen(
+            data: (value) =>
+                value.where((account) => account.isActive).toList(),
+            orElse: () => const <MoneyAccountEntity>[],
+          ),
+          ...internalAccounts.where((account) => account.isActive),
+        ]),
+        accountId: effectiveAccountId,
+      );
+      if (selectedAccount == null) {
+        setState(
+          () => _errorText = widget.type == MoneyTransactionType.income
+              ? '收入不能选择信用账户'
+              : '请选择可用账户',
+        );
+        return null;
+      }
+      final ruleError = _transactionRuleError(
+        account: selectedAccount,
+        amountMinor: amountMinor,
+      );
+      if (ruleError != null) {
+        setState(() => _errorText = ruleError);
+        return null;
+      }
+      final categoryId = _categoryId;
+      if (categoryId == null) {
+        setState(() => _errorText = '请选择分类');
+        return null;
+      }
+
+      final notes = _notesController.text.trim();
+      final merchant = _merchantController.text.trim();
+      final location = _locationController.text.trim();
+      final tagText = _tagController.text.trim();
+      final tags = tagText.isEmpty ? const <String>[] : <String>[tagText];
+      final effectivePaymentMethod = _effectivePaymentMethodForAccount(
+        selectedAccount,
+      );
+      if (_isSplitConfigStale) {
+        setState(() => _errorText = '金额变化后请重新设置分摊');
+        return null;
+      }
+      final splitConfig = widget.type == MoneyTransactionType.expense
+          ? _splitConfig
+          : null;
+      final splitError = _splitConfigError(splitConfig, ledger: ledger);
+      if (splitError != null) {
+        setState(() => _errorText = splitError);
+        return null;
+      }
+      if (!mounted) {
+        return null;
+      }
+      return transaction == null
+          ? TransactionCreateFormResult(
+              draft: MoneyTransactionDraft(
+                type: widget.type,
+                transactionAt: _transactionAt,
+                amountMinor: amountMinor,
+                currencyCode: selectedAccount.currencyCode,
+                // 外部入口（如提醒「记账」）会带上标题；没有的话退回类型名，
+                // 列表会把这类通用文案过滤掉，不会当成用户输入。
+                description: _resolvedDescription,
+                notes: notes,
+                merchant: merchant,
+                location: location,
+                accountId: effectiveAccountId,
+                categoryId: categoryId,
+                subCategoryId: _subCategoryId,
+                paymentMethod: effectivePaymentMethod,
+                customPaymentMethodName:
+                    _customPaymentNameCtrl.text.trim().isEmpty
+                    ? null
+                    : _customPaymentNameCtrl.text.trim(),
+                tags: tags,
+                ledgerId: ledger?.id,
+                status: _status,
+              ),
+              splitConfig: splitConfig,
+            )
+          : MoneyTransactionUpdate(
+              id: transaction.id,
+              type: widget.type,
+              transactionAt: _transactionAt,
+              amountMinor: amountMinor,
+              currencyCode: transaction.currencyCode,
+              description: _typedDescription,
+              notes: notes,
+              merchant: merchant,
+              location: location,
+              accountId: effectiveAccountId,
+              categoryId: categoryId,
+              subCategoryId: _subCategoryId,
+              paymentMethod: effectivePaymentMethod,
+              customPaymentMethodName:
+                  _customPaymentNameCtrl.text.trim().isEmpty
+                  ? null
+                  : _customPaymentNameCtrl.text.trim(),
+              tags: tags,
+            );
+    } on MoneyAmountParseException {
+      setState(() => _errorText = '金额格式不正确');
+      return null;
+    }
+  }
+
+  /// 提交前校验分摊配置是否仍然适用于当前表单状态。
+  ///
+  /// 分摊的成员 id 属于某个具体账本、且只有「已完成」的支出能分摊。
+  /// 这里提前拦截，避免写入后在 repository 抛出笼统的「记录失败」。
+  String? _splitConfigError(
+    MoneySplitConfigDraft? config, {
+    required MoneyLedgerEntity? ledger,
+  }) {
+    if (config == null) {
+      return null;
+    }
+    if (_status != MoneyTransactionStatus.completed) {
+      return '只有已完成的支出才能分摊，请改为已完成或清除分摊';
+    }
+    if (ledger == null || !ledger.isFamily) {
+      return '分摊仅支持家庭账本，请先选择家庭账本或清除分摊';
+    }
+    if (config.ledgerId != ledger.id) {
+      return '分摊设置与当前账本不一致，请重新设置分摊';
+    }
+    final members = ref
+        .read(currentUserMoneyLedgerMembersProvider(ledger.id))
+        .maybeWhen<List<MoneyMemberEntity>?>(
+          data: (value) => value,
+          orElse: () => null,
+        );
+    if (members == null) {
+      // 成员还没加载出来，交给 repository 兜底校验，不在这里误报。
+      return null;
+    }
+    final memberIds = <String>{for (final member in members) member.id};
+    if (!memberIds.contains(config.payerMemberId)) {
+      return '垫款人已不在当前账本，请重新设置分摊';
+    }
+    for (final participant in config.participants) {
+      if (!memberIds.contains(participant.memberId)) {
+        return '有分摊成员已不在当前账本，请重新设置分摊';
+      }
+    }
+    return null;
+  }
+
+  MoneyAccountEntity? _selectedAccountFrom(
+    List<MoneyAccountEntity> accounts, {
+    String? accountId,
+  }) {
+    final targetId = accountId ?? _accountId;
+    if (targetId == null) {
+      return null;
+    }
+    for (final account in accounts) {
+      if (account.id == targetId) {
+        return account;
+      }
+    }
+    return null;
+  }
+
+  /// 历史数据的 description 恒为类型名（那时还没有名称输入框），
+  /// 回填到输入框里会显示成用户从没写过的「支出」。
+  static const _genericDescriptions = <String>{'支出', '收入', '转账', '转入', '转出'};
+
+  static String _userFacingDescription(String raw) {
+    final trimmed = raw.trim();
+    return _genericDescriptions.contains(trimmed) ? '' : trimmed;
+  }
+
+  String get _resolvedDescription {
+    final typed = _descriptionController.text.trim();
+    if (typed.isNotEmpty) {
+      return typed;
+    }
+    final initialDescription = widget.initialDescription?.trim();
+    if (initialDescription != null && initialDescription.isNotEmpty) {
+      return initialDescription;
+    }
+    return widget.type.label;
+  }
+
+  /// 名称框里用户自己填的内容；空则交给仓储回退到类型名。
+  String? get _typedDescription {
+    final typed = _descriptionController.text.trim();
+    return typed.isEmpty ? null : typed;
+  }
+
+  /// 金额框里是算式时给一行实时结果，避免用户提交前还得自己心算。
+  String? get _amountPreviewText {
+    final text = _amountController.text;
+    if (!MoneyAmountExpression.isExpression(text)) {
+      return null;
+    }
+    final minor = MoneyAmountExpression.tryEvaluateToMinor(text);
+    if (minor == null) {
+      return null;
+    }
+    return '= ${formatMoneyMinor(minor, defaultMoneyCurrencyCode)}';
+  }
+
+  Future<void> _openAmountCalculator() async {
+    final result = await showAmountCalculatorSheet(
+      context,
+      initialText: _amountController.text,
+      currencyCode: defaultMoneyCurrencyCode,
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _amountController.text = result;
+      _errorText = null;
+    });
+  }
+
+  String? _transactionRuleError({
+    required MoneyAccountEntity account,
+    required int amountMinor,
+  }) {
+    if (widget.type == MoneyTransactionType.income) {
+      if (!account.type.isAssetLike || account.type.isDebtLike) {
+        return '收入不能选择信用账户';
+      }
+      return null;
+    }
+
+    if (widget.type != MoneyTransactionType.expense) {
+      return null;
+    }
+
+    if (account.type.isCreditLike) {
+      final availableMinor =
+          account.availableCreditMinor +
+          (_isEditing && widget.transaction?.accountId == account.id
+              ? widget.transaction!.amountMinor
+              : 0);
+      if (amountMinor > availableMinor) {
+        return '信用账户可用额度不足，可用 ${formatMoneyMinor(availableMinor, account.currencyCode)}';
+      }
+      return null;
+    }
+
+    final availableMinor =
+        account.balanceMinor +
+        (_isEditing && widget.transaction?.accountId == account.id
+            ? widget.transaction!.amountMinor
+            : 0);
+    if (!account.isVirtual && amountMinor > availableMinor) {
+      return '账户余额不足，可用 ${formatMoneyMinor(availableMinor, account.currencyCode)}';
+    }
+    return null;
+  }
+
+  List<MoneyAccountEntity> _selectableAccountsForType(
+    List<MoneyAccountEntity> accounts,
+  ) {
+    if (widget.type == MoneyTransactionType.income) {
+      return accounts
+          .where(
+            (account) => account.type.isAssetLike && !account.type.isDebtLike,
+          )
+          .toList();
+    }
+    if (widget.type == MoneyTransactionType.expense) {
+      return accounts
+          .where(
+            (account) =>
+                account.type.isAssetLike ||
+                account.type.isCreditLike ||
+                account.type.isInternal,
+          )
+          .toList();
+    }
+    return accounts;
+  }
+
+  MoneyPaymentMethod? _lockedPaymentMethodForAccount(
+    MoneyAccountEntity? account,
+  ) {
+    return switch (account?.type) {
+      MoneyAccountType.cash => MoneyPaymentMethod.cash,
+      MoneyAccountType.huabei => MoneyPaymentMethod.huabei,
+      MoneyAccountType.baitiao => MoneyPaymentMethod.baitiao,
+      MoneyAccountType.alipay => MoneyPaymentMethod.alipay,
+      MoneyAccountType.wechat => MoneyPaymentMethod.wechatPay,
+      MoneyAccountType.cloudQuickPass => MoneyPaymentMethod.unionPay,
+      _ => null,
+    };
+  }
+
+  List<MoneyPaymentMethod> _availablePaymentMethodsForAccount(
+    MoneyAccountEntity? account,
+  ) {
+    final lockedMethod = _lockedPaymentMethodForAccount(account);
+    if (lockedMethod != null) {
+      return [lockedMethod];
+    }
+    return switch (account?.type) {
+      MoneyAccountType.creditCard => const [
+        MoneyPaymentMethod.creditCard,
+        MoneyPaymentMethod.bankTransfer,
+        MoneyPaymentMethod.alipay,
+        MoneyPaymentMethod.wechatPay,
+        MoneyPaymentMethod.unionPay,
+        MoneyPaymentMethod.onlinePayment,
+        MoneyPaymentMethod.thirdParty,
+        MoneyPaymentMethod.other,
+      ],
+      MoneyAccountType.meituanCredit || MoneyAccountType.otherCredit => const [
+        MoneyPaymentMethod.onlinePayment,
+        MoneyPaymentMethod.thirdParty,
+        MoneyPaymentMethod.alipay,
+        MoneyPaymentMethod.wechatPay,
+        MoneyPaymentMethod.bankTransfer,
+        MoneyPaymentMethod.other,
+      ],
+      _ => MoneyPaymentMethod.values,
+    };
+  }
+
+  MoneyPaymentMethod _effectivePaymentMethodForAccount(
+    MoneyAccountEntity? account,
+  ) {
+    final lockedMethod = _lockedPaymentMethodForAccount(account);
+    if (lockedMethod != null) {
+      return lockedMethod;
+    }
+    final methods = _availablePaymentMethodsForAccount(account);
+    if (methods.contains(_paymentMethod)) {
+      return _paymentMethod;
+    }
+    return methods.first;
+  }
+
+  List<MoneyPaymentMethod> _sortPaymentMethodsByUsage(
+    List<MoneyPaymentMethod> methods,
+    Map<MoneyPaymentMethod, int> usageRanks,
+  ) {
+    final sorted = [...methods];
+    sorted.sort((left, right) {
+      final usageCompare = (usageRanks[right] ?? 0).compareTo(
+        usageRanks[left] ?? 0,
+      );
+      if (usageCompare != 0) {
+        return usageCompare;
+      }
+      return left.index.compareTo(right.index);
+    });
+    return sorted;
+  }
+
+  String? _accountRuleHint(MoneyAccountEntity? account) {
+    if (widget.type == MoneyTransactionType.income) {
+      return '收入只可进入现金、银行、支付宝、微信等资产账户';
+    }
+    if (widget.type != MoneyTransactionType.expense || account == null) {
+      return null;
+    }
+    if (account.type.isCreditLike) {
+      return '信用账户支出会增加已入账负债，并占用可用额度';
+    }
+    return '支出会从所选账户余额中扣减';
+  }
+
+  Future<void> _openSplitConfigDialog(
+    MoneyLedgerEntity? ledger,
+    List<MoneyMemberEntity> ledgerMembers,
+  ) async {
+    try {
+      if (ledger == null) {
+        setState(() => _errorText = '请先选择家庭账本');
+        return;
+      }
+      final amountMinor = parseMoneyAmountToMinor(_amountController.text);
+      if (amountMinor <= 0) {
+        setState(() => _errorText = '请先输入大于 0 的金额');
+        return;
+      }
+
+      final result = await showAppResponsiveDialog<MoneySplitConfigDraft>(
+        context: context,
+        expandCompactSheet: true,
+        builder: (context) => TransactionSplitDialog(
+          ledgerId: ledger.id,
+          initialMembers: ledgerMembers,
+          amountMinor: amountMinor,
+          currencyCode: defaultMoneyCurrencyCode,
+          title: '设置支出分摊',
+          confirmLabel: '使用此分摊',
+        ),
+      );
+      if (result == null || !mounted) {
+        return;
+      }
+      setState(() {
+        _splitConfig = result;
+        _splitConfigAmountMinor = amountMinor;
+        _errorText = null;
+      });
+    } on MoneyAmountParseException {
+      setState(() => _errorText = '金额格式不正确');
+    }
+  }
+
+  MoneyLedgerEntity? _selectedLedgerForSubmit() {
+    return ref
+        .read(currentUserMoneyLedgersProvider)
+        .maybeWhen(
+          data: _selectedLedgerFrom,
+          orElse: () {
+            final initialLedger = widget.ledger;
+            return initialLedger != null && initialLedger.isFamily
+                ? initialLedger
+                : null;
+          },
+        );
+  }
+
+  MoneyLedgerEntity? _selectedLedgerFrom(List<MoneyLedgerEntity> ledgers) {
+    final selectedLedgerId = _ledgerId;
+    if (selectedLedgerId == null) {
+      return null;
+    }
+    for (final ledger in ledgers) {
+      if (ledger.id == selectedLedgerId && ledger.isFamily) {
+        return ledger;
+      }
+    }
+    return null;
+  }
+}
+
+class _AdvancedTransactionFields extends StatelessWidget {
+  const _AdvancedTransactionFields({
+    required this.initiallyExpanded,
+    required this.merchantController,
+    this.merchantSuggestions = const <String>[],
+    required this.locationController,
+    required this.tagController,
+    this.tagSuggestions = const <String>[],
+    this.legacyTagHint = false,
+    required this.onExpansionChanged,
+  });
+
+  final bool initiallyExpanded;
+  final TextEditingController merchantController;
+  final List<String> merchantSuggestions;
+  final TextEditingController locationController;
+
+  /// 标签从顶层搬进「更多信息」：顶层区块从 14 个收到 13 个，
+  /// 常用路径（金额/分类/账户/日期）更快看到底。
+  /// （第四批又把备注移出顶层，这里只剩商家 / 地点 / 标签三项。）
+  final TextEditingController tagController;
+  final List<String> tagSuggestions;
+  final bool legacyTagHint;
+  final ValueChanged<bool> onExpansionChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppSurface(
+      tone: AppSurfaceTone.subtle,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: 12),
+          title: Text(
+            '更多信息',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
+            ),
+          ),
+          onExpansionChanged: onExpansionChanged,
+          children: [
+            SuggestionAutocompleteField(
+              controller: merchantController,
+              suggestions: merchantSuggestions,
+              labelText: '商家',
+              hintText: '例如 京东、盒马、星巴克',
+              prefixIcon: const Icon(Icons.storefront_rounded),
+            ),
+            const SizedBox(height: 12),
+            AppTextField(
+              controller: locationController,
+              labelText: '地点',
+              hintText: '例如 上海、公司楼下',
+              prefixIcon: const Icon(Icons.location_on_rounded),
+            ),
+            const SizedBox(height: 12),
+            SuggestionAutocompleteField(
+              controller: tagController,
+              suggestions: tagSuggestions,
+              labelText: '标签',
+              hintText: '可选，如：南京旅游（建预算后自动计入对应标签预算）',
+              prefixIcon: const Icon(Icons.local_offer_rounded),
+              textInputAction: TextInputAction.done,
+            ),
+            if (legacyTagHint) ...[
+              const SizedBox(height: 8),
+              const AppFormHint(
+                text: '该笔历史交易含多个标签，保存后将仅保留一个',
+                icon: Icons.info_outline_rounded,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategorySelectionSummary extends StatelessWidget {
+  const _CategorySelectionSummary({
+    required this.catalog,
+    required this.categoryId,
+    required this.subCategoryId,
+  });
+
+  final MoneyCategoryCatalog catalog;
+  final String? categoryId;
+  final String? subCategoryId;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final category = catalog.categoryById(categoryId);
+    final subCategory = catalog.subCategoryById(subCategoryId);
+    final primaryText = category == null
+        ? '未选择分类'
+        : subCategory == null
+        ? category.name
+        : '${category.name} / ${subCategory.name}';
+
+    return AppSurface(
+      tone: AppSurfaceTone.subtle,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Icon(Icons.sell_rounded, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  primaryText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransactionLedgerMenuItem extends StatelessWidget {
+  const _TransactionLedgerMenuItem({required this.ledger});
+
+  final MoneyLedgerEntity ledger;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isFamily = ledger.isFamily;
+
+    return Row(
+      children: [
+        Icon(
+          isFamily ? Icons.diversity_3_rounded : Icons.person_outline_rounded,
+          size: 18,
+          color: isFamily ? colorScheme.tertiary : colorScheme.secondary,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            ledger.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(letterSpacing: 0),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          isFamily ? '家庭' : '个人',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SplitConfigSummary extends StatelessWidget {
+  const _SplitConfigSummary({
+    required this.config,
+    required this.isStale,
+    required this.enabled,
+    required this.unavailableText,
+    required this.onConfigure,
+    required this.onClear,
+  });
+
+  final MoneySplitConfigDraft? config;
+  final bool isStale;
+  final bool enabled;
+  final String unavailableText;
+  final VoidCallback onConfigure;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final config = this.config;
+    final title = config == null
+        ? '分摊'
+        : isStale
+        ? '分摊需重新设置'
+        : '${config.splitType.label}分摊';
+    final subtitle = !enabled
+        ? unavailableText
+        : config == null
+        ? '可选，适合聚餐、共同支出、代付'
+        : isStale
+        ? '金额已变化，请重新设置分摊'
+        : '已选择 ${config.participants.length} 位成员';
+    final subtitleColor = isStale
+        ? colorScheme.error
+        : colorScheme.onSurfaceVariant;
+
+    return AppSurface(
+      tone: AppSurfaceTone.subtle,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Icon(Icons.call_split_rounded, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: isStale ? colorScheme.error : null,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: subtitleColor,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onClear != null)
+            AppIconActionButton(
+              tooltip: '清除分摊',
+              onPressed: onClear,
+              icon: Icons.close_rounded,
+            ),
+          AppIconActionButton(
+            tooltip: '设置分摊',
+            onPressed: enabled ? onConfigure : null,
+            icon: Icons.tune_rounded,
+            variant: AppIconActionVariant.outlined,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InstallmentPaymentEntry extends StatelessWidget {
+  const _InstallmentPaymentEntry({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return AppSurface(
+      tone: AppSurfaceTone.subtle,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_month_rounded, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '分期支付',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '转为分期计划，首期到期自动入账',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          AppIconActionButton(
+            tooltip: '转为分期支付',
+            onPressed: onTap,
+            icon: Icons.arrow_forward_rounded,
+            variant: AppIconActionVariant.outlined,
+          ),
+        ],
+      ),
+    );
+  }
+}
