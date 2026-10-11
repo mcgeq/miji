@@ -73,7 +73,7 @@ void main() {
     expect(find.textContaining(_foodCategory.name), findsWidgets);
   });
 
-  testWidgets('paid-by-others checkbox hides account selector and submits '
+  testWidgets('paid-by-others switch hides account selector and submits '
       'with the internal account', (tester) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
@@ -138,7 +138,7 @@ void main() {
 
     // 账户选择器隐藏，提示内部账户。
     expect(find.text('账户'), findsNothing);
-    expect(find.text('他人代付：保存后将自动记入系统内部账户'), findsOneWidget);
+    expect(find.textContaining('保存后记入系统内部账户'), findsOneWidget);
 
     // 选择分类（叶子直选）。
     await _tapLeaf(tester, _foodCategory.name);
@@ -207,23 +207,23 @@ void main() {
       await tester.tap(find.text('打开记账弹窗'));
       await tester.pumpAndSettle();
 
-      // 编辑他人代付交易：复选框默认勾选、账户选择器隐藏。
+      // 编辑他人代付交易：开关默认打开、账户选择器隐藏。
       expect(
-        tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
         isTrue,
       );
       expect(find.text('账户'), findsNothing);
 
-      // 去掉勾选后账户选择器恢复显示。
+      // 关掉开关后账户选择器恢复显示。
       await tester.tap(find.text('他人代付'));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
         isFalse,
       );
       expect(find.text('账户'), findsOneWidget);
 
-      // 重新勾选并保存，账户仍为内部账户。
+      // 重新打开并保存，账户仍为内部账户。
       await tester.tap(find.text('他人代付'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('保存'));

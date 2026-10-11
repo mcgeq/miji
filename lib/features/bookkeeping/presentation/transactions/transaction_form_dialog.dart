@@ -406,9 +406,13 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               setState(() {});
             },
           ),
-          // 字段顺序按使用频次重排：金额 → 分类 → 账户 → 日期 → 名称 → 备注。
+          // 字段顺序按使用频次重排：
+          // 金额 → 分类 → 支付方式 → 账户 → 日期 → 名称 → 备注。
           // 原来「名称」排在第 3 位，早于账户 / 分类 / 日期，而它恰恰是这些字段里
           // 最少用的一个——多数流水靠分类与账户就能说清楚。
+          // 支付方式原本压在表单末尾，现在提到账户之前：账户一选定就会**反过来
+          // 锁定**支付方式（支付宝账户→支付宝、微信账户→微信支付），排在账户
+          // 后面等于让用户对着一个已经由账户决定的下拉，还要往下滚很久才看得到。
           catalog.when(
             data: (value) => widget.showCategorySelector
                 ? CategoryLeafSelector(
@@ -433,39 +437,67 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
             loading: () => const LinearProgressIndicator(),
             error: (error, stackTrace) => const Text('分类读取失败'),
           ),
+          // 支付方式紧跟分类：它是仅次于分类的高频选择，而原来被排在表单末尾
+          // （名称 / 备注 / 状态之后），每次记账都要多滚一屏。
+          FormDropdown<MoneyPaymentMethod>(
+            initialSelection: effectivePaymentMethod,
+            label: '支付方式',
+            leadingIcon: const Icon(Icons.credit_card_rounded),
+            enabled: lockedPaymentMethod == null,
+            enableFilter: true,
+            onSelected: (value) {
+              if (value == null) return;
+              setState(() {
+                _paymentMethod = value;
+              });
+            },
+            entries: sortedPaymentMethods
+                .map(
+                  (method) =>
+                      DropdownMenuEntry(value: method, label: method.label),
+                )
+                .toList(),
+          ),
+          if (effectivePaymentMethod == MoneyPaymentMethod.other)
+            SuggestionAutocompleteField(
+              controller: _customPaymentNameCtrl,
+              suggestions: entrySuggestions.customPaymentMethods,
+              labelText: '支付方式名称',
+              hintText: '如：美团月付、抖音月付、京东支付',
+              prefixIcon: const Icon(Icons.payment_rounded),
+              textInputAction: TextInputAction.done,
+            ),
+          // 他人代付：不选具体账户，保存时落到系统内部账户。
+          // 原来是一整块「标题 + 副标题 + 复选框」的卡片，比它要替代的账户
+          // 选择器还高，视觉上却和主字段一样重。改成单行开关：副标题的语义
+          // 交给图标和开启后的说明条，关闭时只占一行。
           if (widget.type == MoneyTransactionType.expense)
-            AppSurface(
-              tone: AppSurfaceTone.subtle,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-              child: CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  '他人代付',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0,
-                  ),
-                ),
-                subtitle: Text(
-                  '由他人垫付，无需选择支付账户',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    letterSpacing: 0,
-                  ),
-                ),
-                value: _paidByOthers,
-                onChanged: (checked) {
-                  setState(() {
-                    _paidByOthersTouched = true;
-                    _paidByOthers = checked ?? false;
-                  });
-                },
-                controlAffinity: ListTileControlAffinity.trailing,
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              secondary: Icon(
+                Icons.handshake_rounded,
+                size: 20,
+                color: colorScheme.primary,
               ),
+              title: Text(
+                '他人代付',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                ),
+              ),
+              value: _paidByOthers,
+              onChanged: (checked) {
+                setState(() {
+                  _paidByOthersTouched = true;
+                  _paidByOthers = checked;
+                });
+              },
             ),
           if (_paidByOthers)
             const AppFormHint(
-              text: '他人代付：保存后将自动记入系统内部账户',
+              text: '保存后记入系统内部账户，由对方承担',
               icon: Icons.info_outline_rounded,
             )
           else
@@ -478,8 +510,6 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                 emptyText: widget.type == MoneyTransactionType.income
                     ? '暂无可用于收入的账户'
                     : '暂无可选账户',
-                showQuickSelect: true,
-                quickSelectCount: 2,
                 onChanged: (account) {
                   setState(() {
                     _accountId = account?.id;
@@ -568,34 +598,6 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                 icon: Icons.info_outline_rounded,
               ),
           ],
-          FormDropdown<MoneyPaymentMethod>(
-            initialSelection: effectivePaymentMethod,
-            label: '支付方式',
-            leadingIcon: const Icon(Icons.credit_card_rounded),
-            enabled: lockedPaymentMethod == null,
-            enableFilter: true,
-            onSelected: (value) {
-              if (value == null) return;
-              setState(() {
-                _paymentMethod = value;
-              });
-            },
-            entries: sortedPaymentMethods
-                .map(
-                  (method) =>
-                      DropdownMenuEntry(value: method, label: method.label),
-                )
-                .toList(),
-          ),
-          if (effectivePaymentMethod == MoneyPaymentMethod.other)
-            SuggestionAutocompleteField(
-              controller: _customPaymentNameCtrl,
-              suggestions: entrySuggestions.customPaymentMethods,
-              labelText: '支付方式名称',
-              hintText: '如：美团月付、抖音月付、京东支付',
-              prefixIcon: const Icon(Icons.payment_rounded),
-              textInputAction: TextInputAction.done,
-            ),
           _AdvancedTransactionFields(
             initiallyExpanded: _advancedExpanded,
             merchantController: _merchantController,

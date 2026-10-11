@@ -13,6 +13,7 @@ import 'package:miji/features/bookkeeping/presentation/categories/components/cat
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
 import 'package:miji/shared/widgets/app_amount_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
+import 'package:miji/shared/widgets/form_dropdown.dart';
 
 /// 回归：曾经的自定义数字键盘会在「点其他输入框拉起系统键盘」时切换布局，
 /// 顺便把焦点抢回金额框，导致商家/备注永远输不进去。键盘已整体移除。
@@ -110,7 +111,7 @@ void main() {
 
     double top(Finder finder) => tester.getTopLeft(finder).dy;
 
-    // 金额 → 分类 → 账户 → 日期 → 名称。
+    // 金额 → 分类 → 支付方式 → 账户 → 日期 → 名称。
     expect(
       top(find.byType(AppAmountField)),
       lessThan(top(find.byType(CategoryLeafSelector))),
@@ -118,7 +119,13 @@ void main() {
     );
     expect(
       top(find.byType(CategoryLeafSelector)),
+      lessThan(top(find.byType(FormDropdown<MoneyPaymentMethod>))),
+      reason: '支付方式应紧跟分类',
+    );
+    expect(
+      top(find.byType(FormDropdown<MoneyPaymentMethod>)),
       lessThan(top(find.byType(AccountSelector))),
+      reason: '支付方式应排在账户之前——账户会反向锁定支付方式',
     );
     expect(
       top(find.byType(AccountSelector)),
@@ -130,6 +137,48 @@ void main() {
       lessThan(top(_nameFinder())),
       reason: '名称是可选字段，应排在日期之后',
     );
+  });
+
+  testWidgets('账户只保留下拉选择框，不再有快速选择', (tester) async {
+    await _pumpForm(tester);
+
+    // 曾经在账户下拉框上方浮着一排 ChoiceChip 快速选择（取前两个启用账户，
+    // 与下拉框内容重复还白占一行）。现在只留下拉框本身。
+    expect(find.byType(AccountSelector), findsOneWidget);
+
+    // 日期行的「今天 / 昨天 / 明天」也是 ChoiceChip，且排在账户之后，
+    // 所以不能断言整张表单没有 chip，只能断言账户上方一个都没有。
+    final accountTop = tester.getTopLeft(find.byType(AccountSelector)).dy;
+    final chips = find.byType(ChoiceChip);
+    expect(chips, findsWidgets, reason: '日期行的快捷项仍在');
+    for (var index = 0; index < chips.evaluate().length; index++) {
+      expect(
+        tester.getTopLeft(chips.at(index)).dy,
+        greaterThan(accountTop),
+        reason: '账户上方不应再有任何 chip',
+      );
+    }
+  });
+
+  testWidgets('他人代付 is a single-line switch sitting above the account', (
+    tester,
+  ) async {
+    await _pumpForm(tester);
+
+    // 从「标题 + 副标题 + 复选框」的整块卡片收成一行开关，且只在支出时出现。
+    expect(find.byType(SwitchListTile), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('他人代付')).dy,
+      lessThan(tester.getTopLeft(find.byType(AccountSelector)).dy),
+    );
+    // 默认关闭：此时账户选择器可见，说明条不出现。
+    expect(find.byType(AccountSelector), findsOneWidget);
+    expect(find.textContaining('保存后记入系统内部账户'), findsNothing);
+
+    // 打开后账户选择器让位给说明条。
+    await _tap(tester, find.text('他人代付'));
+    expect(find.textContaining('保存后记入系统内部账户'), findsOneWidget);
+    expect(find.byType(AccountSelector), findsNothing);
   });
 }
 
