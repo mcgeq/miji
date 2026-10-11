@@ -285,24 +285,26 @@ class MoneyQuickActionLauncher {
   }
 
   Future<void> _openTransferDialog() async {
-    final result = await showAppResponsiveDialog<Object>(
+    // 与流水页同一套契约：写入由表单自己完成，才能支持「保存并继续」。
+    await showAppResponsiveDialog<Object>(
       context: context,
       expandCompactSheet: true,
-      builder: (context) => const TransferFormDialog(),
+      builder: (context) => TransferFormDialog(onSubmit: _createTransfer),
     );
-    if (!context.mounted || result is! MoneyTransferDraft) {
-      return;
-    }
+  }
 
+  /// 返回错误文案（null = 成功），供转账表单回显。
+  Future<String?> _createTransfer(MoneyTransferDraft draft) async {
     try {
       await ref
           .read(currentUserMoneyTransactionActionsProvider)
-          .createTransfer(result);
-      if (!context.mounted) return;
-      AppToast.success(ensureToast(), context, '转账已记录');
+          .createTransfer(draft);
+      if (context.mounted) {
+        AppToast.success(ensureToast(), context, '转账已记录');
+      }
+      return null;
     } catch (error) {
-      if (!context.mounted) return;
-      AppToast.error(ensureToast(), context, _errorText(error, '转账失败'));
+      return _errorText(error, '转账失败');
     }
   }
 
