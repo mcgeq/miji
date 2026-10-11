@@ -993,6 +993,9 @@ class _StatisticsBody extends StatelessWidget {
 
     return _StatisticsPager(
       labels: pages.map((page) => page.group).toList(growable: false),
+      cardCounts: pages
+          .map((page) => page.cards.length)
+          .toList(growable: false),
       pageCount: pages.length,
       onRefresh: onRefresh,
       pageBuilder: (context, index) {
@@ -1334,12 +1337,16 @@ class _StatisticsPager extends StatefulWidget {
   const _StatisticsPager({
     required this.pageCount,
     required this.labels,
+    required this.cardCounts,
     required this.pageBuilder,
     required this.onRefresh,
   });
 
   final int pageCount;
   final List<String> labels;
+
+  /// 每页的卡片数，页签上的角标用。
+  final List<int> cardCounts;
   final Widget Function(BuildContext context, int index) pageBuilder;
   final Future<void> Function() onRefresh;
 
@@ -1392,6 +1399,7 @@ class _StatisticsPagerState extends State<_StatisticsPager> {
         _StatisticsPageTabs(
           count: widget.pageCount,
           labels: widget.labels,
+          cardCounts: widget.cardCounts,
           current: _currentPage,
           onTap: _goToPage,
         ),
@@ -1455,18 +1463,22 @@ class _KeepAliveStatisticsPageState extends State<_KeepAliveStatisticsPage>
 
 /// 分页标签。
 ///
-/// 原来是 5 个没有文字的小圆点，用户不知道后面还有「渠道 / 预算 / 账户」三页
-/// 共 18 类图表卡。这里换成带文字的可点标签，可横向滑动。
+/// 原来是 5 个没有文字的小圆点（用户不知道后面还有三页共 18 类图表卡），
+/// 后来改成带文字的胶囊。这一版再补两样：分组图标与**组内卡片数**——
+/// 「渠道」这页到底是 3 张还是 4 张，不再需要滑过去数。高度提到 40，
+/// 点击目标更稳，也不再细长易误触。
 class _StatisticsPageTabs extends StatelessWidget {
   const _StatisticsPageTabs({
     required this.count,
     required this.labels,
+    required this.cardCounts,
     required this.current,
     required this.onTap,
   });
 
   final int count;
   final List<String> labels;
+  final List<int> cardCounts;
   final int current;
   final ValueChanged<int> onTap;
 
@@ -1476,7 +1488,7 @@ class _StatisticsPageTabs extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return SizedBox(
-      height: 32,
+      height: 40,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -1484,6 +1496,11 @@ class _StatisticsPageTabs extends StatelessWidget {
         separatorBuilder: (context, index) => const SizedBox(width: 6),
         itemBuilder: (context, index) {
           final selected = index == current;
+          final label = index < labels.length ? labels[index] : '${index + 1}';
+          final cards = index < cardCounts.length ? cardCounts[index] : 0;
+          final foreground = selected
+              ? colorScheme.onPrimary
+              : colorScheme.onSurfaceVariant;
           return Material(
             key: ValueKey<String>('statistics-dot-$index'),
             color: selected
@@ -1504,15 +1521,26 @@ class _StatisticsPageTabs extends StatelessWidget {
                         : colorScheme.outlineVariant.withValues(alpha: 0.7),
                   ),
                 ),
-                child: Text(
-                  index < labels.length ? labels[index] : '${index + 1}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: selected
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _dashboardGroupIcon(label),
+                      size: 16,
+                      color: foreground,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: foreground,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _TabCountBadge(count: cards, selected: selected),
+                  ],
                 ),
               ),
             ),
@@ -1522,6 +1550,50 @@ class _StatisticsPageTabs extends StatelessWidget {
     );
   }
 }
+
+/// 页签右侧的卡片数角标。
+class _TabCountBadge extends StatelessWidget {
+  const _TabCountBadge({required this.count, required this.selected});
+
+  final int count;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: selected
+            ? colorScheme.onPrimary.withValues(alpha: 0.22)
+            : colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$count',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: selected
+              ? colorScheme.onPrimary
+              : colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0,
+          height: 1.2,
+        ),
+      ),
+    );
+  }
+}
+
+/// 看板分组的图标。分组名来自 `MoneyDashboardCard.group`，目前固定五组。
+IconData _dashboardGroupIcon(String group) => switch (group) {
+  '概览' => Icons.insights_rounded,
+  '消费' => Icons.pie_chart_rounded,
+  '渠道' => Icons.account_balance_wallet_rounded,
+  '预算' => Icons.flag_rounded,
+  _ => Icons.savings_rounded,
+};
 
 class _StatisticsTotals extends StatelessWidget {
   const _StatisticsTotals({required this.summary});

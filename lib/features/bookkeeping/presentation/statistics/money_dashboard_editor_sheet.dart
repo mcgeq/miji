@@ -100,11 +100,26 @@ class _MoneyDashboardEditorSheet extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final card = layout.order[index];
                 final visible = layout.isVisible(card);
-                return _DashboardCardTile(
+                // 22 项平铺时只能靠逐条扫 subtitle 找卡。这里按**当前排序**动态
+                // 插分组小标题：默认顺序本来就是分好组的，用户把某张卡拖走后
+                // 标题也跟着重排，不会出现「标题说消费、下面全是账户」的错位。
+                final startsGroup =
+                    index == 0 || layout.order[index - 1].group != card.group;
+                return Column(
                   key: ValueKey<String>('dashboard-card-${card.id}'),
-                  card: card,
-                  visible: visible,
-                  onChanged: (value) => controller.toggle(card, value),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (startsGroup)
+                      _DashboardGroupHeader(
+                        group: card.group,
+                        isFirst: index == 0,
+                      ),
+                    _DashboardCardTile(
+                      card: card,
+                      visible: visible,
+                      onChanged: (value) => controller.toggle(card, value),
+                    ),
+                  ],
                 );
               },
             ),
@@ -114,6 +129,52 @@ class _MoneyDashboardEditorSheet extends ConsumerWidget {
     );
   }
 }
+
+/// 分组小标题。分节信息从卡片的 subtitle 上移到这里，
+/// 卡片行因此只有「拖柄 + 名称 + 开关」，扫描更快。
+class _DashboardGroupHeader extends StatelessWidget {
+  const _DashboardGroupHeader({required this.group, required this.isFirst});
+
+  final String group;
+  final bool isFirst;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(8, isFirst ? 0 : 14, 8, 2),
+      child: Row(
+        children: [
+          Icon(
+            _dashboardGroupIcon(group),
+            size: 15,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            group,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 看板分组的图标，与统计页页签同一套。
+IconData _dashboardGroupIcon(String group) => switch (group) {
+  '概览' => Icons.insights_rounded,
+  '消费' => Icons.pie_chart_rounded,
+  '渠道' => Icons.account_balance_wallet_rounded,
+  '预算' => Icons.flag_rounded,
+  _ => Icons.savings_rounded,
+};
 
 class _DashboardCardTile extends StatelessWidget {
   const _DashboardCardTile({
@@ -145,13 +206,6 @@ class _DashboardCardTile extends StatelessWidget {
           card.label,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            letterSpacing: 0,
-          ),
-        ),
-        subtitle: Text(
-          card.group,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
             letterSpacing: 0,
           ),
         ),
