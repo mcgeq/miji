@@ -178,7 +178,6 @@ IconData _dashboardGroupIcon(String group) => switch (group) {
 
 class _DashboardCardTile extends StatelessWidget {
   const _DashboardCardTile({
-    super.key,
     required this.card,
     required this.visible,
     required this.onChanged,
