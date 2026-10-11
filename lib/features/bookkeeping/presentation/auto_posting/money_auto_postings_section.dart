@@ -31,7 +31,13 @@ import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 class MoneyAutoPostingsSection extends ConsumerStatefulWidget {
-  const MoneyAutoPostingsSection({super.key});
+  const MoneyAutoPostingsSection({super.key, this.onOpenInstallments});
+
+  /// 切到「分期」面板。
+  ///
+  /// 列表底部那条「相关」链接用它跳转——分期还款计划的数据与入口只保留
+  /// 分期 Tab 一份，这里不再自己维护一份预览。
+  final VoidCallback? onOpenInstallments;
 
   @override
   ConsumerState<MoneyAutoPostingsSection> createState() =>
@@ -70,6 +76,13 @@ class _MoneyAutoPostingsSectionState
         expenseCatalog.asData?.value ?? const MoneyCategoryCatalog.empty();
     final incomeCategories =
         incomeCatalog.asData?.value ?? const MoneyCategoryCatalog.empty();
+    // 只用来决定列表底部那条「相关」链接显示什么，不参与任何金额计算。
+    final activePlanCount = ref
+        .watch(currentUserInstallmentPlansProvider)
+        .maybeWhen(
+          data: (items) => items.where((plan) => plan.isActive).length,
+          orElse: () => 0,
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,13 +106,12 @@ class _MoneyAutoPostingsSectionState
                 ),
         ),
         const SizedBox(height: 10),
-        _AutoPostingConflictBanner(
-          onTap: () => showAutoPostingConflictSheet(context),
+        // 冲突与接管失效合并成一行，默认折叠。两者都是「提醒」，不是页面主体；
+        // 分开铺开时任意两层同时出现就能把模板列表顶出首屏。
+        _AutoPostingAttentionPanel(
+          onOpenConflicts: () => showAutoPostingConflictSheet(context),
+          onReleaseStale: (items) => _confirmReleaseStaleTakeOver(items),
         ),
-        _StaleTakeOverBanner(
-          onRelease: (items) => _confirmReleaseStaleTakeOver(items),
-        ),
-        _UpcomingInstallmentPreview(),
         const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerRight,
@@ -156,10 +168,17 @@ class _MoneyAutoPostingsSectionState
                 child: ListView.separated(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 12),
-                  itemCount: visibleItems.length,
+                  itemCount:
+                      visibleItems.length + (activePlanCount > 0 ? 1 : 0),
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 10),
                   itemBuilder: (context, index) {
+                    if (index == visibleItems.length) {
+                      return _RelatedInstallmentsLink(
+                        count: activePlanCount,
+                        onTap: widget.onOpenInstallments,
+                      );
+                    }
                     final template = visibleItems[index];
                     return _AutoPostingTemplateCard(
                       template: template,
@@ -404,86 +423,37 @@ class _MoneyAutoPostingsSectionState
   }
 }
 
-/// 顶部警示条：有重复的还款登记就提示，没有就完全不占位。
-class _AutoPostingConflictBanner extends ConsumerWidget {
-  const _AutoPostingConflictBanner({required this.onTap});
+/// 顶部提醒区：冲突登记 + 接管失效合并成一行，默认折叠。
+///
+/// 原来这里是两层独立横幅（都常驻展开），再加上列表上方的分期预览，三层
+/// 同时出现时模板列表首屏基本看不见。现在只有真的「需要处理」时才占位，
+/// 且折叠成一行；展开才铺出具体条目。
+///
+/// 「接管失效」刻意**不自动恢复**模板：分期还完的同一个月突然冒出一笔自动
+/// 记账，用户会以为系统凭空造了一笔账。必须让他自己点头。
+class _AutoPostingAttentionPanel extends ConsumerStatefulWidget {
+  const _AutoPostingAttentionPanel({
+    required this.onOpenConflicts,
+    required this.onReleaseStale,
+  });
 
-  final VoidCallback onTap;
+  final VoidCallback onOpenConflicts;
+  final ValueChanged<List<MoneyAutoPostingTemplateEntity>> onReleaseStale;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final conflicts = ref.watch(
-      currentUserAutoPostingInstallmentConflictsProvider,
-    );
-    final count = conflicts.maybeWhen(
-      data: (items) => items.length,
-      orElse: () => 0,
-    );
-    if (count == 0) {
-      return const SizedBox.shrink();
-    }
-
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final radiusTokens = theme.radiusTokens;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: colorScheme.errorContainer.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(radiusTokens.md),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  size: 18,
-                  color: colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '检测到 $count 处重复登记，同一笔还款会被记两遍账',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '去处理',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.error,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  ConsumerState<_AutoPostingAttentionPanel> createState() =>
+      _AutoPostingAttentionPanelState();
 }
 
-/// 分期已经结束（取消 / 还完）后，接管语义就失效了。
-///
-/// 这里刻意**不自动恢复**模板：分期还完的同一个月突然冒出一笔自动记账，
-/// 用户会以为系统凭空造了一笔账。必须让他自己点头。
-class _StaleTakeOverBanner extends ConsumerWidget {
-  const _StaleTakeOverBanner({required this.onRelease});
-
-  final ValueChanged<List<MoneyAutoPostingTemplateEntity>> onRelease;
+class _AutoPostingAttentionPanelState
+    extends ConsumerState<_AutoPostingAttentionPanel> {
+  bool _expanded = false;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final conflictCount = ref
+        .watch(currentUserAutoPostingInstallmentConflictsProvider)
+        .maybeWhen(data: (items) => items.length, orElse: () => 0);
     final templates = ref
         .watch(currentUserAutoPostingTemplatesProvider)
         .maybeWhen(
@@ -496,6 +466,7 @@ class _StaleTakeOverBanner extends ConsumerWidget {
           data: (items) => items,
           orElse: () => const <MoneyInstallmentPlanEntity>[],
         );
+    // 分期取消 / 还完之后，接管就失效了，模板却还停在停用状态。
     final stale = templates
         .where((template) {
           final planId = template.takenOverByPlanId;
@@ -505,185 +476,107 @@ class _StaleTakeOverBanner extends ConsumerWidget {
           return !plans.any((plan) => plan.id == planId && plan.isActive);
         })
         .toList(growable: false);
-    if (stale.isEmpty) {
+    final total = conflictCount + stale.length;
+    if (total == 0) {
       return const SizedBox.shrink();
     }
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final radiusTokens = theme.radiusTokens;
+    final kinds = <String>[
+      if (conflictCount > 0) '重复登记',
+      if (stale.isNotEmpty) '接管失效',
+    ];
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: colorScheme.tertiaryContainer.withValues(alpha: 0.35),
+        color: colorScheme.errorContainer.withValues(alpha: 0.28),
         borderRadius: BorderRadius.circular(radiusTokens.md),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => onRelease(stale),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.link_off_rounded,
-                  size: 18,
-                  color: colorScheme.onTertiaryContainer,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${stale.length} 个模板接管的分期已结束，仍保持停用',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '去处理',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 分期还款计划（只读）。
-///
-/// 分期自己就会到期自动入账，但用户很容易忘掉这件事，于是又建一个自动记账
-/// 模板——重复就是这么来的。把未来几期摆在这里，用户一眼能看到「还款已经
-/// 有人管了」，不必再建模板。
-///
-/// 默认**折叠成一行**：这是提示性信息，常驻展开会把自动记账列表挤出屏幕
-/// （小屏尤其明显）。只留一个可点的入口，需要时再展开。
-class _UpcomingInstallmentPreview extends ConsumerStatefulWidget {
-  const _UpcomingInstallmentPreview();
-
-  @override
-  ConsumerState<_UpcomingInstallmentPreview> createState() =>
-      _UpcomingInstallmentPreviewState();
-}
-
-class _UpcomingInstallmentPreviewState
-    extends ConsumerState<_UpcomingInstallmentPreview> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final plans = ref.watch(currentUserInstallmentPlansProvider);
-    final activePlans = plans.maybeWhen(
-      data: (items) => items.where((plan) => plan.isActive).toList(),
-      orElse: () => const <MoneyInstallmentPlanEntity>[],
-    );
-    if (activePlans.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    // 只摆前 3 个：这是「提醒你已经有东西在管还款」的提示，不是分期列表，
-    // 摆太多会喧宾夺主。
-    final previewPlans = activePlans.take(3).toList(growable: false);
-
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final radiusTokens = theme.radiusTokens;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: AppListItemPanel(
-        padding: const EdgeInsets.all(12),
-        backgroundColor: colorScheme.surfaceContainerLow,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             InkWell(
               onTap: () => setState(() => _expanded = !_expanded),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.credit_card_rounded,
-                    size: 17,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      '分期还款计划',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w800,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 18,
+                      color: colorScheme.error,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '需要处理 $total 项',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      kinds.join(' · '),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                         letterSpacing: 0,
                       ),
                     ),
-                  ),
-                  Text(
-                    _expanded ? '收起' : '${activePlans.length} 个 · 到期自动入账',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      letterSpacing: 0,
+                    const SizedBox(width: 2),
+                    AnimatedRotation(
+                      turns: _expanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 180),
+                      child: Icon(
+                        Icons.expand_more_rounded,
+                        size: 20,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  AnimatedRotation(
-                    turns: _expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 180),
-                    child: Icon(
-                      Icons.expand_more_rounded,
-                      size: 20,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            if (_expanded) ...[
-              const SizedBox(height: 4),
-              Text(
-                '这些分期到期会自动记账，不用再为它们建自动记账模板。',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  letterSpacing: 0,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // 展开态加高度上限：分期多的时候也不至于把下方列表撑没，
-              // 超出部分在这里内部滚动。
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 240),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ...previewPlans.map(
-                        (plan) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _InstallmentPreviewRow(
-                            plan: plan,
-                            radiusTokens: radiusTokens,
-                          ),
-                        ),
+            // 展开体走 AnimatedSize：原来是硬分支，面板高度瞬跳。
+            AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: _expanded
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                      child: Column(
+                        children: [
+                          if (conflictCount > 0)
+                            _AutoPostingAttentionRow(
+                              icon: Icons.copy_all_rounded,
+                              text:
+                                  '检测到 $conflictCount 处重复登记，'
+                                  '同一笔还款会被记两遍账',
+                              actionLabel: '去处理',
+                              actionColor: colorScheme.error,
+                              onAction: widget.onOpenConflicts,
+                            ),
+                          if (stale.isNotEmpty)
+                            _AutoPostingAttentionRow(
+                              icon: Icons.link_off_rounded,
+                              text: '${stale.length} 个模板接管的分期已结束，仍保持停用',
+                              actionLabel: '恢复',
+                              actionColor: colorScheme.primary,
+                              onAction: () => widget.onReleaseStale(stale),
+                            ),
+                        ],
                       ),
-                      if (activePlans.length > previewPlans.length)
-                        Text(
-                          '还有 ${activePlans.length - previewPlans.length} 个分期计划',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+                    )
+                  : const SizedBox(width: double.infinity),
+            ),
           ],
         ),
       ),
@@ -691,108 +584,118 @@ class _UpcomingInstallmentPreviewState
   }
 }
 
-class _InstallmentPreviewRow extends ConsumerWidget {
-  const _InstallmentPreviewRow({
-    required this.plan,
-    required this.radiusTokens,
+/// 提醒区展开后的一行：一句说明 + 一个动作。
+class _AutoPostingAttentionRow extends StatelessWidget {
+  const _AutoPostingAttentionRow({
+    required this.icon,
+    required this.text,
+    required this.actionLabel,
+    required this.actionColor,
+    required this.onAction,
   });
 
-  final MoneyInstallmentPlanEntity plan;
-  final AppRadiusTokens radiusTokens;
+  final IconData icon;
+  final String text;
+  final String actionLabel;
+  final Color actionColor;
+  final VoidCallback onAction;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final details = ref
-        .watch(currentUserInstallmentDetailsProvider(plan.id))
-        .maybeWhen(
-          data: (items) => items,
-          orElse: () => const <MoneyInstallmentDetailEntity>[],
-        );
-    final upcoming =
-        details
-            .where(
-              (detail) => detail.status == MoneyInstallmentDetailStatus.pending,
-            )
-            .toList()
-          ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
-    // 每个计划只列最近 2 期：展开态也保持紧凑，避免又变成一张长列表。
-    final preview = upcoming.take(2).toList(growable: false);
-    if (preview.isEmpty) {
-      return const SizedBox.shrink();
-    }
 
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(radiusTokens.sm),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  plan.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ),
-              Text(
-                '剩 ${upcoming.length} 期',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  letterSpacing: 0,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          for (final detail in preview)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 66,
-                    child: Text(
-                      '${detail.dueDate.month}月${detail.dueDate.day}日',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '第${detail.periodNumber}期',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    maskedMoneyOr(
-                      formatMoneyMinor(detail.amountMinor, plan.currencyCode),
-                      MoneyPrivacy.of(context),
-                    ),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ],
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 7),
+          child: Icon(icon, size: 15, color: colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurface,
+                letterSpacing: 0,
               ),
             ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        TextButton(
+          onPressed: onAction,
+          style: TextButton.styleFrom(
+            minimumSize: const Size(0, 32),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Text(
+            actionLabel,
+            style: TextStyle(color: actionColor, letterSpacing: 0),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 列表底部的一行「相关」链接。
+///
+/// 分期还款计划在「分期」Tab 已经有一份完整列表，这里原来又常驻一份预览
+/// （展开态 9 行），同一份数据两处入口，只会慢慢漂移。降级成一行链接后，
+/// 模板列表才拿得回首屏。
+class _RelatedInstallmentsLink extends StatelessWidget {
+  const _RelatedInstallmentsLink({required this.count, this.onTap});
+
+  final int count;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return AppListItemPanel(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      backgroundColor: colorScheme.surfaceContainerLowest,
+      child: Row(
+        children: [
+          Icon(
+            Icons.calendar_month_rounded,
+            size: 17,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$count 个分期计划到期自动入账',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '查看',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 16,
+            color: colorScheme.primary,
+          ),
         ],
       ),
     );

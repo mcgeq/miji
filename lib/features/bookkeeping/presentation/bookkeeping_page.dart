@@ -166,7 +166,11 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
         onViewTransactions: _showBudgetTransactions,
       ),
       _BookkeepingPanel.installments => const MoneyInstallmentsSection(),
-      _BookkeepingPanel.autoPosting => const MoneyAutoPostingsSection(),
+      // 自动记账页底部的「相关」链接直接切到分期面板：分期还款计划只保留
+      // 一处入口，避免两边各维护一份列表。
+      _BookkeepingPanel.autoPosting => MoneyAutoPostingsSection(
+        onOpenInstallments: () => _selectPanel(_BookkeepingPanel.installments),
+      ),
       _BookkeepingPanel.reminders => const MoneyReminderCenterSection(),
     };
   }
