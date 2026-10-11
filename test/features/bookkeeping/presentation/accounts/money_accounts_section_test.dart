@@ -49,17 +49,21 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // 分组 chips 并排展示（只带数量，金额只在净资产卡里出现一次）。
+    // 分组 chips 并排展示：名称 + 数量 + 该组的金额合计。
     expect(find.text('资产'), findsOneWidget);
     expect(find.text('信用负债'), findsOneWidget);
     expect(find.text('停用'), findsOneWidget);
     expect(find.text('1'), findsNWidgets(3));
 
+    // 金额用紧凑格式（横向空间紧张），且只有「资产 / 信用负债」两组带金额：
+    // 1234.56 → ¥1.2k；已用额度 1000 → ¥1k；停用组刻意不给金额。
+    expect(find.text('¥1.2k'), findsOneWidget);
+    expect(find.text('¥1k'), findsOneWidget);
+
     // 净资产 Hero 取代了原来只有「资产合计」的一行摘要。
     expect(find.text('净资产'), findsOneWidget);
     expect(find.text('总资产'), findsOneWidget);
     expect(find.text('负债'), findsOneWidget);
-    // 净资产 = 2000 - 1000，金额只在 Hero 里出现；chips 只带数量不重复金额。
     expect(find.text('¥1,000.00'), findsWidgets);
     expect(find.text('¥2,000.00'), findsOneWidget);
 
@@ -133,8 +137,9 @@ void main() {
       await tester.pumpWidget(_maskedHarness(masked: true));
       await tester.pumpAndSettle();
 
-      // 净资产 Hero 与账户余额都遮住。
+      // 净资产 Hero、账户余额与分组 chips 的合计都遮住。
       expect(find.text('¥2,000.00'), findsNothing);
+      expect(find.text('¥1.2k'), findsNothing);
       expect(find.text('••••'), findsWidgets);
     });
 

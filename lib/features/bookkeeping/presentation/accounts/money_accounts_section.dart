@@ -1095,9 +1095,18 @@ class _AccountsHeader extends StatelessWidget {
                     separatorBuilder: (_, _) => const SizedBox(width: 6),
                     itemBuilder: (context, index) {
                       final group = groups[index];
+                      final total = _groupTotal(group);
                       return _GroupChip(
                         label: _title(group.kind),
                         count: group.accounts.length,
+                        amountText: total == null
+                            ? null
+                            : allAmountsHidden
+                            ? '••••'
+                            : formatMoneyMinorCompact(
+                                total.minor,
+                                total.currencyCode,
+                              ),
                         selected: group.kind == selectedKind,
                         onTap: () => onGroupChanged(group.kind),
                       );
@@ -1186,6 +1195,41 @@ class _AccountsHeader extends StatelessWidget {
       MoneyAccountDisplayGroupKind.inactive => '停用',
     };
   }
+
+  /// 分组的金额合计。
+  ///
+  /// 口径与统计页的账户切片一致：资产类看可用余额，信用类看已用额度，
+  /// 负债类看欠款；停用组不给金额（它们退出日常视野，合计没有意义）。
+  ///
+  /// **多币种时返回 null**——把 CNY 和 USD 直接相加是错的，宁可只显示数量。
+  ({String currencyCode, int minor})? _groupTotal(
+    MoneyAccountDisplayGroup group,
+  ) {
+    if (group.kind == MoneyAccountDisplayGroupKind.inactive) {
+      return null;
+    }
+    final currencies = group.accounts
+        .map((account) => account.currencyCode)
+        .toSet();
+    if (currencies.length != 1) {
+      return null;
+    }
+    var total = 0;
+    for (final account in group.accounts) {
+      total += _accountAmountMinor(account);
+    }
+    return (currencyCode: currencies.first, minor: total);
+  }
+
+  int _accountAmountMinor(MoneyAccountEntity account) {
+    if (account.type.isCreditLike) {
+      return account.usedCreditMinor.abs();
+    }
+    if (account.type.isDebtLike) {
+      return account.balanceMinor.abs();
+    }
+    return account.displayBalanceMinor.abs();
+  }
 }
 
 class _GroupChip extends StatelessWidget {
@@ -1194,12 +1238,16 @@ class _GroupChip extends StatelessWidget {
     required this.count,
     required this.selected,
     required this.onTap,
+    this.amountText,
   });
 
   final String label;
   final int count;
   final bool selected;
   final VoidCallback onTap;
+
+  /// 该组的金额合计。多币种或停用组为 null，此时只显示数量。
+  final String? amountText;
 
   @override
   Widget build(BuildContext context) {
@@ -1249,6 +1297,32 @@ class _GroupChip extends StatelessWidget {
                   letterSpacing: 0,
                 ),
               ),
+              // 分组时最想看的其实是钱：资产一共多少、信用一共欠多少。
+              // 原来只有名称 + 数量，还得点进去才知道。
+              if (amountText != null) ...[
+                const SizedBox(width: 6),
+                Container(
+                  width: 3,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected
+                        ? colorScheme.primary.withValues(alpha: 0.5)
+                        : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  amountText!,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: selected
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
