@@ -8,6 +8,7 @@ import 'package:miji/core/database/database_providers.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/theme/app_theme.dart';
 import 'package:miji/features/bookkeeping/presentation/bookkeeping_page.dart';
+import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 
 /// 一级导航：原来是 8 个只有图标的横条（360dp 手机上放不下、没有文字），
 /// 现在收敛成「流水 / 账户 / 预算 / 统计 + 更多」。
@@ -156,6 +157,33 @@ void main() {
     expect(find.text('本周'), findsOneWidget);
   });
 
+  testWidgets('标签筛选有独立入口，选中后变成可移除的生效条件', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router, tagCandidates: const ['南京旅游']);
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+
+    // 折叠态不给标签入口（控制区保持两行）。
+    expect(find.text('标签'), findsNothing);
+
+    await tester.tap(find.text('筛选'));
+    await tester.pumpAndSettle();
+
+    // 展开后与状态 / 日期同级。在此之前，标签筛选只能从统计页下钻带过来，
+    // 列表里根本没有入口。
+    expect(find.text('标签'), findsOneWidget);
+    await tester.tap(find.text('南京旅游'));
+    await tester.pumpAndSettle();
+
+    // 选中后就变成生效条件里的一枚 chip，可单独移除。
+    expect(find.text('#南京旅游'), findsOneWidget);
+  });
+
   testWidgets('筛选筛空时，空态给的是清除筛选而不是快速新增', (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
@@ -255,6 +283,7 @@ Future<void> _pump(
   AppDatabase database,
   GoRouter router, {
   double width = 390,
+  List<String>? tagCandidates,
 }) async {
   tester.view.physicalSize = Size(width * 3, 844 * 3);
   tester.view.devicePixelRatio = 3;
@@ -262,7 +291,13 @@ Future<void> _pump(
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [appDatabaseProvider.overrideWithValue(database)],
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        if (tagCandidates != null)
+          currentUserTagCandidatesProvider.overrideWith(
+            (ref) => Stream.value(tagCandidates),
+          ),
+      ],
       child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
     ),
   );

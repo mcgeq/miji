@@ -438,6 +438,8 @@ class _MoneyTransactionsSectionState
               .maybeWhen(data: (value) => value, orElse: () => 0),
           dateStart: _dateStartFilter,
           dateEnd: _dateEndFilter,
+          tagCandidates: tagCandidates,
+          selectedTags: _tagFilter,
           activeChips: _activeFilterChips(
             accounts: accountRows,
             expenseCatalog: expenseCatalogValue,
@@ -447,6 +449,7 @@ class _MoneyTransactionsSectionState
           onStatusChanged: _setStatusFilter,
           onPickDateRange: _pickDateRange,
           onSelectDatePreset: _applyDatePreset,
+          onToggleTag: _toggleTagFilter,
         ),
         if (_statusFilter == MoneyTransactionStatus.pending) ...[
           const SizedBox(height: 10),
@@ -651,6 +654,12 @@ class _MoneyTransactionsSectionState
                         transaction.amountMinor <= transaction.refundAmountMinor
                     ? null
                     : () => _openRefundDialog(transaction),
+                onDuplicate:
+                    detailPanelOpen ||
+                        transaction.isInstallmentPosting ||
+                        transaction.type == MoneyTransactionType.transfer
+                    ? null
+                    : () => _openDuplicateDialog(transaction),
               ),
             ],
           );
@@ -1777,8 +1786,9 @@ class _MoneyTransactionsSectionState
       );
     }
 
-    // 标签筛选目前只从统计页下钻带过来，页面上没有独立入口。
-    // 少了这枚 chip，列表会安静地少掉一部分流水，用户只会以为数据丢了。
+    // 标签筛选的两条进入路径：统计页下钻、以及展开筛选条里的标签多选。
+    // 少了这枚 chip，从统计页下钻过来的列表会安静地少掉一部分流水，
+    // 用户只会以为数据丢了。
     for (final tag in _tagFilter) {
       chips.add(
         removable(
@@ -1900,6 +1910,16 @@ class _MoneyTransactionsSectionState
       });
       _refreshFromFilterChange();
     });
+  }
+
+  /// 标签多选。标签之间是 OR 语义（命中任意一个即可），点已选中的再点一次取消。
+  void _toggleTagFilter(String tag) {
+    setState(() {
+      _tagFilter = _tagFilter.contains(tag)
+          ? _tagFilter.where((item) => item != tag).toList(growable: false)
+          : <String>[..._tagFilter, tag];
+    });
+    _refreshFromFilterChange();
   }
 
   DateTime _startOfDay(DateTime date) {
@@ -3362,10 +3382,13 @@ class _TransactionFilterStrip extends StatelessWidget {
     required this.pendingCount,
     required this.dateStart,
     required this.dateEnd,
+    required this.tagCandidates,
+    required this.selectedTags,
     required this.activeChips,
     required this.onStatusChanged,
     required this.onPickDateRange,
     required this.onSelectDatePreset,
+    required this.onToggleTag,
   });
 
   final bool expanded;
@@ -3373,10 +3396,13 @@ class _TransactionFilterStrip extends StatelessWidget {
   final int pendingCount;
   final DateTime? dateStart;
   final DateTime? dateEnd;
+  final List<String> tagCandidates;
+  final List<String> selectedTags;
   final List<Widget> activeChips;
   final ValueChanged<MoneyTransactionStatus?> onStatusChanged;
   final VoidCallback onPickDateRange;
   final void Function(DateTime? start, DateTime? end) onSelectDatePreset;
+  final ValueChanged<String> onToggleTag;
 
   @override
   Widget build(BuildContext context) {
@@ -3402,6 +3428,14 @@ class _TransactionFilterStrip extends StatelessWidget {
             onPickRange: onPickDateRange,
             onSelectPreset: onSelectDatePreset,
           ),
+          if (tagCandidates.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _TransactionTagPicker(
+              candidates: tagCandidates,
+              selected: selectedTags,
+              onToggle: onToggleTag,
+            ),
+          ],
         ],
         if (showActive) ...[
           const SizedBox(height: 8),
@@ -3420,6 +3454,60 @@ class _TransactionFilterStrip extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// 标签多选。
+///
+/// 标签筛选原来只能从统计页下钻带过来，列表里没有任何入口——用户根本不知道
+/// 还能按标签筛。放在展开态的筛选条上，与状态 / 日期同级。
+class _TransactionTagPicker extends StatelessWidget {
+  const _TransactionTagPicker({
+    required this.candidates,
+    required this.selected,
+    required this.onToggle,
+  });
+
+  final List<String> candidates;
+  final List<String> selected;
+  final ValueChanged<String> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return SizedBox(
+      height: 32,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Center(
+              child: Text(
+                '标签',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+          ),
+          for (final tag in candidates)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildFilterChip(
+                context,
+                label: tag,
+                selected: selected.contains(tag),
+                onTap: () => onToggle(tag),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -26,6 +26,7 @@ class TransactionCard extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.onRefund,
+    this.onDuplicate,
     this.onTap,
     this.isSelected = false,
     this.swipeCloseSignal,
@@ -46,6 +47,10 @@ class TransactionCard extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onRefund;
+
+  /// 「复制（再来一笔）」：以这条流水为模板开一张新表单。
+  /// 原来只在详情里，同一笔常见支出要记两次得先点开详情。
+  final VoidCallback? onDuplicate;
   final VoidCallback? onTap;
   final bool isSelected;
   final Object? swipeCloseSignal;
@@ -91,6 +96,14 @@ class TransactionCard extends StatelessWidget {
                 foreground: colorScheme.onSecondaryContainer,
                 background: colorScheme.secondaryContainer,
                 onPressed: onRefund!,
+              ),
+            if (onDuplicate != null)
+              AppSwipeAction(
+                tooltip: '复制',
+                icon: Icons.copy_rounded,
+                foreground: colorScheme.onSecondaryContainer,
+                background: colorScheme.secondaryContainer,
+                onPressed: onDuplicate!,
               ),
             if (onDelete != null)
               AppSwipeAction(
