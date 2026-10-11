@@ -7,6 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
@@ -106,6 +107,13 @@ class _MoneyTransactionsSectionState
   bool _isConfirmingAll = false;
   bool _isBulkBusy = false;
   bool _isRestoring = false;
+
+  /// 改筛选时保留旧列表，只在顶部走一条细进度条。
+  ///
+  /// 原来 `_refreshFromFilterChange` 会清空 `_transactions` 并置
+  /// `_isLoadingInitial`，于是点一下任一 chip 整屏闪一次骨架 —— 列表每次都
+  /// 要重新「长出来」。现在只有首次进入才用骨架。
+  bool _isRefreshing = false;
   Object? _loadError;
   MoneyTransactionType? _typeFilter;
   MoneyTransactionStatus? _statusFilter;
@@ -138,6 +146,34 @@ class _MoneyTransactionsSectionState
       _merchantFilter != null ||
       _dateStartFilter != null ||
       _keywordFilter != null;
+
+  /// 只统计「高级筛选」抽屉里的条件。
+  ///
+  /// 类型在分段控件上、搜索词在搜索框里、状态与日期在常用筛选条上，各自
+  /// 都有可见的载体，不需要再靠一个图标变色去暗示「其实还筛了别的」。
+  bool get _hasAdvancedFilters =>
+      _budgetIdFilter != null ||
+      _accountIdFilter != null ||
+      _categoryIdFilter != null ||
+      _subCategoryIdFilter != null ||
+      _paymentMethodFilter != null ||
+      _customPaymentMethodNameFilter != null ||
+      _merchantFilter != null;
+
+  /// 常用筛选条上的生效项数量（状态 / 日期区间 / 标签）。
+  int get _activeStripFilterCount =>
+      (_statusFilter == null ? 0 : 1) +
+      (_dateStartFilter == null && _dateEndFilter == null ? 0 : 1) +
+      _tagFilter.length;
+
+  /// 顶部「筛选」开关上的角标：类型 + 常用筛选条 + 抽屉，都算。
+  int get _activeFilterCount =>
+      _activeStripFilterCount +
+      (_hasAdvancedFilters ? 1 : 0) +
+      (_typeFilter == null ? 0 : 1);
+
+  /// 常用筛选条是否展开。默认折叠，只显示已生效项。
+  bool _filterStripExpanded = false;
 
   String? _selectedTransactionId;
   String? _activeLedgerId;
@@ -259,24 +295,44 @@ class _MoneyTransactionsSectionState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 6),
-        // 常驻搜索：原来关键词搜索在筛选抽屉第 8 位，要四步才能开始打字。
-        AppTextField(
-          controller: _keywordController,
-          hintText: '搜索名称、备注、商家',
-          prefixIcon: const Icon(Icons.search_rounded, size: 19),
-          onChanged: _setKeywordFilterDebounced,
-          suffixIcon: (_keywordFilter ?? '').isEmpty
-              ? null
-              : IconButton(
-                  tooltip: '清除搜索',
-                  icon: const Icon(Icons.close_rounded, size: 18),
-                  onPressed: () {
-                    _keywordController.clear();
-                    _setKeywordFilterDebounced('');
-                  },
-                ),
+        // 第一行：常驻搜索 + 筛选开关。
+        //
+        // 关键词搜索原来在筛选抽屉第 8 位，要四步才能开始打字；现在一行到底，
+        // 右侧的开关负责展开「常用筛选条」（状态 / 日期），角标给出生效数量。
+        Row(
+          children: [
+            Expanded(
+              child: AppTextField(
+                controller: _keywordController,
+                hintText: '搜索名称、备注、商家',
+                prefixIcon: const Icon(Icons.search_rounded, size: 19),
+                onChanged: _setKeywordFilterDebounced,
+                suffixIcon: (_keywordFilter ?? '').isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: '清除搜索',
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        onPressed: () {
+                          _keywordController.clear();
+                          _setKeywordFilterDebounced('');
+                        },
+                      ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _TransactionFilterToggle(
+              expanded: _filterStripExpanded,
+              activeCount: _activeFilterCount,
+              onPressed: () =>
+                  setState(() => _filterStripExpanded = !_filterStripExpanded),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
+        // 第二行：类型分段 + 排序 + 高级筛选 + 更多。
+        //
+        // 导出流水与回收站都是低频动作，收进 ⋯ 之后，分段控件从它们手里拿回
+        // 96dp，「全部 / 支出 / 收入 / 转账」不再贴着右边被压窄。
         Row(
           children: [
             Expanded(
@@ -305,18 +361,6 @@ class _MoneyTransactionsSectionState
               ),
             ),
             const SizedBox(width: 8),
-            AppIconActionButton(
-              tooltip: '导出流水',
-              onPressed: _isExporting ? null : _exportTransactions,
-              icon: Icons.ios_share_rounded,
-            ),
-            const SizedBox(width: 8),
-            AppIconActionButton(
-              tooltip: '回收站',
-              onPressed: _openRecycleBin,
-              icon: Icons.restore_rounded,
-            ),
-            const SizedBox(width: 8),
             _TransactionsSortButton(
               sortField: _sortField,
               sortAscending: _sortAscending,
@@ -331,7 +375,9 @@ class _MoneyTransactionsSectionState
             const SizedBox(width: 8),
             AppFilterSheetTrigger(
               title: '高级筛选',
-              hasActiveFilters: _hasActiveFilters,
+              // 只有抽屉里的字段才算——类型在分段控件上、状态与日期在常用
+              // 筛选条上，各自都有可见载体，不需要靠这个图标变色去暗示。
+              hasActiveFilters: _hasAdvancedFilters,
               children: [
                 _TransactionFilterFields(
                   type: _typeFilter,
@@ -372,41 +418,38 @@ class _MoneyTransactionsSectionState
                 ),
               ],
             ),
+            const SizedBox(width: 8),
+            _TransactionsMoreMenu(
+              exporting: _isExporting,
+              onExport: _exportTransactions,
+              onOpenRecycleBin: _openRecycleBin,
+            ),
           ],
         ),
-        const SizedBox(height: 10),
-        _TransactionStatusChips(
+        // 第三行：常用筛选条。
+        //
+        // 折叠态只显示已生效的条件，一条都没有就整块不占高度；展开后才给出
+        // 状态与日期两组预设。原来这两条 chips 无论用不用都常驻 82dp。
+        _TransactionFilterStrip(
+          expanded: _filterStripExpanded,
           status: _statusFilter,
           pendingCount: ref
               .watch(currentUserPendingTransactionCountProvider)
               .maybeWhen(data: (value) => value, orElse: () => 0),
-          onChanged: _setStatusFilter,
-        ),
-        // 标签筛选目前只从统计页下钻带过来，没有独立的入口。
-        // 没有这个提示条的话，列表会安静地少掉一部分流水，用户只会以为数据丢了。
-        if (_tagFilter.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          _TransactionTagChips(
-            tags: _tagFilter,
-            onRemove: (tag) {
-              setState(() {
-                _tagFilter = _tagFilter
-                    .where((item) => item != tag)
-                    .toList(growable: false);
-              });
-              _refreshFromFilterChange();
-            },
-          ),
-        ],
-        const SizedBox(height: 8),
-        _TransactionDateChips(
           dateStart: _dateStartFilter,
           dateEnd: _dateEndFilter,
-          onPickRange: _pickDateRange,
-          onSelectPreset: _applyDatePreset,
+          activeChips: _activeFilterChips(
+            accounts: accountRows,
+            expenseCatalog: expenseCatalogValue,
+            incomeCatalog: incomeCatalogValue,
+            budgets: budgetRows,
+          ),
+          onStatusChanged: _setStatusFilter,
+          onPickDateRange: _pickDateRange,
+          onSelectDatePreset: _applyDatePreset,
         ),
-        const SizedBox(height: 10),
-        if (_statusFilter == MoneyTransactionStatus.pending)
+        if (_statusFilter == MoneyTransactionStatus.pending) ...[
+          const SizedBox(height: 10),
           _PendingConfirmBanner(
             count: ref
                 .watch(currentUserTransactionSummaryProvider(_summaryQuery))
@@ -414,9 +457,62 @@ class _MoneyTransactionsSectionState
             busy: _isConfirmingAll,
             onConfirmAll: _confirmAllPending,
           ),
-        if (_statusFilter == MoneyTransactionStatus.pending)
+        ],
+        if (widget.filterContext?.account != null) ...[
           const SizedBox(height: 10),
-        _TransactionSummaryBar(query: _summaryQuery, onClear: _clearAllFilters),
+          _AccountTransactionSummaryPanel(
+            account: widget.filterContext!.account!,
+            summary: widget.filterContext!.accountSummary,
+          ),
+        ],
+        if (budgetPreset != null) ...[
+          const SizedBox(height: 10),
+          _BudgetShortcutBanner(
+            label: budgetPreset.label,
+            onCreate: () => _openBudgetDialog(budgetPreset),
+          ),
+        ],
+        const SizedBox(height: 10),
+        // 列表区。改筛选时保留旧结果，只降透明度 + 顶部压一条细进度条 ——
+        // 原来每次筛选都先清空列表，点一下 chip 整屏闪一次骨架。
+        // 用 Stack 而不是在 Column 里插一条，是为了不引起一次布局跳动。
+        Expanded(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: AnimatedOpacity(
+                  opacity: _isRefreshing ? 0.5 : 1,
+                  duration: const Duration(milliseconds: 160),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return _buildTransactionsArea(
+                        isWide: constraints.maxWidth >= 840,
+                        accounts: accountRows,
+                        currentLedger: currentLedger,
+                        installmentPlans: installmentPlanRows,
+                        expenseCatalog: expenseCatalogValue,
+                        incomeCatalog: incomeCatalogValue,
+                        budgets: budgetRows,
+                      );
+                    },
+                  ),
+                ),
+              ),
+              if (_isRefreshing)
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: _InlineRefreshBar(),
+                ),
+            ],
+          ),
+        ),
+        // 底部槽位：多选时是批量操作条，其余时候是筛选结果汇总。
+        //
+        // 两者共用同一格，既不再跟列表抢上方空间，也不会叠在列表上遮住内容。
+        // 导航条由 Scaffold 的 bottomNavigationBar 承担，body 在它上方结束，
+        // 所以这个槽位天然停在导航胶囊之上。
         if (_isBulkMode) ...[
           const SizedBox(height: 10),
           _TransactionBulkActionBar(
@@ -436,35 +532,19 @@ class _MoneyTransactionsSectionState
             onDelete: _bulkDelete,
             onClear: _clearBulkSelection,
           ),
-        ],
-        if (widget.filterContext?.account != null) ...[
-          _AccountTransactionSummaryPanel(
-            account: widget.filterContext!.account!,
-            summary: widget.filterContext!.accountSummary,
+        ] else
+          Padding(
+            // 宽屏 / 桌面端没有底部导航，FAB 会挪到右下角，这里给它留出位置；
+            // 移动端 FAB 整颗嵌在导航胶囊里，不需要额外避让。
+            padding: EdgeInsets.only(
+              top: 10,
+              right: AppResponsive.of(context).prefersRailNavigation ? 64 : 0,
+            ),
+            child: _TransactionSummaryBar(
+              query: _summaryQuery,
+              onClear: _clearAllFilters,
+            ),
           ),
-          const SizedBox(height: 12),
-        ],
-        if (budgetPreset != null) ...[
-          _BudgetShortcutBanner(
-            label: budgetPreset.label,
-            onCreate: () => _openBudgetDialog(budgetPreset),
-          ),
-          const SizedBox(height: 10),
-        ],
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return _buildTransactionsArea(
-                isWide: constraints.maxWidth >= 840,
-                accounts: accountRows,
-                currentLedger: currentLedger,
-                installmentPlans: installmentPlanRows,
-                expenseCatalog: expenseCatalogValue,
-                incomeCatalog: incomeCatalogValue,
-              );
-            },
-          ),
-        ),
       ],
     );
   }
@@ -476,6 +556,7 @@ class _MoneyTransactionsSectionState
     required List<MoneyInstallmentPlanEntity> installmentPlans,
     required MoneyCategoryCatalog expenseCatalog,
     required MoneyCategoryCatalog incomeCatalog,
+    required List<MoneyBudgetEntity> budgets,
   }) {
     if (_isLoadingInitial) {
       return const AppSkeletonList();
@@ -493,8 +574,19 @@ class _MoneyTransactionsSectionState
         hasMore: _hasMore,
         onRefresh: _refreshTransactions,
         onLoadMore: _loadMoreTransactions,
-        emptyBuilder: (context) =>
-            _EmptyTransactionsPanel(onCreate: _openCreateFromEmptyState),
+        // 空态分流：带筛选查不到东西，和「一笔都没记过」是两回事。
+        // 前者是筛选条件的问题，再劝用户「快速新增」只会让他记重复账。
+        emptyBuilder: (context) => _EmptyTransactionsPanel(
+          onCreate: _openCreateFromEmptyState,
+          hasActiveFilters: _hasActiveFilters,
+          filterDescription: _activeFilterDescription(
+            accounts: accounts,
+            expenseCatalog: expenseCatalog,
+            incomeCatalog: incomeCatalog,
+            budgets: budgets,
+          ),
+          onClearFilters: _clearAllFilters,
+        ),
         itemBuilder: (context, transaction, index) {
           final ledgerMemberships = ref
               .watch(currentUserTransactionLedgersProvider(transaction.id))
@@ -808,7 +900,9 @@ class _MoneyTransactionsSectionState
   Future<void> _refreshTransactions() async {
     if (mounted) {
       setState(() {
+        // 只有手里一条都没有时才用骨架；有旧结果就先留着，新的一页到了再整体替换。
         _isLoadingInitial = _transactions.isEmpty;
+        _isRefreshing = _transactions.isNotEmpty;
         _loadError = null;
       });
     }
@@ -916,12 +1010,14 @@ class _MoneyTransactionsSectionState
         _hasMore = page.hasMore;
         _loadError = null;
         _isLoadingInitial = false;
+        _isRefreshing = false;
       });
     } catch (error) {
       if (!mounted || loadSerial != _loadSerial) return;
       setState(() {
         _loadError = reset ? error : null;
         _isLoadingInitial = false;
+        _isRefreshing = false;
       });
       if (!reset) {
         AppToast.error(_ensureToast(), context, '加载更多失败');
@@ -1028,13 +1124,14 @@ class _MoneyTransactionsSectionState
 
   void _refreshFromFilterChange() {
     setState(() {
-      _transactions.clear();
       _page = 1;
       _hasMore = false;
-      _isLoadingInitial = true;
       _loadError = null;
       _selectedTransactionId = null;
       _bulkSelectedIds.clear();
+      // 这里故意不清空 `_transactions`、也不置 `_isLoadingInitial`：
+      // 交还给 `_refreshTransactions` 去判断「有旧结果就保留」。清空会让列表
+      // 先塌成骨架再长回来，点一下筛选整屏白一下。
     });
     unawaited(_refreshTransactions());
   }
@@ -1552,6 +1649,229 @@ class _MoneyTransactionsSectionState
       _keywordFilter = null;
     });
     _refreshFromFilterChange();
+  }
+
+  /// 已生效条件的可移除 chip。
+  ///
+  /// 类型和关键词不在其中：类型一直在分段控件上、关键词一直在搜索框里，
+  /// 再来一个 chip 就是同一件事说两遍。被上下文锁定（从账户 / 预算下钻进来）
+  /// 的条件也不放，它们本来就由页面里的上下文条说明，且本来就不许清除。
+  List<Widget> _activeFilterChips({
+    required List<MoneyAccountEntity> accounts,
+    required MoneyCategoryCatalog expenseCatalog,
+    required MoneyCategoryCatalog incomeCatalog,
+    required List<MoneyBudgetEntity> budgets,
+  }) {
+    final theme = Theme.of(context);
+    final moneyColors = theme.moneyColors;
+    final chips = <Widget>[];
+
+    Widget removable(
+      String label, {
+      Color? accent,
+      required VoidCallback onRemove,
+    }) {
+      return _buildFilterChip(
+        context,
+        label: label,
+        selected: true,
+        accent: accent,
+        trailing: '✕',
+        onTap: onRemove,
+        onTrailingTap: onRemove,
+      );
+    }
+
+    final status = _statusFilter;
+    if (status != null) {
+      final pending = status == MoneyTransactionStatus.pending;
+      chips.add(
+        removable(
+          pending ? '待确认' : '已作废',
+          accent: pending ? moneyColors.warning : theme.colorScheme.error,
+          onRemove: () => _setStatusFilter(null),
+        ),
+      );
+    }
+
+    final hasDateRange = _dateStartFilter != null || _dateEndFilter != null;
+    if (!_isDateLocked && hasDateRange) {
+      chips.add(
+        removable(
+          '${_shortDayLabel(_dateStartFilter)} - '
+          '${_shortDayLabel(_dateEndFilter)}',
+          onRemove: _clearDateRange,
+        ),
+      );
+    }
+
+    if (!_isAccountLocked && _accountIdFilter != null) {
+      chips.add(
+        removable(
+          '账户：${_accountName(accounts, _accountIdFilter)}',
+          onRemove: () => _setAccountFilter(null),
+        ),
+      );
+    }
+
+    final catalog = _typeFilter == MoneyTransactionType.income
+        ? incomeCatalog
+        : expenseCatalog;
+    if (!_isCategoryLocked && _categoryIdFilter != null) {
+      final name = catalog.categoryById(_categoryIdFilter)?.name;
+      chips.add(
+        removable(
+          '分类：${name ?? '已删除'}',
+          onRemove: () => _setCategoryFilter(null),
+        ),
+      );
+    }
+    if (!_isCategoryLocked && _subCategoryIdFilter != null) {
+      final name = catalog.subCategoryById(_subCategoryIdFilter)?.name;
+      chips.add(
+        removable(
+          '子类：${name ?? '已删除'}',
+          onRemove: () => _setSubCategoryFilter(null),
+        ),
+      );
+    }
+
+    final paymentMethod = _paymentMethodFilter;
+    if (paymentMethod != null) {
+      chips.add(
+        removable(
+          '渠道：${paymentMethod.label}',
+          onRemove: () => _setPaymentMethodFilter(null),
+        ),
+      );
+    }
+
+    final merchant = _merchantFilter;
+    if (merchant != null) {
+      chips.add(
+        removable(
+          '商家：$merchant',
+          onRemove: () {
+            _merchantDebounce?.cancel();
+            _merchantController.clear();
+            setState(() => _merchantFilter = null);
+            _refreshFromFilterChange();
+          },
+        ),
+      );
+    }
+
+    if (_budgetIdFilter != null) {
+      String? budgetName;
+      for (final budget in budgets) {
+        if (budget.id == _budgetIdFilter) {
+          budgetName = budget.name;
+          break;
+        }
+      }
+      chips.add(
+        removable(
+          '预算：${budgetName ?? '已删除'}',
+          onRemove: () => _setBudgetFilter(null, const <MoneyBudgetEntity>[]),
+        ),
+      );
+    }
+
+    // 标签筛选目前只从统计页下钻带过来，页面上没有独立入口。
+    // 少了这枚 chip，列表会安静地少掉一部分流水，用户只会以为数据丢了。
+    for (final tag in _tagFilter) {
+      chips.add(
+        removable(
+          '#$tag',
+          onRemove: () {
+            setState(() {
+              _tagFilter = _tagFilter
+                  .where((item) => item != tag)
+                  .toList(growable: false);
+            });
+            _refreshFromFilterChange();
+          },
+        ),
+      );
+    }
+
+    return chips;
+  }
+
+  /// 空态里那句「当前筛选：……」，只列真正在生效的条件。
+  String _activeFilterDescription({
+    required List<MoneyAccountEntity> accounts,
+    required MoneyCategoryCatalog expenseCatalog,
+    required MoneyCategoryCatalog incomeCatalog,
+    required List<MoneyBudgetEntity> budgets,
+  }) {
+    final parts = <String>[];
+    final type = _typeFilter;
+    if (type != null) {
+      parts.add(switch (type) {
+        MoneyTransactionType.expense => '支出',
+        MoneyTransactionType.income => '收入',
+        MoneyTransactionType.transfer => '转账',
+      });
+    }
+    final keyword = _keywordFilter;
+    if (keyword != null) {
+      parts.add('含「$keyword」');
+    }
+    if (_dateStartFilter != null || _dateEndFilter != null) {
+      parts.add(
+        '${_shortDayLabel(_dateStartFilter)} - '
+        '${_shortDayLabel(_dateEndFilter)}',
+      );
+    }
+    if (_accountIdFilter != null) {
+      parts.add(_accountName(accounts, _accountIdFilter));
+    }
+    final catalog = type == MoneyTransactionType.income
+        ? incomeCatalog
+        : expenseCatalog;
+    final category = catalog.categoryById(_categoryIdFilter)?.name;
+    if (category != null) {
+      parts.add(category);
+    }
+    final subCategory = catalog.subCategoryById(_subCategoryIdFilter)?.name;
+    if (subCategory != null) {
+      parts.add(subCategory);
+    }
+    final paymentMethod = _paymentMethodFilter;
+    if (paymentMethod != null) {
+      parts.add(paymentMethod.label);
+    }
+    final merchant = _merchantFilter;
+    if (merchant != null) {
+      parts.add(merchant);
+    }
+    final status = _statusFilter;
+    if (status != null) {
+      parts.add(status == MoneyTransactionStatus.pending ? '待确认' : '已作废');
+    }
+    if (_budgetIdFilter != null) {
+      for (final budget in budgets) {
+        if (budget.id == _budgetIdFilter) {
+          parts.add('预算「${budget.name}」');
+          break;
+        }
+      }
+    }
+    parts.addAll(_tagFilter.map((tag) => '#$tag'));
+
+    if (parts.isEmpty) {
+      return '当前没有生效的筛选条件。';
+    }
+    return '当前筛选：${parts.join(' · ')}';
+  }
+
+  String _shortDayLabel(DateTime? value) {
+    if (value == null) {
+      return '—';
+    }
+    final local = value.toLocal();
+    return '${local.month}/${local.day}';
   }
 
   void _setKeywordFilterDebounced(String value) {
@@ -2761,6 +3081,110 @@ class _TransactionsSortButton extends StatelessWidget {
   }
 }
 
+/// 操作行最右侧的 ⋯：收低频动作。
+///
+/// 导出与回收站原来各占一个 44dp 图标按钮，和排序、高级筛选一起把分段控件
+/// 挤到只能靠 minSegmentWidth=44 才放得下四段。收进来之后分段控件拿回 96dp。
+class _TransactionsMoreMenu extends StatelessWidget {
+  const _TransactionsMoreMenu({
+    required this.exporting,
+    required this.onExport,
+    required this.onOpenRecycleBin,
+  });
+
+  final bool exporting;
+  final VoidCallback onExport;
+  final VoidCallback onOpenRecycleBin;
+
+  static const _exportValue = 'export';
+  static const _recycleValue = 'recycle';
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return PopupMenuButton<String>(
+      tooltip: '更多操作',
+      position: PopupMenuPosition.under,
+      onSelected: (value) {
+        if (value == _exportValue) {
+          onExport();
+          return;
+        }
+        onOpenRecycleBin();
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: _exportValue,
+          enabled: !exporting,
+          child: Row(
+            children: [
+              Icon(
+                Icons.ios_share_rounded,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 10),
+              const Text('导出流水'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _recycleValue,
+          child: Row(
+            children: [
+              Icon(
+                Icons.restore_rounded,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 10),
+              const Text('回收站'),
+            ],
+          ),
+        ),
+      ],
+      // 外形跟排序按钮对齐，操作行里几个控件才是同一条线。
+      child: Container(
+        width: 44,
+        height: 38,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+          ),
+        ),
+        child: Icon(
+          Icons.more_horiz_rounded,
+          size: 19,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+/// 改筛选时压在列表顶部的细进度条。
+///
+/// 位置用 Stack 固定在列表上沿，不参与布局，所以出现和消失都不会让列表跳。
+class _InlineRefreshBar extends StatelessWidget {
+  const _InlineRefreshBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 2.5,
+      child: LinearProgressIndicator(
+        minHeight: 2.5,
+        backgroundColor: Colors.transparent,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+}
+
 /// 流水状态筛选：待确认 / 已作废。
 ///
 /// 这两类流水之前完全查不出来——查询模型里没有状态字段，而它们又
@@ -2830,53 +3254,169 @@ class _TransactionStatusChips extends StatelessWidget {
   }
 }
 
-/// 已生效的标签筛选。
-///
-/// 点 chip 上的 ✕ 移除该标签；清空后回到不限制标签的状态。
-class _TransactionTagChips extends StatelessWidget {
-  const _TransactionTagChips({required this.tags, required this.onRemove});
+/// 「筛选」开关：展开 / 收起常用筛选条，右侧角标是生效条件数量。
+class _TransactionFilterToggle extends StatelessWidget {
+  const _TransactionFilterToggle({
+    required this.expanded,
+    required this.activeCount,
+    required this.onPressed,
+  });
 
-  final List<String> tags;
-  final ValueChanged<String> onRemove;
+  final bool expanded;
+  final int activeCount;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final active = activeCount > 0;
+    final foreground = active
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
 
-    return SizedBox(
-      height: 32,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Center(
-              child: Text(
-                '标签',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0,
-                ),
+    return Tooltip(
+      message: expanded ? '收起筛选' : '展开筛选',
+      child: Material(
+        color: active
+            ? colorScheme.primaryContainer.withValues(alpha: 0.45)
+            : colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onPressed,
+          child: Container(
+            height: 38,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: active
+                    ? colorScheme.primary.withValues(alpha: 0.4)
+                    : colorScheme.outlineVariant.withValues(alpha: 0.7),
               ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.filter_list_rounded, size: 17, color: foreground),
+                const SizedBox(width: 6),
+                Text(
+                  '筛选',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+                if (active) ...[
+                  const SizedBox(width: 5),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '$activeCount',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onPrimary,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 2),
+                Icon(
+                  expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 17,
+                  color: foreground,
+                ),
+              ],
             ),
           ),
-          for (final tag in tags)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildFilterChip(
-                context,
-                label: tag,
-                selected: true,
-                onTap: () => onRemove(tag),
-                trailing: '✕',
-                onTrailingTap: () => onRemove(tag),
-                accent: colorScheme.primary,
-              ),
-            ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+/// 常用筛选条。
+///
+/// 状态与日期原来各占一条常驻 chips（合计 82dp），不管用不用都摆在那儿。
+/// 折叠态只渲染「已生效的条件」——一条都没有就整块不占高度；展开后才铺出
+/// 两组预设，展开是显式操作，多占两行是能接受的代价。
+class _TransactionFilterStrip extends StatelessWidget {
+  const _TransactionFilterStrip({
+    required this.expanded,
+    required this.status,
+    required this.pendingCount,
+    required this.dateStart,
+    required this.dateEnd,
+    required this.activeChips,
+    required this.onStatusChanged,
+    required this.onPickDateRange,
+    required this.onSelectDatePreset,
+  });
+
+  final bool expanded;
+  final MoneyTransactionStatus? status;
+  final int pendingCount;
+  final DateTime? dateStart;
+  final DateTime? dateEnd;
+  final List<Widget> activeChips;
+  final ValueChanged<MoneyTransactionStatus?> onStatusChanged;
+  final VoidCallback onPickDateRange;
+  final void Function(DateTime? start, DateTime? end) onSelectDatePreset;
+
+  @override
+  Widget build(BuildContext context) {
+    final showActive = activeChips.isNotEmpty;
+    if (!expanded && !showActive) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (expanded) ...[
+          const SizedBox(height: 10),
+          _TransactionStatusChips(
+            status: status,
+            pendingCount: pendingCount,
+            onChanged: onStatusChanged,
+          ),
+          const SizedBox(height: 8),
+          _TransactionDateChips(
+            dateStart: dateStart,
+            dateEnd: dateEnd,
+            onPickRange: onPickDateRange,
+            onSelectPreset: onSelectDatePreset,
+          ),
+        ],
+        if (showActive) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 32,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                for (final chip in activeChips)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: chip,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -3603,13 +4143,46 @@ bool sameDayKey(DateTime a, DateTime b) {
   return la.year == lb.year && la.month == lb.month && la.day == lb.day;
 }
 
+/// 列表空态。分两种情况，别再把它们说成同一件事。
 class _EmptyTransactionsPanel extends StatelessWidget {
-  const _EmptyTransactionsPanel({required this.onCreate});
+  const _EmptyTransactionsPanel({
+    required this.onCreate,
+    required this.hasActiveFilters,
+    required this.filterDescription,
+    required this.onClearFilters,
+  });
 
   final VoidCallback onCreate;
 
+  /// 是真的没数据，还是筛选之后没数据 —— 两者的下一步动作完全相反。
+  final bool hasActiveFilters;
+  final String filterDescription;
+  final VoidCallback onClearFilters;
+
   @override
   Widget build(BuildContext context) {
+    // 带筛选查不到东西时，该做的是改条件。继续劝「快速新增」只会让用户在
+    // 已经筛过的视图里记重复账，然后疑惑「我刚记的那笔怎么不在列表里」。
+    if (hasActiveFilters) {
+      return AppEmptyState(
+        title: '没有符合条件的流水',
+        message: filterDescription,
+        icon: Icons.search_off_rounded,
+        padding: EdgeInsets.zero,
+        action: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FilledButton.icon(
+              onPressed: onClearFilters,
+              icon: const Icon(Icons.filter_alt_off_rounded, size: 18),
+              label: const Text('清除筛选'),
+            ),
+            TextButton(onPressed: onCreate, child: const Text('或 记一笔新的流水')),
+          ],
+        ),
+      );
+    }
+
     return AppEmptyState(
       title: '还没有流水',
       message: '可以从快速新增记录支出、收入或转账。',

@@ -97,7 +97,7 @@ void main() {
   });
 
   testWidgets(
-    'type tabs are not covered by the share button on narrow phones',
+    'type tabs are not covered by the trailing buttons on narrow phones',
     (tester) async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -106,17 +106,18 @@ void main() {
       addTearDown(router.dispose);
 
       // 360dp 是主流窄屏宽度：56dp 最小段宽 * 4 = 224dp > 可用宽度，
-      // 曾经溢出到分享按钮下面（既被遮住又点不到）。
+      // 曾经溢出到右侧图标按钮下面（既被遮住又点不到）。
       await _pump(tester, database, router, width: 360);
       await tester.tap(find.text('流水'));
       await tester.pumpAndSettle();
 
       final transfer = tester.getRect(find.text('转账'));
-      final share = tester.getRect(find.byTooltip('导出流水'));
+      // 导出与回收站已收进 ⋯，操作行最右侧现在是它。
+      final trailing = tester.getRect(find.byTooltip('更多操作'));
       expect(
         transfer.right,
-        lessThanOrEqualTo(share.left),
-        reason: '「转账」标签被分享按钮遮住',
+        lessThanOrEqualTo(trailing.left),
+        reason: '「转账」标签被右侧按钮遮住',
       );
 
       final control = tester.getRect(
@@ -131,6 +132,53 @@ void main() {
       );
     },
   );
+
+  testWidgets('常用筛选条默认折叠，展开后才铺出状态与日期预设', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+
+    // 折叠态：状态与日期两组预设都不在，控制区只占两行。
+    // 它们只是「藏起来」不是「删掉」，展开后必须原样回来。
+    expect(find.text('全部状态'), findsNothing);
+    expect(find.text('本周'), findsNothing);
+
+    await tester.tap(find.text('筛选'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('全部状态'), findsOneWidget);
+    expect(find.text('本周'), findsOneWidget);
+  });
+
+  testWidgets('筛选筛空时，空态给的是清除筛选而不是快速新增', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final router = _router();
+    addTearDown(router.dispose);
+
+    await _pump(tester, database, router);
+    await tester.tap(find.text('流水'));
+    await tester.pumpAndSettle();
+
+    // 一笔都没记过 —— 该引导去记账。
+    expect(find.text('还没有流水'), findsOneWidget);
+
+    await tester.tap(find.text('支出'));
+    await tester.pumpAndSettle();
+
+    // 筛过之后查不到 —— 该给的是改条件。继续劝「快速新增」会让用户在已经
+    // 筛过的视图里记重复账，再疑惑「我刚记的那笔怎么不在列表里」。
+    expect(find.text('没有符合条件的流水'), findsOneWidget);
+    expect(find.text('还没有流水'), findsNothing);
+    expect(find.widgetWithText(FilledButton, '清除筛选'), findsOneWidget);
+  });
 
   testWidgets('summary bar shows only amounts, labels live in semantics', (
     tester,

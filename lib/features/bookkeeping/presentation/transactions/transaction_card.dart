@@ -416,13 +416,15 @@ class TransactionCard extends StatelessWidget {
     };
   }
 
+  /// 卡片内只留时间。
+  ///
+  /// 列表按天分组，分组头已经写明「今天 / 昨天 / 10月11日」，卡片里再渲染
+  /// 一次 `MM-DD` 属于同一天表达两遍，还平白多占一行宽度。
   String _dateText(DateTime dateTime) {
     final local = dateTime.toLocal();
-    final month = local.month.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
-    return '$month-$day $hour:$minute';
+    return '$hour:$minute';
   }
 }
 
