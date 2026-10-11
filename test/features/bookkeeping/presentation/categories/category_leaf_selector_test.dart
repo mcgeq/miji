@@ -411,9 +411,9 @@ void main() {
         );
       }
 
-      expect(heights[0], 76);
-      expect(heights[1], 76);
-      expect(heights[2], 76, reason: '宽度变化不该改变格高');
+      expect(heights[0], 60);
+      expect(heights[1], 60);
+      expect(heights[2], 60, reason: '宽度变化不该改变格高');
     });
 
     testWidgets('4 列 × 8 个常用位正好两行', (tester) async {
@@ -427,7 +427,7 @@ void main() {
       expect(tiles, findsNWidgets(8));
 
       final grid = tester.getSize(find.byType(GridView));
-      expect(grid.height, 158, reason: '2 行 × 76dp + 6dp 行距');
+      expect(grid.height, 126, reason: '2 行 × 60dp + 6dp 行距');
       // 一行的前 4 个在同一个 y 上。
       expect(
         tester.getTopLeft(tiles.at(0)).dy,
@@ -439,19 +439,35 @@ void main() {
       );
     });
 
-    testWidgets('格子两行：第一行子分类、第二行父分类', (tester) async {
+    testWidgets('格子只留子分类名，父分类名退到读屏里', (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await pump(tester, width: 390);
 
-      // 第一行是子分类名，第二行是父分类名（浅色小字）。
-      final sub = tester.getRect(find.text('餐饮外卖0').first);
-      final parent = tester.getRect(find.text('餐饮').first);
-      expect(sub.top, lessThan(parent.top));
-      expect(sub.center.dx, closeTo(parent.center.dx, 2), reason: '两行在同一列内居中');
-      // 不再出现合并写法。
-      expect(find.text('餐饮·餐饮外卖0'), findsNothing);
+      // 格子里只剩一行文字。原来那一行是父分类名（9.5px 浅灰小字），
+      // 删掉它换来的正是 76 → 60dp。
+      final tile = find
+          .byWidgetPredicate((w) => w.runtimeType.toString() == '_LeafTile')
+          .first;
+      expect(
+        find.descendant(of: tile, matching: find.byType(Text)),
+        findsOneWidget,
+        reason: '一个格子只该有一行文字',
+      );
+      // 注意：本用例的 fixture 里多个分类共用了同一批子分类名，
+      // 所以「餐饮外卖0」会出现多次，只能断言存在。
+      expect(find.text('餐饮外卖0'), findsWidgets, reason: '子分类名还在');
+      expect(find.text('餐饮'), findsNothing, reason: '父分类名不该再出现在格子里');
+
+      // 归属没有丢：读屏仍念「父 子」，否则只听到「外卖」不知是哪一类。
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.label == '餐饮 餐饮外卖0',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('长名字与放大字体都不会溢出', (tester) async {
@@ -472,7 +488,7 @@ void main() {
       await pump(tester, width: 390, frequentCount: 3);
       expect(
         tester.getSize(find.byType(GridView)).height,
-        76,
+        60,
         reason: '3 个格子在 4 列布局下是一行',
       );
     });

@@ -197,15 +197,20 @@ class CategoryLeafSelector extends StatelessWidget {
         ],
         // 4 列 + **固定行高**：原来用 childAspectRatio 由格宽反推高度，
         // 结果是「格子越宽越高」——手机 79.5dp、宽弹窗能到 120dp+，
-        // 而格子里其实只有 图标 + 两行文字（约 72dp）。
-        // 改成 mainAxisExtent 后，任何屏宽/弹窗宽度下格高都恒定为 76dp。
+        // 而格子里其实只有 图标 + 一行文字（26 + 4 + 16 + 上下 padding 12 ≈ 58）。
+        // 改成 mainAxisExtent 后，任何屏宽/弹窗宽度下格高都恒定为 60dp。
+        //
+        // 76 → 60 是去掉格子里的父分类名换来的。那一行是全场信息量最低的：叶
+        // 子常同属一两个父分类（新用户前 8 个叶子全是「餐饮」的子分类，会连着
+        // 写 8 次「餐饮」）。归属没有丢——读屏的 Semantics label 仍念
+        // 「父 子」，已选条也照旧显示「父 · 子」。
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 4,
           mainAxisSpacing: 6,
           crossAxisSpacing: 6,
-          mainAxisExtent: 76,
+          mainAxisExtent: 60,
           children: [
             for (final leaf in frequent)
               _LeafTile(
@@ -356,7 +361,7 @@ class _LeafTile extends StatelessWidget {
               ),
             ),
             // 格子高度固定，内容用 FittedBox 兜住（系统字体放大时整体缩小，
-            // 而不是溢出一行）。两行文字：子分类名 + 父分类名。
+            // 而不是溢出一行）。只留一行文字：子分类名。
             child: Center(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
@@ -378,7 +383,9 @@ class _LeafTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    // 两行：第一行子分类（主），第二行分类（父，浅色小字）。
+                    // 只有子分类名（父分类本身作叶子时就是分类名）。
+                    // 父分类名曾经占第二行，字号 9.5 —— 去掉它换 16dp 格高，
+                    // 归属信息交给上面的 Semantics label 与已选条。
                     Text(
                       leaf.name,
                       maxLines: 1,
@@ -391,17 +398,6 @@ class _LeafTile extends StatelessWidget {
                         letterSpacing: 0,
                       ),
                     ),
-                    if (showParent)
-                      Text(
-                        leaf.category.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          fontSize: 9.5,
-                          letterSpacing: 0,
-                        ),
-                      ),
                   ],
                 ),
               ),
