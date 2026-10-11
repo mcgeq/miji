@@ -120,7 +120,8 @@ class _MoneyAutoPostingsSectionState
             onPressed: currentLedger == null
                 ? null
                 : () => _openTemplateDialog(),
-            icon: Icons.event_repeat_rounded,
+            // 与账户 / 预算 / 分期三页的页面级新增入口保持同一图标与样式。
+            icon: Icons.add_rounded,
             variant: AppIconActionVariant.filled,
           ),
         ),
@@ -140,11 +141,10 @@ class _MoneyAutoPostingsSectionState
                   title: '暂无自动记账模板',
                   message: '可以添加房贷、车贷、会员订阅等固定流水。',
                   icon: Icons.event_repeat_rounded,
-                  action: AppIconActionButton(
-                    tooltip: '新增自动记账',
+                  action: FilledButton.icon(
                     onPressed: () => _openTemplateDialog(),
-                    icon: Icons.add_rounded,
-                    variant: AppIconActionVariant.filled,
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('新增自动记账'),
                   ),
                 );
               }

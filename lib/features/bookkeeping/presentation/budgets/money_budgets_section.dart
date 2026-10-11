@@ -660,15 +660,15 @@ class _BudgetFilterFields extends StatelessWidget {
       children: [
         FormDropdown<MoneyBudgetTrackingType?>(
           key: ValueKey('budget-tracking-${trackingType?.name ?? 'all'}'),
-          width: 132,
+          width: 146,
           initialSelection: trackingType,
-          label: '类型',
+          label: '追踪类型',
           leadingIcon: const Icon(Icons.tune_rounded),
           onSelected: (value) => apply(() => onTrackingTypeChanged(value)),
           entries: const [
             DropdownMenuEntry<MoneyBudgetTrackingType?>(
               value: null,
-              label: '全部类型',
+              label: '全部追踪类型',
             ),
             DropdownMenuEntry<MoneyBudgetTrackingType?>(
               value: MoneyBudgetTrackingType.expenseLimit,
@@ -792,11 +792,10 @@ class _EmptyBudgetsPanel extends StatelessWidget {
       title: '还没有预算',
       message: '新增预算后可以跟踪月度、周期或分类支出',
       icon: Icons.flag_rounded,
-      action: AppIconActionButton(
-        tooltip: '新增预算',
+      action: FilledButton.icon(
         onPressed: onCreate,
-        icon: Icons.add_rounded,
-        variant: AppIconActionVariant.filled,
+        icon: const Icon(Icons.add_rounded, size: 18),
+        label: const Text('新增预算'),
       ),
     );
   }
@@ -815,11 +814,10 @@ class _NoMatchedBudgetsPanel extends StatelessWidget {
           title: '没有匹配的预算',
           icon: Icons.filter_alt_off_rounded,
           padding: EdgeInsets.zero,
-          action: AppIconActionButton(
-            tooltip: '重置筛选',
+          action: OutlinedButton.icon(
             onPressed: onReset,
-            icon: Icons.refresh_rounded,
-            variant: AppIconActionVariant.outlined,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('重置筛选'),
           ),
         ),
       ),

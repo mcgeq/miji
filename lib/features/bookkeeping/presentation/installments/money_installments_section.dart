@@ -308,11 +308,10 @@ class _MoneyInstallmentsContent extends StatelessWidget {
               title: '还没有可用信用账户',
               message: '分期只能挂在信用卡、花呗、白条等信用账户上',
               icon: Icons.credit_card_rounded,
-              action: AppIconActionButton(
-                tooltip: '新建信用账户',
+              action: FilledButton.icon(
                 onPressed: onCreateAccount,
-                icon: Icons.add_card_rounded,
-                variant: AppIconActionVariant.filled,
+                icon: const Icon(Icons.add_card_rounded, size: 18),
+                label: const Text('新建信用账户'),
               ),
             ),
           )
@@ -322,11 +321,10 @@ class _MoneyInstallmentsContent extends StatelessWidget {
               title: '还没有支出分类',
               message: '先创建支出分类，再回来设置分期',
               icon: Icons.category_rounded,
-              action: AppIconActionButton(
-                tooltip: '去管理分类',
+              action: OutlinedButton.icon(
                 onPressed: onManageCategories,
-                icon: Icons.arrow_forward_rounded,
-                variant: AppIconActionVariant.outlined,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: const Text('去管理分类'),
               ),
             ),
           )
@@ -336,11 +334,10 @@ class _MoneyInstallmentsContent extends StatelessWidget {
               title: '还没有分期计划',
               message: '新增分期后会冻结信用账户本金，并按期生成支出',
               icon: Icons.calendar_month_rounded,
-              action: AppIconActionButton(
-                tooltip: '新增分期',
+              action: FilledButton.icon(
                 onPressed: () => onCreate(accounts, categoryCatalog),
-                icon: Icons.add_rounded,
-                variant: AppIconActionVariant.filled,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('新增分期'),
               ),
             ),
           )
@@ -421,7 +418,7 @@ class _InstallmentConflictBanner extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '$count 个自动记账模板与分期重复，同一笔还款会记两遍',
+                    '检测到 $count 处重复登记，同一笔还款会被记两遍账',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurface,
                       fontWeight: FontWeight.w700,

@@ -1149,12 +1149,15 @@ class _AccountsHeader extends StatelessWidget {
           variant: AppIconActionVariant.plain,
         ),
         filterTrigger,
+        // 页面级新增入口统一规则：本页的 ＋ 只负责本页实体（账户 / 预算 /
+        // 分期 / 自动记账），流水类动作一律走全局 FAB。
+        // 四个页面的 ＋ 都必须是 filled，与同排的 plain 图标按钮区分开。
         AppIconActionButton(
           tooltip: '新增账户',
           onPressed: onCreate,
           icon: Icons.add_rounded,
           iconSize: 19,
-          variant: AppIconActionVariant.plain,
+          variant: AppIconActionVariant.filled,
         ),
       ],
     );
@@ -1322,11 +1325,12 @@ class _EmptyAccountsPanel extends StatelessWidget {
       message: '先创建一个现金、银行卡或储蓄账户。',
       icon: Icons.account_balance_wallet_outlined,
       padding: EdgeInsets.zero,
-      action: AppIconActionButton(
-        tooltip: '新增账户',
+      // 空态是一个新用户唯一能看到的界面 —— 只给一个纯图标按钮，
+      // 要悬停看 tooltip 才知道它是什么，等于没告诉人家下一步做什么。
+      action: FilledButton.icon(
         onPressed: onCreate,
-        icon: Icons.add_rounded,
-        variant: AppIconActionVariant.filled,
+        icon: const Icon(Icons.add_rounded, size: 18),
+        label: const Text('新增账户'),
       ),
     );
   }
@@ -1435,16 +1439,16 @@ class _AccountFilterFields extends StatelessWidget {
         ),
         FormDropdown<MoneyAccountType?>(
           key: ValueKey('account-type-${typeFilter?.name ?? 'all'}'),
-          width: 120,
+          width: 148,
           initialSelection: typeFilter,
-          label: '类型',
+          label: '账户类型',
           onSelected: (value) => apply(() => onTypeChanged(value)),
           enableFilter: true,
           menuHeight: 250,
           entries: [
             const DropdownMenuEntry<MoneyAccountType?>(
               value: null,
-              label: '全部类型',
+              label: '全部账户类型',
             ),
             ...types.map(
               (type) => DropdownMenuEntry<MoneyAccountType?>(
@@ -1534,6 +1538,9 @@ class _AccountTile extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return AppSwipeActionTile(
       onTap: onViewTransactions,
+      // 左滑只留「编辑 / 删除」，与预算卡片保持同一口径。
+      // 「停用 / 启用」收进右上角 ⋯ 菜单 —— 它本来就低频，而左滑条在手机上
+      // 一次只露得出 2~3 个按钮，塞第三个的代价是前两个也要滑一下才看清。
       actions: [
         AppSwipeAction(
           tooltip: '编辑',
@@ -1541,15 +1548,6 @@ class _AccountTile extends ConsumerWidget {
           foreground: colorScheme.onPrimaryContainer,
           background: colorScheme.primaryContainer,
           onPressed: onEdit,
-        ),
-        AppSwipeAction(
-          tooltip: account.isActive ? '停用' : '启用',
-          icon: account.isActive
-              ? Icons.pause_circle_outline_rounded
-              : Icons.play_circle_outline_rounded,
-          foreground: colorScheme.onTertiaryContainer,
-          background: colorScheme.tertiaryContainer,
-          onPressed: onToggleActive,
         ),
         AppSwipeAction(
           tooltip: '删除',

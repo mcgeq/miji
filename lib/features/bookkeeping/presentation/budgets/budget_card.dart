@@ -65,28 +65,11 @@ class BudgetCard extends StatelessWidget {
 
     return AppSwipeActionTile(
       onTap: onViewTransactions,
+      // 左滑只保留「编辑 / 删除」两个高频动作 —— 手机上一次最多看到 2~3 个
+      // 按钮，铺 5 个等于把后两个变成「要再滑一下才发现」。
+      // 其余动作都有更好的入口：查看流水是卡片里常驻的文字按钮，
+      // 预算历史 / 分配设置在右上角的 ⋯ 菜单里。
       actions: [
-        AppSwipeAction(
-          tooltip: '查看流水',
-          icon: Icons.receipt_long_rounded,
-          foreground: colorScheme.onSecondaryContainer,
-          background: colorScheme.secondaryContainer,
-          onPressed: onViewTransactions,
-        ),
-        AppSwipeAction(
-          tooltip: '预算历史',
-          icon: Icons.history_rounded,
-          foreground: colorScheme.onTertiaryContainer,
-          background: colorScheme.tertiaryContainer,
-          onPressed: onViewHistory,
-        ),
-        AppSwipeAction(
-          tooltip: '预算分配',
-          icon: Icons.account_tree_rounded,
-          foreground: colorScheme.onTertiaryContainer,
-          background: colorScheme.tertiaryContainer,
-          onPressed: onManageAllocations,
-        ),
         AppSwipeAction(
           tooltip: '编辑',
           icon: Icons.edit_rounded,
@@ -222,7 +205,7 @@ class BudgetCard extends StatelessWidget {
                 if (allocationSummary case final summary?
                     when summary.hasAllocations)
                   Text(
-                    '${summary.count} 项子分配',
+                    '${summary.count} 项分配',
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w700,
@@ -258,7 +241,7 @@ class BudgetCard extends StatelessWidget {
                       context,
                       _BudgetMenuAction.allocations,
                       Icons.account_tree_rounded,
-                      '子分配设置',
+                      '分配设置',
                     ),
                     _menuItem(
                       context,

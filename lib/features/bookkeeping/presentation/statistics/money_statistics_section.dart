@@ -817,8 +817,8 @@ class _StatisticsFilterStrip extends StatelessWidget {
           ),
         ],
         FormDropdown<MoneyStatisticsTypeFocus>(
-          width: 124,
-          label: '类型',
+          width: 140,
+          label: '统计类型',
           leadingIcon: const Icon(Icons.query_stats_rounded),
           initialSelection: filter.typeFocus,
           entries: [
@@ -858,7 +858,7 @@ class _StatisticsFilterStrip extends StatelessWidget {
           entries: [
             const DropdownMenuEntry<MoneyAccountType?>(
               value: null,
-              label: '全部类型',
+              label: '全部账户类型',
             ),
             for (final value in MoneyAccountType.values)
               if (!value.isInternal)
@@ -874,14 +874,14 @@ class _StatisticsFilterStrip extends StatelessWidget {
             'statistics-payment-${filter.paymentMethod?.storageValue ?? 'all'}',
           ),
           width: 144,
-          label: '渠道',
+          label: '支付渠道',
           leadingIcon: const Icon(Icons.payments_rounded),
           initialSelection: filter.paymentMethod,
           enableFilter: true,
           entries: [
             const DropdownMenuEntry<MoneyPaymentMethod?>(
               value: null,
-              label: '全部渠道',
+              label: '全部支付渠道',
             ),
             for (final value in MoneyPaymentMethod.values)
               DropdownMenuEntry<MoneyPaymentMethod?>(
