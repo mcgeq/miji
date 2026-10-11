@@ -394,42 +394,33 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               setState(() {});
             },
           ),
-          AppTextField(
-            controller: _descriptionController,
-            labelText: '名称',
-            hintText: '可选，如：和老王吃饭、618 囤货',
-            prefixIcon: const Icon(Icons.title_rounded),
-            textInputAction: TextInputAction.next,
+          // 字段顺序按使用频次重排：金额 → 分类 → 账户 → 日期 → 名称 → 备注。
+          // 原来「名称」排在第 3 位，早于账户 / 分类 / 日期，而它恰恰是这些字段里
+          // 最少用的一个——多数流水靠分类与账户就能说清楚。
+          catalog.when(
+            data: (value) => widget.showCategorySelector
+                ? CategoryLeafSelector(
+                    catalog: value,
+                    selectedCategoryId: _categoryId,
+                    selectedSubCategoryId: _subCategoryId,
+                    usage: _categoryUsage,
+                    enabled: !_submitting,
+                    onChanged: (categoryId, subCategoryId) =>
+                        _onCategoryChanged(
+                          MoneyCategorySelection(
+                            category: value.categoryById(categoryId),
+                            subCategory: value.subCategoryById(subCategoryId),
+                          ),
+                        ),
+                  )
+                : _CategorySelectionSummary(
+                    catalog: value,
+                    categoryId: _categoryId,
+                    subCategoryId: _subCategoryId,
+                  ),
+            loading: () => const LinearProgressIndicator(),
+            error: (error, stackTrace) => const Text('分类读取失败'),
           ),
-          if (!_isEditing && widget.type != MoneyTransactionType.transfer) ...[
-            AppSlidingSegmentedControl<MoneyTransactionStatus>(
-              minSegmentWidth: 80,
-              value: _status,
-              onChanged: (value) => setState(() {
-                _status = value;
-                // 只有「已完成」的支出才能分摊，切到待处理时清掉分摊配置。
-                if (value == MoneyTransactionStatus.pending) {
-                  _splitConfig = null;
-                  _splitConfigAmountMinor = null;
-                }
-              }),
-              segments: const [
-                AppSlidingSegment(
-                  value: MoneyTransactionStatus.completed,
-                  label: '已完成',
-                ),
-                AppSlidingSegment(
-                  value: MoneyTransactionStatus.pending,
-                  label: '待处理',
-                ),
-              ],
-            ),
-            if (_status == MoneyTransactionStatus.pending)
-              const AppFormHint(
-                text: '待处理：暂不占用账户余额，也不计入统计；确认后才入账',
-                icon: Icons.info_outline_rounded,
-              ),
-          ],
           if (widget.type == MoneyTransactionType.expense)
             AppSurface(
               tone: AppSurfaceTone.subtle,
@@ -510,30 +501,6 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                 ),
               ),
             ),
-          catalog.when(
-            data: (value) => widget.showCategorySelector
-                ? CategoryLeafSelector(
-                    catalog: value,
-                    selectedCategoryId: _categoryId,
-                    selectedSubCategoryId: _subCategoryId,
-                    usage: _categoryUsage,
-                    enabled: !_submitting,
-                    onChanged: (categoryId, subCategoryId) =>
-                        _onCategoryChanged(
-                          MoneyCategorySelection(
-                            category: value.categoryById(categoryId),
-                            subCategory: value.subCategoryById(subCategoryId),
-                          ),
-                        ),
-                  )
-                : _CategorySelectionSummary(
-                    catalog: value,
-                    categoryId: _categoryId,
-                    subCategoryId: _subCategoryId,
-                  ),
-            loading: () => const LinearProgressIndicator(),
-            error: (error, stackTrace) => const Text('分类读取失败'),
-          ),
           DateTimePicker(
             selectedDate: _transactionAt,
             // 与转账表单同一口径：编辑态也显示快捷项。
@@ -543,6 +510,52 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               setState(() => _transactionAt = value);
             },
           ),
+          AppTextField(
+            controller: _descriptionController,
+            labelText: '名称',
+            hintText: '可选，如：和老王吃饭、618 囤货',
+            prefixIcon: const Icon(Icons.title_rounded),
+            textInputAction: TextInputAction.next,
+          ),
+          // 备注从「更多信息」提到顶层：它是流水里第二常用的自由文本，
+          // 原来要展开「更多信息」再找到它，两步起。行数随内容增长，
+          // 空着时只占一行。
+          AppTextField(
+            controller: _notesController,
+            minLines: 1,
+            maxLines: 3,
+            labelText: '备注',
+            prefixIcon: const Icon(Icons.notes_rounded),
+          ),
+          if (!_isEditing && widget.type != MoneyTransactionType.transfer) ...[
+            AppSlidingSegmentedControl<MoneyTransactionStatus>(
+              minSegmentWidth: 80,
+              value: _status,
+              onChanged: (value) => setState(() {
+                _status = value;
+                // 只有「已完成」的支出才能分摊，切到待处理时清掉分摊配置。
+                if (value == MoneyTransactionStatus.pending) {
+                  _splitConfig = null;
+                  _splitConfigAmountMinor = null;
+                }
+              }),
+              segments: const [
+                AppSlidingSegment(
+                  value: MoneyTransactionStatus.completed,
+                  label: '已完成',
+                ),
+                AppSlidingSegment(
+                  value: MoneyTransactionStatus.pending,
+                  label: '待处理',
+                ),
+              ],
+            ),
+            if (_status == MoneyTransactionStatus.pending)
+              const AppFormHint(
+                text: '待处理：暂不占用账户余额，也不计入统计；确认后才入账',
+                icon: Icons.info_outline_rounded,
+              ),
+          ],
           FormDropdown<MoneyPaymentMethod>(
             initialSelection: effectivePaymentMethod,
             label: '支付方式',
@@ -576,7 +589,6 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
             merchantController: _merchantController,
             merchantSuggestions: entrySuggestions.merchants,
             locationController: _locationController,
-            notesController: _notesController,
             tagController: _tagController,
             tagSuggestions: tagCandidates,
             legacyTagHint: hasMultipleLegacyTags,
@@ -1351,7 +1363,6 @@ class _AdvancedTransactionFields extends StatelessWidget {
     required this.merchantController,
     this.merchantSuggestions = const <String>[],
     required this.locationController,
-    required this.notesController,
     required this.tagController,
     this.tagSuggestions = const <String>[],
     this.legacyTagHint = false,
@@ -1362,10 +1373,10 @@ class _AdvancedTransactionFields extends StatelessWidget {
   final TextEditingController merchantController;
   final List<String> merchantSuggestions;
   final TextEditingController locationController;
-  final TextEditingController notesController;
 
   /// 标签从顶层搬进「更多信息」：顶层区块从 14 个收到 13 个，
-  /// 常用路径（金额/账户/分类/日期/支付方式）更快看到底。
+  /// 常用路径（金额/分类/账户/日期）更快看到底。
+  /// （第四批又把备注移出顶层，这里只剩商家 / 地点 / 标签三项。）
   final TextEditingController tagController;
   final List<String> tagSuggestions;
   final bool legacyTagHint;
@@ -1405,14 +1416,6 @@ class _AdvancedTransactionFields extends StatelessWidget {
               labelText: '地点',
               hintText: '例如 上海、公司楼下',
               prefixIcon: const Icon(Icons.location_on_rounded),
-            ),
-            const SizedBox(height: 12),
-            AppTextField(
-              controller: notesController,
-              minLines: 2,
-              maxLines: 3,
-              labelText: '备注',
-              prefixIcon: const Icon(Icons.notes_rounded),
             ),
             const SizedBox(height: 12),
             SuggestionAutocompleteField(
