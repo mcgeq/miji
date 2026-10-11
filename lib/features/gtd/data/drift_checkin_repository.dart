@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:miji/core/attachments/attachment_store.dart';
 import 'package:miji/core/database/app_database.dart' as db;
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
@@ -14,12 +15,17 @@ class DriftCheckinRepository implements CheckinRepository {
     required this.database,
     Uuid? uuid,
     DateTime Function()? now,
+    AttachmentStore? attachmentStore,
   }) : _uuid = uuid ?? const Uuid(),
-       _now = now ?? (() => DateTime.now().toUtc());
+       _now = now ?? (() => DateTime.now().toUtc()),
+       _attachmentStore = attachmentStore ?? AttachmentStore();
 
   final db.AppDatabase database;
   final Uuid _uuid;
   final DateTime Function() _now;
+
+  /// 打卡照片也要进统一的附件目录（见 [addPhoto]）。
+  final AttachmentStore _attachmentStore;
 
   // ---------------------------------------------------------------------------
   // 计划管理
@@ -479,6 +485,16 @@ class DriftCheckinRepository implements CheckinRepository {
     final now = _now();
     final id = _uuid.v4();
 
+    // [localPath] 是 image_picker 给的**临时**路径，临时目录会被系统清理。
+    // 直接把它写进库，用户几个月后会发现打卡照片全没了。所以先收进附件目录，
+    // 库里只存相对路径（iOS 沙盒的绝对路径每次升级都会变，存绝对路径同样会废）。
+    final storedPath = await _attachmentStore.importFile(
+      userId: userId,
+      sourcePath: localPath,
+      // 用仓库自己的时钟，与下面写入行的 createdAt 保持一致。
+      createdAt: now,
+    );
+
     await database
         .into(database.checkinPhotos)
         .insert(
@@ -486,7 +502,7 @@ class DriftCheckinRepository implements CheckinRepository {
             id: id,
             userId: userId,
             recordId: recordId,
-            localPath: localPath,
+            localPath: storedPath,
             takenAt: Value(takenAt),
             gpsJson: Value(gpsJson),
             createdAt: now,
@@ -788,6 +804,8 @@ class DriftCheckinRepository implements CheckinRepository {
             ))
             .get();
 
+    final photos = await Future.wait(photoRows.map(_photoFromRow));
+
     return CheckinRecord(
       id: row.id,
       userId: row.userId,
@@ -811,16 +829,22 @@ class DriftCheckinRepository implements CheckinRepository {
       deletedAt: row.deletedAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      photos: photoRows.map(_photoFromRow).toList(),
+      photos: photos,
     );
   }
 
-  CheckinPhoto _photoFromRow(db.CheckinPhoto row) {
+  /// 行 → 实体：顺带把库里存的路径解析成本机可用路径。
+  ///
+  /// 库里现在存的是附件目录下的相对路径（[addPhoto] 改过之后），而早先版本存的是
+  /// image_picker 的临时绝对路径。两种都要能读——[AttachmentStore.resolveStoredPath]
+  /// 会把绝对路径原样放行，历史照片因此不会读废。解析放在这里而不是放在每个
+  /// 读取方，是为了让所有调用点（列表、详情、导出）都不用知道这件事。
+  Future<CheckinPhoto> _photoFromRow(db.CheckinPhoto row) async {
     return CheckinPhoto(
       id: row.id,
       userId: row.userId,
       recordId: row.recordId,
-      localPath: row.localPath,
+      localPath: await _attachmentStore.resolveStoredPath(row.localPath),
       takenAt: row.takenAt,
       gpsJson: row.gpsJson,
       deviceId: row.deviceId,

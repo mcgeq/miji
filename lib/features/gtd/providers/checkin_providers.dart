@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:miji/core/auth/application/auth_session_controller.dart';
+import 'package:miji/core/attachments/attachment_providers.dart';
 import 'package:miji/core/database/database_providers.dart';
 import 'package:miji/features/gtd/application/checkin_timer_controller.dart';
 import 'package:miji/features/gtd/data/drift_checkin_repository.dart';
@@ -12,7 +13,11 @@ import 'package:miji/features/gtd/domain/checkin_repository.dart';
 // ---------------------------------------------------------------------------
 
 final checkinRepositoryProvider = Provider<CheckinRepository>((ref) {
-  return DriftCheckinRepository(database: ref.watch(appDatabaseProvider));
+  return DriftCheckinRepository(
+    database: ref.watch(appDatabaseProvider),
+    // 打卡照片先收进统一的附件目录（见 addPhoto 的说明）。
+    attachmentStore: ref.watch(attachmentStoreProvider),
+  );
 });
 
 // ---------------------------------------------------------------------------
