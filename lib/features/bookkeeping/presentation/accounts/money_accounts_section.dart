@@ -2218,48 +2218,48 @@ class _AccountActionsMenu extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        PopupMenuItem(
+        _menuItem(
+          context,
           value: _AccountMenuAction.toggleAmount,
-          child: _menuRow(
-            context,
-            isAmountHidden
-                ? Icons.visibility_rounded
-                : Icons.visibility_off_rounded,
-            isAmountHidden ? '显示金额' : '隐藏金额',
-          ),
+          icon: isAmountHidden
+              ? Icons.visibility_rounded
+              : Icons.visibility_off_rounded,
+          label: isAmountHidden ? '显示金额' : '隐藏金额',
         ),
         if (onViewTransactions != null)
-          PopupMenuItem(
+          _menuItem(
+            context,
             value: _AccountMenuAction.viewTransactions,
-            child: _menuRow(context, Icons.receipt_long_rounded, '查看流水'),
+            icon: Icons.receipt_long_rounded,
+            label: '查看流水',
           ),
-        PopupMenuItem(
+        _menuItem(
+          context,
           value: _AccountMenuAction.edit,
-          child: _menuRow(context, Icons.edit_rounded, '编辑账户'),
+          icon: Icons.edit_rounded,
+          label: '编辑账户',
         ),
         if (onAdjustBalance != null)
-          PopupMenuItem(
+          _menuItem(
+            context,
             value: _AccountMenuAction.adjustBalance,
-            child: _menuRow(context, Icons.sync_alt_rounded, '余额校正'),
+            icon: Icons.sync_alt_rounded,
+            label: '余额校正',
           ),
-        PopupMenuItem(
+        _menuItem(
+          context,
           value: _AccountMenuAction.toggleActive,
-          child: _menuRow(
-            context,
-            account.isActive
-                ? Icons.pause_circle_outline_rounded
-                : Icons.play_circle_outline_rounded,
-            account.isActive ? '停用账户' : '启用账户',
-          ),
+          icon: account.isActive
+              ? Icons.pause_circle_outline_rounded
+              : Icons.play_circle_outline_rounded,
+          label: account.isActive ? '停用账户' : '启用账户',
         ),
-        PopupMenuItem(
+        _menuItem(
+          context,
           value: _AccountMenuAction.delete,
-          child: _menuRow(
-            context,
-            Icons.delete_outline_rounded,
-            '删除账户',
-            color: theme.colorScheme.error,
-          ),
+          icon: Icons.delete_outline_rounded,
+          label: '删除账户',
+          color: theme.colorScheme.error,
         ),
       ],
       child: Container(
@@ -2281,30 +2281,30 @@ class _AccountActionsMenu extends StatelessWidget {
     );
   }
 
-  Widget _menuRow(
-    BuildContext context,
-    IconData icon,
-    String label, {
+  /// 菜单项：只留图标。
+  ///
+  /// 文字退到长按提示（`Tooltip`）与读屏语义（`semanticLabel`）里，
+  /// 这样菜单更紧凑，又不会让屏幕阅读器变成一堆无名的图标按钮。
+  PopupMenuItem<_AccountMenuAction> _menuItem(
+    BuildContext context, {
+    required _AccountMenuAction value,
+    required IconData icon,
+    required String label,
     Color? color,
   }) {
     final theme = Theme.of(context);
-    return Row(
-      children: [
-        Icon(
+    return PopupMenuItem<_AccountMenuAction>(
+      value: value,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Tooltip(
+        message: label,
+        child: Icon(
           icon,
-          size: 18,
+          size: 20,
+          semanticLabel: label,
           color: color ?? theme.colorScheme.onSurfaceVariant,
         ),
-        const SizedBox(width: 10),
-        Text(
-          label,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: color ?? theme.colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

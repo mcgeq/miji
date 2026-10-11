@@ -160,9 +160,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_horiz_rounded).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('编辑账户'), findsOneWidget);
-    expect(find.text('停用账户'), findsOneWidget);
-    expect(find.text('删除账户'), findsOneWidget);
+    // 菜单项现在只有图标，文案在 Tooltip / 语义里。
+    expect(find.byTooltip('编辑账户'), findsOneWidget);
+    expect(find.byTooltip('停用账户'), findsOneWidget);
+    expect(find.byTooltip('删除账户'), findsOneWidget);
   });
 
   group('全局金额遮罩', () {
@@ -248,9 +249,9 @@ void main() {
       // 打开第一个账户的 ⋯ 菜单：应该提供「显示金额」。
       await tester.tap(find.byTooltip('更多操作').first);
       await tester.pumpAndSettle();
-      expect(find.text('显示金额'), findsOneWidget);
+      expect(find.byTooltip('显示金额'), findsOneWidget);
 
-      await tester.tap(find.text('显示金额'));
+      await tester.tap(find.byTooltip('显示金额'));
       await tester.pumpAndSettle();
 
       // 该账户的金额恢复展示（净资产 Hero 仍按生效状态遮住）。
