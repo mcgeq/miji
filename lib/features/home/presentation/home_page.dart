@@ -30,19 +30,10 @@ import 'package:miji/features/home/presentation/home_greeting_header.dart';
 import 'package:miji/features/home/presentation/home_health_strip.dart';
 import 'package:miji/features/home/presentation/home_insight_strip.dart';
 import 'package:miji/features/home/presentation/home_onboarding_view.dart';
-import 'package:miji/features/home/presentation/home_quick_actions_row.dart';
 import 'package:miji/features/home/presentation/home_recent_transactions_panel.dart';
 import 'package:miji/features/home/presentation/home_stat_tiles.dart';
 import 'package:miji/features/home/presentation/home_weekly_trend_card.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
-
-/// 首页快捷动作（按使用频率排序）。
-const _homeQuickActions = [
-  MoneyQuickAction.expense,
-  MoneyQuickAction.income,
-  MoneyQuickAction.transfer,
-  MoneyQuickAction.budget,
-];
 
 /// 双栏布局断点，与 [AppResponsive] 的 rail 断点解耦，
 /// 保证内容区在平板上也不会挤成单列。
@@ -269,11 +260,6 @@ class _HomeDashboard extends ConsumerWidget {
       onTapBudget: () => launcher.run(MoneyQuickAction.budget),
     );
 
-    final quickActions = HomeQuickActionsRow(
-      actions: _homeQuickActions,
-      onAction: launcher.run,
-    );
-
     final insightStrip = HomeInsightStrip(
       insight: insight.valueOrNull,
       onSelectTarget: (target) => _openInsightTarget(context, target),
@@ -372,13 +358,11 @@ class _HomeDashboard extends ConsumerWidget {
                 _gap,
                 _section(1, overviewCard),
                 _gap,
-                _section(2, quickActions),
-                _gap,
-                _section(3, insightStrip),
-                if (hasAlerts) ...[_gap, _section(4, alerts)],
+                _section(2, insightStrip),
+                if (hasAlerts) ...[_gap, _section(3, alerts)],
                 _gap,
                 _section(
-                  5,
+                  4,
                   Row(
                     children: [
                       if (todayActionTile != null)
@@ -388,11 +372,11 @@ class _HomeDashboard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (healthStrip != null) ...[_gap, _section(6, healthStrip)],
+                if (healthStrip != null) ...[_gap, _section(5, healthStrip)],
                 _gap,
-                _section(7, categoryPanel),
+                _section(6, categoryPanel),
                 _gap,
-                _section(8, recentPanel),
+                _section(7, recentPanel),
                 const SizedBox(height: 8),
                 quote,
               ],
@@ -414,11 +398,9 @@ class _HomeDashboard extends ConsumerWidget {
                       children: [
                         _section(1, overviewCard),
                         _gap,
-                        _section(2, quickActions),
+                        _section(2, insightStrip),
                         _gap,
-                        _section(3, insightStrip),
-                        _gap,
-                        _section(4, recentPanel),
+                        _section(3, recentPanel),
                       ],
                     ),
                   ),
@@ -428,18 +410,18 @@ class _HomeDashboard extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (hasAlerts) ...[_section(6, alerts), _gap],
+                        if (hasAlerts) ...[_section(4, alerts), _gap],
                         if (todayActionTile != null) ...[
-                          _section(7, todayActionTile),
+                          _section(5, todayActionTile),
                           _gap,
                         ],
-                        _section(8, netAssetTile),
+                        _section(6, netAssetTile),
                         _gap,
                         if (healthStrip != null) ...[
-                          _section(9, healthStrip),
+                          _section(7, healthStrip),
                           _gap,
                         ],
-                        _section(10, categoryPanel),
+                        _section(8, categoryPanel),
                       ],
                     ),
                   ),

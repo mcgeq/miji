@@ -126,6 +126,17 @@ class HomeMonthBudgetSummary {
   /// 扣掉已预留之后真正还能花的钱，可以是负数（预留后必然超支）。
   int get availableMinor => remainingMinor - committedMinor;
 
+  /// 已用 + 已预留。
+  ///
+  /// 卡上的「进度」是决策信息（还能不能花），所以必须算上未来义务：
+  /// 只按已用画，会出现「环才走了 17%、却告诉你还可花 ¥0」这种自相矛盾。
+  /// 对账口径不在这里——明细行仍然把「已用」「已预留」分开列。
+  int get occupiedMinor => usedMinor + committedMinor;
+
+  /// 占用进度：(已用 + 已预留) / 预算。预算金额为 0 时按 0 处理。
+  double get occupiedProgress =>
+      totalMinor <= 0 ? 0.0 : occupiedMinor / totalMinor;
+
   int get dailyAllowanceMinor {
     if (!hasBudget || remainingDays <= 0 || availableMinor <= 0) {
       return 0;

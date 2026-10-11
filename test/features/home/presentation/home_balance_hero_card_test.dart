@@ -260,6 +260,54 @@ void main() {
     expect(find.text('本月已超支'), findsOneWidget);
   });
 
+  testWidgets('进度算上「已预留」：环画到占用位置，而不是只画已用', (tester) async {
+    // 已用 457,950（57%）+ 已预留 300,000 → 占用 757,950（95%）。
+    // 只画已用的话，环还空着 43%，同一张卡却写着「还可花 ¥420.50」。
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(committedMinor: 300000),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('95%'), findsOneWidget);
+    expect(find.text('已占用'), findsOneWidget);
+    expect(find.text('已用+预留 95%'), findsOneWidget);
+    expect(find.text('已预留'), findsOneWidget);
+    // 环的中心数字不再是「已用占比」。
+    expect(find.text('57%'), findsNothing);
+    // 还有 5% 没被占，不算超支。
+    expect(find.text('本月已超支'), findsNothing);
+    expect(find.textContaining('420'), findsOneWidget);
+  });
+
+  testWidgets('已预留占满额度但还没超支：环满格，标题仍是「还可花」', (tester) async {
+    // 已预留 350,000 → 占用 807,950（101%），但已用只有 57%。
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(committedMinor: 350000),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('101%'), findsOneWidget);
+    expect(find.text('本月还可花'), findsOneWidget);
+    // 超支红线只看已用：预留占满不等于超支。
+    expect(find.text('本月已超支'), findsNothing);
+  });
+
   testWidgets('breaks the budget detail into one row per metric', (
     tester,
   ) async {

@@ -84,7 +84,8 @@ class HomeBalanceHeroCard extends StatelessWidget {
                       summary: summary,
                       spending: spending,
                       masked: masked,
-                      progress: summary?.progress ?? 0,
+                      usedProgress: summary?.progress ?? 0,
+                      occupiedProgress: summary?.occupiedProgress ?? 0,
                     ),
                     const SizedBox(height: 16),
                     _Pills(
@@ -104,7 +105,8 @@ class HomeBalanceHeroCard extends StatelessWidget {
                       ],
                       const SizedBox(height: 14),
                       _DualProgress(
-                        spendProgress: summary!.progress,
+                        usedProgress: summary!.progress,
+                        occupiedProgress: summary.occupiedProgress,
                         periodProgress: summary.periodProgress,
                         exceeded: exceeded,
                       ),
@@ -260,7 +262,8 @@ class _MainRow extends StatelessWidget {
     required this.summary,
     required this.spending,
     required this.masked,
-    required this.progress,
+    required this.usedProgress,
+    required this.occupiedProgress,
   });
 
   final bool hasBudget;
@@ -268,7 +271,12 @@ class _MainRow extends StatelessWidget {
   final HomeMonthBudgetSummary? summary;
   final HomeTodaySpendingSummary spending;
   final bool masked;
-  final double progress;
+
+  /// 已用 / 预算。
+  final double usedProgress;
+
+  /// (已用 + 已预留) / 预算；环与进度条按这个口径画。
+  final double occupiedProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -340,7 +348,10 @@ class _MainRow extends StatelessWidget {
         ),
         if (hasBudget) ...[
           const SizedBox(width: 16),
-          _BudgetRing(progress: progress, exceeded: exceeded),
+          _BudgetRing(
+            usedProgress: usedProgress,
+            occupiedProgress: occupiedProgress,
+          ),
         ],
       ],
     );
@@ -466,11 +477,23 @@ class _HeroAmount extends StatelessWidget {
   }
 }
 
+/// 预算环形进度。
+///
+/// 画的是**占用**（已用 + 已预留），不是只画已用：只按已用画的话，
+/// 「未来义务把额度占满」时环还是空着一半，和旁边「本月还可花 ¥0」直接打架。
+///
+/// 两段弧形区分来源：纯白是已用，浅白是被预留占住的部分。合并成一个数
+/// 会让预留看起来像已经花掉，用户也就没法对账了。
 class _BudgetRing extends StatelessWidget {
-  const _BudgetRing({required this.progress, required this.exceeded});
+  const _BudgetRing({
+    required this.usedProgress,
+    required this.occupiedProgress,
+  });
 
-  final double progress;
-  final bool exceeded;
+  final double usedProgress;
+
+  /// 已用 + 已预留，恒 ≥ [usedProgress]。
+  final double occupiedProgress;
 
   static const _size = 84.0;
   static const _stroke = 8.0;
@@ -478,35 +501,81 @@ class _BudgetRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final clamped = progress.clamp(0.0, 1.0).toDouble();
+    final used = usedProgress.clamp(0.0, 1.0).toDouble();
+    final occupied = occupiedProgress.clamp(0.0, 1.0).toDouble();
+    final hasCommitted = occupied - used > 0.0001;
 
     return SizedBox.square(
       dimension: _size,
       child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: clamped),
+        tween: Tween(begin: 0, end: 1),
         duration: const Duration(milliseconds: 700),
         curve: Curves.easeOutCubic,
-        builder: (context, value, child) {
+        builder: (context, t, child) {
           return Stack(
             alignment: Alignment.center,
             children: [
+              // 底环：整圈预算。用 border 画固定底环，避免每个
+              // CircularProgressIndicator 都自带一条底环、叠加后颜色变深。
+              SizedBox.square(
+                dimension: _size,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.24),
+                      width: _stroke,
+                    ),
+                  ),
+                ),
+              ),
+              // 预留段（浅）：先画到「占用」的位置。
+              if (hasCommitted)
+                SizedBox.square(
+                  dimension: _size,
+                  child: CircularProgressIndicator(
+                    value: occupied * t,
+                    strokeWidth: _stroke,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation(
+                      Colors.white.withValues(alpha: 0.52),
+                    ),
+                  ),
+                ),
+              // 已用段（实）：与预留段同起点，叠在上面。
               SizedBox.square(
                 dimension: _size,
                 child: CircularProgressIndicator(
-                  value: value,
+                  value: used * t,
                   strokeWidth: _stroke,
                   strokeCap: StrokeCap.round,
-                  backgroundColor: Colors.white.withValues(alpha: 0.24),
+                  backgroundColor: Colors.transparent,
                   valueColor: const AlwaysStoppedAnimation(Colors.white),
                 ),
               ),
-              Text(
-                '${(progress * 100).clamp(0, 999).toStringAsFixed(0)}%',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0,
-                ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${(occupiedProgress * 100).clamp(0, 999).toStringAsFixed(0)}%',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  // 环的百分比不再是「已用占比」，标出来免得被误读。
+                  Text(
+                    '已占用',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 9,
+                      height: 1.1,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ],
               ),
             ],
           );
@@ -753,23 +822,35 @@ class _CategoryBudgetRow extends StatelessWidget {
   }
 }
 
-/// 时间进度 vs 花费进度的双轨进度条。
+/// 时间进度 vs 额度占用的双轨进度条。
+///
+/// 三档白度区分来源：白 0.38 是已过去的时间，白 0.62 是被预留占住的部分，
+/// 纯白是真花掉的钱。先前的版本只画「已用」，于是「预留把额度占满」时
+/// 进度条看着还很空，和同一张卡上的「本月还可花 ¥0」矛盾。
 class _DualProgress extends StatelessWidget {
   const _DualProgress({
-    required this.spendProgress,
+    required this.usedProgress,
+    required this.occupiedProgress,
     required this.periodProgress,
     required this.exceeded,
   });
 
-  final double spendProgress;
+  /// 已用 / 预算。
+  final double usedProgress;
+
+  /// (已用 + 已预留) / 预算，恒 ≥ [usedProgress]。
+  final double occupiedProgress;
   final double periodProgress;
   final bool exceeded;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final spend = spendProgress.clamp(0.0, 1.0).toDouble();
+    final used = usedProgress.clamp(0.0, 1.0).toDouble();
+    final occupied = occupiedProgress.clamp(0.0, 1.0).toDouble();
     final period = periodProgress.clamp(0.0, 1.0).toDouble();
+    final committed = (occupied - used).clamp(0.0, 1.0).toDouble();
+    final hasCommitted = committed > 0.0001;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -788,7 +869,7 @@ class _DualProgress extends StatelessWidget {
                     child: Container(
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
@@ -800,16 +881,30 @@ class _DualProgress extends StatelessWidget {
                       width: width * period,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: Colors.white.withValues(alpha: 0.38),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
                   ),
+                  // 预留段：紧接在已用之后。
+                  if (hasCommitted)
+                    Positioned(
+                      left: width * used,
+                      top: 4,
+                      child: Container(
+                        width: width * committed,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.62),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
                   Positioned(
                     left: 0,
                     top: 4,
                     child: Container(
-                      width: width * spend,
+                      width: width * used,
                       height: 8,
                       decoration: BoxDecoration(
                         color: exceeded
@@ -849,7 +944,10 @@ class _DualProgress extends StatelessWidget {
               ),
             ),
             Text(
-              '花费进度 ${(spendProgress * 100).clamp(0, 999).toStringAsFixed(0)}%',
+              // 有预留时把两段都写出来，用户才知道进度条里那段浅色是什么。
+              hasCommitted
+                  ? '已用+预留 ${(occupiedProgress * 100).clamp(0, 999).toStringAsFixed(0)}%'
+                  : '花费进度 ${(occupiedProgress * 100).clamp(0, 999).toStringAsFixed(0)}%',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: Colors.white.withValues(alpha: 0.86),
                 fontWeight: FontWeight.w700,

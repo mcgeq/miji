@@ -234,6 +234,17 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
   final progress = budget.amountMinor <= 0
       ? 0.0
       : usedMinor / budget.amountMinor;
+  final committedMinor = commitment.totalMinor;
+  // 与模型里的 HomeMonthBudgetSummary.occupiedProgress 同一口径。
+  final occupiedProgress = budget.amountMinor <= 0
+      ? 0.0
+      : (usedMinor + committedMinor) / budget.amountMinor;
+  // 顶部胶囊讲的是「花钱速度」，只按已用判定（把预留算进去会把
+  // 「还没花」说成「已超支」）。但额度被未来义务占满时要单独说清楚，
+  // 否则环已经走满、胶囊还写着「节奏正常」。
+  final paceLabel = progress < 1 && occupiedProgress >= 1
+      ? '额度已被预留占满'
+      : homeBudgetPaceLabelFor(progress, pace.periodProgress);
 
   return HomeMonthBudgetSummary(
     hasBudget: true,
@@ -243,11 +254,11 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
     totalMinor: budget.amountMinor,
     usedMinor: usedMinor,
     remainingMinor: budget.remainingAmountMinor,
-    committedMinor: commitment.totalMinor,
+    committedMinor: committedMinor,
     progress: progress,
     periodProgress: pace.periodProgress,
     paceRatio: pace.paceRatioFor(progress),
-    paceLabel: homeBudgetPaceLabelFor(progress, pace.periodProgress),
+    paceLabel: paceLabel,
     remainingDays: pace.remainingDays,
   );
 });
