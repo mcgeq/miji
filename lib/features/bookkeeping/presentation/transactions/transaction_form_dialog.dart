@@ -60,6 +60,7 @@ class TransactionFormDialog extends ConsumerStatefulWidget {
     this.initialDescription,
     this.initialNotes,
     this.initialTransactionAt,
+    this.initialPaymentMethod,
     this.template,
   });
 
@@ -85,6 +86,12 @@ class TransactionFormDialog extends ConsumerStatefulWidget {
   final String? initialDescription;
   final String? initialNotes;
   final DateTime? initialTransactionAt;
+
+  /// 预填支付方式（截图识别等外部入口带入）。
+  ///
+  /// 给了值就不再让「记住上次选择」的默认覆盖它——识别出来的支付方式
+  /// 比历史偏好更可信。
+  final MoneyPaymentMethod? initialPaymentMethod;
 
   /// 提交回调。
   ///
@@ -184,6 +191,11 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       final initialDescription = widget.initialDescription?.trim();
       if (initialDescription != null && initialDescription.isNotEmpty) {
         _descriptionController.text = initialDescription;
+      }
+      final initialPaymentMethod = widget.initialPaymentMethod;
+      if (initialPaymentMethod != null) {
+        _paymentMethod = initialPaymentMethod;
+        _paymentMethodPinned = true;
       }
       return;
     }

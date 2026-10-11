@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
+import 'package:miji/core/ocr/app_text_recognizer.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/router/app_routes.dart';
+import 'package:miji/features/bookkeeping/application/money_receipt_parser.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -26,6 +30,7 @@ import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
 /// 避免两处各写一遍动作列表而逐渐分叉。
 enum MoneyQuickAction {
   expense,
+  receipt,
   income,
   transfer,
   task,
@@ -39,6 +44,7 @@ extension MoneyQuickActionX on MoneyQuickAction {
   String get label {
     return switch (this) {
       MoneyQuickAction.expense => '支出',
+      MoneyQuickAction.receipt => '截图记账',
       MoneyQuickAction.income => '收入',
       MoneyQuickAction.transfer => '转账',
       MoneyQuickAction.task => '任务',
@@ -52,6 +58,7 @@ extension MoneyQuickActionX on MoneyQuickAction {
   IconData get icon {
     return switch (this) {
       MoneyQuickAction.expense => Icons.remove_rounded,
+      MoneyQuickAction.receipt => Icons.document_scanner_rounded,
       MoneyQuickAction.income => Icons.add_rounded,
       MoneyQuickAction.transfer => Icons.swap_horiz_rounded,
       MoneyQuickAction.task => Icons.task_alt_rounded,
@@ -61,6 +68,13 @@ extension MoneyQuickActionX on MoneyQuickAction {
       MoneyQuickAction.plan => Icons.check_circle_outline_rounded,
     };
   }
+
+  /// 该动作在当前平台是否可用。
+  ///
+  /// 截图记账依赖端侧 OCR（只有 Android / iOS 有），桌面与 Web 上
+  /// 直接从入口列表里摘掉，而不是让用户点了再看到一句报错。
+  bool get isAvailable =>
+      this != MoneyQuickAction.receipt || isTextRecognitionSupported;
 }
 
 /// 执行记账快捷动作的唯一入口。
@@ -82,6 +96,8 @@ class MoneyQuickActionLauncher {
     switch (action) {
       case MoneyQuickAction.expense:
         await _openTransactionDialog(MoneyTransactionType.expense);
+      case MoneyQuickAction.receipt:
+        await _openReceiptScanDialog();
       case MoneyQuickAction.income:
         await _openTransactionDialog(MoneyTransactionType.income);
       case MoneyQuickAction.transfer:
@@ -98,6 +114,215 @@ class MoneyQuickActionLauncher {
         if (context.mounted) {
           await context.push(AppRoutes.gtdPlansCreate);
         }
+    }
+  }
+
+  /// 「截图记账」：选一张支付截图 → 端侧 OCR → 预填记一笔。
+  ///
+  /// 识别结果一律回填表单让用户确认，**绝不自动落账**——截图里的促销文字、
+  /// 小数点误识别都可能出错，这也是所有成熟记账 App 的做法。
+  Future<void> _openReceiptScanDialog() async {
+    if (!isTextRecognitionSupported) {
+      AppToast.error(ensureToast(), context, '当前平台不支持截图识别，请在手机上使用');
+      return;
+    }
+
+    final source = await _pickReceiptSource();
+    if (source == null || !context.mounted) {
+      return;
+    }
+
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1920,
+    );
+    if (picked == null || !context.mounted) {
+      return;
+    }
+
+    final recognizer = AppTextRecognizer();
+    final OcrPage page;
+    try {
+      page = await _runWithProgress(
+        '正在识别截图…',
+        () => recognizer.recognizeFile(picked.path),
+      );
+    } catch (error) {
+      // 失败原因必须留下来：release 包里的 OCR 失效常常源自 R8 裁剪这类
+      // 构建期问题，只提示「识别失败」的话，排查就只能靠猜。
+      debugPrint('截图识别失败: $error');
+      if (context.mounted) {
+        final detail = error.toString();
+        final brief = detail.length > 80
+            ? '${detail.substring(0, 80)}…'
+            : detail;
+        AppToast.error(ensureToast(), context, '截图识别失败：$brief');
+      }
+      return;
+    } finally {
+      await recognizer.dispose();
+    }
+    if (!context.mounted) {
+      return;
+    }
+
+    // 先按版面把同一水平行上的块并成一句，再交给解析器——支付截图的
+    // 「左标签 + 右值」布局，只有合并之后「找标签取值」的规则才成立。
+    final visualLines = page.mergeVisualLines();
+    debugPrint(
+      '截图识别原文（按版面合并为 ${visualLines.length} 行）:\n${visualLines.join('\n')}',
+    );
+    final draft = parseReceiptPage(page);
+    if (draft.amountMinor == null) {
+      // 金额是这条链路唯一不可省的字段（没有金额就等于没记账），所以只要它
+      // 没抽出来就把识别到的文字摊开给用户——可滚动、可复制。否则「没认出来」
+      // 这三个字区分不了「图上就没字」和「认出来了但没抽对」，排查只能靠猜。
+      await _showReceiptTextPreview(visualLines);
+      if (!context.mounted) {
+        return;
+      }
+    }
+
+    final categoryId = await _resolveReceiptCategoryId(draft);
+    if (!context.mounted) {
+      return;
+    }
+
+    await showAppResponsiveDialog<Object>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => TransactionFormDialog(
+        type: draft.type,
+        ledger: ref.read(currentUserEffectiveTransactionLedgerValueProvider),
+        initialAmountMinor: draft.amountMinor,
+        initialDescription: draft.merchant,
+        initialNotes: draft.notes,
+        initialTransactionAt: draft.occurredAt,
+        initialPaymentMethod: draft.paymentMethod,
+        categoryId: categoryId,
+        onSubmit: (result) => _createFromForm(draft.type, result),
+      ),
+    );
+  }
+
+  /// 截图里写出的分类名（只有部分版式带）→ 本地分类 id。
+  ///
+  /// 读不到目录、或名字对不上本地分类，都返回 null，留给用户在表单里选。
+  Future<String?> _resolveReceiptCategoryId(MoneyReceiptDraft draft) async {
+    if (draft.categoryName == null) {
+      return null;
+    }
+    final catalog = await _valueOrEmptyCatalog(
+      ref.read(
+        currentUserCategoryCatalogProvider(
+          draft.type == MoneyTransactionType.income
+              ? MoneyCategoryKind.income
+              : MoneyCategoryKind.expense,
+        ).future,
+      ),
+    );
+    return matchCategoryIdByName(catalog, draft.categoryName);
+  }
+
+  /// 金额没抽出来时，把识别到的文字摊开——可滚动、可选中复制。
+  ///
+  /// 这不是给终端用户的功能，而是一条**让用户能把识别结果反馈出来**的通道：
+  /// 支付截图的版式千变万化，拿不到文字就只能靠猜哪条规则没匹配上。
+  /// 这里展示的是**按版面合并后**的行，与解析器看到的完全一致，反馈才有对照价值。
+  Future<void> _showReceiptTextPreview(List<String> visualLines) async {
+    final text = visualLines.join('\n').trim();
+    await showAppResponsiveDialog<void>(
+      context: context,
+      builder: (dialogContext) => AppDialogScaffold(
+        title: '没能从截图里认出金额',
+        subtitle: '下面是识别到的原文，可复制后反馈，也可以直接手动填写',
+        body: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 240, maxHeight: 300),
+          child: SingleChildScrollView(
+            child: SelectableText(
+              text.isEmpty ? '（这张图没有识别到任何文字）' : text,
+              style: Theme.of(dialogContext).textTheme.bodyMedium,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: text));
+              if (dialogContext.mounted) {
+                AppToast.success(ensureToast(), dialogContext, '原文已复制');
+              }
+            },
+            child: const Text('复制原文'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('手动填写'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 让用户选「相册里的截图」还是「现拍一张」。
+  Future<ImageSource?> _pickReceiptSource() {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('从相册选择截图'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: const Text('拍照'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 识别期间挡住界面，给一个明确的等待反馈。
+  ///
+  /// 大截图在低端机上要一秒以上，没有反馈用户会以为没点上而重复触发。
+  Future<T> _runWithProgress<T>(
+    String message,
+    Future<T> Function() task,
+  ) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final dialogClosed = showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+              const SizedBox(width: 16),
+              Expanded(child: Text(message)),
+            ],
+          ),
+        ),
+      ),
+    );
+    try {
+      return await task();
+    } finally {
+      navigator.pop();
+      await dialogClosed;
     }
   }
 

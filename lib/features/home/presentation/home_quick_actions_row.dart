@@ -88,6 +88,7 @@ class _QuickActionButton extends StatelessWidget {
     final moneyColors = theme.moneyColors;
     return switch (action) {
       MoneyQuickAction.expense => moneyColors.expense,
+      MoneyQuickAction.receipt => theme.colorScheme.primary,
       MoneyQuickAction.income => moneyColors.income,
       MoneyQuickAction.transfer => moneyColors.transfer,
       MoneyQuickAction.budget => theme.colorScheme.primary,

@@ -38,8 +38,11 @@ class _MoneyQuickActionFabState extends ConsumerState<MoneyQuickActionFab> {
   );
 
   /// 悬浮面板展示全部动作，顺序即优先级。
+  ///
+  /// [isAvailable] 为 false 的动作（桌面 / Web 上的截图记账）不会出现在面板里。
   static const _actions = <MoneyQuickAction>[
     MoneyQuickAction.expense,
+    MoneyQuickAction.receipt,
     MoneyQuickAction.income,
     MoneyQuickAction.transfer,
     MoneyQuickAction.task,
@@ -48,6 +51,9 @@ class _MoneyQuickActionFabState extends ConsumerState<MoneyQuickActionFab> {
     MoneyQuickAction.budget,
     MoneyQuickAction.plan,
   ];
+
+  List<MoneyQuickAction> get _availableActions =>
+      _actions.where((action) => action.isAvailable).toList(growable: false);
 
   @override
   void dispose() {
@@ -96,7 +102,7 @@ class _MoneyQuickActionFabState extends ConsumerState<MoneyQuickActionFab> {
     final entry = OverlayEntry(
       builder: (context) => Positioned.fill(
         child: _MoneyQuickActionSheet(
-          actions: _actions,
+          actions: _availableActions,
           onAction: _handleAction,
           onDismiss: _hideActions,
           docked: isDocked,

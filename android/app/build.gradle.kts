@@ -80,6 +80,10 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // ML Kit 文字识别的默认包只带拉丁字母模型，中文必须显式引入这个语言包，
+    // 否则支付截图上的中文会被识别成空白或乱码（Dart 侧对应
+    // TextRecognitionScript.chinese）。模型随包发布，识别过程不联网。
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
 }
 
 kotlin {

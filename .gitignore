@@ -52,3 +52,7 @@ docs/snap_*.json
 
 # Generated database code
 lib/core/database/app_database.g.dart
+
+# 真实支付截图（含姓名、金额、转账单号、卡号后四位）：只作本地排查参照，
+# 不进公开仓库。scriptures/ 下其余文件是应用界面截图，照常入库。
+scriptures/IMG_*
