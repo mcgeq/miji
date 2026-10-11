@@ -2201,6 +2201,9 @@ class _AccountActionsMenu extends StatelessWidget {
     return PopupMenuButton<_AccountMenuAction>(
       tooltip: '更多操作',
       position: PopupMenuPosition.under,
+      // 只有图标，菜单就该只有图标宽。Material 默认 minWidth 112，会把
+      // 纯图标行撑成一条宽条。48 = 图标 20 + 左右 padding 14 + 14。
+      constraints: const BoxConstraints(minWidth: 48, maxWidth: 48),
       onSelected: (action) {
         switch (action) {
           case _AccountMenuAction.toggleAmount:

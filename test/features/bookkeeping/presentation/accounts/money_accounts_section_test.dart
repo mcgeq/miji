@@ -164,6 +164,14 @@ void main() {
     expect(find.byTooltip('编辑账户'), findsOneWidget);
     expect(find.byTooltip('停用账户'), findsOneWidget);
     expect(find.byTooltip('删除账户'), findsOneWidget);
+
+    // 菜单也应只有图标宽，不被 Material 默认的 112dp minWidth 撑成宽条。
+    final itemWidth = tester
+        .getSize(
+          find.byWidgetPredicate((widget) => widget is PopupMenuItem).first,
+        )
+        .width;
+    expect(itemWidth, lessThanOrEqualTo(48));
   });
 
   group('全局金额遮罩', () {

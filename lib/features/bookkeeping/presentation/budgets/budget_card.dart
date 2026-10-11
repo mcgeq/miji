@@ -218,6 +218,8 @@ class BudgetCard extends StatelessWidget {
                 PopupMenuButton<_BudgetMenuAction>(
                   tooltip: '更多操作',
                   position: PopupMenuPosition.under,
+                  // 只有图标，菜单就只有图标宽（Material 默认 minWidth 112）。
+                  constraints: const BoxConstraints(minWidth: 48, maxWidth: 48),
                   onSelected: (action) {
                     switch (action) {
                       case _BudgetMenuAction.history:
