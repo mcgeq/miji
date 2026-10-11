@@ -13,6 +13,7 @@ import 'package:miji/core/sync/delta_sync/sync_change_logger.dart';
 import 'package:miji/features/bookkeeping/application/money_installment_schedule.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_auto_posting_conflict_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
@@ -43,6 +44,7 @@ part 'parts/budget_commitments.dart';
 part 'parts/bill_reminders.dart';
 part 'parts/installments.dart';
 part 'parts/auto_posting.dart';
+part 'parts/auto_posting_conflicts.dart';
 part 'parts/remote_apply.dart';
 part 'parts/reports.dart';
 part 'parts/asset_snapshots.dart';
@@ -1156,6 +1158,7 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       isDeleted: template.isDeleted,
       createdAt: template.createdAt,
       updatedAt: template.updatedAt,
+      takenOverByPlanId: template.takenOverByPlanId,
     );
   }
 
@@ -4260,6 +4263,9 @@ abstract class _DriftMoneyRepositoryBase implements MoneyRepository {
       endDate: _dateFromKey(plan.endDate),
       firstDueDate: _dateFromKey(plan.firstDueDate),
       status: MoneyInstallmentPlanStatus.fromStorageValue(plan.status),
+      calcMethod: MoneyInstallmentCalcMethod.fromStorageValue(
+        plan.calcMethod ?? MoneyInstallmentCalcMethod.flat.storageValue,
+      ),
       notes: plan.notes,
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt,
@@ -5217,8 +5223,12 @@ class DriftMoneyRepository extends _DriftMoneyRepositoryBase
         _BillReminders,
         _Installments,
         _AutoPosting,
+        // _AutoPostingConflicts 要用到 _AutoPosting 的 occurrence 展开和
+        // _Installments 的私有读法，必须排在两者之后。
+        _AutoPostingConflicts,
         // _BudgetCommitments 的 on 子句要求 _Budgets / _AutoPosting 已经混入，
-        // 所以它必须排在这两者之后。
+        // 且它要复用 _AutoPostingConflicts 的重复判定来给「已预留」去重，
+        // 所以它排在最后。
         _BudgetCommitments,
         _RemoteApply,
         _Reports,

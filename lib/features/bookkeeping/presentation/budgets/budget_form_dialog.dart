@@ -13,20 +13,42 @@ import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
+import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/suggestion_autocomplete_field.dart';
 
 class BudgetFormDialog extends ConsumerStatefulWidget {
-  const BudgetFormDialog({super.key, this.budget});
+  const BudgetFormDialog({
+    super.key,
+    this.budget,
+    this.initialScopeType,
+    this.initialCategoryId,
+    this.initialSubCategoryId,
+    this.initialAccountId,
+    this.initialTag,
+    this.initialTrackingType,
+  });
 
   final MoneyBudgetEntity? budget;
+
+  /// 从统计下钻 / 流水筛选直接建预算时的预填值。
+  ///
+  /// 「看完发现这个分类花超了」到「给它设个预算」之间原本要回到预算页、
+  /// 重新选分类，这一步经常就懒得走了。传这些值进来，表单直接落在正确位置。
+  final MoneyBudgetScopeType? initialScopeType;
+  final String? initialCategoryId;
+  final String? initialSubCategoryId;
+  final String? initialAccountId;
+  final String? initialTag;
+  final MoneyBudgetTrackingType? initialTrackingType;
 
   @override
   ConsumerState<BudgetFormDialog> createState() => _BudgetFormDialogState();
@@ -53,6 +75,8 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
   String? _periodErrorText;
   bool _alertEnabled = false;
   bool _autoRollover = false;
+  bool _isLoadingReference = false;
+  String? _referenceHint;
   String _selectedColor = '#F97316';
   DateTime? _startDate;
   DateTime? _endDate;
@@ -76,15 +100,22 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     _repeatIntervalController = TextEditingController(
       text: (budget?.repeatInterval ?? 1).toString(),
     );
-    _categoryId = budget?.categoryId;
-    _subCategoryId = budget?.subCategoryId;
-    _accountId = budget?.accountId;
+    _categoryId = budget?.categoryId ?? widget.initialCategoryId;
+    _subCategoryId = budget?.subCategoryId ?? widget.initialSubCategoryId;
+    _accountId = budget?.accountId ?? widget.initialAccountId;
     _ledgerId = budget?.ledgerId;
     _trackingType =
-        budget?.trackingType ?? MoneyBudgetTrackingType.expenseLimit;
+        budget?.trackingType ??
+        widget.initialTrackingType ??
+        MoneyBudgetTrackingType.expenseLimit;
     _periodType = budget?.periodType ?? MoneyBudgetPeriodType.monthly;
-    _scopeType = budget?.scopeType ?? MoneyBudgetScopeType.all;
-    _tagController = TextEditingController(text: budget?.tag ?? '');
+    _scopeType =
+        budget?.scopeType ??
+        widget.initialScopeType ??
+        MoneyBudgetScopeType.all;
+    _tagController = TextEditingController(
+      text: budget?.tag ?? widget.initialTag ?? '',
+    );
     if (_scopeType == MoneyBudgetScopeType.all) {
       _categoryId = null;
       _subCategoryId = null;
@@ -490,6 +521,14 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
               labelText: amountLabel,
               validator: _validateAmount,
             ),
+            // 设预算最大的痛点是不知道该填多少，而近几个月的实际支出就是
+            // 最靠谱的锚点。按当前 scope 与收支方向统计，避免「全部分类的
+            // 月均」被填进「餐饮预算」里。
+            _BudgetHistoryReference(
+              busy: _isLoadingReference,
+              hint: _referenceHint,
+              onFill: _fillAmountFromHistory,
+            ),
             if (_categoryErrorText != null)
               Text(
                 _categoryErrorText!,
@@ -722,6 +761,95 @@ class _BudgetFormDialogState extends ConsumerState<BudgetFormDialog> {
     }
   }
 
+  /// 按近 3 个**完整自然月**的实际发生额填充预算额度。
+  ///
+  /// 只取完整月：当月还没过完，算进来会把月均拉低，用户照着填必然不够花。
+  /// 统计口径与预算「已用」保持一致（只算已入账、排除转账）。
+  Future<void> _fillAmountFromHistory() async {
+    if (_isLoadingReference) {
+      return;
+    }
+    setState(() {
+      _isLoadingReference = true;
+      _referenceHint = null;
+    });
+    try {
+      final session = ref.read(authSessionControllerProvider);
+      final userId = session.userId;
+      if (userId == null) {
+        setState(() => _referenceHint = '暂无法读取历史数据');
+        return;
+      }
+      final isIncome = _trackingType == MoneyBudgetTrackingType.incomeTarget;
+      final type = isIncome
+          ? MoneyTransactionType.income
+          : MoneyTransactionType.expense;
+      final tag = _scopeType == MoneyBudgetScopeType.tag
+          ? _tagController.text.trim()
+          : '';
+      final ledgerId =
+          _ledgerId ?? ref.read(currentUserCurrentLedgerValueProvider)?.id;
+
+      const months = 3;
+      final now = DateTime.now();
+      final repository = ref.read(moneyRepositoryProvider);
+      final monthly = <int>[];
+      for (var offset = months; offset >= 1; offset--) {
+        // DateTime 的月份会自动借位，11 - 3 = 8 月这类跨年不需要特殊处理。
+        final start = DateTime(now.year, now.month - offset, 1);
+        final end = DateTime(now.year, now.month - offset + 1, 1);
+        final summary = await repository.summarizeTransactions(
+          userId,
+          MoneyTransactionQuery(
+            page: 1,
+            pageSize: 1,
+            ledgerId: ledgerId,
+            type: type,
+            status: MoneyTransactionStatus.completed,
+            accountId: _accountId,
+            categoryId: _categoryId,
+            subCategoryId: _subCategoryId,
+            tags: tag.isEmpty ? const <String>[] : <String>[tag],
+            dateStart: start,
+            dateEnd: end.subtract(const Duration(milliseconds: 1)),
+          ),
+        );
+        monthly.add(isIncome ? summary.incomeMinor : summary.expenseMinor);
+      }
+
+      var total = 0;
+      for (final amount in monthly) {
+        total += amount;
+      }
+      final average = total ~/ months;
+      if (average <= 0) {
+        setState(() => _referenceHint = '近 $months 个月没有可参考的流水');
+        return;
+      }
+      _amountController.text = (average / 100).toStringAsFixed(2);
+      final labels = <String>[];
+      for (var index = 0; index < monthly.length; index++) {
+        final month = DateTime(now.year, now.month - months + index, 1);
+        labels.add('${month.month}月 ${_compactMoney(monthly[index])}');
+      }
+      setState(
+        () => _referenceHint =
+            '已按近 $months 个月均值 ${_compactMoney(average)} 填充：${labels.join(' / ')}',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingReference = false);
+      }
+    }
+  }
+
+  String _compactMoney(int amountMinor) {
+    // 预算表单本身没有币种字段，币种由账本决定；这里只用于展示参考值，
+    // 取当前账本的基准币种足够。
+    final ledger = ref.read(currentUserCurrentLedgerValueProvider);
+    return formatMoneyMinor(amountMinor, ledger?.baseCurrencyCode ?? 'CNY');
+  }
+
   String? _validateAlertThreshold(String? value) {
     if (!_alertEnabled) {
       return null;
@@ -881,6 +1009,64 @@ class _BudgetLedgerNotice extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 「按历史均值填充」入口。
+///
+/// 放在金额框下面而不是塞进弹窗：用户最可能在填金额时犹豫，
+/// 这时旁边就有一个能算数的按钮，比记住历史数字强得多。
+class _BudgetHistoryReference extends StatelessWidget {
+  const _BudgetHistoryReference({
+    required this.busy,
+    required this.hint,
+    required this.onFill,
+  });
+
+  final bool busy;
+  final String? hint;
+  final VoidCallback onFill;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: busy ? null : onFill,
+            icon: busy
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.history_rounded, size: 16),
+            label: const Text('按近 3 个月均值填充'),
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ),
+        if (hint case final text?) ...[
+          const SizedBox(height: 4),
+          Text(
+            text,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

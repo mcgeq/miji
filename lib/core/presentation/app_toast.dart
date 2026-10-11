@@ -33,17 +33,48 @@ class AppToast {
     );
   }
 
+  /// 带操作按钮的提示，用于「已删除 · 撤销」这类可反悔的反馈。
+  ///
+  /// 停留时间比普通提示长：用户看到再点过来需要反应时间，2 秒就消失等于没有。
+  static void undo({
+    required FToast toast,
+    required BuildContext context,
+    required String message,
+    required String actionLabel,
+    required VoidCallback onAction,
+  }) {
+    final color = Theme.of(context).colorScheme.secondary;
+    _show(
+      toast,
+      icon: Icons.check_circle_outline_rounded,
+      color: color,
+      message: message,
+      actionLabel: actionLabel,
+      onAction: onAction,
+      duration: const Duration(seconds: 6),
+    );
+  }
+
   static void _show(
     FToast toast, {
     required IconData icon,
     required Color color,
     required String message,
+    Duration duration = const Duration(seconds: 2),
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     toast.removeQueuedCustomToasts();
     toast.showToast(
       gravity: ToastGravity.BOTTOM,
-      toastDuration: const Duration(seconds: 2),
-      child: _AppToastContent(icon: icon, color: color, message: message),
+      toastDuration: duration,
+      child: _AppToastContent(
+        icon: icon,
+        color: color,
+        message: message,
+        actionLabel: actionLabel,
+        onAction: onAction,
+      ),
     );
   }
 }
@@ -53,11 +84,15 @@ class _AppToastContent extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.message,
+    this.actionLabel,
+    this.onAction,
   });
 
   final IconData icon;
   final Color color;
   final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +131,29 @@ class _AppToastContent extends StatelessWidget {
                 ),
               ),
             ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(width: 12),
+              TextButton(
+                onPressed: onAction,
+                style: TextButton.styleFrom(
+                  foregroundColor: colorScheme.onInverseSurface,
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  actionLabel!,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onInverseSurface,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

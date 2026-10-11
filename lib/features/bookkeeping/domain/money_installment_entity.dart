@@ -87,6 +87,7 @@ class MoneyInstallmentPlanEntity {
     required this.endDate,
     required this.firstDueDate,
     required this.status,
+    this.calcMethod = MoneyInstallmentCalcMethod.flat,
     required this.createdAt,
     required this.updatedAt,
     this.description,
@@ -112,6 +113,9 @@ class MoneyInstallmentPlanEntity {
   final DateTime endDate;
   final DateTime firstDueDate;
   final MoneyInstallmentPlanStatus status;
+
+  /// 计算方式（等额平摊 / 等额本息 / 等额本金）。历史数据可能为空，回落到等额平摊。
+  final MoneyInstallmentCalcMethod calcMethod;
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;

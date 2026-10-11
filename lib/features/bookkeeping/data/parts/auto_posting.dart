@@ -186,6 +186,12 @@ mixin _AutoPosting on _DriftMoneyRepositoryBase {
               startsOn: Value(_dateOnlyUtc(update.startsOn)),
               endsOn: Value<DateTime?>(_nullableDateOnlyUtc(update.endsOn)),
               isActive: Value(update.isActive),
+              // 用户把模板重新启用，等于放弃「交给分期」：一并清掉接管标记，
+              // 否则会留下「启用 + 已接管」的矛盾状态——执行层照记一笔，
+              // 预算层却因为标记还在而跳过，账实与额度对不上。
+              takenOverByPlanId: Value<String?>(
+                update.isActive ? null : existing.takenOverByPlanId,
+              ),
               version: Value(existing.version + 1),
               updatedAt: Value(now),
             ),

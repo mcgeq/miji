@@ -19,6 +19,8 @@ import 'package:miji/features/bookkeeping/application/transaction_entry_defaults
 import 'package:miji/features/bookkeeping/data/drift_money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
+import 'package:miji/features/bookkeeping/application/auto_posting_conflict_ignore_store.dart';
+import 'package:miji/features/bookkeeping/domain/money_auto_posting_conflict_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
@@ -382,6 +384,22 @@ final currentUserPendingTransactionCountProvider =
         ),
       );
       return summary.count;
+    });
+
+/// 回收站：最近 30 天被删除的流水。
+///
+/// 必须 watch 刷新版本号——删除与恢复都不会动流水表之外的表，
+/// 只靠数据自身的 watch 是不会重跑的。
+final currentUserDeletedTransactionsProvider =
+    FutureProvider.autoDispose<List<MoneyTransactionEntity>>((ref) async {
+      ref.watch(moneyDataRefreshVersionProvider);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyTransactionEntity>[];
+      }
+      return ref
+          .watch(currentUserMoneyTransactionActionsProvider)
+          .listDeletedTransactions();
     });
 
 final currentUserCreditCardBillViewProvider = FutureProvider.autoDispose
@@ -1344,6 +1362,34 @@ final currentUserAutoPostingRunsProvider = StreamProvider.autoDispose
       yield* ref
           .watch(moneyRepositoryProvider)
           .watchAutoPostingRunsForTemplate(session.userId!, templateId);
+    });
+
+/// 当前账本里「同一笔还款既登记成分期、又登记成自动记账」的冲突。
+///
+/// 已忽略（用户标记过「这是两笔不同支出」）的不再返回；已接管的模板 isActive
+/// 为 false，仓储层查不到，也不会出现在这里——所以列表天然只剩待处置的。
+final currentUserAutoPostingInstallmentConflictsProvider =
+    FutureProvider.autoDispose<List<MoneyAutoPostingInstallmentConflict>>((
+      ref,
+    ) async {
+      _watchMoneyDataRefresh(ref);
+      final session = ref.watch(authSessionControllerProvider);
+      if (!session.isUnlocked || session.userId == null) {
+        return const <MoneyAutoPostingInstallmentConflict>[];
+      }
+
+      final ignored =
+          ref.watch(autoPostingConflictIgnoreProvider).value ??
+          const <String>{};
+      final ledger = await ref.watch(currentUserCurrentLedgerProvider.future);
+      final conflicts = await ref
+          .watch(moneyRepositoryProvider)
+          .findAutoPostingInstallmentConflicts(session.userId!);
+
+      return conflicts
+          .where((item) => !ignored.contains(item.conflictKey))
+          .where((item) => ledger == null || item.ledgerId == ledger.id)
+          .toList(growable: false);
     });
 
 final moneyBudgetHistoryTrendProvider = FutureProvider.autoDispose
@@ -2412,6 +2458,24 @@ class CurrentUserMoneyAutoPostingActions {
     _refresh();
   }
 
+  /// 把模板交给分期计划独占：模板停用，不再入账也不再占预算。
+  Future<void> takeOverByInstallment(String templateId, String planId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .takeOverAutoPostingTemplate(userId, templateId, planId);
+    _refresh();
+  }
+
+  /// 交还给模板：重新启用，恢复独立入账。
+  Future<void> releaseTakeOver(String templateId) async {
+    final userId = _requireUnlockedUserId();
+    await _ref
+        .read(moneyRepositoryProvider)
+        .releaseAutoPostingTakeOver(userId, templateId);
+    _refresh();
+  }
+
   String _requireUnlockedUserId() {
     final session = _ref.read(authSessionControllerProvider);
     final userId = session.userId;
@@ -2851,6 +2915,32 @@ class CurrentUserMoneyTransactionActions {
       _refresh();
     }
     return applied;
+  }
+
+  /// 撤销删除，返回实际恢复的条数。
+  Future<int> restoreTransactions(List<String> transactionIds) async {
+    final userId = _requireUnlockedUserId();
+    final applied = await _ref
+        .read(moneyRepositoryProvider)
+        .restoreTransactions(userId, transactionIds);
+    if (applied > 0) {
+      _refresh();
+    }
+    return applied;
+  }
+
+  /// 回收站内容；[within] 之外的更早记录不再展示。
+  Future<List<MoneyTransactionEntity>> listDeletedTransactions({
+    Duration within = const Duration(days: 30),
+  }) async {
+    final userId = _requireUnlockedUserId();
+    return _ref
+        .read(moneyRepositoryProvider)
+        .listDeletedTransactions(
+          userId,
+          deletedAfter: DateTime.now().toUtc().subtract(within),
+          limit: 100,
+        );
   }
 
   Future<MoneyTransactionPage> listTransactions(

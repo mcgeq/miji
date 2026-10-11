@@ -9,10 +9,19 @@ part of 'package:miji/features/bookkeeping/data/drift_money_repository.dart';
 /// 匹配维度也比照 [_budgetMatchesTransactionImpact]：账本、收支方向、币种、
 /// scope（账户 / 分类 / 子分类 / 标签）。少比一项就会出现「收入模板预占支出预算」
 /// 这类错误。
-/// 依赖 [_Budgets]（账本谓词）与 [_AutoPosting]（occurrence 展开）里的私有成员，
-/// 而这两个是兄弟 mixin——只有把它们写进 `on` 子句、并在 `DriftMoneyRepository`
-/// 的 `with` 列表里排在前面，这里才能访问到。
-mixin _BudgetCommitments on _DriftMoneyRepositoryBase, _Budgets, _AutoPosting {
+///
+/// 去重：同一笔还款既登记成分期期次、又登记成自动记账模板时，只算分期那一份，
+/// 见 [_CommitmentSources.conflictingTemplateIds]。
+/// 依赖 [_Budgets]（账本谓词）、[_AutoPosting]（occurrence 展开）与
+/// [_AutoPostingConflicts]（重复判定）里的私有成员，它们都是兄弟 mixin——
+/// 只有写进 `on` 子句、并在 `DriftMoneyRepository` 的 `with` 列表里排在前面，
+/// 这里才能访问到。
+mixin _BudgetCommitments
+    on
+        _DriftMoneyRepositoryBase,
+        _Budgets,
+        _AutoPosting,
+        _AutoPostingConflicts {
   @override
   Future<MoneyBudgetCommitment> budgetCommitmentForBudget(
     String userId,
@@ -166,6 +175,11 @@ mixin _BudgetCommitments on _DriftMoneyRepositoryBase, _Budgets, _AutoPosting {
     final periodEndUtc = period.end.toUtc();
 
     for (final template in sources.templates) {
+      // 这一笔已经由分期期次计入了，模板这一份必须跳过，否则同一笔还款
+      // 会把额度占掉两次。
+      if (sources.conflictingTemplateIds.contains(template.id)) {
+        continue;
+      }
       // 转账只是资金搬家，不占任何收支预算。
       if (template.type == MoneyTransactionType.transfer) {
         continue;
@@ -370,12 +384,16 @@ mixin _BudgetCommitments on _DriftMoneyRepositoryBase, _Budgets, _AutoPosting {
     final templates = <MoneyAutoPostingTemplateEntity>[];
     final runStatusByKey = <String, String>{};
     if (options.includeAutoPosting) {
+      // taken_over_by_plan_id 非空 = 已由分期接管。正常路径上这类模板 isActive
+      // 已经是 false，会被上面的条件过滤掉；这里再显式排除一次，是为了防止
+      //「标了接管却仍是启用态」的脏数据把同一笔钱算两遍。
       final templateRows =
           await (database.select(database.moneyAutoPostingTemplates)..where(
                 (row) =>
                     row.userId.equals(userId) &
                     row.isActive.equals(true) &
-                    row.isDeleted.equals(false),
+                    row.isDeleted.equals(false) &
+                    row.takenOverByPlanId.isNull(),
               ))
               .get();
       for (final row in templateRows) {
@@ -446,11 +464,24 @@ mixin _BudgetCommitments on _DriftMoneyRepositoryBase, _Budgets, _AutoPosting {
       }
     }
 
+    // 同一笔还款在模板和分期里各登记了一次时，只保留分期那一份。
+    // 分期期次是唯一真相：它带着本金 / 利息 / 冻结额度，自动记账模板只是
+    // 一个固定金额，本来就不该由它来代表分期还款。
+    final conflictingTemplateIds =
+        options.includeAutoPosting && options.includeInstallments
+        ? conflictingAutoPostingTemplateIds(
+            userId: userId,
+            templates: templates,
+            pendingInstallments: pendingInstallments,
+          )
+        : const <String>{};
+
     return _CommitmentSources(
       templates: templates,
       runStatusByKey: runStatusByKey,
       pendingInstallments: pendingInstallments,
       pendingReminders: pendingReminders,
+      conflictingTemplateIds: conflictingTemplateIds,
     );
   }
 
@@ -529,6 +560,7 @@ class _CommitmentSources {
     required this.runStatusByKey,
     required this.pendingInstallments,
     required this.pendingReminders,
+    this.conflictingTemplateIds = const <String>{},
   });
 
   final List<MoneyAutoPostingTemplateEntity> templates;
@@ -537,6 +569,9 @@ class _CommitmentSources {
   final Map<String, String> runStatusByKey;
   final List<_PendingInstallmentCommitment> pendingInstallments;
   final List<MoneyBillReminderEntity> pendingReminders;
+
+  /// 与分期期次重复登记、因而被跳过的自动记账模板 id。
+  final Set<String> conflictingTemplateIds;
 }
 
 class _PendingInstallmentCommitment {

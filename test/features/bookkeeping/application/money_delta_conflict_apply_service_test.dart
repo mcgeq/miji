@@ -5,6 +5,8 @@ import 'package:miji/core/sync/delta_sync/delta_conflict_resolver.dart';
 import 'package:miji/core/sync/delta_sync/delta_conflict_store.dart';
 import 'package:miji/core/sync/delta_sync/delta_package_models.dart';
 import 'package:miji/features/bookkeeping/application/money_delta_conflict_apply_service.dart';
+import 'package:miji/features/bookkeeping/domain/money_auto_posting_conflict_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 
@@ -193,6 +195,29 @@ class _FakeMoneyRepository implements MoneyRepository {
     String transactionId,
     int refundAmountMinor,
   ) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<MoneyAutoPostingTemplateEntity> takeOverAutoPostingTemplate(
+    String userId,
+    String templateId,
+    String planId,
+  ) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<MoneyAutoPostingTemplateEntity> releaseAutoPostingTakeOver(
+    String userId,
+    String templateId,
+  ) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<MoneyAutoPostingInstallmentConflict>>
+  findAutoPostingInstallmentConflicts(String userId) async {
     throw UnimplementedError();
   }
 

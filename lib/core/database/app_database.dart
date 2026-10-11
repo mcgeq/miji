@@ -99,7 +99,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration {
@@ -297,6 +297,15 @@ class AppDatabase extends _$AppDatabase {
               );
             }
           }
+        }
+        if (from < 24) {
+          // V1.6: 自动记账模板被分期接管。同一笔周期还款若同时登记为分期期次
+          // 和自动记账模板，到期当天两个引擎会各建一笔流水；接管后模板停止
+          // 独立入账（isActive 同步置 false），由分期引擎独占。
+          await migrator.addColumn(
+            moneyAutoPostingTemplates,
+            moneyAutoPostingTemplates.takenOverByPlanId,
+          );
         }
       },
     );

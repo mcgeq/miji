@@ -1315,6 +1315,315 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
     }
   }
 
+  @override
+  Future<int> restoreTransactions(
+    String userId,
+    List<String> transactionIds,
+  ) async {
+    final uniqueIds = _uniqueTransactionIds(transactionIds);
+    if (uniqueIds.isEmpty) {
+      return 0;
+    }
+
+    try {
+      await ensureReadyForUser(userId);
+      final impacts = <_BudgetTransactionImpact>[];
+      final accountIds = <String>{};
+      var applied = 0;
+      for (final transactionId in uniqueIds) {
+        final changed = await _applyTransactionRestore(
+          userId: userId,
+          transactionId: transactionId,
+          impacts: impacts,
+          accountIds: accountIds,
+        );
+        if (changed) {
+          applied += 1;
+        }
+      }
+      if (applied == 0) {
+        return 0;
+      }
+      if (impacts.isNotEmpty) {
+        await _refreshBudgetSnapshotsForTransactionImpacts(userId, impacts);
+      }
+      if (accountIds.isNotEmpty) {
+        await _syncCreditAccountRepaymentRemindersForAccounts(
+          userId,
+          accountIds.toList(),
+        );
+      }
+      await _tryRebuildUsageStatsForUser(userId);
+      return applied;
+    } catch (error) {
+      if (error is MoneyRepositoryException) {
+        rethrow;
+      }
+      throw MoneyRepositoryException(
+        MoneyRepositoryErrorCode.databaseWriteFailed,
+        error,
+      );
+    }
+  }
+
+  @override
+  Future<List<MoneyTransactionEntity>> listDeletedTransactions(
+    String userId, {
+    DateTime? deletedAfter,
+    int limit = 100,
+  }) async {
+    await ensureReadyForUser(userId);
+    final query = database.select(database.moneyTransactions)
+      ..where((row) => row.userId.equals(userId) & row.isDeleted.equals(true))
+      ..orderBy([(row) => OrderingTerm.desc(row.deletedAt)])
+      ..limit(limit < 1 ? 1 : limit);
+    final rows = await query.get();
+
+    // 时间窗在 Dart 侧过滤：deletedAt 可空，写进 SQL 谓词要处理一堆 nullable
+    // 比较分支，而回收站最多也就几十条。
+    final after = deletedAfter?.toUtc();
+    final kept = rows
+        .where((row) {
+          final deletedAt = row.deletedAt;
+          if (after == null || deletedAt == null) {
+            return true;
+          }
+          return !deletedAt.isBefore(after);
+        })
+        .toList(growable: false);
+    if (kept.isEmpty) {
+      return const <MoneyTransactionEntity>[];
+    }
+
+    final tagsByTransactionId = await _getTagsForTransactions(
+      kept.map((row) => row.id),
+    );
+    return kept
+        .map(
+          (row) => _mapTransaction(
+            row,
+            tags: tagsByTransactionId[row.id] ?? const <String>[],
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  /// 单条恢复的核心逻辑，返回是否真的恢复。
+  ///
+  /// 恢复是删除的严格逆操作：账户余额加回去、分期 run 状态撤回、预算快照重算。
+  /// 恢复不了的情况（账户已被删、分期入账流水、转账的另一半找不到）一律**跳过**
+  /// 而不是让整批失败——和批量删除保持同一套语义。
+  Future<bool> _applyTransactionRestore({
+    required String userId,
+    required String transactionId,
+    required List<_BudgetTransactionImpact> impacts,
+    required Set<String> accountIds,
+  }) async {
+    final transaction =
+        await (database.select(database.moneyTransactions)
+              ..where(
+                (row) =>
+                    row.id.equals(transactionId) &
+                    row.userId.equals(userId) &
+                    row.isDeleted.equals(true),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (transaction == null) {
+      return false;
+    }
+    // 分期入账流水由分期计划驱动：计划那边记着「已还」，把流水恢复出来会
+    // 变成计划与流水互相矛盾，宁可不恢复。
+    if (_DriftMoneyRepositoryBase._isInstallmentPosting(transaction)) {
+      return false;
+    }
+
+    final type = MoneyTransactionType.fromStorageValue(transaction.type);
+    final now = _utcNow();
+
+    if (type == MoneyTransactionType.transfer) {
+      final relatedId = transaction.relatedTransactionId;
+      if (relatedId == null) {
+        return false;
+      }
+      final related =
+          await (database.select(database.moneyTransactions)
+                ..where(
+                  (row) =>
+                      row.id.equals(relatedId) &
+                      row.userId.equals(userId) &
+                      row.isDeleted.equals(true),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (related == null) {
+        return false;
+      }
+      final outgoing =
+          transaction.actualPayerAccount ==
+              _DriftMoneyRepositoryBase._transferOutMarker
+          ? transaction
+          : related;
+      final incoming = identical(outgoing, transaction) ? related : transaction;
+
+      final fromAccount = await _findAccountForUser(userId, outgoing.accountId);
+      final toAccount = await _findAccountForUser(userId, incoming.accountId);
+      if (fromAccount == null || toAccount == null) {
+        return false;
+      }
+      final fromLedger = _MutableAccountLedger.fromAccount(fromAccount)
+        ..applyTransferOutgoing(outgoing.amountMinor)
+        ..validate();
+      final toLedger = _MutableAccountLedger.fromAccount(toAccount)
+        ..applyTransferIncoming(incoming.amountMinor)
+        ..validate();
+
+      await database.transaction(() async {
+        await _updateAccountLedger(userId, fromAccount.id, fromLedger, now);
+        await _updateAccountLedger(userId, toAccount.id, toLedger, now);
+        await _unmarkTransactionDeleted(
+          userId,
+          outgoing.id,
+          outgoing.version,
+          now,
+        );
+        await _unmarkTransactionDeleted(
+          userId,
+          incoming.id,
+          incoming.version,
+          now,
+        );
+      });
+      // 转账不进预算口径，删除时也没记 impact，这里保持一致。
+      accountIds.add(outgoing.accountId);
+      accountIds.add(incoming.accountId);
+      return true;
+    }
+
+    final account = await _findAccountForUser(userId, transaction.accountId);
+    if (account == null) {
+      return false;
+    }
+    final transactionStatus = MoneyTransactionStatus.fromStorageValue(
+      transaction.status,
+    );
+    final ledger = _MutableAccountLedger.fromAccount(account);
+    if (transactionStatus == MoneyTransactionStatus.completed) {
+      ledger.applyTransactionCreate(
+        type,
+        _effectiveTransactionAmountMinor(transaction),
+      );
+    }
+    ledger.validate();
+
+    final ledgerIds = await _ledgerIdsForTransactionRow(userId, transaction.id);
+    final transactionTags = await _getTagsForTransaction(transaction.id);
+    await database.transaction(() async {
+      await _updateAccountLedger(userId, account.id, ledger, now);
+      await _unmarkTransactionDeleted(
+        userId,
+        transaction.id,
+        transaction.version,
+        now,
+      );
+      await _restoreAutoPostingRunForTransaction(
+        userId: userId,
+        transaction: transaction,
+        now: now,
+      );
+    });
+
+    impacts.add(
+      _BudgetTransactionImpact(
+        type: type,
+        accountId: transaction.accountId,
+        categoryId: transaction.categoryId,
+        subCategoryId: transaction.subCategoryId,
+        ledgerIds: ledgerIds,
+        tags: transactionTags,
+      ),
+    );
+    accountIds.add(transaction.accountId);
+    return true;
+  }
+
+  /// 找账户但不抛异常——恢复一条流水时，它的账户可能已经在回收站里了，
+  /// 这种情况应该跳过这条，而不是让整批恢复失败。
+  Future<MoneyAccount?> _findAccountForUser(
+    String userId,
+    String accountId,
+  ) async {
+    return (database.select(database.moneyAccounts)
+          ..where(
+            (row) =>
+                row.id.equals(accountId) &
+                row.userId.equals(userId) &
+                row.isDeleted.equals(false),
+          )
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  Future<void> _unmarkTransactionDeleted(
+    String userId,
+    String transactionId,
+    int beforeVersion,
+    DateTime now,
+  ) async {
+    await (database.update(database.moneyTransactions)..where(
+          (row) =>
+              row.id.equals(transactionId) &
+              row.userId.equals(userId) &
+              row.isDeleted.equals(true),
+        ))
+        .write(
+          MoneyTransactionsCompanion(
+            isDeleted: const Value(false),
+            deletedAt: const Value<DateTime?>(null),
+            version: Value(beforeVersion + 1),
+            updatedAt: Value(now),
+          ),
+        );
+    await _recordTransactionChange(
+      userId: userId,
+      recordId: transactionId,
+      operation: SyncChangeOperation.update,
+      changedFields: _restoreSyncFields(),
+      beforeVersion: beforeVersion,
+      afterVersion: beforeVersion + 1,
+    );
+  }
+
+  /// 删除流水时把对应的自动记账 run 标成了 userDeleted（否则下一轮还会补记），
+  /// 恢复时要把状态退回去，不然这一次执行就永久消失了。
+  Future<void> _restoreAutoPostingRunForTransaction({
+    required String userId,
+    required MoneyTransaction transaction,
+    required DateTime now,
+  }) async {
+    final runId = transaction.sourceTemplateRunId;
+    if (runId == null || runId.trim().isEmpty) {
+      return;
+    }
+    final runRow = await _getAutoPostingRunById(userId, runId);
+    if (runRow == null) {
+      return;
+    }
+    final run = _mapAutoPostingRun(runRow);
+    if (run.status != MoneyAutoPostingRunStatus.userDeleted) {
+      return;
+    }
+    await _writeAutoPostingRunState(
+      existing: run,
+      status: MoneyAutoPostingRunStatus.posted,
+      transactionId: transaction.id,
+      postedAt: run.postedAt ?? now,
+      errorCode: null,
+      errorMessage: null,
+      updatedAt: now,
+    );
+  }
+
   /// 单条删除的核心逻辑，返回是否真的删除。
   ///
   /// 与 [deleteTransaction] 的区别只在不抛「分期入账」而直接跳过——
@@ -1770,6 +2079,15 @@ mixin _Transactions on _DriftMoneyRepositoryBase {
     String transactionId,
   ) async {
     await _getTransactionForUser(userId, transactionId);
+    return _ledgerIdsForTransactionRow(userId, transactionId);
+  }
+
+  /// 与 [_ledgerIdsForTransaction] 相同，但不校验流水是否还在——
+  /// 恢复一条已删除的流水时，它此刻确实还是 `isDeleted = true`。
+  Future<List<String>> _ledgerIdsForTransactionRow(
+    String userId,
+    String transactionId,
+  ) async {
     final links = await (database.select(
       database.moneyLedgerTransactions,
     )..where((link) => link.transactionId.equals(transactionId))).get();

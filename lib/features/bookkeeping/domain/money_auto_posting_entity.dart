@@ -84,6 +84,7 @@ class MoneyAutoPostingTemplateEntity {
     required this.isDeleted,
     required this.createdAt,
     required this.updatedAt,
+    this.takenOverByPlanId,
   });
 
   final String id;
@@ -113,6 +114,15 @@ class MoneyAutoPostingTemplateEntity {
   final bool isDeleted;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// 非空表示已被该分期计划接管，模板不再独立入账。
+  final String? takenOverByPlanId;
+
+  /// 当前是否处于「被分期接管」状态。
+  ///
+  /// 只看字段不够：分期被取消 / 完成后接管语义失效，UI 需要提示用户处理，
+  /// 而不是继续把它当成一个有效的接管。是否仍有效由仓储层结合 plan 状态判定。
+  bool get isTakenOver => takenOverByPlanId != null;
 }
 
 class MoneyAutoPostingTemplateDraft {

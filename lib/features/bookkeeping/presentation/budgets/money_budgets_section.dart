@@ -463,6 +463,8 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
         MoneyRepositoryErrorCode.creditCardLimitExceeded => '信用账户占用额度不能超过信用额度',
         MoneyRepositoryErrorCode.invalidInstallmentAmount => '请检查分期金额和期数',
         MoneyRepositoryErrorCode.invalidInstallmentAccount => '请选择信用账户',
+        MoneyRepositoryErrorCode.invalidInstallmentTakeOver =>
+          '无法接管：请确认分期有效、账户与币种一致',
         MoneyRepositoryErrorCode.installmentPlanNotFound => '分期计划不可用',
         MoneyRepositoryErrorCode.invalidInstallmentStatus => '当前分期状态不可操作',
         MoneyRepositoryErrorCode.invalidTransactionStatus => '当前流水状态不可操作',

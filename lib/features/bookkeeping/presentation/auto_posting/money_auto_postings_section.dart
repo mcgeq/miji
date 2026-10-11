@@ -14,6 +14,8 @@ import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/auto_posting/auto_posting_conflict_sheet.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -91,6 +93,14 @@ class _MoneyAutoPostingsSectionState
                 ),
         ),
         const SizedBox(height: 10),
+        _AutoPostingConflictBanner(
+          onTap: () => showAutoPostingConflictSheet(context),
+        ),
+        _StaleTakeOverBanner(
+          onRelease: (items) => _confirmReleaseStaleTakeOver(items),
+        ),
+        _UpcomingInstallmentPreview(),
+        const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerRight,
           child: AppIconActionButton(
@@ -162,6 +172,8 @@ class _MoneyAutoPostingsSectionState
                       onEdit: () => _openTemplateDialog(template),
                       onDelete: () => _confirmDelete(template),
                       onRunNow: () => _runTemplateNow(template),
+                      onReleaseTakeOver: () =>
+                          _confirmReleaseTakeOver(template),
                     );
                   },
                 ),
@@ -193,15 +205,67 @@ class _MoneyAutoPostingsSectionState
 
     try {
       final actions = ref.read(currentUserMoneyAutoPostingActionsProvider);
-      if (template == null) {
-        await actions.createTemplate(result.toDraft());
-        if (!mounted) return;
-        AppToast.success(_ensureToast(), context, '自动记账模板已创建');
-      } else {
-        await actions.updateTemplate(result.toUpdate(template));
-        if (!mounted) return;
-        AppToast.success(_ensureToast(), context, '自动记账模板已更新');
+      final saved = template == null
+          ? await actions.createTemplate(result.toDraft())
+          : await actions.updateTemplate(result.toUpdate(template));
+      if (!mounted) return;
+      AppToast.success(
+        _ensureToast(),
+        context,
+        template == null ? '自动记账模板已创建' : '自动记账模板已更新',
+      );
+      if (saved.isActive) {
+        await _warnIfConflicting(saved.id);
       }
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, _errorText(error));
+    }
+  }
+
+  /// 刚保存的模板如果跟某个分期撞车，立刻问一句。
+  ///
+  /// 放在保存之后而不是之前：冲突判定要展开 occurrence，需要完整的模板数据，
+  /// 表单里的草稿拿不到稳定 id。晚一步问，但问的是确定的事。
+  Future<void> _warnIfConflicting(String templateId) async {
+    ref.invalidate(currentUserAutoPostingInstallmentConflictsProvider);
+    final conflicts = await ref.read(
+      currentUserAutoPostingInstallmentConflictsProvider.future,
+    );
+    final hit = conflicts
+        .where((item) => item.templateId == templateId)
+        .toList(growable: false);
+    if (hit.isEmpty || !mounted) {
+      return;
+    }
+
+    final conflict = hit.first;
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: '可能与分期重复',
+      message:
+          '“${conflict.templateName}”与分期“${conflict.planName}”'
+          '第 ${conflict.periodNumber} 期看起来是同一笔还款，'
+          '两个都留着会在到期日记两遍账。现在交给分期记账吗？'
+          '（模板会被停用，可随时恢复）',
+      confirmLabel: '交给分期',
+      cancelLabel: '暂不处理',
+      icon: Icons.warning_amber_rounded,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyAutoPostingActionsProvider)
+          .takeOverByInstallment(conflict.templateId, conflict.planId);
+      if (!mounted) return;
+      AppToast.success(
+        _ensureToast(),
+        context,
+        '已交给分期「${conflict.planName}」记账',
+      );
     } catch (error) {
       if (!mounted) return;
       AppToast.error(_ensureToast(), context, _errorText(error));
@@ -260,6 +324,63 @@ class _MoneyAutoPostingsSectionState
     }
   }
 
+  Future<void> _confirmReleaseStaleTakeOver(
+    List<MoneyAutoPostingTemplateEntity> templates,
+  ) async {
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: '恢复独立入账',
+      message:
+          '这些模板对应的分期已经取消或还完。'
+          '恢复后它们会重新开始记账——确认这些支出现在还需要记吗？',
+      confirmLabel: '全部恢复',
+      icon: Icons.link_off_rounded,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    try {
+      final actions = ref.read(currentUserMoneyAutoPostingActionsProvider);
+      for (final template in templates) {
+        await actions.releaseTakeOver(template.id);
+      }
+      if (!mounted) return;
+      AppToast.success(_ensureToast(), context, '已恢复 ${templates.length} 个模板');
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, _errorText(error));
+    }
+  }
+
+  Future<void> _confirmReleaseTakeOver(
+    MoneyAutoPostingTemplateEntity template,
+  ) async {
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: '恢复独立入账',
+      message:
+          '确认让“${template.name}”重新自己记账？'
+          '如果对应的分期还在，这一笔就会被记两遍。',
+      confirmLabel: '恢复',
+      icon: Icons.event_repeat_rounded,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(currentUserMoneyAutoPostingActionsProvider)
+          .releaseTakeOver(template.id);
+      if (!mounted) return;
+      AppToast.success(_ensureToast(), context, '已恢复独立入账');
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.error(_ensureToast(), context, _errorText(error));
+    }
+  }
+
   FToast _ensureToast() {
     return _toast ??= (FToast()..init(context));
   }
@@ -273,12 +394,408 @@ class _MoneyAutoPostingsSectionState
         MoneyRepositoryErrorCode.ledgerNotFound => '账本不可用',
         MoneyRepositoryErrorCode.autoPostingTemplateNotFound => '模板不可用',
         MoneyRepositoryErrorCode.invalidTransferAccounts => '自动记账仅支持收入或支出',
+        MoneyRepositoryErrorCode.invalidInstallmentTakeOver => '币种不一致，无法交给该分期',
         MoneyRepositoryErrorCode.databaseReadFailed => '读取失败',
         MoneyRepositoryErrorCode.databaseWriteFailed => '保存失败',
         _ => '操作失败',
       };
     }
     return '操作失败';
+  }
+}
+
+/// 顶部警示条：有重复的还款登记就提示，没有就完全不占位。
+class _AutoPostingConflictBanner extends ConsumerWidget {
+  const _AutoPostingConflictBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final conflicts = ref.watch(
+      currentUserAutoPostingInstallmentConflictsProvider,
+    );
+    final count = conflicts.maybeWhen(
+      data: (items) => items.length,
+      orElse: () => 0,
+    );
+    if (count == 0) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final radiusTokens = theme.radiusTokens;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: colorScheme.errorContainer.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(radiusTokens.md),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 18,
+                  color: colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '检测到 $count 处重复登记，同一笔还款会被记两遍账',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '去处理',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 分期已经结束（取消 / 还完）后，接管语义就失效了。
+///
+/// 这里刻意**不自动恢复**模板：分期还完的同一个月突然冒出一笔自动记账，
+/// 用户会以为系统凭空造了一笔账。必须让他自己点头。
+class _StaleTakeOverBanner extends ConsumerWidget {
+  const _StaleTakeOverBanner({required this.onRelease});
+
+  final ValueChanged<List<MoneyAutoPostingTemplateEntity>> onRelease;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final templates = ref
+        .watch(currentUserAutoPostingTemplatesProvider)
+        .maybeWhen(
+          data: (items) => items,
+          orElse: () => const <MoneyAutoPostingTemplateEntity>[],
+        );
+    final plans = ref
+        .watch(currentUserInstallmentPlansProvider)
+        .maybeWhen(
+          data: (items) => items,
+          orElse: () => const <MoneyInstallmentPlanEntity>[],
+        );
+    final stale = templates
+        .where((template) {
+          final planId = template.takenOverByPlanId;
+          if (planId == null) {
+            return false;
+          }
+          return !plans.any((plan) => plan.id == planId && plan.isActive);
+        })
+        .toList(growable: false);
+    if (stale.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final radiusTokens = theme.radiusTokens;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: colorScheme.tertiaryContainer.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(radiusTokens.md),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => onRelease(stale),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.link_off_rounded,
+                  size: 18,
+                  color: colorScheme.onTertiaryContainer,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${stale.length} 个模板接管的分期已结束，仍保持停用',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '去处理',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 分期还款计划（只读）。
+///
+/// 分期自己就会到期自动入账，但用户很容易忘掉这件事，于是又建一个自动记账
+/// 模板——重复就是这么来的。把未来几期摆在这里，用户一眼能看到「还款已经
+/// 有人管了」，不必再建模板。
+///
+/// 默认**折叠成一行**：这是提示性信息，常驻展开会把自动记账列表挤出屏幕
+/// （小屏尤其明显）。只留一个可点的入口，需要时再展开。
+class _UpcomingInstallmentPreview extends ConsumerStatefulWidget {
+  const _UpcomingInstallmentPreview();
+
+  @override
+  ConsumerState<_UpcomingInstallmentPreview> createState() =>
+      _UpcomingInstallmentPreviewState();
+}
+
+class _UpcomingInstallmentPreviewState
+    extends ConsumerState<_UpcomingInstallmentPreview> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final plans = ref.watch(currentUserInstallmentPlansProvider);
+    final activePlans = plans.maybeWhen(
+      data: (items) => items.where((plan) => plan.isActive).toList(),
+      orElse: () => const <MoneyInstallmentPlanEntity>[],
+    );
+    if (activePlans.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    // 只摆前 3 个：这是「提醒你已经有东西在管还款」的提示，不是分期列表，
+    // 摆太多会喧宾夺主。
+    final previewPlans = activePlans.take(3).toList(growable: false);
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final radiusTokens = theme.radiusTokens;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: AppListItemPanel(
+        padding: const EdgeInsets.all(12),
+        backgroundColor: colorScheme.surfaceContainerLow,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.credit_card_rounded,
+                    size: 17,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '分期还款计划',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    _expanded ? '收起' : '${activePlans.length} 个 · 到期自动入账',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Icon(
+                      Icons.expand_more_rounded,
+                      size: 20,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_expanded) ...[
+              const SizedBox(height: 4),
+              Text(
+                '这些分期到期会自动记账，不用再为它们建自动记账模板。',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  letterSpacing: 0,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // 展开态加高度上限：分期多的时候也不至于把下方列表撑没，
+              // 超出部分在这里内部滚动。
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 240),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...previewPlans.map(
+                        (plan) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _InstallmentPreviewRow(
+                            plan: plan,
+                            radiusTokens: radiusTokens,
+                          ),
+                        ),
+                      ),
+                      if (activePlans.length > previewPlans.length)
+                        Text(
+                          '还有 ${activePlans.length - previewPlans.length} 个分期计划',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InstallmentPreviewRow extends ConsumerWidget {
+  const _InstallmentPreviewRow({
+    required this.plan,
+    required this.radiusTokens,
+  });
+
+  final MoneyInstallmentPlanEntity plan;
+  final AppRadiusTokens radiusTokens;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final details = ref
+        .watch(currentUserInstallmentDetailsProvider(plan.id))
+        .maybeWhen(
+          data: (items) => items,
+          orElse: () => const <MoneyInstallmentDetailEntity>[],
+        );
+    final upcoming =
+        details
+            .where(
+              (detail) => detail.status == MoneyInstallmentDetailStatus.pending,
+            )
+            .toList()
+          ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    // 每个计划只列最近 2 期：展开态也保持紧凑，避免又变成一张长列表。
+    final preview = upcoming.take(2).toList(growable: false);
+    if (preview.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(radiusTokens.sm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  plan.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+              Text(
+                '剩 ${upcoming.length} 期',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          for (final detail in preview)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 3),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 66,
+                    child: Text(
+                      '${detail.dueDate.month}月${detail.dueDate.day}日',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '第${detail.periodNumber}期',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    maskedMoneyOr(
+                      formatMoneyMinor(detail.amountMinor, plan.currencyCode),
+                      MoneyPrivacy.of(context),
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
@@ -290,6 +807,7 @@ class _AutoPostingTemplateCard extends ConsumerWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onRunNow,
+    required this.onReleaseTakeOver,
   });
 
   final MoneyAutoPostingTemplateEntity template;
@@ -297,12 +815,27 @@ class _AutoPostingTemplateCard extends ConsumerWidget {
   final String categoryText;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onReleaseTakeOver;
   final VoidCallback onRunNow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final runs = ref.watch(currentUserAutoPostingRunsProvider(template.id));
+    // 被接管的模板要显示「谁接管了它」：只显示一个「已停用」用户不知道为什么，
+    // 更不知道能撤销。
+    final takenOverPlanId = template.takenOverByPlanId;
+    final takenOverPlanName = takenOverPlanId == null
+        ? null
+        : ref
+              .watch(currentUserInstallmentPlansProvider)
+              .maybeWhen(
+                data: (items) => items
+                    .where((plan) => plan.id == takenOverPlanId)
+                    .map((plan) => plan.name)
+                    .firstOrNull,
+                orElse: () => null,
+              );
 
     return AppSwipeActionTile(
       actions: [
@@ -337,6 +870,8 @@ class _AutoPostingTemplateCard extends ConsumerWidget {
           template: template,
           account: account,
           categoryText: categoryText,
+          takenOverPlanName: takenOverPlanName,
+          onReleaseTakeOver: onReleaseTakeOver,
           runs: runs.maybeWhen(
             data: (items) => items,
             orElse: () => const <MoneyAutoPostingRunEntity>[],
@@ -352,12 +887,18 @@ class _AutoPostingTemplateCardContent extends StatelessWidget {
     required this.template,
     required this.account,
     required this.categoryText,
+    required this.onReleaseTakeOver,
+    this.takenOverPlanName,
     this.runs = const <MoneyAutoPostingRunEntity>[],
   });
 
   final MoneyAutoPostingTemplateEntity template;
   final MoneyAccountEntity? account;
   final String categoryText;
+  final VoidCallback onReleaseTakeOver;
+
+  /// 接管的分期名称；为 null 表示未被接管（或分期已被删除）。
+  final String? takenOverPlanName;
   final List<MoneyAutoPostingRunEntity> runs;
 
   @override
@@ -456,6 +997,50 @@ class _AutoPostingTemplateCardContent extends StatelessWidget {
                     color: colorScheme.onSurfaceVariant,
                     letterSpacing: 0,
                   ),
+                ),
+              ],
+              if (template.takenOverByPlanId != null) ...[
+                const SizedBox(height: 8),
+                Divider(height: 1, color: colorScheme.outlineVariant),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.credit_card_rounded,
+                      size: 15,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        takenOverPlanName == null
+                            ? '已交给分期记账，模板停用'
+                            : '已交给分期「$takenOverPlanName」记账，模板停用',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    TextButton(
+                      onPressed: onReleaseTakeOver,
+                      style: TextButton.styleFrom(
+                        minimumSize: Size.zero,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        '恢复独立入账',
+                        style: TextStyle(letterSpacing: 0),
+                      ),
+                    ),
+                  ],
                 ),
               ],
               if (runs.isNotEmpty) ...[

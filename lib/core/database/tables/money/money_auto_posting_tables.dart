@@ -64,6 +64,17 @@ class MoneyAutoPostingTemplates extends Table {
 
   DateTimeColumn get updatedAt => dateTime()();
 
+  /// 被哪个分期计划接管。
+  ///
+  /// 非空表示「这笔周期支出与分期「X」的某一期是同一笔还款」，此时模板必须
+  /// 停止独立入账，否则到期当天两个引擎各建一笔流水（见
+  /// [_AutoPosting._executeAutoPostingOccurrence] 与 [_Installments.postInstallmentDetail]）。
+  /// 置位时 [isActive] 同步置 false；解除接管时恢复。
+  ///
+  /// 之所以是「标记 + 停用」而不是直接删除模板：删除会丢掉用户的原始配置，
+  /// 解除接管后没法恢复；而且 UI 上需要说清楚「这个模板为什么是停用的」。
+  TextColumn get takenOverByPlanId => text().nullable()();
+
   @override
   String get tableName => 'money_auto_posting_templates';
 

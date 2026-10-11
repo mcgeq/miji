@@ -11,6 +11,7 @@ import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_bill_view.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
+import 'package:miji/features/bookkeeping/domain/money_auto_posting_conflict_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
@@ -360,6 +361,23 @@ abstract class MoneyRepository {
   /// 批量删除流水，返回实际删除的条数（转账一对算 1 条）。
   Future<int> deleteTransactions(String userId, List<String> transactionIds);
 
+  /// 撤销删除，返回实际恢复的条数。
+  ///
+  /// 删除是软删除（isDeleted + deletedAt），所以撤销就是把账户余额加回去、
+  /// 自动记账 run 状态撤回、预算快照重算。恢复不了的直接跳过（账户已删、
+  /// 分期入账流水、转账的另一半不在回收站里），不牵连同一批的其他流水。
+  Future<int> restoreTransactions(String userId, List<String> transactionIds);
+
+  /// 回收站：近期被删除的流水，按删除时间倒序。
+  ///
+  /// [deletedAfter] 传 null 表示不限时间；回收站语义上只展示最近 30 天，
+  /// 更老的软删除记录留着做同步依据，但不再打扰用户。
+  Future<List<MoneyTransactionEntity>> listDeletedTransactions(
+    String userId, {
+    DateTime? deletedAfter,
+    int limit = 100,
+  });
+
   /// 变更流水状态：待处理 → 已完成（入账）/ 已作废；已完成 → 已作废（回滚余额）。
   Future<MoneyTransactionEntity> setTransactionStatus(
     String userId,
@@ -516,6 +534,29 @@ abstract class MoneyRepository {
   /// 下次执行时重新校验（账户/分类/余额等），成功则转为已入账。
   Future<void> resetAutoPostingRun(String userId, String runId);
 
+  /// 把自动记账模板标记为「已由分期计划 [planId] 接管」。
+  ///
+  /// 接管后模板 isActive 置 false，不再独立入账、也不再计入预算预留——
+  /// 这笔还款由分期引擎独占。分期被取消 / 完成后，用
+  /// [releaseAutoPostingTakeOver] 交还给模板。
+  Future<MoneyAutoPostingTemplateEntity> takeOverAutoPostingTemplate(
+    String userId,
+    String templateId,
+    String planId,
+  );
+
+  /// 解除接管，模板恢复启用（回到它自己记账的状态）。
+  Future<MoneyAutoPostingTemplateEntity> releaseAutoPostingTakeOver(
+    String userId,
+    String templateId,
+  );
+
+  /// 找出「同一笔还款既登记为分期期次、又登记为自动记账模板」的冲突。
+  ///
+  /// 只读，不改任何数据。返回项里 [isTakenOver] 为 true 的表示已处置过。
+  Future<List<MoneyAutoPostingInstallmentConflict>>
+  findAutoPostingInstallmentConflicts(String userId);
+
   Future<MoneyInstallmentExecutionSummary> executeDueInstallmentPostings(
     String userId, {
     DateTime? now,
@@ -652,6 +693,7 @@ enum MoneyRepositoryErrorCode {
   insufficientFunds,
   invalidTransferAccounts,
   creditCardLimitExceeded,
+  invalidInstallmentTakeOver,
 }
 
 class MoneyRepositoryException implements Exception {

@@ -28,6 +28,7 @@ import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/account_form_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/auto_posting/auto_posting_conflict_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
@@ -280,6 +281,9 @@ class _MoneyInstallmentsContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 6),
+        // 分期自己会到期自动入账；用户若又为同一笔还款建了自动记账模板，
+        // 到期当天会记两遍账。两个页面都放提示，从哪边进来都能看到。
+        _InstallmentConflictBanner(),
         // 常驻新增入口。
         //
         // 原来 _MoneyInstallmentsContent 声明了 required onCreate，
@@ -374,6 +378,72 @@ class _MoneyInstallmentsContent extends StatelessWidget {
       return category.name;
     }
     return '${category.name} / ${subCategory.name}';
+  }
+}
+
+class _InstallmentConflictBanner extends ConsumerWidget {
+  const _InstallmentConflictBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final conflicts = ref.watch(
+      currentUserAutoPostingInstallmentConflictsProvider,
+    );
+    final count = conflicts.maybeWhen(
+      data: (items) => items.length,
+      orElse: () => 0,
+    );
+    if (count == 0) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final radiusTokens = theme.radiusTokens;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: colorScheme.errorContainer.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(radiusTokens.md),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => showAutoPostingConflictSheet(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 18,
+                  color: colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '$count 个自动记账模板与分期重复，同一笔还款会记两遍',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '去处理',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

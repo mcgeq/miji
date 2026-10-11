@@ -94,7 +94,41 @@ class MoneyTransactionActions {
       if (!context.mounted || !isMounted()) return;
       await onChanged();
       if (!context.mounted || !isMounted()) return;
-      AppToast.success(ensureToast(), context, '流水已删除');
+      // 删除是软删除，给一次反悔机会；误删的代价远大于多一个按钮。
+      AppToast.undo(
+        toast: ensureToast(),
+        context: context,
+        message: '流水已删除',
+        actionLabel: '撤销',
+        onAction: () => _restore(<String>[transaction.id]),
+      );
+    } catch (error) {
+      if (!context.mounted || !isMounted()) return;
+      AppToast.error(
+        ensureToast(),
+        context,
+        moneyTransactionActionErrorText(error),
+      );
+    }
+  }
+
+  /// 撤销删除。账户已被删掉、或这条是分期入账流水时恢复不了，
+  /// 这时明确告诉用户「恢复不了」，而不是静默失败。
+  Future<void> _restore(List<String> transactionIds) async {
+    try {
+      final applied = await ref
+          .read(currentUserMoneyTransactionActionsProvider)
+          .restoreTransactions(transactionIds);
+      if (!context.mounted || !isMounted()) {
+        return;
+      }
+      if (applied <= 0) {
+        AppToast.error(ensureToast(), context, '已无法恢复');
+        return;
+      }
+      await onChanged();
+      if (!context.mounted || !isMounted()) return;
+      AppToast.success(ensureToast(), context, '已恢复 $applied 笔');
     } catch (error) {
       if (!context.mounted || !isMounted()) return;
       AppToast.error(
@@ -446,6 +480,8 @@ String moneyTransactionActionErrorText(Object error) {
       MoneyRepositoryErrorCode.creditCardLimitExceeded => '信用账户占用额度不能超过信用额度',
       MoneyRepositoryErrorCode.invalidInstallmentAmount => '请检查分期金额和期数',
       MoneyRepositoryErrorCode.invalidInstallmentAccount => '请选择信用账户',
+      MoneyRepositoryErrorCode.invalidInstallmentTakeOver =>
+        '无法接管：请确认分期有效、账户与币种一致',
       MoneyRepositoryErrorCode.installmentPlanNotFound => '分期计划不可用',
       MoneyRepositoryErrorCode.invalidInstallmentStatus => '当前分期状态不可操作',
       MoneyRepositoryErrorCode.invalidTransactionStatus => '当前流水状态不可操作',

@@ -27,6 +27,7 @@ import 'package:miji/features/bookkeeping/application/money_amount_formatter.dar
 import 'package:miji/features/bookkeeping/application/money_export_service.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/budgets/budget_form_dialog.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
@@ -40,6 +41,7 @@ import 'package:miji/features/bookkeeping/presentation/transactions/transaction_
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/money_transaction_actions.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/transaction_recycle_bin_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transfer_form_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_split_dialog.dart';
 
@@ -103,6 +105,7 @@ class _MoneyTransactionsSectionState
   bool _isExporting = false;
   bool _isConfirmingAll = false;
   bool _isBulkBusy = false;
+  bool _isRestoring = false;
   Object? _loadError;
   MoneyTransactionType? _typeFilter;
   MoneyTransactionStatus? _statusFilter;
@@ -246,6 +249,11 @@ class _MoneyTransactionsSectionState
     final categoryUsage = ref
         .watch(currentUserCategoryUsageStatsProvider)
         .maybeWhen(data: (value) => value, orElse: () => null);
+    final budgetPreset = _budgetPresetFromFilters(
+      expenseCatalog: expenseCatalogValue,
+      incomeCatalog: incomeCatalogValue,
+      accounts: accountRows,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -301,6 +309,12 @@ class _MoneyTransactionsSectionState
               tooltip: '导出流水',
               onPressed: _isExporting ? null : _exportTransactions,
               icon: Icons.ios_share_rounded,
+            ),
+            const SizedBox(width: 8),
+            AppIconActionButton(
+              tooltip: '回收站',
+              onPressed: _openRecycleBin,
+              icon: Icons.restore_rounded,
             ),
             const SizedBox(width: 8),
             _TransactionsSortButton(
@@ -429,6 +443,13 @@ class _MoneyTransactionsSectionState
             summary: widget.filterContext!.accountSummary,
           ),
           const SizedBox(height: 12),
+        ],
+        if (budgetPreset != null) ...[
+          _BudgetShortcutBanner(
+            label: budgetPreset.label,
+            onCreate: () => _openBudgetDialog(budgetPreset),
+          ),
+          const SizedBox(height: 10),
         ],
         Expanded(
           child: LayoutBuilder(
@@ -1157,6 +1178,7 @@ class _MoneyTransactionsSectionState
     )
     run, {
     required String label,
+    bool undoable = false,
   }) async {
     if (_isBulkBusy) {
       return;
@@ -1180,11 +1202,21 @@ class _MoneyTransactionsSectionState
         return;
       }
       final skipped = ids.length - applied;
-      AppToast.success(
-        toast,
-        context,
-        skipped > 0 ? '$label $applied 笔，跳过 $skipped 笔' : '$label $applied 笔',
-      );
+      final message = skipped > 0
+          ? '$label $applied 笔，跳过 $skipped 笔'
+          : '$label $applied 笔';
+      if (undoable) {
+        // 批量删除一次能干掉几十笔，必须留撤销。
+        AppToast.undo(
+          toast: toast,
+          context: context,
+          message: message,
+          actionLabel: '撤销',
+          onAction: () => _restoreTransactions(ids),
+        );
+      } else {
+        AppToast.success(toast, context, message);
+      }
       setState(() => _bulkSelectedIds.clear());
       await _refreshTransactions();
     } catch (error) {
@@ -1222,7 +1254,45 @@ class _MoneyTransactionsSectionState
     await _applyBulk(
       (actions, ids) => actions.deleteTransactions(ids),
       label: '已删除',
+      undoable: true,
     );
+  }
+
+  /// 撤销删除（单条删除走的是 [MoneyTransactionActions] 里的同一套逻辑）。
+  Future<void> _restoreTransactions(List<String> ids) async {
+    if (_isRestoring) {
+      return;
+    }
+    setState(() => _isRestoring = true);
+    final toast = _ensureToast();
+    try {
+      final applied = await ref
+          .read(currentUserMoneyTransactionActionsProvider)
+          .restoreTransactions(ids);
+      if (!mounted) {
+        return;
+      }
+      if (applied <= 0) {
+        AppToast.error(toast, context, '已无法恢复');
+        return;
+      }
+      final skipped = ids.length - applied;
+      AppToast.success(
+        toast,
+        context,
+        skipped > 0 ? '已恢复 $applied 笔，跳过 $skipped 笔' : '已恢复 $applied 笔',
+      );
+      await _refreshTransactions();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      AppToast.error(toast, context, _errorText(error));
+    } finally {
+      if (mounted) {
+        setState(() => _isRestoring = false);
+      }
+    }
   }
 
   /// 「批量修改」面板：改分类 / 改账户 / 加标签 / 移除标签。
@@ -1902,6 +1972,98 @@ class _MoneyTransactionsSectionState
 
   Future<void> _confirmDelete(MoneyTransactionEntity transaction) async {
     await _transactionActions().delete(transaction);
+  }
+
+  Future<void> _openRecycleBin() {
+    return showAppResponsiveDialog<void>(
+      context: context,
+      builder: (context) => const TransactionRecycleBinSheet(),
+    );
+  }
+
+  /// 当前筛选能不能直接翻译成一个预算 scope。
+  ///
+  /// 只认「分类 / 账户 / 标签」这三个预算支持的维度：关键词、支付方式、
+  /// 日期这些预算 scope 里没有，硬凑出来的预算会对不上账。
+  _BudgetPreset? _budgetPresetFromFilters({
+    required MoneyCategoryCatalog expenseCatalog,
+    required MoneyCategoryCatalog incomeCatalog,
+    required List<MoneyAccountEntity> accounts,
+  }) {
+    final isIncome = _typeFilter == MoneyTransactionType.income;
+    final catalog = isIncome ? incomeCatalog : expenseCatalog;
+    final trackingType = isIncome
+        ? MoneyBudgetTrackingType.incomeTarget
+        : MoneyBudgetTrackingType.expenseLimit;
+
+    if (_tagFilter.isNotEmpty) {
+      final tag = _tagFilter.first;
+      return _BudgetPreset(
+        scopeType: MoneyBudgetScopeType.tag,
+        tag: tag,
+        trackingType: trackingType,
+        label: '为标签「$tag」设预算',
+      );
+    }
+
+    final categoryId = _categoryIdFilter;
+    final accountId = _accountIdFilter;
+    if (categoryId != null) {
+      final category = catalog.categoryById(categoryId);
+      final subCategory = catalog.subCategoryById(_subCategoryIdFilter);
+      final categoryName = subCategory?.name ?? category?.name ?? '该分类';
+      final accountName = _accountName(accounts, accountId);
+      if (accountId != null) {
+        return _BudgetPreset(
+          scopeType: MoneyBudgetScopeType.categoryAccount,
+          categoryId: categoryId,
+          subCategoryId: _subCategoryIdFilter,
+          accountId: accountId,
+          trackingType: trackingType,
+          label: '为「$categoryName · $accountName」设预算',
+        );
+      }
+      return _BudgetPreset(
+        scopeType: MoneyBudgetScopeType.category,
+        categoryId: categoryId,
+        subCategoryId: _subCategoryIdFilter,
+        trackingType: trackingType,
+        label: '为「$categoryName」设预算',
+      );
+    }
+
+    if (accountId != null) {
+      return _BudgetPreset(
+        scopeType: MoneyBudgetScopeType.account,
+        accountId: accountId,
+        trackingType: trackingType,
+        label: '为「${_accountName(accounts, accountId)}」设预算',
+      );
+    }
+    return null;
+  }
+
+  String _accountName(List<MoneyAccountEntity> accounts, String? accountId) {
+    for (final account in accounts) {
+      if (account.id == accountId) {
+        return account.name;
+      }
+    }
+    return '该账户';
+  }
+
+  Future<void> _openBudgetDialog(_BudgetPreset preset) {
+    return showAppResponsiveDialog<void>(
+      context: context,
+      builder: (context) => BudgetFormDialog(
+        initialScopeType: preset.scopeType,
+        initialCategoryId: preset.categoryId,
+        initialSubCategoryId: preset.subCategoryId,
+        initialAccountId: preset.accountId,
+        initialTag: preset.tag,
+        initialTrackingType: preset.trackingType,
+      ),
+    );
   }
 
   FToast _ensureToast() {
@@ -2887,6 +3049,76 @@ class _TransactionBulkActionBar extends StatelessWidget {
       color: colorScheme.onInverseSurface,
       visualDensity: VisualDensity.compact,
       splashRadius: 18,
+    );
+  }
+}
+
+/// 从当前筛选直接翻译成预算 scope 需要的字段。
+class _BudgetPreset {
+  const _BudgetPreset({
+    required this.scopeType,
+    required this.trackingType,
+    required this.label,
+    this.categoryId,
+    this.subCategoryId,
+    this.accountId,
+    this.tag,
+  });
+
+  final MoneyBudgetScopeType scopeType;
+  final MoneyBudgetTrackingType trackingType;
+  final String label;
+  final String? categoryId;
+  final String? subCategoryId;
+  final String? accountId;
+  final String? tag;
+}
+
+/// 「看完了，就给它设个预算」的入口。
+///
+/// 统计页下钻到某个分类的流水、或者用户自己筛出某个账户之后，最自然的
+/// 下一步就是定个额度。没有这个入口，用户得记住数字、回到预算页、重新选
+/// 一遍分类——多数人走到这一步就放弃了。
+class _BudgetShortcutBanner extends StatelessWidget {
+  const _BudgetShortcutBanner({required this.label, required this.onCreate});
+
+  final String label;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.flag_rounded,
+            size: 18,
+            color: colorScheme.onSecondaryContainer,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSecondaryContainer,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+          TextButton(onPressed: onCreate, child: const Text('设预算')),
+        ],
+      ),
     );
   }
 }
