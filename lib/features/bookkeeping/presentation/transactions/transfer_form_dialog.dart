@@ -21,6 +21,13 @@ import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/amount_calculator_sheet.dart';
 
+/// 表单提交回调：返回错误文案（null = 成功）。
+///
+/// 传入时表单不再把结果 pop 给调用方，而是自己调用 [onSubmit] 完成写入 ——
+/// 这是「保存并继续」的前提：对话框得留在屏幕上，才有「继续」这一说。
+/// 与记一笔表单（`TransactionFormSubmit`）保持同一套契约。
+typedef TransferFormSubmit = Future<String?> Function(MoneyTransferDraft draft);
+
 class TransferFormDialog extends ConsumerStatefulWidget {
   const TransferFormDialog({
     super.key,
@@ -28,12 +35,14 @@ class TransferFormDialog extends ConsumerStatefulWidget {
     this.initialToAccountId,
     this.initialAmountMinor,
     this.initialNotes,
+    this.onSubmit,
   });
 
   final MoneyTransactionEntity? transaction;
   final String? initialToAccountId;
   final int? initialAmountMinor;
   final String? initialNotes;
+  final TransferFormSubmit? onSubmit;
 
   @override
   ConsumerState<TransferFormDialog> createState() => _TransferFormDialogState();
@@ -49,6 +58,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
   String? _toAccountId;
   String? _subCategoryId;
   String? _errorText;
+  bool _submitting = false;
 
   bool get _isEditing => widget.transaction != null;
 
@@ -133,6 +143,9 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
             labelText: '金额',
             currencyCode: defaultMoneyCurrencyCode,
             prominent: true,
+            // 与记一笔表单同一口径：新建时直接落在金额框，编辑时不抢焦点
+            // （否则键盘一弹就把要核对的信息顶出视野）。
+            autofocus: !_isEditing,
             previewText: _amountPreviewText,
             onCalculatorTap: _openAmountCalculator,
             onChanged: (_) => setState(() {}),
@@ -232,32 +245,96 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
         ],
       ),
       errorText: _errorText,
-      actions: appDialogIconActions(
-        onCancel: () => Navigator.of(context).pop(),
-        onConfirm: _submit,
-        confirmTooltip: _isEditing ? '保存' : '创建',
-      ),
+      actions: [
+        ...appDialogIconActions(
+          onCancel: () => Navigator.of(context).pop(),
+          onConfirm: _submitting ? null : () => _submit(),
+          confirmTooltip: _isEditing ? '保存' : '创建',
+        ),
+        if (widget.onSubmit != null && !_isEditing)
+          AppIconActionButton(
+            tooltip: '保存并继续',
+            onPressed: _submitting ? null : () => _submit(keepOpen: true),
+            icon: Icons.playlist_add_rounded,
+            variant: AppIconActionVariant.filledTonal,
+          ),
+      ],
     );
   }
 
-  void _submit() {
+  Future<void> _submit({bool keepOpen = false}) async {
+    final result = _buildResult();
+    if (result == null) {
+      return;
+    }
+    final submit = widget.onSubmit;
+    // 只有「新建 + 调用方提供了回调」这一种情况才自己写入：
+    // 编辑态没有「再来一笔」的语义，未提供回调时保持原有的 pop 契约。
+    // 这里先判 `is!`，才能让 result 在下面被提升为 MoneyTransferDraft。
+    if (result is! MoneyTransferDraft) {
+      Navigator.of(context).pop(result);
+      return;
+    }
+    if (submit == null) {
+      Navigator.of(context).pop(result);
+      return;
+    }
+
+    setState(() => _submitting = true);
+    String? error;
+    try {
+      error = await submit(result);
+    } catch (_) {
+      error = '保存失败，请稍后重试';
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _submitting = false;
+      _errorText = error;
+    });
+    if (error != null) {
+      return;
+    }
+    if (keepOpen) {
+      _resetAfterSubmit();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  /// 提交成功后重置表单，用于「保存并继续」。
+  ///
+  /// 只清「这一笔特有」的金额与备注，转出 / 转入账户、日期、分类保留不动 ——
+  /// 月末连着还几张信用卡时转出账户是同一个，每次都重选纯属浪费。
+  void _resetAfterSubmit() {
+    setState(() {
+      _amountController.clear();
+      _notesController.clear();
+      _errorText = null;
+    });
+  }
+
+  /// 校验并组装 draft / update。校验失败返回 null 并把错误写进 [_errorText]。
+  Object? _buildResult() {
     try {
       final amountMinor = parseMoneyAmountToMinor(_amountController.text);
       if (amountMinor <= 0) {
         setState(() => _errorText = '请输入大于 0 的金额');
-        return;
+        return null;
       }
       if (_fromAccountId == null) {
         setState(() => _errorText = '请选择转出账户');
-        return;
+        return null;
       }
       if (_toAccountId == null) {
         setState(() => _errorText = '请选择转入账户');
-        return;
+        return null;
       }
       if (_fromAccountId == _toAccountId) {
         setState(() => _errorText = '转出账户和转入账户不能相同');
-        return;
+        return null;
       }
       final currentLedger = ref.read(currentUserCurrentLedgerValueProvider);
       final activeAccounts = currentLedger == null
@@ -275,11 +352,11 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
       final toAccount = _accountById(activeAccounts, _toAccountId);
       if (fromAccount == null || !_canTransferFrom(fromAccount)) {
         setState(() => _errorText = '请选择可转出的账户');
-        return;
+        return null;
       }
       if (toAccount == null || !_canTransferTo(toAccount, fromAccount)) {
         setState(() => _errorText = '请选择可转入的账户');
-        return;
+        return null;
       }
       final ruleError = _transferRuleError(
         fromAccount: fromAccount,
@@ -288,7 +365,7 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
       );
       if (ruleError != null) {
         setState(() => _errorText = ruleError);
-        return;
+        return null;
       }
 
       final notes = _notesController.text.trim();
@@ -297,33 +374,32 @@ class _TransferFormDialogState extends ConsumerState<TransferFormDialog> {
         fromAccount: fromAccount,
         toAccount: toAccount,
       );
-      Navigator.of(context).pop(
-        transaction == null
-            ? MoneyTransferDraft(
-                transactionAt: _transactionAt,
-                amountMinor: amountMinor,
-                currencyCode: fromAccount.currencyCode,
-                description: MoneyTransactionType.transfer.label,
-                notes: notes,
-                fromAccountId: _fromAccountId!,
-                toAccountId: _toAccountId!,
-                subCategoryId: _subCategoryId,
-                paymentMethod: paymentMethod,
-              )
-            : MoneyTransferUpdate(
-                id: transaction.id,
-                transactionAt: _transactionAt,
-                amountMinor: amountMinor,
-                currencyCode: transaction.currencyCode,
-                notes: notes,
-                fromAccountId: _fromAccountId!,
-                toAccountId: _toAccountId!,
-                subCategoryId: _subCategoryId,
-                paymentMethod: paymentMethod,
-              ),
-      );
+      return transaction == null
+          ? MoneyTransferDraft(
+              transactionAt: _transactionAt,
+              amountMinor: amountMinor,
+              currencyCode: fromAccount.currencyCode,
+              description: MoneyTransactionType.transfer.label,
+              notes: notes,
+              fromAccountId: _fromAccountId!,
+              toAccountId: _toAccountId!,
+              subCategoryId: _subCategoryId,
+              paymentMethod: paymentMethod,
+            )
+          : MoneyTransferUpdate(
+              id: transaction.id,
+              transactionAt: _transactionAt,
+              amountMinor: amountMinor,
+              currencyCode: transaction.currencyCode,
+              notes: notes,
+              fromAccountId: _fromAccountId!,
+              toAccountId: _toAccountId!,
+              subCategoryId: _subCategoryId,
+              paymentMethod: paymentMethod,
+            );
     } on MoneyAmountParseException {
       setState(() => _errorText = '金额格式不正确');
+      return null;
     }
   }
 

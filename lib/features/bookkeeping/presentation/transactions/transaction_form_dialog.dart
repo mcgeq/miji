@@ -536,7 +536,9 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           ),
           DateTimePicker(
             selectedDate: _transactionAt,
-            showQuickOptions: !_isEditing,
+            // 与转账表单同一口径：编辑态也显示快捷项。
+            // 改一笔记错日期的流水时，「今天 / 昨天」恰恰是最常用的修正方式。
+            showQuickOptions: true,
             onChanged: (value) {
               setState(() => _transactionAt = value);
             },

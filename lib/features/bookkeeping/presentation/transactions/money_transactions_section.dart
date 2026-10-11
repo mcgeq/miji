@@ -1978,24 +1978,27 @@ class _MoneyTransactionsSectionState
   }
 
   Future<void> _openTransferDialog() async {
-    final result = await showAppResponsiveDialog<Object>(
+    // 写入交给表单自己（onSubmit），「保存并继续」才能在同一个对话框里连着记
+    // 多笔；失败时错误文案回显在表单上，而不是发一个转瞬即逝的 toast。
+    await showAppResponsiveDialog<Object>(
       context: context,
       expandCompactSheet: true,
-      builder: (context) => const TransferFormDialog(),
+      builder: (context) => TransferFormDialog(onSubmit: _createTransfer),
     );
-    if (!mounted || result is! MoneyTransferDraft) {
-      return;
-    }
+  }
 
+  /// 返回错误文案（null = 成功），供转账表单回显。
+  Future<String?> _createTransfer(MoneyTransferDraft draft) async {
     try {
       await ref
           .read(currentUserMoneyTransactionActionsProvider)
-          .createTransfer(result);
-      if (!mounted) return;
-      AppToast.success(_ensureToast(), context, '转账已记录');
+          .createTransfer(draft);
+      if (mounted) {
+        AppToast.success(_ensureToast(), context, '转账已记录');
+      }
+      return null;
     } catch (error) {
-      if (!mounted) return;
-      AppToast.error(_ensureToast(), context, _errorText(error));
+      return _errorText(error);
     }
   }
 
@@ -2824,14 +2827,14 @@ class _TransactionFilterFields extends StatelessWidget {
               key: ValueKey('transaction-type-${type?.name ?? 'all'}'),
               width: 140,
               initialSelection: type,
-              label: '类型',
+              label: '交易类型',
               enabled: !isTypeLocked,
               leadingIcon: const Icon(Icons.tune_rounded),
               onSelected: (value) => apply(() => onTypeChanged(value)),
               entries: [
                 const DropdownMenuEntry<MoneyTransactionType?>(
                   value: null,
-                  label: '全部类型',
+                  label: '全部交易类型',
                 ),
                 ...MoneyTransactionType.values.map(
                   (type) => DropdownMenuEntry<MoneyTransactionType?>(
@@ -2875,7 +2878,7 @@ class _TransactionFilterFields extends StatelessWidget {
               entries: [
                 const DropdownMenuEntry<MoneyPaymentMethod?>(
                   value: null,
-                  label: '全部渠道',
+                  label: '全部支付渠道',
                 ),
                 ...MoneyPaymentMethod.values.map(
                   (method) => DropdownMenuEntry<MoneyPaymentMethod?>(
