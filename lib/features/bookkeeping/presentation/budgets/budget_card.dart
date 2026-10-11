@@ -455,6 +455,10 @@ class BudgetCard extends StatelessWidget {
 
 enum _BudgetMenuAction { history, allocations, edit, delete }
 
+/// 菜单项：只留图标。
+///
+/// 文字退到长按提示（`Tooltip`）与读屏语义（`semanticLabel`）里，
+/// 与账户卡片的 ⋯ 菜单保持同一形态。
 PopupMenuItem<_BudgetMenuAction> _menuItem(
   BuildContext context,
   _BudgetMenuAction action,
@@ -465,23 +469,15 @@ PopupMenuItem<_BudgetMenuAction> _menuItem(
   final theme = Theme.of(context);
   return PopupMenuItem<_BudgetMenuAction>(
     value: action,
-    child: Row(
-      children: [
-        Icon(
-          icon,
-          size: 18,
-          color: color ?? theme.colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: 10),
-        Text(
-          label,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: color ?? theme.colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0,
-          ),
-        ),
-      ],
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    child: Tooltip(
+      message: label,
+      child: Icon(
+        icon,
+        size: 20,
+        semanticLabel: label,
+        color: color ?? theme.colorScheme.onSurfaceVariant,
+      ),
     ),
   );
 }
