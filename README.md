@@ -6,7 +6,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter" alt="Flutter">
   <img src="https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart" alt="Dart">
-  <img src="https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20Web%20%7C%20Windows%20%7C%20macOS-lightgrey" alt="Platforms">
+  <img src="https://img.shields.io/badge/platform-Android%20%7C%20iOS-lightgrey" alt="Platforms">
 </p>
 
 # Miji
@@ -62,7 +62,7 @@ dart run build_runner build
 flutter run
 ```
 
-Supported platforms: Android, iOS, Web, Windows, macOS.
+Supported platforms: Android, iOS.
 
 ## Project Structure
 
