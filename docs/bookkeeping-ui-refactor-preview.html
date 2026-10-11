@@ -1109,7 +1109,7 @@ html[data-theme="dark"] .addbtn{color:#2B1F1A}
         <tr>
           <td>流水页控制区折叠</td>
           <td><code>transactions/money_transactions_section.dart</code></td>
-          <td>状态 chips 与日期 chips 合并进一个可展开筛选条；下钻上下文横幅缩成可关闭 chip。</td>
+          <td>状态 chips 与日期 chips 合并进一行<b>默认折叠</b>的筛选条（无生效条件时整块不占高度）；导出 / 回收站收进 <code>⋯</code>。⚠️ 画稿里「下钻上下文横幅缩成可关闭 chip」这一条<b>没有实现</b>，上下文仍只在筛选抽屉里显示。</td>
         </tr>
         <tr>
           <td>汇总条改吸底</td>
@@ -1146,10 +1146,35 @@ html[data-theme="dark"] .addbtn{color:#2B1F1A}
           <td><code>money_auto_postings_section.dart</code></td>
           <td>删掉 <code>_UpcomingInstallmentPreview</code>，改为列表底部一行 <code>_RelatedInstallmentsLink</code>，点击切到「分期」面板。</td>
         </tr>
+        <tr>
+          <td>术语统一</td>
+          <td><code>transactions</code> / <code>statistics</code> / <code>accounts</code> / <code>budgets</code> / <code>installments</code></td>
+          <td>四个都叫「类型」的下拉按概念拆开：交易类型 / 统计类型 / 账户类型 / 追踪类型；支付渠道统一；「子分配」收敛为「分配」。标签变长要连带加宽（label 就是占位文案，单行省略）。</td>
+        </tr>
+        <tr>
+          <td>空态 CTA 带文字</td>
+          <td>账户 / 预算 / 自动记账 / 分期</td>
+          <td>七处空态按钮由纯图标改为 <code>FilledButton.icon</code> / <code>OutlinedButton.icon</code>。页面级常驻的 <code>＋</code> 仍是图标（同排还有排序 / 隐藏金额 / 筛选）。</td>
+        </tr>
+        <tr>
+          <td>新增入口统一</td>
+          <td><code>money_accounts_section.dart</code>、<code>money_auto_postings_section.dart</code></td>
+          <td>四个页面级 <code>＋</code> 统一为 filled + <code>Icons.add_rounded</code>。FAB 九宫格未动。</td>
+        </tr>
+        <tr>
+          <td>滑动与菜单二选一</td>
+          <td><code>budget_card.dart</code>、<code>money_accounts_section.dart</code></td>
+          <td>预算卡片左滑 5→2、账户卡片左滑 3→2，只留编辑 / 删除；移出的动作都已在 <code>⋯</code> 菜单或卡片内常驻按钮里。</td>
+        </tr>
+        <tr>
+          <td>转账表单对齐</td>
+          <td><code>transfer_form_dialog.dart</code>、<code>transaction_form_dialog.dart</code></td>
+          <td>补 <code>autofocus</code>；新增 <code>TransferFormSubmit</code> 回调以支持「保存并继续」（与记一笔同构，未传时保持原 pop 契约）；记一笔日期快捷项改为编辑态也显示。</td>
+        </tr>
       </tbody>
     </table>
     <p class="stage-desc" style="margin-top:14px">
-      落地状态：流水页（控制区折叠 / 吸底汇总 / 不闪骨架 / 空态分流 / 卡片日期）与自动记账页（横幅合并 / 预览下沉）已实现；表单字段顺序与其余各项仍为画稿。
+      落地状态：<b>批次一</b>（流水页：控制区折叠 / 吸底汇总 / 不闪骨架 / 空态分流 / 卡片日期）、<b>批次二</b>（自动记账页：横幅合并 / 预览下沉）、<b>批次三</b>（术语统一 / 空态 CTA 带文字 / 新增入口统一 / 滑动与菜单二选一 / 转账表单对齐）已实现。仍为画稿的：<b>表单字段顺序</b>（P1-6，含备注提到顶层，与批次四一起做）、流水页的「下钻上下文 chip」。
     </p>
   </section>
 
