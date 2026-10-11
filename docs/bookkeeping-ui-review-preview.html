@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>米记 · 记账模块 UI 优化审核清单</title>
+<style>
+/* ============================================================
+   主题变量（沿用米记设计令牌）
+   ============================================================ */
+:root{
+  --bg:#F6EFE9;
+  --canvas:#FFF8F2;
+  --surface:#FFFFFF;
+  --surface-2:#FFF0E5;
+  --surface-3:#FBEDE4;
+  --line:#EAD8CC;
+  --line-soft:rgba(234,216,204,.55);
+  --text:#2B1F1A;
+  --text-2:#7C6A61;
+  --text-3:#A9988F;
+  --primary:#E45F4F;
+  --primary-ink:#B03A2C;
+  --primary-soft:rgba(228,95,79,.10);
+  --secondary:#21A78B;
+  --secondary-soft:rgba(33,167,139,.12);
+  --income:#168A5B;
+  --income-soft:rgba(22,138,91,.10);
+  --expense:#D44D6E;
+  --expense-soft:rgba(212,77,110,.10);
+  --warning:#C97A12;
+  --warning-soft:rgba(224,138,30,.13);
+  --transfer:#4F7DD9;
+  --transfer-soft:rgba(79,125,217,.11);
+  --shadow-sm:0 1px 2px rgba(74,45,32,.04);
+  --shadow:0 1px 2px rgba(74,45,32,.05), 0 10px 26px -18px rgba(74,45,32,.35);
+  --radius:20px;
+  --radius-sm:14px;
+  --radius-xs:10px;
+}
+html[data-theme="dark"]{
+  --bg:#120E0C;
+  --canvas:#1B1412;
+  --surface:#241C19;
+  --surface-2:#2E211C;
+  --surface-3:#332520;
+  --line:#4A3730;
+  --line-soft:rgba(74,55,48,.6);
+  --text:#F6EBE5;
+  --text-2:#B7A49B;
+  --text-3:#8B7870;
+  --primary:#FF9A88;
+  --primary-ink:#FFC3B6;
+  --primary-soft:rgba(255,154,136,.14);
+  --secondary:#7AE1C8;
+  --secondary-soft:rgba(122,225,200,.14);
+  --income:#63D3A4;
+  --income-soft:rgba(99,211,164,.14);
+  --expense:#FF8EA8;
+  --expense-soft:rgba(255,142,168,.14);
+  --warning:#F0B45C;
+  --warning-soft:rgba(240,180,92,.16);
+  --transfer:#92B4FF;
+  --transfer-soft:rgba(146,180,255,.16);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 28px -20px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 12% -8%, var(--primary-soft), transparent 60%),
+    radial-gradient(900px 500px at 96% 4%, var(--secondary-soft), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  font-size:15px;
+  line-height:1.6;
+}
+code{
+  font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  font-size:12.5px;
+  background:var(--surface-2);
+  border:1px solid var(--line-soft);
+  border-radius:6px;
+  padding:1px 5px;
+  white-space:nowrap;
+}
+html[data-theme="dark"] code{background:rgba(255,255,255,.07)}
+
+/* ============================================================
+   外壳
+   ============================================================ */
+.page{max-width:1080px;margin:0 auto;padding:40px 24px 120px}
+.page-head{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary)}
+.eyebrow::before{content:"";width:22px;height:2px;border-radius:2px;background:var(--primary)}
+h1{margin:10px 0 8px;font-size:30px;line-height:1.22;letter-spacing:-.02em;font-weight:800}
+.lede{margin:0;max-width:64ch;color:var(--text-2);font-size:14.5px}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;padding:4px;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow-sm)}
+.seg button{
+  appearance:none;border:0;background:transparent;color:var(--text-2);
+  font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;cursor:pointer;
+  transition:.18s ease;white-space:nowrap;
+}
+.seg button:hover{color:var(--text)}
+.seg button[aria-pressed="true"]{background:var(--primary);color:#fff;box-shadow:0 4px 12px -4px var(--primary)}
+html[data-theme="dark"] .seg button[aria-pressed="true"]{color:#2B1F1A}
+
+/* ============================================================
+   总览
+   ============================================================ */
+.overview{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px 22px;box-shadow:var(--shadow);margin-bottom:30px;
+}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat .k{font-size:12px;font-weight:700;color:var(--text-3);letter-spacing:.04em}
+.stat .v{font-size:26px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:14px;font-weight:600;color:var(--text-3);margin-left:2px}
+.stat.yes .v{color:var(--income)}
+.stat.no .v{color:var(--text-3)}
+.stat.hold .v{color:var(--warning)}
+.stat.all .v{color:var(--primary)}
+.bar{height:10px;border-radius:999px;background:var(--surface-3);display:flex;overflow:hidden}
+.bar i{display:block;height:100%;transition:width .25s ease}
+.bar .b-yes{background:var(--secondary)}
+.bar .b-no{background:var(--text-3);opacity:.5}
+.bar-note{margin:10px 0 0;font-size:12.5px;color:var(--text-3)}
+
+/* ============================================================
+   批次
+   ============================================================ */
+.batch{margin-bottom:34px}
+.batch-head{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.batch-head h2{margin:0;font-size:19px;font-weight:800;letter-spacing:-.01em}
+.batch-head .cnt{font-size:12.5px;font-weight:700;color:var(--text-3);font-variant-numeric:tabular-nums}
+.batch-desc{margin:0 0 14px;font-size:13.5px;color:var(--text-2);max-width:76ch}
+.batch-actions{display:flex;gap:8px;margin-bottom:14px}
+.mini{
+  appearance:none;font:inherit;font-size:12.5px;font-weight:700;padding:6px 12px;cursor:pointer;
+  background:var(--surface);color:var(--text-2);border:1px solid var(--line);border-radius:999px;transition:.16s ease;
+}
+.mini:hover{color:var(--text);border-color:var(--text-3)}
+
+/* ============================================================
+   条目
+   ============================================================ */
+.item{
+  position:relative;
+  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:var(--radius-sm);padding:18px 20px;margin-bottom:12px;box-shadow:var(--shadow-sm);
+  transition:border-color .18s ease,opacity .18s ease;
+}
+.item[data-choice="yes"]{border-left-color:var(--secondary)}
+.item[data-choice="no"]{border-left-color:var(--text-3);opacity:.62}
+.item[hidden]{display:none}
+.item-top{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-bottom:8px}
+.item-top h3{margin:0;font-size:15.5px;font-weight:700;letter-spacing:-.01em;flex:1 1 240px}
+.badge{font-size:11px;font-weight:800;letter-spacing:.05em;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.badge.p0{background:var(--expense-soft);color:var(--expense)}
+.badge.p1{background:var(--warning-soft);color:var(--warning)}
+.badge.p2{background:var(--transfer-soft);color:var(--transfer)}
+.tag{font-size:11.5px;font-weight:700;color:var(--text-3);border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap}
+
+.sym{margin:0 0 12px;font-size:13.5px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-xs);padding:9px 12px}
+.row{display:grid;grid-template-columns:52px 1fr;gap:10px;margin-bottom:8px;font-size:13.5px}
+.row .lab{font-weight:800;color:var(--text-3);font-size:12px;letter-spacing:.04em;padding-top:2px}
+.row .val{color:var(--text-2);line-height:1.75}
+.row .val strong{color:var(--text);font-weight:700}
+
+.vote{display:flex;gap:8px;margin-top:14px;padding-top:13px;border-top:1px dashed var(--line-soft)}
+.vote button{
+  appearance:none;font:inherit;font-size:13px;font-weight:700;padding:7px 16px;cursor:pointer;
+  background:transparent;color:var(--text-2);border:1px solid var(--line);border-radius:999px;transition:.16s ease;
+}
+.vote button:hover{color:var(--text);border-color:var(--text-3)}
+.vote button[aria-pressed="true"][data-vote="yes"]{background:var(--secondary);border-color:var(--secondary);color:#fff}
+.vote button[aria-pressed="true"][data-vote="no"]{background:var(--text-3);border-color:var(--text-3);color:#fff}
+html[data-theme="dark"] .vote button[aria-pressed="true"]{color:#1B1412}
+.vote .hint{margin-left:auto;font-size:12px;color:var(--text-3);align-self:center}
+
+/* ============================================================
+   汇总
+   ============================================================ */
+.summary{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:22px;box-shadow:var(--shadow);margin-top:38px;
+}
+.summary h2{margin:0 0 4px;font-size:18px;font-weight:800}
+.summary p.sub{margin:0 0 16px;color:var(--text-3);font-size:13px}
+#report{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.8;
+  background:var(--canvas);border:1px solid var(--line);border-radius:var(--radius-xs);
+  padding:14px 16px;margin:0 0 14px;white-space:pre-wrap;color:var(--text-2);
+  max-height:420px;overflow:auto;
+}
+.btn-primary{
+  appearance:none;font:inherit;font-size:13.5px;font-weight:700;padding:10px 20px;cursor:pointer;
+  background:var(--primary);color:#fff;border:0;border-radius:999px;box-shadow:0 6px 16px -8px var(--primary);transition:.16s ease;
+}
+.btn-primary:hover{filter:brightness(1.05)}
+html[data-theme="dark"] .btn-primary{color:#2B1F1A}
+
+/* ============================================================
+   提示条
+   ============================================================ */
+.note{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);
+  background:var(--surface);border:1px solid var(--line);border-radius:999px;
+  padding:11px 22px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.22s ease;
+  font-size:13.5px;font-weight:700;z-index:40;
+}
+.note.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:720px){
+  .page{padding:26px 16px 110px}
+  h1{font-size:24px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:12px}
+  .row{grid-template-columns:1fr;gap:2px}
+  .row .lab{padding-top:0}
+  .vote{flex-wrap:wrap}
+  .vote .hint{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="page-head">
+    <div>
+      <span class="eyebrow">Miji · Bookkeeping UI Review</span>
+      <h1>记账模块 UI / 布局优化 · 审核清单</h1>
+      <p class="lede">共 18 项，按「投入产出比」分 4 个批次 + 1 组待议。逐项点「采纳 / 搁置」，下方会实时汇总成清单，可直接复制回对话。每项都附了文件行号，方便对照代码确认。</p>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="筛选" id="filter">
+        <button data-filter="all" aria-pressed="true">全部</button>
+        <button data-filter="hold" aria-pressed="false">未决</button>
+        <button data-filter="yes" aria-pressed="false">已采纳</button>
+        <button data-filter="no" aria-pressed="false">已搁置</button>
+      </div>
+      <div class="seg" role="group" aria-label="主题" id="theme">
+        <button data-theme-btn="light" aria-pressed="true">浅色</button>
+        <button data-theme-btn="dark" aria-pressed="false">深色</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="overview">
+    <div class="stats">
+      <div class="stat all"><span class="k">总计</span><span class="v" id="s-all">18<small>项</small></span></div>
+      <div class="stat yes"><span class="k">已采纳</span><span class="v" id="s-yes">0<small>项</small></span></div>
+      <div class="stat hold"><span class="k">未决</span><span class="v" id="s-hold">18<small>项</small></span></div>
+      <div class="stat no"><span class="k">已搁置</span><span class="v" id="s-no">0<small>项</small></span></div>
+    </div>
+    <div class="bar"><i class="b-yes" id="bar-yes" style="width:0%"></i><i class="b-no" id="bar-no" style="width:0%"></i></div>
+    <p class="bar-note">选择会保存在本机浏览器，刷新不丢。全部审完后点页面底部的「复制为 Markdown」。</p>
+  </section>
+
+  <main id="batches"></main>
+
+  <section class="summary">
+    <h2>审核结果</h2>
+    <p class="sub">下面这份就是回传内容，点按钮复制。</p>
+    <pre id="report"></pre>
+    <button class="btn-primary" id="copy">复制为 Markdown</button>
+  </section>
+
+</div>
+
+<div class="note" id="note">已复制</div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+
+  var BATCHES = [
+    {
+      id:'A', name:'批次 A · 体验止血',
+      desc:'都是局部改动、风险最低，可以一次性提交验证。',
+      items:[
+        {
+          pri:'P0', tag:'查阅',
+          title:'空状态区分「无数据」与「筛选无结果」',
+          sym:'叠加账户+分类+日期后查不到数据，仍然显示「还没有流水 / 可以从快速新增记录支出、收入或转账」。',
+          evid:'`money_transactions_section.dart:496` 无条件注入 emptyBuilder；`_EmptyTransactionsPanel` 在 `:3606-3626` 文案写死。可复用 `_hasActiveFilters`（`:128-140`）与「清除筛选」逻辑（`:1521-1555`）。',
+          fix:'有筛选时显示「没有符合条件的流水」+「清除筛选」主按钮；无筛选时才保留引导记账。'
+        },
+        {
+          pri:'P0', tag:'查阅',
+          title:'交易卡去掉与分组头重复的日期行',
+          sym:'分组头已经写了「今天 / 昨天 / X月X日」，卡片内又固定渲染一次 MM-DD HH:mm，同一天被表达两次。',
+          evid:'分组头 `money_transactions_section.dart:506-518`、`:3578-3586`；卡片日期 `transaction_card.dart:130`、`:419-426`。',
+          fix:'卡片内日期只留 HH:mm，跨天信息交给分组头；或同天分组内直接隐藏这一行。'
+        },
+        {
+          pri:'P0', tag:'操作',
+          title:'筛选变更不再整屏闪骨架',
+          sym:'点任意筛选 chip 都会清空列表并置加载态，页面瞬间变骨架再重建。',
+          evid:'`_refreshFromFilterChange` `money_transactions_section.dart:1029-1040` 清空列表并置 `_isLoadingInitial`；骨架渲染在 `:480-482`。',
+          fix:'保留旧列表，改成顶部细进度条或列表降透明度；只有首次进入才用骨架。'
+        },
+        {
+          pri:'P1', tag:'操作',
+          title:'转账表单对齐「记一笔」表单',
+          sym:'转账金额不自动聚焦、没有「保存并继续」、备注位置与记一笔相反、编辑态日期快捷项口径不同。',
+          evid:'`transfer_form_dialog.dart:131-139`（无 autofocus）、`:235-239`（只有取消/确定）、`:225-231`（备注在顶层）、`:215`；对照 `transaction_form_dialog.dart:387`、`:611-617`。',
+          fix:'补 autofocus 与「保存并继续」；备注位置统一；日期快捷项口径统一为编辑态也显示。'
+        },
+        {
+          pri:'P2', tag:'操作',
+          title:'空状态按钮补上文字标签',
+          sym:'账户、预算、分期、自动记账的空状态 CTA 多为纯图标按钮，靠 tooltip 说明，第一次用的用户看不懂。',
+          evid:'账户 `money_accounts_section.dart:1325-1330`、预算 `money_budgets_section.dart:784-802`；只有分期的三级依赖引导（`money_installments_section.dart:305-346`）做得最完整。',
+          fix:'空状态 CTA 一律带文字（图标 + 文案），可参照分期页的链式引导。'
+        }
+      ]
+    },
+    {
+      id:'B', name:'批次 B · 首屏减负',
+      desc:'改动面稍大，但直接决定「打开页面第一眼看到什么」。',
+      items:[
+        {
+          pri:'P0', tag:'查阅',
+          title:'流水页控制区折叠 + 汇总条吸底',
+          sym:'列表前堆了 6 段控制区（搜索框 → 操作行 → 状态 chips → 日期 chips → 汇总条 → 各类 banner），约 270px；命中条件 banner 时可到 500px，第一笔流水常落在第二屏。',
+          evid:'`money_transactions_section.dart:258-419` 的 16 段 Column；条件 banner 分别在 `:409-416`、`:440-446`、`:447-453`。',
+          fix:'状态 chips 与日期 chips 合并成可展开的筛选条；汇总条改成吸底（pinned）；从账户/预算下钻时的上下文横幅缩成一枚可关闭的小 chip。'
+        },
+        {
+          pri:'P0', tag:'查阅',
+          title:'自动记账页横幅合并 + 分期预览下沉',
+          sym:'冲突横幅、接管失效横幅、分期还款计划预览三层可同时出现，模板列表被压到折叠线以下，首屏经常「只见横幅不见模板」。',
+          evid:'`money_auto_postings_section.dart:96`、`:99`、`:102`；分期预览 `:562-800`，代码注释自己写着「常驻展开会把自动记账列表挤出屏幕」（`:568-569`）。',
+          fix:'三层横幅合并成一个默认折叠的「提醒区」；分期预览降级成列表底部一行「相关」链接（跳转分期 Tab）；折叠态补上「最近一期到期日」。'
+        },
+        {
+          pri:'P2', tag:'操作',
+          title:'顶部操作行收敛',
+          sym:'一个分段控件 + 4 个图标按钮 + 4 个间距，靠把 minSegmentWidth 压到 44 才在 360dp 放下，属于压线布局，字体放大或更窄屏有溢出风险。',
+          evid:'`money_transactions_section.dart:280-331`，注释 `:285-287`。',
+          fix:'「导出 / 回收站」收进「⋯」菜单，操作行只留「排序 + 高级筛选」。'
+        }
+      ]
+    },
+    {
+      id:'C', name:'批次 C · 一致性与术语',
+      desc:'不改变功能，只把「同一件事的不同说法/不同做法」收敛成一套。',
+      items:[
+        {
+          pri:'P1', tag:'一致性',
+          title:'「新增」入口统一为一条规则',
+          sym:'FAB 的 8 个动作已经覆盖账户/分期/预算/支出/收入/转账，但账户页、预算页、分期页、自动记账页又各有一个 ＋，样式和位置都不统一。',
+          evid:'`money_quick_action_fab.dart:41-50`（8 个动作）；页内 ＋：账户 `money_accounts_section.dart:1152-1158`、预算 `money_budgets_section.dart:166-171`、分期 `money_installments_section.dart:294-301`、自动记账 `money_auto_postings_section.dart:106-113`。',
+          fix:'定一条规则：页面内的 ＋ 只负责本页实体，FAB 只管流水类动作；＋ 抽成同一个组件统一样式。'
+        },
+        {
+          pri:'P1', tag:'操作',
+          title:'滑动动作与「⋯」菜单二选一',
+          sym:'预算卡左滑 5 项、又叠了 ⋯ 菜单 4 项；账户卡左滑 3 项、又叠了 ⋯ 菜单 6 项。手机上左滑一次只看得到 2~3 个动作。',
+          evid:'`budget_card.dart:66-104`、`:235-295`；`money_accounts_section.dart:1535-1561`、`:1136-2180`。代码注释自己也承认「手机一次只见 2~3 个」（`budget_card.dart:233-234`）。',
+          fix:'左滑只保留「编辑 / 删除」两个高频项，其余全部收进 ⋯；或者反过来只留 ⋯。不要两套并存。'
+        },
+        {
+          pri:'P1', tag:'一致性',
+          title:'术语统一 + 冲突提示合并为一处',
+          sym:'同一个东西三套叫法：「子分配 / 分配 / 未来义务」；同一件冲突两处文案不同：「同一笔还款会记两遍」vs「同一笔还款会被记两遍账」。',
+          evid:'`budget_card.dart:225`、`:591`、`:262`，`budget_commitment_sheet.dart:35`、`:55`；`money_installments_section.dart:424` vs `money_auto_postings_section.dart:450`；「账户类型/类型/渠道」混用于 `money_statistics_section.dart:855`、`:877`、`money_accounts_section.dart:1440`、`money_budgets_section.dart:665`。',
+          fix:'定一份术语表（建议：子分配 / 冲突提醒 / 账户类型 / 支付渠道）；两处冲突横幅文案统一，并考虑只保留一处 UI（收进提醒中心或做成全局角标）。'
+        }
+      ]
+    },
+    {
+      id:'D', name:'批次 D · 查阅效率',
+      desc:'让「想找的东西」更快被找到，让「常用的动作」更少点几下。',
+      items:[
+        {
+          pri:'P1', tag:'操作',
+          title:'「记一笔」字段顺序调整',
+          sym:'「名称」排在第 3 位，早于账户、分类、日期——后三者明显更高频；而备注被折叠进「更多信息」，至少要点 2 次才能输入。',
+          evid:'`transaction_form_dialog.dart:397-403`（名称）、`:469`（账户）、`:513`（分类）、`:537`（日期）、`:572-586`（更多信息）。',
+          fix:'顺序改为 金额 → 分类 → 账户 → 日期 → 名称 → 支付方式 → 更多；备注提到顶层或就近给一个快捷展开。'
+        },
+        {
+          pri:'P2', tag:'查阅',
+          title:'统计页页签与看板分节',
+          sym:'22 张卡分 5 页，要找「净值趋势 / 信用使用率 / 未来账单」需要横滑 4 次再页内下滑很久；页签只有约 32px 高，细长易误触；自定义看板 Sheet 里 22 项也是平铺。',
+          evid:'`money_dashboard_layout.dart:14-37`（22 卡）、`:68-84`（5 组）；`money_statistics_section.dart:1387-1431`、`:1460-1524`（页签在 `:1478`）；`money_dashboard_editor_sheet.dart:90-110`。',
+          fix:'页签改成带图标 + 卡片数的分段控件，高度提到 40px；看板 Sheet 按 group 分节，不要 22 项平铺。'
+        },
+        {
+          pri:'P2', tag:'查阅',
+          title:'账户分组 chips 补金额合计',
+          sym:'资产 / 信用负债 / 停用三组用 chips 切换单组显示，但 chips 上只有名称和数量，没有金额合计——而这正是用户分组时最想看的信息。',
+          evid:'`money_accounts_section.dart:1054-1186`（_AccountsHeader）、`:1171-1248`（_GroupChip）。',
+          fix:'chips 上补金额合计（例如「资产 · ¥12,340」），或改成可折叠的分组堆叠，一屏同时看到三组。'
+        },
+        {
+          pri:'P2', tag:'查阅',
+          title:'标签筛选补入口 / 搜索框文案与行为对齐',
+          sym:'标签筛选只能从统计页下钻带过来，列表内没有入口；常驻搜索框的 hint 写着「搜索名称、备注、商家」，但实际只传了 keyword，商家是另一条 filter，只在高级筛选抽屉里。',
+          evid:'`money_transactions_section.dart:385-386`（注释自述无独立入口）、`:263-278`（hint）、`:951-952`、`:2650-2659`。',
+          fix:'标签筛选补一个 chips 入口（可复用状态 chips 那一行）；搜索框 hint 去掉「商家」，或让搜索真正覆盖商家。'
+        },
+        {
+          pri:'P2', tag:'操作',
+          title:'「再来一笔」补到滑动或菜单',
+          sym:'复制一笔必须先点开详情再点按钮，滑动动作里没有复制。',
+          evid:'`transaction_detail_content.dart:588-594`；`transaction_card.dart:71-102` 的滑动动作只有 确认入账/编辑/退款/删除。',
+          fix:'滑动动作或 ⋯ 菜单里补「复制」，对「同一笔常见支出」场景收益很大。'
+        }
+      ]
+    },
+    {
+      id:'E', name:'待议 · 需产品决策',
+      desc:'这两项不是「好不好」的问题，而是取决于产品取向，先不动。',
+      items:[
+        {
+          pri:'P1', tag:'决策',
+          title:'默认落地页从「账户」改为「流水」',
+          sym:'进入记账页默认落在「账户」，而 Tab 栏第一个是「流水」。高频页面不是默认页，每次进来都要多点一下。',
+          evid:'`bookkeeping_page.dart:53` 初始化 `_selectedPanel = accounts`；`:769` 的 `_panelFromSection` 兜底也是 accounts。',
+          fix:'若「账户」是刻意的资产概览视角，保持不动；否则改成默认「流水」。'
+        },
+        {
+          pri:'P2', tag:'决策',
+          title:'自动记账页的分期预览是否彻底移除',
+          sym:'该只读预览与「分期」Tab 的列表/明细职责重叠。批次 B 里是「下沉」，这里问的是要不要「移除」。',
+          evid:'`money_auto_postings_section.dart:562-800`（_UpcomingInstallmentPreview）。',
+          fix:'下沉保留一处交叉提示，还是彻底移除交给分期 Tab——取决于是否希望用户在自动记账页感知到分期。'
+        }
+      ]
+    }
+  ];
+
+  var LABELS = {yes:'采纳', no:'搁置'};
+  var CHOICE_KEY = 'miji.bookkeepingUiReview.v1';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(CHOICE_KEY) || '{}') || {}; } catch (e) { state = {}; }
+
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function rich(s){
+    return esc(s).replace(/`([^`]+)`/g, function(_, code){ return '<code>' + code + '</code>'; });
+  }
+  function save(){
+    try { localStorage.setItem(CHOICE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  var allItems = [];
+  var host = document.getElementById('batches');
+  var html = '';
+
+  BATCHES.forEach(function(batch){
+    html += '<section class="batch" data-batch="' + batch.id + '">';
+    html += '<div class="batch-head"><h2>' + esc(batch.name) + '</h2>'
+          + '<span class="cnt" id="cnt-' + batch.id + '"></span></div>';
+    html += '<p class="batch-desc">' + esc(batch.desc) + '</p>';
+    html += '<div class="batch-actions">'
+          + '<button class="mini" data-bulk="yes" data-batch-target="' + batch.id + '">本批全部采纳</button>'
+          + '<button class="mini" data-bulk="hold" data-batch-target="' + batch.id + '">清空本批</button>'
+          + '</div>';
+
+    batch.items.forEach(function(item, i){
+      var id = batch.id + (i + 1);
+      allItems.push({id:id, batch:batch.id, name:batch.name, item:item});
+      var choice = state[id] || '';
+      html += '<article class="item" data-id="' + id + '" data-choice="' + choice + '">';
+      html += '<div class="item-top">'
+            + '<span class="badge ' + item.pri.toLowerCase() + '">' + item.pri + '</span>'
+            + '<h3>' + esc(item.title) + '</h3>'
+            + '<span class="tag">' + esc(item.tag) + '</span>'
+            + '</div>';
+      html += '<p class="sym">' + esc(item.sym) + '</p>';
+      html += '<div class="row"><span class="lab">证据</span><span class="val">' + rich(item.evid) + '</span></div>';
+      html += '<div class="row"><span class="lab">改法</span><span class="val">' + rich(item.fix) + '</span></div>';
+      html += '<div class="vote">'
+            + '<button data-vote="yes" aria-pressed="' + (choice === 'yes') + '">采纳</button>'
+            + '<button data-vote="no" aria-pressed="' + (choice === 'no') + '">搁置</button>'
+            + '<span class="hint">' + id + '</span>'
+            + '</div>';
+      html += '</article>';
+    });
+
+    html += '</section>';
+  });
+
+  host.innerHTML = html;
+
+  function counts(){
+    var c = {yes:0, no:0, hold:0};
+    allItems.forEach(function(entry){
+      var v = state[entry.id];
+      if (v === 'yes') c.yes++;
+      else if (v === 'no') c.no++;
+      else c.hold++;
+    });
+    return c;
+  }
+
+  function paint(){
+    allItems.forEach(function(entry){
+      var el = host.querySelector('.item[data-id="' + entry.id + '"]');
+      if (!el) return;
+      var v = state[entry.id] || '';
+      el.setAttribute('data-choice', v);
+      el.querySelectorAll('[data-vote]').forEach(function(btn){
+        btn.setAttribute('aria-pressed', String(btn.getAttribute('data-vote') === v));
+      });
+    });
+
+    var c = counts();
+    var total = allItems.length;
+    document.getElementById('s-all').innerHTML = total + '<small>项</small>';
+    document.getElementById('s-yes').innerHTML = c.yes + '<small>项</small>';
+    document.getElementById('s-hold').innerHTML = c.hold + '<small>项</small>';
+    document.getElementById('s-no').innerHTML = c.no + '<small>项</small>';
+    document.getElementById('bar-yes').style.width = (c.yes / total * 100) + '%';
+    document.getElementById('bar-no').style.width = (c.no / total * 100) + '%';
+
+    BATCHES.forEach(function(batch){
+      var el = document.getElementById('cnt-' + batch.id);
+      if (!el) return;
+      var picked = batch.items.filter(function(_, i){
+        return state[batch.id + (i + 1)] === 'yes';
+      }).length;
+      el.textContent = picked + ' / ' + batch.items.length + ' 采纳';
+    });
+
+    document.getElementById('report').textContent = buildReport(c);
+  }
+
+  function buildReport(c){
+    var lines = [];
+    lines.push('# 记账模块 UI 优化 · 审核结果');
+    lines.push('');
+    lines.push('采纳 ' + c.yes + ' 项 / 搁置 ' + c.no + ' 项 / 未决 ' + c.hold + ' 项（共 ' + allItems.length + ' 项）');
+    lines.push('');
+    BATCHES.forEach(function(batch){
+      var picked = [];
+      batch.items.forEach(function(item, i){
+        var id = batch.id + (i + 1);
+        if (state[id] === 'yes') picked.push('- [x] ' + id + ' ' + item.title + '（' + item.pri + '）');
+        else if (state[id] === 'no') picked.push('- [ ] ' + id + ' ' + item.title + '（搁置）');
+        else picked.push('- [ ] ' + id + ' ' + item.title + '（未决）');
+      });
+      lines.push('## ' + batch.name);
+      lines = lines.concat(picked);
+      lines.push('');
+    });
+    return lines.join('\n');
+  }
+
+  // 投票
+  host.addEventListener('click', function(ev){
+    var btn = ev.target.closest('[data-vote]');
+    if (btn) {
+      var el = btn.closest('.item');
+      var id = el.getAttribute('data-id');
+      var v = btn.getAttribute('data-vote');
+      state[id] = (state[id] === v) ? null : v;
+      save(); paint();
+      return;
+    }
+    var bulk = ev.target.closest('[data-bulk]');
+    if (bulk) {
+      var mode = bulk.getAttribute('data-bulk');
+      var bid = bulk.getAttribute('data-batch-target');
+      var batch = BATCHES.filter(function(b){ return b.id === bid; })[0];
+      if (!batch) return;
+      batch.items.forEach(function(_, i){
+        var id = bid + (i + 1);
+        state[id] = mode === 'yes' ? 'yes' : null;
+      });
+      save(); paint();
+    }
+  });
+
+  // 筛选
+  document.querySelectorAll('[data-filter]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var f = btn.getAttribute('data-filter');
+      document.querySelectorAll('[data-filter]').forEach(function(b){
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      allItems.forEach(function(entry){
+        var el = host.querySelector('.item[data-id="' + entry.id + '"]');
+        if (!el) return;
+        var v = state[entry.id] || 'hold';
+        el.hidden = !(f === 'all' || f === v);
+      });
+      document.querySelectorAll('.batch').forEach(function(sec){
+        var visible = sec.querySelectorAll('.item:not([hidden])').length;
+        sec.hidden = visible === 0;
+      });
+    });
+  });
+
+  // 主题
+  document.querySelectorAll('[data-theme-btn]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      root.setAttribute('data-theme', btn.getAttribute('data-theme-btn'));
+      document.querySelectorAll('[data-theme-btn]').forEach(function(b){
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+    });
+  });
+
+  // 复制
+  var note = document.getElementById('note');
+  var noteTimer = null;
+  function flash(msg){
+    note.textContent = msg;
+    note.classList.add('on');
+    if (noteTimer) clearTimeout(noteTimer);
+    noteTimer = setTimeout(function(){ note.classList.remove('on'); }, 1800);
+  }
+  document.getElementById('copy').addEventListener('click', function(){
+    var text = document.getElementById('report').textContent;
+    function done(){ flash('已复制到剪贴板'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(text); });
+    } else {
+      fallback(text);
+    }
+  });
+  function fallback(text){
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); flash('已复制到剪贴板'); }
+    catch (e) { flash('复制失败，请手动选中上方文本'); }
+    document.body.removeChild(ta);
+  }
+
+  paint();
+})();
+</script>
+</body>
+</html>
