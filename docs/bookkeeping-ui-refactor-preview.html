@@ -1171,10 +1171,35 @@ html[data-theme="dark"] .addbtn{color:#2B1F1A}
           <td><code>transfer_form_dialog.dart</code>、<code>transaction_form_dialog.dart</code></td>
           <td>补 <code>autofocus</code>；新增 <code>TransferFormSubmit</code> 回调以支持「保存并继续」（与记一笔同构，未传时保持原 pop 契约）；记一笔日期快捷项改为编辑态也显示。</td>
         </tr>
+        <tr>
+          <td>表单字段顺序 + 备注提到顶层</td>
+          <td><code>transaction_form_dialog.dart</code></td>
+          <td>重排为 金额 → 分类 → 账户 → 日期 → 名称 → <b>备注</b> → 状态 → 支付方式 → 更多。备注从「更多信息」搬出，<code>minLines</code> 2→1（空着只占一行）。</td>
+        </tr>
+        <tr>
+          <td>统计页签 + 看板分节</td>
+          <td><code>money_statistics_section.dart</code>、<code>money_dashboard_editor_sheet.dart</code></td>
+          <td>页签补分组图标 + 组内卡片数角标，高度 32→40；看板编辑器 22 项按<b>当前排序</b>动态插分组小标题（拖拽后不会错位）。</td>
+        </tr>
+        <tr>
+          <td>账户分组 chips 带金额</td>
+          <td><code>money_accounts_section.dart</code></td>
+          <td>chips 由「名称 · 数量」改为「名称 · 数量 · 金额」（紧凑格式）。停用组不给金额；多币种时也不给（直接相加是错的）。</td>
+        </tr>
+        <tr>
+          <td>标签筛选入口</td>
+          <td><code>money_transactions_section.dart</code></td>
+          <td>展开态筛选条补「标签」多选（与状态 / 日期同级）。原来标签筛选只能从统计页下钻带过来，列表里没有入口。</td>
+        </tr>
+        <tr>
+          <td>复制入口</td>
+          <td><code>transaction_card.dart</code></td>
+          <td>流水卡片左滑补「复制」（复用详情里的「再来一笔」）。原来要先点开详情。</td>
+        </tr>
       </tbody>
     </table>
     <p class="stage-desc" style="margin-top:14px">
-      落地状态：<b>批次一</b>（流水页：控制区折叠 / 吸底汇总 / 不闪骨架 / 空态分流 / 卡片日期）、<b>批次二</b>（自动记账页：横幅合并 / 预览下沉）、<b>批次三</b>（术语统一 / 空态 CTA 带文字 / 新增入口统一 / 滑动与菜单二选一 / 转账表单对齐）已实现。仍为画稿的：<b>表单字段顺序</b>（P1-6，含备注提到顶层，与批次四一起做）、流水页的「下钻上下文 chip」。
+      落地状态：<b>批次一</b>（流水页：控制区折叠 / 吸底汇总 / 不闪骨架 / 空态分流 / 卡片日期）、<b>批次二</b>（自动记账页：横幅合并 / 预览下沉）、<b>批次三</b>（术语统一 / 空态 CTA 带文字 / 新增入口统一 / 滑动与菜单二选一 / 转账表单对齐）、<b>批次四</b>（表单字段顺序 + 备注提到顶层 / 统计页签与看板分节 / 账户分组 chips 带金额 / 标签筛选入口 / 复制入口）均已实现。两处判定为「不需要做」：P0-1 的「下钻上下文 chip」已由批次一的生效条件 chips 覆盖；P2-3 的「搜索框 hint 与商家不符」原文判断过时——关键词谓词本来就已经 LIKE 了 merchant。
     </p>
   </section>
 
