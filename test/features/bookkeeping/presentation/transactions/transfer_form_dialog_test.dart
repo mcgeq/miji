@@ -69,7 +69,7 @@ Future<void> _pump(
       overrides: [
         currentUserCurrentLedgerValueProvider.overrideWithValue(_ledger),
         currentUserMoneyTransferAccountsProvider.overrideWith(
-          (ref, ledgerId) => Stream.value(const [_cashAccount, _savingAccount]),
+          (ref, ledgerId) => Stream.value([_cashAccount, _savingAccount]),
         ),
         currentUserCategoryCatalogProvider.overrideWith(
           (ref, kind) => Stream.value(_catalog),
@@ -102,7 +102,7 @@ final _ledger = MoneyLedgerEntity(
   updatedAt: _createdAt,
 );
 
-const _cashAccount = MoneyAccountEntity(
+final _cashAccount = MoneyAccountEntity(
   id: 'cash-1',
   userId: 'user-1',
   name: '现金',
@@ -125,7 +125,7 @@ const _cashAccount = MoneyAccountEntity(
   updatedAt: _createdAt,
 );
 
-const _savingAccount = MoneyAccountEntity(
+final _savingAccount = MoneyAccountEntity(
   id: 'saving-1',
   userId: 'user-1',
   name: '招商银行储蓄卡',
