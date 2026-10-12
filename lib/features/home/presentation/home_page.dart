@@ -42,6 +42,8 @@ import 'package:miji/features/home/presentation/home_greeting_header.dart';
 import 'package:miji/features/home/presentation/home_today_board.dart';
 import 'package:miji/features/home/presentation/home_health_cycle_card.dart';
 import 'package:miji/features/home/presentation/home_health_today_card.dart';
+import 'package:miji/features/home/presentation/home_collapsible.dart';
+import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/health/presentation/health_quick_dialogs.dart';
 import 'package:miji/features/health/providers/health_providers.dart';
 import 'package:miji/features/home/presentation/home_insight_strip.dart';
@@ -312,20 +314,30 @@ class _HomeDashboard extends ConsumerWidget {
       ),
     );
 
-    final categoryPanel = HomeCategoryStructurePanel(
-      type: categoryType,
-      onTypeChanged: (value) =>
-          ref.read(homeCategoryStructureTypeProvider.notifier).set(value),
-      items: categoryItems.valueOrNull ?? const [],
-      isLoading: categoryItems.isLoading,
+    final categoryPanel = HomeCollapsible(
+      icon: Icons.donut_large_rounded,
+      title: '本月分类',
+      subtitle: _categorySummary(categoryItems.valueOrNull),
+      child: HomeCategoryStructurePanel(
+        type: categoryType,
+        onTypeChanged: (value) =>
+            ref.read(homeCategoryStructureTypeProvider.notifier).set(value),
+        items: categoryItems.valueOrNull ?? const [],
+        isLoading: categoryItems.isLoading,
+      ),
     );
 
-    final recentPanel = HomeRecentTransactionsPanel(
-      items: recentItems.valueOrNull ?? const [],
-      isLoading: recentItems.isLoading,
-      onOpenAll: () => _openTransactionsPage(context),
-      onOpenItem: (id) => _openTransactionDetail(context, ref, id),
-      onRecordTransaction: () => launcher.run(MoneyQuickAction.expense),
+    final recentPanel = HomeCollapsible(
+      icon: Icons.receipt_long_rounded,
+      title: '最近账单',
+      subtitle: _recentSummary(recentItems.valueOrNull),
+      child: HomeRecentTransactionsPanel(
+        items: recentItems.valueOrNull ?? const [],
+        isLoading: recentItems.isLoading,
+        onOpenAll: () => _openTransactionsPage(context),
+        onOpenItem: (id) => _openTransactionDetail(context, ref, id),
+        onRecordTransaction: () => launcher.run(MoneyQuickAction.expense),
+      ),
     );
 
     final healthBriefValue = healthBrief.valueOrNull;
@@ -615,6 +627,24 @@ class _HomeDashboard extends ConsumerWidget {
         );
     invalidateTodayActionData(ref);
     ref.invalidate(homeActionBriefProvider);
+  }
+
+  String? _categorySummary(List<HomeCategorySpendingItem>? items) {
+    if (items == null || items.isEmpty) {
+      return null;
+    }
+    final top = items.first;
+    return '${top.categoryName} ${(top.ratio * 100).round()}% · '
+        '共 ${items.length} 个分类';
+  }
+
+  String? _recentSummary(List<HomeRecentTransactionItem>? items) {
+    if (items == null || items.isEmpty) {
+      return null;
+    }
+    final top = items.first;
+    return '${top.title} · '
+        '${formatMoneyMinor(top.amountMinor, top.currencyCode)}';
   }
 
   void _openBoardCell(BuildContext context, HomeBlockId id) {
