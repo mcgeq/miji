@@ -78,10 +78,7 @@ final homeUnifiedRemindersProvider = Provider<HomeUnifiedReminders>((ref) {
   }
 
   final money =
-      ref
-          .watch(currentUserPendingReminderCenterItemsProvider)
-          .asData
-          ?.value ??
+      ref.watch(currentUserPendingReminderCenterItemsProvider).asData?.value ??
       const <MoneyReminderCenterItem>[];
   final budgets =
       ref.watch(currentUserBudgetsProvider).asData?.value ??

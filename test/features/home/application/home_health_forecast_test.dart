@@ -61,10 +61,7 @@ void main() {
       MaterialApp(
         theme: AppTheme.light(),
         home: Scaffold(
-          body: HomeHealthForecastCard(
-            forecast: forecast,
-            onOpenHealth: () {},
-          ),
+          body: HomeHealthForecastCard(forecast: forecast, onOpenHealth: () {}),
         ),
       ),
     );

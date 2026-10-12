@@ -603,10 +603,7 @@ class _HomeDashboard extends ConsumerWidget {
     ref.read(homeWeekOffsetProvider.notifier).set(offset);
   }
 
-  void _openAllReminders(
-    BuildContext context,
-    HomeUnifiedReminders reminders,
-  ) {
+  void _openAllReminders(BuildContext context, HomeUnifiedReminders reminders) {
     final hasMoney = reminders.items.any(
       (item) => item.source == HomeReminderSource.money,
     );

@@ -22,8 +22,10 @@ const _health = HomeReminderItem(
   action: OpenHealthAction(),
 );
 
-Widget host(Widget child) =>
-    MaterialApp(theme: AppTheme.light(), home: Scaffold(body: child));
+Widget host(Widget child) => MaterialApp(
+  theme: AppTheme.light(),
+  home: Scaffold(body: child),
+);
 
 void main() {
   testWidgets('renders items with source labels and amount', (tester) async {

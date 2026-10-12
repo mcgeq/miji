@@ -74,15 +74,23 @@ void main() {
         task('1', '逾期', dueAt: DateTime(2026, 10, 10, 18)),
         task('2', '今天', dueAt: DateTime(2026, 10, 12, 20)),
         task('3', '明天', dueAt: DateTime(2026, 10, 13, 20)),
-        task('4', '已完成', dueAt: DateTime(2026, 10, 10),
-            status: TodoTaskStatus.completed),
+        task(
+          '4',
+          '已完成',
+          dueAt: DateTime(2026, 10, 10),
+          status: TodoTaskStatus.completed,
+        ),
       ], _now);
 
       expect(items.length, 2);
-      expect(items.firstWhere((i) => i.title == '逾期').severity,
-          HomeReminderSeverity.overdue);
-      expect(items.firstWhere((i) => i.title == '今天').severity,
-          HomeReminderSeverity.dueToday);
+      expect(
+        items.firstWhere((i) => i.title == '逾期').severity,
+        HomeReminderSeverity.overdue,
+      );
+      expect(
+        items.firstWhere((i) => i.title == '今天').severity,
+        HomeReminderSeverity.dueToday,
+      );
     });
   });
 
@@ -90,8 +98,10 @@ void main() {
     test('only plans with reminder enabled and not done', () {
       final items = buildHabitReminders([
         PlanProgress(plan: plan('1', '阅读'), currentValue: 0),
-        PlanProgress(plan: plan('2', '运动', reminderEnabled: false),
-            currentValue: 0),
+        PlanProgress(
+          plan: plan('2', '运动', reminderEnabled: false),
+          currentValue: 0,
+        ),
         PlanProgress(plan: plan('3', '冥想'), currentValue: 1),
       ]);
       expect(items.map((i) => i.title).toList(), ['阅读']);
@@ -135,9 +145,7 @@ void main() {
           task('1', '今天', dueAt: DateTime(2026, 10, 12, 20)),
           task('2', '逾期', dueAt: DateTime(2026, 10, 8)),
         ],
-        habits: [
-          PlanProgress(plan: plan('h', '阅读'), currentValue: 0),
-        ],
+        habits: [PlanProgress(plan: plan('h', '阅读'), currentValue: 0)],
         health: null,
         now: _now,
       );
@@ -147,17 +155,21 @@ void main() {
     });
 
     test('maps money severity', () {
-      final items = buildMoneyReminders([
-        MoneyReminderCenterItem(
-          sourceType: MoneyReminderCenterSourceType.creditCardBill,
-          sourceId: 'c1',
-          title: '信用卡还款',
-          dueDate: _now,
-          amountMinor: 234050,
-          currencyCode: 'CNY',
-          actionType: MoneyReminderCenterActionType.repay,
-        ),
-      ], const [], _now);
+      final items = buildMoneyReminders(
+        [
+          MoneyReminderCenterItem(
+            sourceType: MoneyReminderCenterSourceType.creditCardBill,
+            sourceId: 'c1',
+            title: '信用卡还款',
+            dueDate: _now,
+            amountMinor: 234050,
+            currencyCode: 'CNY',
+            actionType: MoneyReminderCenterActionType.repay,
+          ),
+        ],
+        const [],
+        _now,
+      );
       expect(items.single.source, HomeReminderSource.money);
       expect(items.single.severity, HomeReminderSeverity.dueToday);
       expect(items.single.amountMinor, 234050);

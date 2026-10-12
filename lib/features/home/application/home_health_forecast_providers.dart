@@ -47,7 +47,11 @@ HomeHealthForecast buildHomeHealthForecast({
       for (var i = 0; i < days; i++)
         HomeForecastDay(
           date: start.add(Duration(days: i)),
-          kind: _kindFor(start.add(Duration(days: i)), prediction, activePeriod),
+          kind: _kindFor(
+            start.add(Duration(days: i)),
+            prediction,
+            activePeriod,
+          ),
         ),
     ],
   );

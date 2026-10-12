@@ -28,9 +28,10 @@ final homeCrossInsightProvider = FutureProvider<HomeInsight?>((ref) async {
   if (items.isEmpty) {
     return null;
   }
-  final sorted = [...items]
-    ..sort((a, b) => b.severity.compareTo(a.severity));
-  return HomeInsight(items: sorted.take(_maxInsightItems).toList(growable: false));
+  final sorted = [...items]..sort((a, b) => b.severity.compareTo(a.severity));
+  return HomeInsight(
+    items: sorted.take(_maxInsightItems).toList(growable: false),
+  );
 });
 
 List<HomeInsightItem> buildActionInsights(TodoStatsSummary? stats) {
@@ -90,9 +91,7 @@ List<HomeInsightItem> buildHealthInsights(HealthTrendSummary? trend) {
     out.add(
       HomeInsightItem(
         kind: HomeInsightKind.healthSleep,
-        tone: sleep < 420
-            ? HomeInsightTone.warning
-            : HomeInsightTone.neutral,
+        tone: sleep < 420 ? HomeInsightTone.warning : HomeInsightTone.neutral,
         target: HomeInsightTarget.health,
         actionLabel: '看健康',
         segments: [

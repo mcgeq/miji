@@ -59,11 +59,10 @@ void main() {
     });
 
     test('flags overdue tasks', () {
-      final items = buildActionInsights(const TodoStatsSummary(overdueCount: 3));
-      expect(
-        items.any((i) => i.kind == HomeInsightKind.actionOverdue),
-        isTrue,
+      final items = buildActionInsights(
+        const TodoStatsSummary(overdueCount: 3),
       );
+      expect(items.any((i) => i.kind == HomeInsightKind.actionOverdue), isTrue);
     });
 
     test('empty without stats', () {

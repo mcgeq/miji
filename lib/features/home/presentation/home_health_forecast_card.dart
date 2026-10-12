@@ -55,7 +55,9 @@ class HomeHealthForecastCard extends StatelessWidget {
             children: [
               for (var i = 0; i < days.length; i++) ...[
                 if (i > 0) const SizedBox(width: 5),
-                Expanded(child: _ForecastCell(day: days[i], today: days.first)),
+                Expanded(
+                  child: _ForecastCell(day: days[i], today: days.first),
+                ),
               ],
             ],
           ),
