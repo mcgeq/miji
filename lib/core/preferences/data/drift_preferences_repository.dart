@@ -189,10 +189,7 @@ class DriftPreferencesRepository implements PreferencesRepository {
 
   @override
   Future<void> updateHomePagerTabs(String userId, bool show) async {
-    await _update(
-      userId,
-      UserPreferencesCompanion(homePagerTabs: Value(show)),
-    );
+    await _update(userId, UserPreferencesCompanion(homePagerTabs: Value(show)));
   }
 
   Future<void> _update(

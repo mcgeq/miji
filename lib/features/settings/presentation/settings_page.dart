@@ -1382,7 +1382,6 @@ class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
   AppThemeModePreference? _savingThemeMode;
   bool? _savingHomeTodayAction;
   bool? _savingMaskMoneyAmounts;
-  bool? _savingHomeHealthStrip;
   FToast? _toast;
 
   Future<void> _updateThemeMode(AppThemeModePreference themeMode) async {
@@ -1536,16 +1535,6 @@ class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
                     ? (value) => _updateMaskMoneyAmounts(value)
                     : null,
               ),
-              const SizedBox(height: 10),
-              AppSwitchField(
-                title: '健康提示',
-                subtitle: '在首页显示一行经期 / 孕期提示',
-                icon: Icons.favorite_outline_rounded,
-                value: preferences.showHomeHealthStrip,
-                onChanged: _savingHomeHealthStrip == null
-                    ? (value) => _updateShowHomeHealthStrip(value)
-                    : null,
-              ),
             ],
           ),
         ),
@@ -1562,18 +1551,6 @@ class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
           .updateMaskMoneyAmounts(userId, mask),
       successText: mask ? '首页金额已隐藏' : '首页金额已显示',
       failureText: '金额隐私设置更新失败，请重试',
-    );
-  }
-
-  Future<void> _updateShowHomeHealthStrip(bool show) async {
-    await _updateHomePreference(
-      apply: () => setState(() => _savingHomeHealthStrip = show),
-      clear: () => setState(() => _savingHomeHealthStrip = null),
-      action: (userId) => ref
-          .read(preferencesRepositoryProvider)
-          .updateShowHomeHealthStrip(userId, show),
-      successText: '首页显示已更新',
-      failureText: '首页显示更新失败，请重试',
     );
   }
 
@@ -1650,14 +1627,8 @@ class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
         const SizedBox(height: 8),
         SegmentedButton<HomeLayoutMode>(
           segments: const [
-            ButtonSegment(
-              value: HomeLayoutMode.list,
-              label: Text('纵向单列'),
-            ),
-            ButtonSegment(
-              value: HomeLayoutMode.pager,
-              label: Text('横向分页'),
-            ),
+            ButtonSegment(value: HomeLayoutMode.list, label: Text('纵向单列')),
+            ButtonSegment(value: HomeLayoutMode.pager, label: Text('横向分页')),
           ],
           selected: {layoutMode},
           onSelectionChanged: (selection) =>

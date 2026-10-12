@@ -17,7 +17,12 @@ HomeHabitEntry habit() {
     updatedAt: DateTime.utc(2026, 10, 1),
   );
   return HomeHabitEntry(
-    progress: PlanProgress(plan: plan, currentCount: 1, currentValue: 20, streak: 12),
+    progress: PlanProgress(
+      plan: plan,
+      currentCount: 1,
+      currentValue: 20,
+      streak: 12,
+    ),
   );
 }
 
@@ -29,9 +34,7 @@ Widget host(HomeActionHabitCard card) => MaterialApp(
 void main() {
   testWidgets('empty state renders', (tester) async {
     await tester.pumpWidget(
-      host(
-        HomeActionHabitCard(habits: const [], onTapHabit: (_) {}),
-      ),
+      host(HomeActionHabitCard(habits: const [], onTapHabit: (_) {})),
     );
     expect(find.text('还没有打卡计划'), findsOneWidget);
   });

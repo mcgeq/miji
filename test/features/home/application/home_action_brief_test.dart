@@ -18,7 +18,8 @@ void main() {
   test('todo items keep provider order and cap', () {
     final view = TodayActionView(
       items: [
-        for (var i = 0; i < 8; i++) TodayTodoActionItem(task: task('$i', 'T$i')),
+        for (var i = 0; i < 8; i++)
+          TodayTodoActionItem(task: task('$i', 'T$i')),
       ],
       completedCount: 0,
       totalCount: 8,
@@ -58,11 +59,7 @@ void main() {
   });
 
   test('empty view produces empty brief', () {
-    final brief = buildHomeActionBrief(
-      view: null,
-      habits: const [],
-      cap: 5,
-    );
+    final brief = buildHomeActionBrief(view: null, habits: const [], cap: 5);
     expect(brief.todos, isEmpty);
     expect(brief.totalCount, 0);
   });

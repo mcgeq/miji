@@ -74,9 +74,7 @@ HomeBoardCell buildMoneyBoardCell({
   final todayLabel = todayExpenseMinor == null
       ? '还没有流水'
       : '今日支出 ${masked ? '••••' : formatMoneyMinor(todayExpenseMinor, currencyCode)}';
-  final sub = monthRemainingMinor != null
-      ? '本月还可花 · $todayLabel'
-      : todayLabel;
+  final sub = monthRemainingMinor != null ? '本月还可花 · $todayLabel' : todayLabel;
 
   return HomeBoardCell(
     id: HomeBlockId.boardMoney,

@@ -1,7 +1,8 @@
 # 首页 v2 设计方案：从「记账仪表盘」到「生活仪表盘」
 
-> 状态：方案待拍板，未动代码。
-> 配套线框稿：[`home-dashboard-v2-mockup.html`](home-dashboard-v2-mockup.html)（可交互，浏览器打开，先看这个再读本文）。
+> 状态：**M1 已实现并合并**（默认横向分页）；M2-M4 待出计划。
+> 配套线框稿：[`home-dashboard-v2-mockup.html`](home-dashboard-v2-mockup.html)（可交互，浏览器打开）。
+> 实施计划：[`home-dashboard-v2-implementation-plan.md`](home-dashboard-v2-implementation-plan.md)。
 > 最后更新：2026-10-12
 
 ---

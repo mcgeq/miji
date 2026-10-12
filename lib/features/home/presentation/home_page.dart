@@ -499,10 +499,7 @@ class _HomeDashboard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (hasAlerts) ...[_section(4, alerts), _gap],
-                        if (todoCard != null) ...[
-                          _section(5, todoCard),
-                          _gap,
-                        ],
+                        if (todoCard != null) ...[_section(5, todoCard), _gap],
                         if (habitCard != null) ...[
                           _section(5, habitCard),
                           _gap,
@@ -806,25 +803,14 @@ List<_HomePageData> _buildPagerPages({
   return [
     _HomePageData(
       label: '概览',
-      children: [
-        board,
-        if (hasAlerts) alerts,
-        insight,
-        quote,
-      ],
+      children: [board, if (hasAlerts) alerts, insight, quote],
     ),
     _HomePageData(
       label: '记账',
       children: [overviewCard, netAssetTile, categoryPanel, recentPanel],
     ),
-    _HomePageData(
-      label: '健康',
-      children: [?healthCycleCard, ?healthTodayCard],
-    ),
-    _HomePageData(
-      label: '行动',
-      children: [?todoCard, ?habitCard],
-    ),
+    _HomePageData(label: '健康', children: [?healthCycleCard, ?healthTodayCard]),
+    _HomePageData(label: '行动', children: [?todoCard, ?habitCard]),
   ];
 }
 

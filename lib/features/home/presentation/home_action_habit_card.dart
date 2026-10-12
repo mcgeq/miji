@@ -133,9 +133,7 @@ class _HabitTile extends StatelessWidget {
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(vertical: 5),
               decoration: BoxDecoration(
-                color: habit.isDone
-                    ? Colors.transparent
-                    : colorScheme.primary,
+                color: habit.isDone ? Colors.transparent : colorScheme.primary,
                 borderRadius: BorderRadius.circular(9),
                 border: habit.isDone
                     ? Border.all(

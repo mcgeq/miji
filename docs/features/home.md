@@ -2,34 +2,40 @@
 
 > 中文版：[home.zh.md](home.zh.md) · [← Feature guides](README.md)
 
-Home is the dashboard you land on between the two data-heavy modules. Its job is to answer "how am I doing?" in one glance and to get you into a quick action in as few taps as possible.
+Home is a "life dashboard" that puts **money / health / action** side by side. Its job is to answer "how am I doing?" in one glance and to get you into a quick action in as few taps as possible.
 
-The layout is responsive: a **single column on phones**, and an **8/4 two-column layout** on tablets and desktops.
+## Layout
+
+- **Horizontal pager (default)**: four pages `Overview / Money / Health / Action`, switched by swiping left/right, with page dots at the bottom. The top tab bar is off by default and can be enabled in settings.
+- **Vertical single column**: one scroll; tablets and desktops (≥840dp) use an 8/4 two-column layout.
+- Switch under **Settings → Home → Layout**. Both layouts share the same block configuration.
 
 ## Sections
 
 | Section | What it shows |
 | --- | --- |
-| **Greeting header** | Time-aware greeting and the month selector |
-| **Balance hero** | The headline number — this month's remaining budget, or the month's net when there is no budget — plus a time-vs-spend progress bar and a breakdown (used / daily allowance / income) |
-| **Alerts strip** | Anything that needs attention now (bills due, budget alerts) |
-| **Insight strip** | A one-line observation ("spending is 18% up vs last period", "you spent faster than time elapsed") |
-| **Overview card** | Income / expense / net for the month |
-| **Weekly trend** | A small bar chart of recent spending |
-| **Category structure** | Where the money went, by category and sub-category |
-| **Spending calendar** | A heatmap-style month calendar; tap a day to add a back-dated transaction |
-| **Recent transactions** | The latest activity, tappable through to detail |
-| **Health strip** | A slim glance at the current cycle status |
-| **Stat tiles** | A compact set of secondary metrics |
-| **Quick actions** | Shortcuts into the most common entry flows |
-| **Onboarding** | A first-run view shown when there is nothing to display yet |
+| **Greeting header** | Time-aware greeting, streak and month selector |
+| **Today board** | Money / health / action side by side: remaining budget (or month net), period/pregnancy status, today's todo progress. Each cell can be turned off (at least 2 remain) |
+| **Alerts strip** | Bookkeeping reminders that need attention now (bills due, budget alerts) |
+| **Money · Budget hero** | Budget / trend / calendar combined into one card |
+| **Money · Categories** | Collapsed to a one-line summary by default; tap to expand |
+| **Money · Recent** | Collapsed to the latest transaction by default; tap to expand |
+| **Health · Cycle** | Cycle ring + current phase + days until next period / late / pregnancy week; an enable guide when tracking is off |
+| **Health · Today** | Mood / sleep / water / weight, tap any to log in place |
+| **Action · Today's todos** | Complete, add, edit or delete inline; overdue and priority are marked |
+| **Action · Habits** | Progress + one-tap check-in + streak |
+| **Net worth** | Assets − liabilities |
+| **Insight strip** | A one-line observation ("spending is 18% up vs last period") |
+| **Onboarding** | A money / health / action three-module guide shown on first run |
 
 ## Behaviour notes
 
-- The hero number adapts: **budget mode** shows what is left to spend this month (counting committed amounts), **no-budget mode** falls back to the month's net.
+- The money cell adapts: **budget mode** shows what is left to spend this month, **no-budget mode** falls back to the month's net. A cell with no data shows `—` instead of hiding the whole board.
+- The health blocks collapse into a single "enable health tracking" guide when period tracking is off.
 - Every amount respects the global **hide amounts** switch, and income amounts are masked by default (tap an income amount to reveal — see the bookkeeping guide).
 - The layout is designed so conditional blocks never cause the page to jump; empty states keep the same footprint as populated ones.
 
 ## Related docs & source
 
 - Source: `lib/features/home/`
+- Design: [`../specs/home-dashboard-v2-design.md`](../specs/home-dashboard-v2-design.md)

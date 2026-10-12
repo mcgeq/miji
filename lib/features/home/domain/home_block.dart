@@ -34,12 +34,7 @@ enum HomeBlockId {
   moneyRecent('money.recent', '最近流水', HomeBlockModule.money, true),
   healthCycle('health.cycle', '周期状态', HomeBlockModule.health, true),
   healthToday('health.today', '今日健康记录', HomeBlockModule.health, true),
-  healthForecast(
-    'health.forecast',
-    '未来 7 天预测',
-    HomeBlockModule.health,
-    false,
-  ),
+  healthForecast('health.forecast', '未来 7 天预测', HomeBlockModule.health, false),
   actionTodo('action.todo', '今日待办', HomeBlockModule.action, true),
   actionHabit('action.habit', '习惯打卡', HomeBlockModule.action, true),
   insight('insight.cross', '跨模块洞察', HomeBlockModule.global, true),

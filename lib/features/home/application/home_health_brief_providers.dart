@@ -61,9 +61,7 @@ final homeHealthBriefProvider = FutureProvider<HomeHealthBrief?>((ref) async {
   return buildHomeHealthBrief(snapshot: snapshot);
 });
 
-HomeHealthBrief buildHomeHealthBrief({
-  required HealthTodaySnapshot snapshot,
-}) {
+HomeHealthBrief buildHomeHealthBrief({required HealthTodaySnapshot snapshot}) {
   final prediction = snapshot.prediction;
   final settings = snapshot.settings;
   final isPregnancy = prediction.statusKind == HealthTodayStatusKind.pregnancy;
