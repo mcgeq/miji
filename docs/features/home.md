@@ -23,10 +23,11 @@ Home is a "life dashboard" that puts **money / health / action** side by side. I
 | **Money · Recent** | Collapsed to the latest transaction by default; tap to expand |
 | **Health · Cycle** | Cycle ring + current phase + days until next period / late / pregnancy week; an enable guide when tracking is off |
 | **Health · Today** | Mood / sleep / water / weight, tap any to log in place |
+| **Health · 7-day forecast** | Off by default. A 7-day strip: period / fertile / PMS / normal |
 | **Action · Today's todos** | Complete, add, edit or delete inline; overdue and priority are marked |
 | **Action · Habits** | Progress + one-tap check-in + streak |
 | **Net worth** | Assets − liabilities |
-| **Insight strip** | A one-line observation ("spending is 18% up vs last period") |
+| **Insight strip** | Cross-module observations: money ("spending is 18% up vs last period"), action ("82% done this week"), health ("sleeping 6h40m on average") — each tappable |
 | **Onboarding** | A money / health / action three-module guide shown on first run |
 
 ## Behaviour notes
