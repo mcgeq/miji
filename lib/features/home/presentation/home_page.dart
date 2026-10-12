@@ -35,7 +35,8 @@ import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
 import 'package:miji/features/todo/presentation/todo_task_detail_page.dart';
 import 'package:miji/features/home/domain/home_block.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
-import 'package:miji/features/home/presentation/home_alerts_strip.dart';
+import 'package:miji/features/home/application/home_unified_reminders_providers.dart';
+import 'package:miji/features/home/presentation/home_unified_reminders_card.dart';
 import 'package:miji/features/home/presentation/home_balance_hero_card.dart';
 import 'package:miji/features/home/presentation/home_category_structure_panel.dart';
 import 'package:miji/features/home/presentation/home_overview_card.dart';
@@ -143,6 +144,10 @@ class _HomeDataPreloaderState extends ConsumerState<_HomeDataPreloader> {
         ref.read(homeCategoryBudgetSummaryProvider.future),
         ref.read(homeStreakProvider.future),
         ref.read(homeInsightProvider.future),
+        ref.read(currentUserPendingReminderCenterItemsProvider.future),
+        ref.read(allTodoTasksProvider.future),
+        ref.read(todayProgressProvider.future),
+        ref.read(todayActionItemsProvider.future),
       ]),
     );
 
@@ -193,7 +198,7 @@ class _HomeDashboard extends ConsumerWidget {
     final insight = ref.watch(homeInsightProvider);
     final netAsset = ref.watch(homeNetAssetSummaryProvider);
     final streak = ref.watch(homeStreakProvider);
-    final reminders = ref.watch(currentUserPendingReminderCenterItemsProvider);
+    final reminders = ref.watch(homeUnifiedRemindersProvider);
     final accounts = ref.watch(currentUserVisibleAccountsProvider);
     final budgets = ref.watch(currentUserBudgetsProvider);
     final showHealthStrip = ref.watch(homeShowHealthStripProvider);
@@ -286,11 +291,12 @@ class _HomeDashboard extends ConsumerWidget {
       onSelectTarget: (target) => _openInsightTarget(context, target),
     );
 
-    final alerts = HomeAlertsStrip(
-      items: reminders.valueOrNull ?? const [],
-      isLoading: reminders.isLoading,
-      onOpenAll: () => _openRemindersPage(context),
-      maxItems: 2,
+    final alerts = HomeUnifiedRemindersCard(
+      items: reminders.items,
+      isLoading: false,
+      onOpenAll: () => _openAllReminders(context, reminders),
+      onTapItem: (item) => _onTapReminder(context, ref, item),
+      maxItems: 3,
     );
 
     final trendView = HomeTrendView(
@@ -406,8 +412,7 @@ class _HomeDashboard extends ConsumerWidget {
       onTapCell: (id) => _openBoardCell(context, id),
     );
 
-    final hasAlerts =
-        reminders.isLoading || (reminders.valueOrNull ?? const []).isNotEmpty;
+    final hasAlerts = reminders.items.isNotEmpty;
 
     if (ref.watch(homeLayoutModeProvider) == HomeLayoutMode.pager) {
       return Column(
@@ -569,6 +574,37 @@ class _HomeDashboard extends ConsumerWidget {
   /// 数据丢了。周窗口现在按月份切分，永远不会跨月切换。
   void _onWeekChanged(WidgetRef ref, int offset) {
     ref.read(homeWeekOffsetProvider.notifier).set(offset);
+  }
+
+  void _openAllReminders(
+    BuildContext context,
+    HomeUnifiedReminders reminders,
+  ) {
+    final hasMoney = reminders.items.any(
+      (item) => item.source == HomeReminderSource.money,
+    );
+    if (hasMoney) {
+      _openRemindersPage(context);
+    } else {
+      context.push(AppRoutes.gtd);
+    }
+  }
+
+  void _onTapReminder(
+    BuildContext context,
+    WidgetRef ref,
+    HomeReminderItem item,
+  ) {
+    switch (item.action) {
+      case OpenMoneyRemindersAction():
+        _openRemindersPage(context);
+      case CompleteTodoAction(:final task):
+        unawaited(_toggleTodo(ref, task));
+      case CheckInHabitAction(:final progress):
+        unawaited(_checkInHabit(ref, HomeHabitEntry(progress: progress)));
+      case OpenHealthAction():
+        context.go(AppRoutes.health);
+    }
   }
 
   void _openRemindersPage(BuildContext context) {

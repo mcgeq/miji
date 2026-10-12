@@ -23,8 +23,10 @@ HomeActionBrief brief(List<TodoTask> tasks) => HomeActionBrief(
   streakDays: 0,
 );
 
-Widget host(Widget child) =>
-    MaterialApp(theme: AppTheme.light(), home: Scaffold(body: child));
+Widget host(Widget child) => MaterialApp(
+  theme: AppTheme.light(),
+  home: Scaffold(body: child),
+);
 
 void main() {
   testWidgets('caps at three items', (tester) async {
