@@ -67,6 +67,7 @@
 | --- | --- | --- | --- |
 | **Android 桌面小组件** | [`android-home-widget-plan.md`](specs/android-home-widget-plan.md) | 🟡 待拍板 | 方案完整（原生 Kotlin/XML 设计 + `home_widget` 桥接 + 多用户/锁屏/金额遮蔽/R8 约束）。4 个待拍板点见第五节。纯增量、风险低，最坏是「桌面小组件不更新」，不影响 App |
 | **水彩背景图主题** | [`theme-background-image-plan.md`](specs/theme-background-image-plan.md) | 🟡 待决策 | 素材盘点 + WCAG/Pillow 实测 + A/B/C/D 四方案；含「毛玻璃不做」「设置项先不做」的明确结论 |
+| **首页 v2（生活仪表盘）** | [`home-dashboard-v2-design.md`](specs/home-dashboard-v2-design.md) · [线框稿](specs/home-dashboard-v2-mockup.html) · [实施计划 M1](specs/home-dashboard-v2-implementation-plan.md) | 🟡 待开工 | 把首页从记账独占升级为「钱 / 健康 / 行动」三维并列：今日三宫格、健康周期环 + 今日记录、可勾选待办（CRUD）、习惯打卡、Block 可插拔可拖拽；布局可在设置里切「纵向单列 / 横向分页」，横向默认无标签、靠滑动 + 圆点。8 条决策已确认，M1 计划就绪（13 个 Task）；M2-M4（统一提醒 / 跨模块洞察 / 7 天预测）待出计划 |
 
 ---
 

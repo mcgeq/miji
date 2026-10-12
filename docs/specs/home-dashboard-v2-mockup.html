@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>米记 · 首页 v2 设计稿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EFE9DF; --surface:#FBF6F0; --raised:#F6F1EB; --sunken:#ECE7E1;
+    --text:#1B1813; --text2:#615D58; --outline:#998D80; --hair:#DAD5CF;
+    --primary:#4269D3; --primary-soft:#DDE8FF; --on-primary-soft:#2E488E;
+    --secondary:#626E8A; --tertiary:#8B608C;
+    --income:#006E30; --expense:#A7463C; --warning:#473D00; --success:#006E30;
+    --hero1:#A15500; --hero2:#9C6400; --hero3:#936E00;
+    --ring-track:rgba(0,0,0,.10);
+    --shadow:0 1px 2px rgba(30,20,10,.06),0 8px 24px -12px rgba(30,20,10,.18);
+    --shadow-lg:0 24px 60px -24px rgba(30,20,10,.42);
+    --chip:rgba(0,0,0,.045);
+  }
+  html[data-theme="dark"]{
+    --bg:#0E0A07; --surface:#17130F; --raised:#221D18; --sunken:#090604;
+    --text:#E7E2DC; --text2:#98938D; --outline:#6B6257; --hair:#322E2A;
+    --primary:#759DFF; --primary-soft:#1E2A4A; --on-primary-soft:#AEC6FF;
+    --secondary:#919EBB; --tertiary:#BE8FBE;
+    --income:#9DF7B0; --expense:#FFB5AA; --warning:#C8B648; --success:#9DF7B0;
+    --hero1:#A15500; --hero2:#9C6400; --hero3:#936E00;
+    --ring-track:rgba(255,255,255,.12);
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 28px -14px rgba(0,0,0,.7);
+    --shadow-lg:0 30px 70px -30px rgba(0,0,0,.9);
+    --chip:rgba(255,255,255,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:"Noto Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 15% -10%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 60%),
+      radial-gradient(900px 600px at 110% 10%, color-mix(in srgb, var(--hero1) 12%, transparent), transparent 55%),
+      var(--bg);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:0;
+    transition:background .3s ease,color .3s ease;
+  }
+
+  .app{display:flex;gap:34px;max-width:1240px;margin:0 auto;padding:28px 26px 60px;align-items:flex-start}
+  @media (max-width:1050px){.app{flex-direction:column;align-items:center}}
+
+  /* ---------- control panel ---------- */
+  .panel{position:sticky;top:24px;width:330px;flex:0 0 330px}
+  @media (max-width:1050px){.panel{position:static;width:min(680px,100%);flex:auto}}
+  .brand{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+  .brand .mark{font-family:"Noto Serif SC",serif;font-weight:900;font-size:30px;line-height:1;
+    background:linear-gradient(120deg,var(--hero1),var(--hero3));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .t{font-size:15px;font-weight:700;color:var(--text2)}
+  .brand .v{font-size:11px;font-weight:800;color:var(--on-primary-soft);background:var(--primary-soft);
+    padding:2px 8px;border-radius:999px}
+  .lead{font-size:12.5px;color:var(--text2);line-height:1.75;margin:8px 0 18px}
+  .lead b{color:var(--text)}
+
+  .group{background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .group h3{margin:0 0 10px;font-size:11px;font-weight:900;letter-spacing:.08em;color:var(--text2);text-transform:uppercase;display:flex;align-items:center;gap:7px}
+  .group h3 .dot{width:6px;height:6px;border-radius:99px;background:var(--primary)}
+  .seg{display:flex;background:var(--sunken);border-radius:12px;padding:3px;gap:3px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--text2);font:inherit;font-size:12.5px;font-weight:700;
+    padding:8px 6px;border-radius:9px;cursor:pointer;transition:.18s}
+  .seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .seg.two button{padding:7px 4px}
+
+  .scen{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .scen button{border:1px solid var(--hair);background:var(--raised);color:var(--text2);font:inherit;font-size:12.5px;
+    font-weight:700;padding:9px 6px;border-radius:11px;cursor:pointer;transition:.18s;text-align:center}
+  .scen button:hover{border-color:var(--outline)}
+  .scen button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  html[data-theme="dark"] .scen button.on{color:#0b1020}
+
+  .toggles{display:flex;flex-direction:column;gap:2px;margin-top:2px}
+  .tg{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:9px;cursor:pointer;font-size:12.5px;color:var(--text2);
+    user-select:none;transition:.15s}
+  .tg:hover{background:var(--chip)}
+  .tg.on{color:var(--text)}
+  .tg .sw{width:34px;height:20px;border-radius:99px;background:var(--sunken);border:1px solid var(--hair);position:relative;flex:0 0 34px;transition:.2s}
+  .tg .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:99px;background:var(--outline);transition:.2s}
+  .tg.on .sw{background:var(--primary);border-color:var(--primary)}
+  .tg.on .sw::after{left:16px;background:#fff}
+  .tg small{margin-left:auto;font-size:10.5px;color:var(--outline);font-weight:700}
+  .sub{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px;padding-left:8px}
+  .sub span{font-size:10.5px;font-weight:700;color:var(--text2);background:var(--chip);border-radius:6px;padding:3px 7px}
+
+  /* ---------- stage ---------- */
+  .stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:16px;min-width:0}
+  .stagehead{align-self:flex-start;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .stagehead .title{font-family:"Noto Serif SC",serif;font-weight:700;font-size:20px}
+  .badge{font-size:11px;font-weight:800;color:var(--text2);background:var(--surface);border:1px solid var(--hair);border-radius:999px;padding:4px 11px}
+  .badge.amber{color:#6b4200;background:#FFE6BC;border-color:#f0d29a}
+  html[data-theme="dark"] .badge.amber{color:#FFE6BC;background:#3a2c10;border-color:#5a4416}
+
+  .phone{
+    width:392px;flex:0 0 auto;
+    background:linear-gradient(160deg,#2a2622,#14110e);
+    border-radius:46px;padding:11px;
+    box-shadow:var(--shadow-lg);
+    position:relative;
+  }
+  html[data-theme="dark"] .phone{background:linear-gradient(160deg,#3a352f,#0a0806)}
+  .phone::after{content:"";position:absolute;inset:11px;border-radius:36px;pointer-events:none;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  .screen{
+    background:var(--bg);border-radius:36px;overflow:hidden;height:1500px;max-height:calc(100vh - 130px);
+    position:relative;
+  }
+  @media (max-width:520px){.phone{width:100%;border-radius:34px}.screen{border-radius:26px;height:calc(100vh - 210px)}}
+  .scroll{height:100%;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;padding-bottom:96px}
+  .scroll::-webkit-scrollbar{width:5px}
+  .scroll::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
+
+  /* in-app */
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:11px 22px 4px;font-size:12.5px;font-weight:700;color:var(--text)}
+  .statusbar .inds{display:flex;gap:5px;align-items:center;font-size:11px;color:var(--text2)}
+  .topbar{display:flex;align-items:center;gap:8px;padding:6px 16px 2px}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--hair);
+    border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:800;color:var(--text);box-shadow:var(--shadow)}
+  .pill.ghost{color:var(--text2);box-shadow:none;background:transparent}
+  .pill.ic{padding:7px 9px;color:var(--text2)}
+  .topbar .spacer{flex:1}
+  .avatar{width:30px;height:30px;border-radius:999px;background:conic-gradient(from 210deg,#e0a94a,#7a5a2a,#e6c176,#4a6b3a);border:2px solid var(--surface)}
+
+  .greet{padding:16px 18px 0}
+  .greet h1{margin:0;font-size:29px;font-weight:900;letter-spacing:-.01em;line-height:1.15;font-family:"Noto Serif SC",serif}
+  .greet .date{margin-top:3px;font-size:12.5px;color:var(--text2);font-weight:600}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;padding:12px 18px 0}
+  .chips .c{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--hair);
+    border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800;color:var(--text);box-shadow:var(--shadow);cursor:pointer}
+  .chips .c i{font-style:normal;font-size:12px}
+  .chips .c.period{color:#8a2f4a;background:color-mix(in srgb,#E56B8E 14%, var(--surface));border-color:color-mix(in srgb,#E56B8E 30%, var(--hair))}
+  html[data-theme="dark"] .chips .c.period{color:#ffb9cb}
+  .chips .c.action{color:var(--on-primary-soft);background:var(--primary-soft);border-color:transparent}
+
+  .sect{padding:16px 14px 0}
+  .body{padding:0 14px}
+  .stack{display:flex;flex-direction:column;gap:12px;padding:0 14px}
+  .secttitle{display:flex;align-items:center;gap:8px;padding:18px 18px 8px;font-size:11px;font-weight:900;color:var(--text2);
+    letter-spacing:.1em;text-transform:uppercase}
+  .secttitle::after{content:"";height:1px;flex:1;background:var(--hair)}
+
+  /* cards */
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .card.pad{padding:15px}
+  .cardhead{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--text2);margin-bottom:11px}
+  .cardhead .ic{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px}
+  .cardhead .more{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--primary);cursor:pointer;display:flex;align-items:center;gap:2px}
+
+  /* today board */
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:0 14px}
+  .cell{background:var(--surface);border:1px solid var(--hair);border-radius:17px;padding:12px 11px;box-shadow:var(--shadow);
+    cursor:pointer;transition:.18s;position:relative;overflow:hidden}
+  .cell:hover{transform:translateY(-2px);border-color:var(--outline)}
+  .cell .k{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:var(--text2)}
+  .cell .k .ic{width:18px;height:18px;border-radius:6px;display:grid;place-items:center;font-size:11px}
+  .cell .v{margin-top:8px;font-size:19px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .cell .v .unit{font-size:11px;font-weight:800;color:var(--text2);margin-left:1px}
+  .cell .s{margin-top:5px;font-size:10.5px;font-weight:600;color:var(--text2);line-height:1.35}
+  .cell.health .v{font-size:17px}
+
+  /* money hero */
+  .hero{border-radius:20px;padding:16px;color:#fff;position:relative;overflow:hidden;
+    background:linear-gradient(140deg,var(--hero1),var(--hero2) 55%,var(--hero3));box-shadow:var(--shadow)}
+  .hero::before{content:"";position:absolute;width:210px;height:210px;border-radius:50%;right:-70px;top:-70px;
+    background:radial-gradient(circle at 40% 40%, rgba(255,255,255,.22), transparent 65%)}
+  .hero .tabs{display:flex;gap:6px;margin-bottom:14px;position:relative}
+  .hero .tabs span{font-size:11.5px;font-weight:800;padding:6px 11px;border-radius:999px;cursor:pointer;color:rgba(255,255,255,.72)}
+  .hero .tabs span.on{background:rgba(255,255,255,.92);color:#7a4300}
+  .hero .cap{font-size:12px;font-weight:700;opacity:.86}
+  .hero .big{font-size:36px;font-weight:900;line-height:1.05;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .hero .big small{font-size:16px;font-weight:800;opacity:.85}
+  .hero .rows{margin-top:12px;display:grid;grid-template-columns:1fr auto;gap:5px 10px;font-size:12px;position:relative}
+  .hero .rows .l{opacity:.82;font-weight:600}
+  .hero .rows .r{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+  .hero .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;position:relative}
+  .hero .metrics .m{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.18);border-radius:13px;padding:9px 10px}
+  .hero .metrics .m .l{font-size:10.5px;font-weight:700;opacity:.85}
+  .hero .metrics .m .n{font-size:15px;font-weight:900;margin-top:3px;font-variant-numeric:tabular-nums}
+  .hero .pace{margin-top:13px;position:relative}
+  .hero .bar{height:8px;border-radius:99px;background:rgba(255,255,255,.25);position:relative;overflow:hidden}
+  .hero .bar i{position:absolute;top:0;bottom:0;left:0;width:35%;background:rgba(255,255,255,.95);border-radius:99px}
+  .hero .bar b{position:absolute;top:-3px;bottom:-3px;left:35%;width:2px;background:#fff;border-radius:2px}
+  .hero .pacelabels{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;opacity:.86;margin-top:6px}
+
+  .ring{width:66px;height:66px;border-radius:99px;flex:0 0 66px;display:grid;place-items:center;position:relative}
+  .ring .inner{width:50px;height:50px;border-radius:99px;background:var(--surface);display:grid;place-items:center;text-align:center;line-height:1.05}
+  .ring .inner b{font-size:13px;font-weight:900;font-variant-numeric:tabular-nums}
+  .ring .inner span{font-size:8.5px;font-weight:700;color:var(--text2)}
+
+  .row{display:flex;align-items:center;gap:11px}
+  .row + .row{margin-top:11px}
+  .row .txt{flex:1;min-width:0}
+  .row .txt .a{font-size:13px;font-weight:800;line-height:1.3}
+  .row .txt .b{font-size:11px;color:var(--text2);font-weight:600;margin-top:2px}
+  .row .go{color:var(--primary);font-size:11.5px;font-weight:800;display:flex;align-items:center;gap:1px}
+
+  /* health metrics */
+  .hm{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  .hm .cell2{background:var(--raised);border:1px solid var(--hair);border-radius:13px;padding:9px 6px;text-align:center;cursor:pointer;transition:.15s}
+  .hm .cell2:hover{border-color:var(--outline)}
+  .hm .cell2 .ic{font-size:15px;line-height:1}
+  .hm .cell2 .lb{font-size:9.5px;font-weight:700;color:var(--text2);margin-top:5px}
+  .hm .cell2 .vl{font-size:11.5px;font-weight:900;margin-top:2px;font-variant-numeric:tabular-nums}
+  .hm .cell2.empty .vl{color:var(--outline);font-size:15px;line-height:1.1}
+
+  /* forecast strip */
+  .fc{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .fc .d{text-align:center}
+  .fc .d .w{font-size:9px;font-weight:700;color:var(--text2)}
+  .fc .d .n{font-size:12px;font-weight:900;margin:2px 0 4px}
+  .fc .d .dot{height:22px;border-radius:7px;background:var(--sunken);position:relative;overflow:hidden}
+  .fc .d.period .dot{background:color-mix(in srgb,#E56B8E 42%, var(--surface))}
+  .fc .d.fertile .dot{background:color-mix(in srgb,#3FA37A 32%, var(--surface))}
+  .fc .d.pms .dot{background:color-mix(in srgb,#D8A93C 34%, var(--surface))}
+  .fc .d.today .n{color:var(--primary)}
+  .legend{display:flex;gap:12px;margin-top:10px;font-size:10.5px;color:var(--text2);font-weight:700}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+
+  /* todo list */
+  .todo{display:flex;align-items:center;gap:10px;padding:10px 4px;border-radius:11px;cursor:pointer;position:relative}
+  .todo:hover{background:var(--chip)}
+  .todo + .todo{border-top:1px solid var(--hair)}
+  .todo .box{width:20px;height:20px;border-radius:7px;border:2px solid var(--outline);flex:0 0 20px;display:grid;place-items:center;color:transparent;font-size:12px;font-weight:900;transition:.15s}
+  .todo.done .box{background:var(--primary);border-color:var(--primary);color:#fff}
+  .todo .tl{flex:1;min-width:0;font-size:13px;font-weight:700;line-height:1.3}
+  .todo.done .tl{color:var(--text2);text-decoration:line-through}
+  .todo.overdue{border-left:3px solid var(--expense);padding-left:9px}
+  .todo .tag{font-size:9.5px;font-weight:900;padding:2px 6px;border-radius:99px}
+  .tag.high{background:color-mix(in srgb,var(--expense) 18%, transparent);color:var(--expense)}
+  .tag.over{background:var(--expense);color:#fff}
+  .tag.due{background:var(--primary-soft);color:var(--on-primary-soft)}
+  .pdot{width:7px;height:7px;border-radius:99px;flex:0 0 7px}
+
+  .progtop{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .progtop .num{font-size:15px;font-weight:900;font-variant-numeric:tabular-nums}
+  .progtop .num small{color:var(--text2);font-weight:800}
+  .streak{margin-left:auto;font-size:11px;font-weight:800;color:#a35a00;background:#FFE6BC;padding:3px 9px;border-radius:99px}
+  html[data-theme="dark"] .streak{color:#FFE6BC;background:#3a2c10}
+
+  /* habits */
+  .habits{display:flex;gap:9px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .habits::-webkit-scrollbar{display:none}
+  .habit{flex:0 0 auto;width:104px;background:var(--raised);border:1px solid var(--hair);border-radius:14px;padding:11px;text-align:center;cursor:pointer;transition:.15s}
+  .habit:hover{border-color:var(--outline)}
+  .habit .e{font-size:20px;line-height:1}
+  .habit .n{font-size:11.5px;font-weight:800;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .habit .p{font-size:10px;font-weight:700;color:var(--text2);margin-top:3px;font-variant-numeric:tabular-nums}
+  .habit .btn{margin-top:8px;font-size:11px;font-weight:900;color:#fff;background:var(--primary);border-radius:9px;padding:6px 0}
+  .habit.done .btn{background:transparent;color:var(--success);border:1px solid color-mix(in srgb,var(--success) 40%, transparent)}
+  .habit .bar{height:5px;border-radius:99px;background:var(--sunken);margin-top:7px;overflow:hidden}
+  .habit .bar i{display:block;height:100%;background:var(--primary);border-radius:99px}
+
+  /* reminders */
+  .rem{display:flex;align-items:center;gap:10px;padding:9px 0}
+  .rem + .rem{border-top:1px solid var(--hair)}
+  .rem .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:14px;flex:0 0 30px;
+    background:var(--raised);border:1px solid var(--hair)}
+  .rem .txt{flex:1;min-width:0}
+  .rem .txt .a{font-size:12.5px;font-weight:800;line-height:1.3}
+  .rem .txt .b{font-size:10.5px;color:var(--text2);font-weight:600;margin-top:1px}
+  .rem .amt{font-size:12.5px;font-weight:900;font-variant-numeric:tabular-nums}
+  .rem .src{font-size:9px;font-weight:900;color:var(--text2);background:var(--chip);border-radius:5px;padding:2px 5px}
+  .remwrap{border:1px solid color-mix(in srgb,var(--warning) 34%, transparent);
+    background:linear-gradient(180deg, color-mix(in srgb,var(--warning) 10%, var(--surface)), var(--surface))}
+  .remwrap .cardhead{color:color-mix(in srgb,var(--warning) 70%, var(--text))}
+
+  /* insight */
+  .ins{display:flex;align-items:center;gap:10px;padding:11px 0}
+  .ins + .ins{border-top:1px solid var(--hair)}
+  .ins .ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:13px;flex:0 0 28px}
+  .ins .tx{flex:1;font-size:12.5px;font-weight:700;line-height:1.4}
+  .ins .tx b{color:var(--primary)}
+
+  .catbar{display:flex;height:9px;border-radius:99px;overflow:hidden;margin:12px 0 10px;gap:2px}
+  .catbar i{display:block;height:100%}
+  .catleg{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;font-weight:700;color:var(--text2)}
+  .catleg span{display:flex;align-items:center;gap:5px}
+  .catleg i{width:9px;height:9px;border-radius:3px;display:inline-block}
+
+  .quote{padding:10px 18px 8px;text-align:center;font-size:12px;color:var(--text2);font-weight:600;line-height:1.7;font-family:"Noto Serif SC",serif}
+  .quote .q{font-size:15px;font-weight:900;color:var(--hero1);margin-bottom:5px}
+
+  /* 横向分页模式（首页内左右滑动） */
+  .screen.pager-mode{display:flex;flex-direction:column}
+  .ptabs{display:flex;gap:5px;padding:10px 14px 6px;flex:0 0 auto}
+  .ptabs .t{flex:1;text-align:center;font-size:12.5px;font-weight:800;color:var(--text2);
+    padding:8px 4px;border-radius:11px;cursor:pointer;transition:.16s;background:var(--chip)}
+  .ptabs .t.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .pager{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none}
+  .pager::-webkit-scrollbar{display:none}
+  .pager .page{flex:0 0 100%;min-width:100%;height:100%;overflow-y:auto;scroll-snap-align:start;padding-bottom:96px;scrollbar-width:none}
+  .pager .page::-webkit-scrollbar{display:none}
+  .pagemeta{display:flex;justify-content:center;gap:6px;padding:6px 0 4px;flex:0 0 auto}
+  .pagemeta i{width:6px;height:6px;border-radius:99px;background:var(--hair);transition:.2s;cursor:pointer}
+  .pagemeta i.on{background:var(--primary);width:16px}
+  .swipehint{flex:0 0 auto;text-align:center;font-size:10.5px;font-weight:700;color:var(--text2);
+    padding:8px 0 2px;opacity:.85}
+  .swipehint b{color:var(--primary);font-weight:900}
+
+  /* bottom nav */
+  .nav{position:absolute;left:12px;right:12px;bottom:12px;height:64px;background:color-mix(in srgb,var(--surface) 88%, transparent);
+    backdrop-filter:blur(14px);border:1px solid var(--hair);border-radius:24px;display:flex;align-items:center;justify-content:space-around;
+    box-shadow:var(--shadow);z-index:20}
+  .nav .n{display:grid;place-items:center;gap:2px;color:var(--text2);font-size:9px;font-weight:800;width:52px;cursor:pointer}
+  .nav .n .ic{font-size:18px}
+  .nav .n.on{color:var(--text)}
+  .nav .n.on .ic{color:var(--primary)}
+  .nav .fab{width:52px;height:52px;border-radius:99px;margin-top:-22px;display:grid;place-items:center;color:#fff;font-size:26px;font-weight:300;
+    background:linear-gradient(150deg,#5E88F6,#4269D3);box-shadow:0 10px 22px -8px rgba(66,105,211,.85)}
+
+  /* onboarding */
+  .onb{padding:10px 18px}
+  .onb .hero2{background:linear-gradient(150deg,var(--hero1),var(--hero3));border-radius:22px;padding:22px;color:#fff;position:relative;overflow:hidden}
+  .onb .hero2 h2{margin:6px 0 6px;font-size:23px;font-weight:900;font-family:"Noto Serif SC",serif}
+  .onb .hero2 p{margin:0;font-size:12.5px;opacity:.9;line-height:1.7}
+  .onb .steps{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+  .onb .st{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+  .onb .st .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:18px}
+  .onb .st .tx{flex:1}
+  .onb .st .tx b{font-size:13.5px;font-weight:900}
+  .onb .st .tx p{margin:2px 0 0;font-size:11.5px;color:var(--text2);font-weight:600}
+  .onb .st .arr{width:28px;height:28px;border-radius:99px;background:var(--primary-soft);color:var(--on-primary-soft);display:grid;place-items:center;font-weight:900}
+
+  /* annotations */
+  .pin{display:none}
+  body.annotate .pin{display:grid}
+  .pin{position:absolute;top:-8px;left:-8px;width:22px;height:22px;border-radius:99px;background:var(--primary);color:#fff;
+    place-items:center;font-size:11px;font-weight:900;z-index:9;box-shadow:0 4px 10px -2px rgba(66,105,211,.7);cursor:help}
+  .annot-note{display:none;background:var(--surface);border:1px dashed var(--outline);border-radius:14px;padding:13px 14px;margin-top:12px;font-size:12px;line-height:1.85;color:var(--text2)}
+  body.annotate .annot-note{display:block}
+  .annot-note h4{margin:0 0 8px;font-size:12px;color:var(--text);font-weight:900}
+  .annot-note b{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:99px;background:var(--primary);color:#fff;font-size:10px;font-weight:900;margin-right:5px}
+  .annot-note p{margin:0 0 7px}
+  .annot-note p:last-child{margin:0}
+
+  .foot{margin-top:8px;font-size:11px;color:var(--text2);text-align:center;line-height:1.8}
+  .foot code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:10.5px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ CONTROL PANEL ============ -->
+  <aside class="panel">
+    <div class="brand">
+      <span class="mark">米记</span>
+      <span class="t">首页 v2 设计稿</span>
+      <span class="v">待确认</span>
+    </div>
+    <p class="lead">把首页从「记账仪表盘」升级为 <b>钱 / 健康 / 行动</b> 三维并列的「生活仪表盘」。左侧可切换主题、场景与区块，用来确认信息取舍与默认布局。<br>方案正文见 <code>docs/specs/home-dashboard-v2-design.md</code>。</p>
+
+    <div class="group">
+      <h3><span class="dot"></span>主题</h3>
+      <div class="seg two">
+        <button data-theme-btn="light" class="on">☀ 浅色</button>
+        <button data-theme-btn="dark">🌙 深色</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>布局</h3>
+      <div class="seg two" id="layoutSeg">
+        <button data-layout="scroll">纵向单列</button>
+        <button data-layout="pager" class="on">横向分页</button>
+      </div>
+      <p class="lead" style="margin:10px 0 0;font-size:11.5px">横向分页 = 首页内左右滑动切换「概览 / 记账 / 健康 / 行动」四页。</p>
+      <div class="tg" id="pagerTabsToggle" style="margin-top:6px">
+        <div class="sw"></div><span>分页显示顶部标签</span><small>默认关</small>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>场景</h3>
+      <div class="scen" id="scen">
+        <button data-scen="balanced" class="on">均衡日常</button>
+        <button data-scen="health">健康优先</button>
+        <button data-scen="money">记账优先</button>
+        <button data-scen="pregnant">孕期模式</button>
+        <button data-scen="overdue">经期推迟</button>
+        <button data-scen="firstrun">首次使用</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>区块开关（设置页同款）</h3>
+      <div class="toggles" id="toggles"></div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>图例</h3>
+      <div class="sub" style="padding-left:0">
+        <span>🔵 数字 = 相对现状的新增/升级</span>
+      </div>
+      <div class="tg on" id="annotToggle" style="margin-top:4px">
+        <div class="sw"></div><span>显示改动标注</span>
+      </div>
+    </div>
+
+    <p class="foot">点手机里的复选框 / 打卡按钮可试交互 · 滚轮滑动屏幕</p>
+  </aside>
+
+  <!-- ============ STAGE ============ -->
+  <main class="stage">
+    <div class="stagehead">
+      <span class="title">首页 · Home</span>
+      <span class="badge amber" id="scenName">均衡日常</span>
+      <span class="badge" id="layoutHint">单列手机 · 平板走 8/4 双栏</span>
+    </div>
+
+    <div class="phone">
+      <div class="screen">
+        <div class="scroll" id="screen">
+          <!-- rendered by JS -->
+        </div>
+        <div class="nav">
+          <div class="n"><span class="ic">✅</span>打卡</div>
+          <div class="n"><span class="ic">📒</span>记账</div>
+          <div class="fab">+</div>
+          <div class="n on"><span class="ic">🏠</span>首页</div>
+          <div class="n"><span class="ic">♡</span>健康</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="annot-note" id="annot">
+      <h4>本次相对现状的改动</h4>
+      <p><b>1</b><strong>今日三宫格</strong>：钱 / 健康 / 行动三格同级，一眼看今天。数据全部来自首页已有 provider。</p>
+      <p><b>2</b><strong>统一提醒</strong>：把记账提醒扩到待办逾期 / 打卡 / 经期，带来源标签。</p>
+      <p><b>3</b><strong>健康周期</strong>：从「一行文字」升级为周期环 + 阶段 + 距下次 / 推迟 / 孕期。</p>
+      <p><b>4</b><strong>今日健康记录</strong>：心情 / 睡眠 / 饮水 / 体重，原地补记不跳页。</p>
+      <p><b>5</b><strong>今日待办</strong>：可直接勾选，标出逾期与优先级，不再只显示「下一件」。</p>
+      <p><b>6</b><strong>习惯打卡</strong>：进度 + 一键打卡 + 连续天数。</p>
+      <p><b>7</b><strong>未来 7 天预测</strong>（默认关）：经期 / 易孕 / PMS 色带。</p>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   数据：每个场景一份，贴近真实 provider 输出
+   ============================================================ */
+const yuan = n => '¥' + n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const yuan0 = n => '¥' + n.toLocaleString('zh-CN');
+
+const SCENARIOS = {
+  balanced: {
+    name:'均衡日常',
+    money:{budget:4980, used:637.45, committed:3929.23, today:51.17, monthIncome:7820, daily:70.82,
+           pace:0.35, occupied:0.92, remaining:413.32, dailyAllow:19.68, netAsset:28412.6, asset:41280, liability:12867.4},
+    health:{on:true, status:'periodDay', day:3, cycleLen:28, cycleDay:3, nextIn:25, nextLabel:'11月6日预计开始',
+            logged:true, logItems:[['mood','🙂','心情','平静'],['sleep','😴','睡眠','7h20m'],['water','💧','饮水','1200ml'],['weight','⚖️','体重','52.4kg']]},
+    action:{done:2,total:5,streak:7,
+            todos:[
+              {t:'交房租',over:false,tag:'high',tagText:'高',sched:'今天 20:00'},
+              {t:'提交周报',over:true,tag:'over',tagText:'逾期 2 天',sched:''},
+              {t:'买猫粮',over:false,tag:'',tagText:'',sched:'今天'},
+              {t:'预约牙医',over:false,tag:'',tagText:'',sched:'今天'},
+              {t:'读 20 页书',over:false,tag:'',tagText:'',sched:'今天'},
+            ],
+            habits:[
+              {e:'📖',n:'阅读',cur:20,tgt:30,unit:'页',done:false,streak:12},
+              {e:'🏃',n:'运动',cur:1,tgt:1,unit:'次',done:true,streak:7},
+              {e:'💧',n:'喝水',cur:4,tgt:8,unit:'杯',done:false,streak:3},
+            ]},
+    reminders:[
+      {src:'记账',ic:'💳',a:'信用卡还款日将至',b:'招商银行 · 招商信用卡',r:yuan0(2340.5),tone:'expense'},
+      {src:'待办',ic:'✅',a:'「提交周报」已逾期',b:'逾期 2 天',r:'',tone:''},
+      {src:'健康',ic:'🩺',a:'预计 6 天后进入易孕期',b:'可提前安排',r:'',tone:''},
+    ],
+    insight:[
+      {ic:'📈',bg:'#DDE8FF',c:'#2E488E',tx:'今天比日均少花 <b>¥19.65</b>'},
+      {ic:'✅',bg:'#DFF3E3',c:'#006E30',tx:'本周完成率 <b>82%</b>，比上周 +6%'},
+      {ic:'🩺',bg:'#F6E6F4',c:'#8B608C',tx:'睡眠连续 3 天低于 7 小时'},
+    ],
+    cats:[['餐饮','63%','#A66C11'],['交通','12%','#008B97'],['购物','9%','#A95C8F'],['其他','16%','#DAD5CF']],
+  },
+  health: {
+    name:'健康优先',
+    _preset:{healthCycle:true,healthToday:true,healthForecast:true,actionTodo:true,actionHabit:true,
+             moneyHero:true,moneyCats:false,moneyRecent:false,reminders:true,insight:true},
+    money:{budget:4980, used:637.45, committed:3929.23, today:51.17, monthIncome:7820, daily:70.82,
+           pace:0.35, occupied:0.92, remaining:413.32, dailyAllow:19.68, netAsset:28412.6, asset:41280, liability:12867.4},
+    health:{on:true, status:'cycleDay', day:12, cycleLen:28, cycleDay:12, nextIn:16, nextLabel:'10月28日预计开始',
+            logged:true, logItems:[['mood','😊','心情','开心'],['sleep','😴','睡眠','6h40m'],['water','💧','饮水','800ml'],['weight','⚖️','体重','52.1kg']]},
+    action:{done:1,total:4,streak:7,
+            todos:[{t:'瑜伽 30 分钟',over:false,tag:'',tagText:'',sched:'今天'}],
+            habits:[{e:'🧘',n:'冥想',cur:1,tgt:1,unit:'次',done:true,streak:21},{e:'🏃',n:'运动',cur:0,tgt:1,unit:'次',done:false,streak:7},{e:'📖',n:'阅读',cur:15,tgt:30,unit:'页',done:false,streak:12}]},
+    reminders:[
+      {src:'健康',ic:'🩺',a:'距下次经期还有 16 天',b:'易孕期 10/20 – 10/25',r:'',tone:''},
+      {src:'打卡',ic:'🔥',a:'「阅读」还差 15 页',b:'今天未完成',r:'',tone:''},
+    ],
+    insight:[
+      {ic:'🩺',bg:'#F6E6F4',c:'#8B608C',tx:'睡眠连续 3 天低于 7 小时'},
+      {ic:'📈',bg:'#DDE8FF',c:'#2E488E',tx:'体重较上周 <b>-0.3kg</b>'},
+      {ic:'✅',bg:'#DFF3E3',c:'#006E30',tx:'本周完成率 <b>82%</b>，比上周 +6%'},
+    ],
+    cats:[['餐饮','63%','#A66C11'],['交通','12%','#008B97'],['购物','9%','#A95C8F'],['其他','16%','#DAD5CF']],
+  },
+  money: {
+    name:'记账优先',
+    _preset:{healthCycle:false,healthToday:false,healthForecast:false,actionTodo:false,actionHabit:false,
+             moneyHero:true,moneyCats:true,moneyRecent:true,reminders:true,insight:true},
+    money:{budget:4980, used:637.45, committed:3929.23, today:51.17, monthIncome:7820, daily:70.82,
+           pace:0.35, occupied:0.92, remaining:413.32, dailyAllow:19.68, netAsset:28412.6, asset:41280, liability:12867.4},
+    health:{on:false},
+    action:{done:0,total:0,streak:7,todos:[],habits:[]},
+    reminders:[{src:'记账',ic:'💳',a:'信用卡还款日将至',b:'招商银行 · 招商信用卡',r:yuan0(2340.5),tone:'expense'},
+               {src:'记账',ic:'⚠️',a:'餐饮预算已用 92%',b:'餐饮 · 本月',r:'¥1,840 / ¥2,000',tone:'warning'}],
+    insight:[{ic:'📈',bg:'#DDE8FF',c:'#2E488E',tx:'今天比日均少花 <b>¥19.65</b>'},
+             {ic:'⚠️',bg:'#FBEAD8',c:'#8a3d00',tx:'本月已预留 <b>¥3,929</b>，占预算 79%'}],
+    cats:[['餐饮','63%','#A66C11'],['交通','12%','#008B97'],['购物','9%','#A95C8F'],['其他','16%','#DAD5CF']],
+  },
+  pregnant: {
+    name:'孕期模式',
+    _preset:{healthCycle:true,healthToday:true,healthForecast:false,actionTodo:true,actionHabit:true,
+             moneyHero:true,moneyCats:true,moneyRecent:false,reminders:true,insight:true},
+    money:{budget:4980, used:637.45, committed:3929.23, today:51.17, monthIncome:7820, daily:70.82,
+           pace:0.35, occupied:0.92, remaining:413.32, dailyAllow:19.68, netAsset:28412.6, asset:41280, liability:12867.4},
+    health:{on:true, status:'pregnant', day:20, week:20, dueIn:140, nextLabel:'预产期 2027年3月1日',
+            logged:false, logItems:[['mood','–','心情',''],['sleep','😴','睡眠','8h10m'],['water','💧','饮水','1500ml'],['weight','⚖️','体重','58.6kg']]},
+    action:{done:3,total:4,streak:21,
+            todos:[{t:'产检预约',over:false,tag:'high',tagText:'高',sched:'明天 09:00'},{t:'补充叶酸',over:false,tag:'',tagText:'',sched:'每天'},{t:'散步 30 分钟',over:false,tag:'',tagText:'',sched:'今天'}],
+            habits:[{e:'🍃',n:'散步',cur:30,tgt:30,unit:'分钟',done:true,streak:21},{e:'💊',n:'叶酸',cur:1,tgt:1,unit:'次',done:true,streak:45}]},
+    reminders:[{src:'健康',ic:'🤰',a:'孕期第 20 周 · 大排畸检查',b:'建议 20–24 周完成',r:'',tone:''},
+               {src:'打卡',ic:'🔥',a:'叶酸已连续 45 天',b:'今天已完成',r:'',tone:''}],
+    insight:[{ic:'🩺',bg:'#F6E6F4',c:'#8B608C',tx:'孕期第 <b>20</b> 周 · 本周进入孕中期'},
+             {ic:'✅',bg:'#DFF3E3',c:'#006E30',tx:'本周完成率 <b>88%</b>'}],
+    cats:[['餐饮','58%','#A66C11'],['医疗','18%','#008B97'],['购物','14%','#A95C8F'],['其他','10%','#DAD5CF']],
+  },
+  overdue: {
+    name:'经期推迟',
+    _preset:{healthCycle:true,healthToday:true,healthForecast:true,actionTodo:true,actionHabit:true,
+             moneyHero:true,moneyCats:false,moneyRecent:false,reminders:true,insight:true},
+    money:{budget:4980, used:637.45, committed:3929.23, today:51.17, monthIncome:7820, daily:70.82,
+           pace:0.35, occupied:0.92, remaining:413.32, dailyAllow:19.68, netAsset:28412.6, asset:41280, liability:12867.4},
+    health:{on:true, status:'overdue', day:30, cycleLen:28, cycleDay:30, nextIn:-2, nextLabel:'预计 10月10日开始',
+            logged:false, logItems:[['mood','–','心情',''],['sleep','–','睡眠',''],['water','💧','饮水','600ml'],['weight','–','体重','']]},
+    action:{done:1,total:3,streak:7,
+            todos:[{t:'记录经期',over:false,tag:'due',tagText:'待办',sched:'今天'},{t:'买卫生巾',over:false,tag:'',tagText:'',sched:'今天'}],
+            habits:[{e:'📖',n:'阅读',cur:20,tgt:30,unit:'页',done:false,streak:12}]},
+    reminders:[{src:'健康',ic:'🩺',a:'经期已推迟 2 天',b:'预计 10月10日 · 可更新记录',r:'',tone:''},
+               {src:'打卡',ic:'🔥',a:'「阅读」还差 10 页',b:'今天未完成',r:'',tone:''}],
+    insight:[{ic:'🩺',bg:'#F6E6F4',c:'#8B608C',tx:'经期较预测推迟 <b>2 天</b>'},
+             {ic:'📈',bg:'#DDE8FF',c:'#2E488E',tx:'最近周期 30 天，比平均长 2 天'}],
+    cats:[['餐饮','63%','#A66C11'],['交通','12%','#008B97'],['购物','9%','#A95C8F'],['其他','16%','#DAD5CF']],
+  },
+  firstrun: {
+    name:'首次使用', fresh:true,
+    _preset:{healthCycle:false,healthToday:false,healthForecast:false,actionTodo:false,actionHabit:false,
+             moneyHero:false,moneyCats:false,moneyRecent:false,reminders:false,insight:false},
+    money:{}, health:{on:false}, action:{done:0,total:0,todos:[],habits:[]}, reminders:[], insight:[], cats:[],
+  },
+};
+
+const BLOCKS = [
+  {id:'reminders',   label:'统一提醒',   note:'记账+待办+打卡+健康'},
+  {id:'moneyHero',   label:'记账 · 预算 Hero', note:'三视图合一'},
+  {id:'moneyCats',   label:'记账 · 分类结构', note:'摘要/展开'},
+  {id:'moneyRecent', label:'记账 · 最近流水', note:'摘要/展开'},
+  {id:'healthCycle', label:'健康 · 周期状态', note:'环 + 阶段'},
+  {id:'healthToday', label:'健康 · 今日记录', note:'心情/睡眠/水/体重'},
+  {id:'healthForecast', label:'健康 · 7 天预测', note:'默认关'},
+  {id:'actionTodo',  label:'行动 · 今日待办', note:'可勾选'},
+  {id:'actionHabit', label:'行动 · 习惯打卡', note:'一键打卡'},
+  {id:'insight',     label:'跨模块洞察', note:''},
+];
+
+const state = {
+  theme:'light',
+  scen:'balanced',
+  layoutMode:'pager',
+  pagerPage:0,
+  pagerTabs:false,
+  annotate:true,
+  blocks:{reminders:true,moneyHero:true,moneyCats:true,moneyRecent:true,healthCycle:true,healthToday:true,
+          healthForecast:false,actionTodo:true,actionHabit:true,insight:true},
+  overrides:{},
+};
+const D = () => SCENARIOS[state.scen];
+
+/* 待办勾选状态：默认前 a.done 条已完成，点击用 override 覆盖 */
+function ovMap(){ return state.overrides[state.scen] || (state.overrides[state.scen]={}); }
+function isTodoDone(i){ const m=ovMap(); return (i in m)? m[i] : (i < D().action.done); }
+function doneCount(){
+  const a=D().action; let n=a.done;
+  for(const k in ovMap()){ const i=+k; if(i>=a.todos.length) continue; const base=i<a.done?1:0; n += (ovMap()[k]?1:0)-base; }
+  return Math.max(0, Math.min(a.total, n));
+}
+
+/* ============================================================
+   图标 / 小组件
+   ============================================================ */
+function secttitle(t){return `<div class="secttitle">${t}</div>`}
+
+function pin(n){return state.annotate?`<span class="pin" title="新增/升级">${n}</span>`:''}
+
+function chips(total,done){
+  const h=D().health;
+  let out=[];
+  out.push(`<span class="c"><i>🔥</i> 连续 ${(D().action.streak||7)} 天</span>`);
+  if(h.on){
+    if(h.status==='pregnant') out.push(`<span class="c period"><i>🤰</i> 孕期第 ${h.week} 周</span>`);
+    else if(h.status==='overdue') out.push(`<span class="c period"><i>🩸</i> 经期推迟 ${Math.abs(h.nextIn)} 天</span>`);
+    else if(h.status==='periodDay') out.push(`<span class="c period"><i>🩸</i> 经期第 ${h.day} 天</span>`);
+    else out.push(`<span class="c period"><i>🩸</i> 距下次 ${h.nextIn} 天</span>`);
+  }
+  if(total>0) out.push(`<span class="c action"><i>✅</i> 今日 ${done}/${total}</span>`);
+  return `<div class="chips">${out.join('')}</div>`;
+}
+
+function board(){
+  const m=D().money,h=D().health,a=D().action;
+  const healthMain = !h.on ? '未开启' :
+    h.status==='pregnant' ? `第 ${h.week} 周` :
+    h.status==='overdue' ? `推迟 ${Math.abs(h.nextIn)} 天` :
+    h.status==='periodDay' ? `第 ${h.day} 天` : `还有 ${h.nextIn} 天`;
+  const healthSub = !h.on ? '去开启追踪' :
+    h.status==='periodDay'||h.status==='pregnant'
+      ? (h.logged?'今天已记录':'今天还没记录')
+      : (h.nextLabel||'');
+  const actionMain = a.total>0?`${a.done}<span class="unit"> / ${a.total}</span>`:'—';
+  const actionSub = a.total===0?'今天没有待办':(doneCount()>=a.total?'全部完成 🎉':('下一件 · '+(a.todos.find((t,i)=>!isTodoDone(i))?.t||'已完成')));
+  const moneyMain = m.remaining!=null? yuan0(m.remaining) : '—';
+  const moneySub = m.today!=null? `今日支出 ${yuan(m.today)}` : '还没有流水';
+
+  return `
+  <div class="board">
+    <div class="cell">
+      ${pin(1)}
+      <div class="k"><span class="ic" style="background:#DDE8FF;color:#2E488E">💰</span>今日</div>
+      <div class="v">${moneyMain}</div>
+      <div class="s">本月还可花<br>${moneySub}</div>
+    </div>
+    <div class="cell health">
+      ${pin(3)}
+      <div class="k"><span class="ic" style="background:#F6E6F4;color:#8B608C">🩺</span>健康</div>
+      <div class="v">${healthMain}</div>
+      <div class="s">${healthSub}</div>
+    </div>
+    <div class="cell">
+      ${pin(5)}
+      <div class="k"><span class="ic" style="background:#DFF3E3;color:#006E30">✅</span>行动</div>
+      <div class="v">${actionMain}</div>
+      <div class="s">${actionSub}</div>
+    </div>
+  </div>`;
+}
+
+function reminders(){
+  const rs=D().reminders;
+  if(!rs.length) return '';
+  return `
+  <div class="stack">
+    <div class="card pad remwrap">
+      ${pin(2)}
+      <div class="cardhead"><span class="ic" style="background:transparent">⚠️</span>需要关注
+        <span class="more">全部 ›</span></div>
+      ${rs.map(r=>`
+        <div class="rem">
+          <span class="ic">${r.ic}</span>
+          <div class="txt"><div class="a">${r.a}</div><div class="b">${r.b} <span class="src">${r.src}</span></div></div>
+          ${r.r?`<span class="amt" style="color:${r.tone==='expense'?'var(--expense)':r.tone==='warning'?'var(--warning)':'var(--text)'}">${r.r}</span>`:''}
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function moneyHero(){
+  const m=D().money;
+  if(m.budget==null) return '';
+  return `
+  <div class="stack">
+    <div class="hero">
+      <div class="tabs"><span class="on">本月预算</span><span>支出趋势</span><span>日历</span></div>
+      <div class="cap">本月还可花</div>
+      <div class="big">${yuan(m.remaining)}</div>
+      <div class="rows">
+        <span class="l">预算</span><span class="r">${yuan(m.budget)}</span>
+        <span class="l">已用</span><span class="r">${yuan(m.used)}</span>
+        <span class="l">已预留</span><span class="r">${yuan(m.committed)}</span>
+        <span class="l">日均可花</span><span class="r">${yuan(m.dailyAllow)}</span>
+      </div>
+      <div class="metrics">
+        <div class="m"><div class="l">今日支出</div><div class="n">${yuan(m.today)}</div></div>
+        <div class="m"><div class="l">本月收入</div><div class="n">••••</div></div>
+        <div class="m"><div class="l">日均支出</div><div class="n">${yuan(m.daily)}</div></div>
+      </div>
+      <div class="pace">
+        <div class="bar"><i></i><b></b></div>
+        <div class="pacelabels"><span>时间进度 ${Math.round(m.pace*100)}%</span><span>已用+预留 ${Math.round(m.occupied*100)}%</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function moneyCats(){
+  const c=D().cats;
+  if(!c.length) return '';
+  return `
+  <div class="stack">
+    <div class="card pad">
+      <div class="cardhead">📊 分类结构 <span class="more">展开 ›</span></div>
+      <div class="catbar">${c.map(x=>`<i style="width:${parseInt(x[1])}%;background:${x[2]}"></i>`).join('')}</div>
+      <div class="catleg">${c.map(x=>`<span><i style="background:${x[2]}"></i>${x[0]} ${x[1]}</span>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+function moneyRecent(){
+  return `
+  <div class="stack">
+    <div class="card pad">
+      <div class="cardhead">🧾 最近流水 <span class="more">全部 ›</span></div>
+      <div class="rem"><span class="ic">☕</span><div class="txt"><div class="a">星巴克</div><div class="b">餐饮 · 招商信用卡 · 1 小时前</div></div><span class="amt" style="color:var(--expense)">-¥32.00</span></div>
+      <div class="rem"><span class="ic">🚇</span><div class="txt"><div class="a">地铁</div><div class="b">交通 · 支付宝 · 今早</div></div><span class="amt" style="color:var(--expense)">-¥4.00</span></div>
+    </div>
+  </div>`;
+}
+
+function healthCycle(){
+  const h=D().health;
+  if(!h.on){
+    return `
+    <div class="stack">
+      <div class="card pad">
+        <div class="row">
+          <span class="ring" style="background:var(--sunken)"><span class="inner"><b>?</b></span></span>
+          <div class="txt"><div class="a">开启经期追踪</div><div class="b">记录周期、预测经期与易孕期</div></div>
+          <span class="go">去开启 ›</span>
+        </div>
+      </div>
+    </div>`;
+  }
+  const isPreg=h.status==='pregnant', isOver=h.status==='overdue', isPD=h.status==='periodDay';
+  const ringPct = isPreg? (h.week/40) : ((h.cycleDay||1)/h.cycleLen);
+  const deg=Math.round(ringPct*360);
+  const phase = isPreg?'孕中期': isPD?'经期': isOver?'黄体期': (h.cycleDay<=5?'经期':h.cycleDay<=13?'卵泡期':h.cycleDay<=16?'排卵期':'黄体期');
+  const ringColor = isPreg?'#8B608C': isPD||isOver?'#C2536F': (h.cycleDay>=14?'#3FA37A':'#4269D3');
+  const big = isPreg? `第 ${h.week} 周` : isOver? `推迟 ${Math.abs(h.nextIn)} 天` : isPD? `经期第 ${h.day} 天` : `还有 ${h.nextIn} 天`;
+  const sub = isPreg? h.nextLabel : isOver? `${h.nextLabel} · 可更新记录` : isPD? '本次经期进行中' : '距下次经期';
+  return `
+  <div class="stack">
+    <div class="card pad" style="padding:16px">
+      ${pin(3)}
+      <div class="cardhead">${isPreg?'🤰':'🩸'} 健康周期 <span class="more">今日记录 ›</span></div>
+      <div class="row">
+        <span class="ring" style="background:conic-gradient(${ringColor} ${deg}deg, var(--ring-track) ${deg}deg)">
+          <span class="inner"><b>${isPreg? h.week : h.cycleDay}</b><span>${isPreg?'/ 40 周':'/ '+h.cycleLen+' 天'}</span></span>
+        </span>
+        <div class="txt">
+          <div class="a" style="font-size:14px">${big}</div>
+          <div class="b">${sub}</div>
+          <div class="b" style="margin-top:3px"><span style="color:${ringColor};font-weight:900">${phase}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function healthToday(){
+  const h=D().health;
+  if(!h.on) return '';
+  const items=h.logItems.map(([kind,emoji,label,val])=>{
+    const empty = !val;
+    return `<div class="cell2 ${empty?'empty':''}">
+      <div class="ic">${emoji}</div><div class="lb">${label}</div>
+      <div class="vl">${empty?'+':val}</div></div>`;
+  }).join('');
+  return `
+  <div class="stack">
+    <div class="card pad">
+      ${pin(4)}
+      <div class="cardhead">📝 今日记录 <span class="more">编辑 ›</span></div>
+      <div class="hm">${items}</div>
+    </div>
+  </div>`;
+}
+
+function healthForecast(){
+  const h=D().health;
+  if(!h.on) return '';
+  const days=[['六','10',0],['日','11',0],['一','12','today'],['二','13','fertile'],['三','14','fertile'],['四','15','pms'],['五','16','pms']];
+  return `
+  <div class="stack">
+    <div class="card pad">
+      ${pin(7)}
+      <div class="cardhead">📅 未来 7 天预测</div>
+      <div class="fc">${days.map(([w,n,c])=>`
+        <div class="d ${c}"><div class="w">周${w}</div><div class="n">${n}</div><div class="dot"></div></div>`).join('')}</div>
+      <div class="legend">
+        <span><i style="background:#E56B8E"></i>经期</span>
+        <span><i style="background:#3FA37A"></i>易孕</span>
+        <span><i style="background:#D8A93C"></i>PMS</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function actionTodo(){
+  const a=D().action;
+  if(a.total===0){
+    return `
+    <div class="stack">
+      <div class="card pad">
+        <div class="cardhead">✅ 今日待办</div>
+        <div class="row">
+          <div class="txt"><div class="a">今天没有待办</div><div class="b">新建一个任务开始今天的行动</div></div>
+          <span class="go">+ 新建</span>
+        </div>
+      </div>
+    </div>`;
+  }
+  const doneNow = doneCount();
+  const rows = a.todos.slice(0,5).map((t,i)=>{
+    const done = isTodoDone(i);
+    const dot = t.tag==='high'?'var(--expense)':t.tag==='due'?'var(--primary)':'';
+    return `<div class="todo ${done?'done':''} ${t.over&&!done?'overdue':''}" onclick="toggleTodo(${i})">
+      <span class="box">✓</span>
+      ${dot?`<span class="pdot" style="background:${dot}"></span>`:''}
+      <span class="tl">${t.t}</span>
+      ${t.tag?`<span class="tag ${t.tag}">${t.tagText}</span>`:`<span class="tag due">${t.sched}</span>`}
+    </div>`;
+  }).join('');
+  const total=a.total, pct=Math.min(100,Math.round(doneNow/total*100));
+  return `
+  <div class="stack">
+    <div class="card pad">
+      ${pin(5)}
+      <div class="progtop">
+        <span class="num">${doneNow}<small> / ${total}</small></span>
+        <span class="streak">🔥 连续 ${a.streak} 天</span>
+      </div>
+      <div class="bar" style="height:6px;border-radius:99px;background:var(--sunken);overflow:hidden;margin:8px 0 6px">
+        <i style="display:block;height:100%;width:${pct}%;background:var(--primary);border-radius:99px"></i>
+      </div>
+      ${rows}
+      <div style="text-align:center;margin-top:9px;font-size:11.5px;font-weight:800;color:var(--primary);cursor:pointer">查看全部 ›</div>
+    </div>
+  </div>`;
+}
+
+function actionHabit(){
+  const hs=D().action.habits;
+  if(!hs.length) return '';
+  const cards=hs.map(h=>{
+    const pct=Math.min(100,Math.round(h.cur/h.tgt*100));
+    return `<div class="habit ${h.done?'done':''}">
+      <div class="e">${h.e}</div>
+      <div class="n">${h.n}</div>
+      <div class="p">${h.cur}/${h.tgt} ${h.unit}${h.streak?` · 🔥${h.streak}`:''}</div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="btn">${h.done?'✓ 已完成':'打卡'}</div>
+    </div>`;
+  }).join('');
+  return `
+  <div class="stack">
+    <div class="card pad">
+      ${pin(6)}
+      <div class="cardhead">🔥 习惯打卡 <span class="more">管理 ›</span></div>
+      <div class="habits">${cards}</div>
+    </div>
+  </div>`;
+}
+
+function insight(){
+  const ins=D().insight;
+  if(!ins.length) return '';
+  return `
+  <div class="stack">
+    <div class="card pad">
+      ${ins.map(i=>`
+        <div class="ins">
+          <span class="ic" style="background:${i.bg};color:${i.c}">${i.ic}</span>
+          <span class="tx">${i.tx}</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function onboarding(){
+  return `
+  <div class="onb">
+    <div class="hero2">
+      <div style="font-size:12px;font-weight:800;opacity:.85">欢迎来到米记</div>
+      <h2>记录钱、健康<br>和每一天的行动</h2>
+      <p>所有数据都存在本机，无需账号。先花一分钟建立你的第一个账户吧。</p>
+    </div>
+    <div class="steps">
+      <div class="st"><span class="ic" style="background:#DDE8FF;color:#2E488E">💳</span>
+        <div class="tx"><b>建立第一个账户</b><p>现金 / 银行卡 / 支付宝都行</p></div><span class="arr">›</span></div>
+      <div class="st"><span class="ic" style="background:#F6E6F4;color:#8B608C">🩺</span>
+        <div class="tx"><b>开启健康追踪</b><p>经期预测与每日健康记录</p></div><span class="arr">›</span></div>
+      <div class="st"><span class="ic" style="background:#DFF3E3;color:#006E30">✅</span>
+        <div class="tx"><b>添加待办或习惯</b><p>让首页的今日行动活起来</p></div><span class="arr">›</span></div>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--text2);margin-top:16px">也可以直接开始，稍后在设置里开启</p>
+  </div>`;
+}
+
+/* ============================================================
+   渲染
+   ============================================================ */
+function render(){
+  const d=D();
+  const sumArea = document.getElementById('screen');
+  const a=d.action;
+  const total=a.total, done=doneCount();
+
+  if(d.fresh){
+    sumArea.classList.remove('pager-mode');
+    sumArea.innerHTML = `
+      <div class="statusbar"><span>19:32</span><span class="inds">▪▪▪ ᯤ 🔋</span></div>
+      <div class="topbar"><span class="pill">2026.10 ⌄</span><span class="spacer"></span><span class="avatar"></span></div>
+      <div class="greet"><h1>晚上好，mcgeq</h1><div class="date">2026年10月12日 星期日</div></div>
+      ${onboarding()}
+    `;
+  } else {
+    const remHtml = state.blocks.reminders ? reminders() : '';
+    const moneyHtml=[];
+    if(state.blocks.moneyHero) moneyHtml.push(moneyHero());
+    if(state.blocks.moneyCats) moneyHtml.push(moneyCats());
+    if(state.blocks.moneyRecent) moneyHtml.push(moneyRecent());
+    const healthHtml=[];
+    if(state.blocks.healthCycle) healthHtml.push(healthCycle());
+    if(state.blocks.healthToday) healthHtml.push(healthToday());
+    if(state.blocks.healthForecast) healthHtml.push(healthForecast());
+    const actionHtml=[];
+    if(state.blocks.actionTodo) actionHtml.push(actionTodo());
+    if(state.blocks.actionHabit) actionHtml.push(actionHabit());
+    const insightHtml=[];
+    if(state.blocks.insight) insightHtml.push(insight());
+
+    const head = `
+      <div class="statusbar"><span>19:32</span><span class="inds">▪▪▪ ᯤ 🔋</span></div>
+      <div class="topbar">
+        <span class="pill">2026.10 ⌄</span>
+        <span class="pill ghost">今天</span>
+        <span class="spacer"></span>
+        <span class="pill"><span>👤</span> 个人账本 ⌄</span>
+        <span class="avatar"></span>
+      </div>
+      <div class="greet">
+        <h1>晚上好，mcgeq</h1>
+        <div class="date">2026年10月12日 星期日</div>
+      </div>
+      ${chips(total,done)}`;
+
+    if(state.layoutMode==='pager'){
+      const sheet = (html) => html ? `<div class="sect">${html}</div>` : '';
+      const pages=[
+        {label:'概览', body: sheet(board()) + sheet(remHtml) + sheet(insightHtml) + `<div class="quote"><div class="q">“</div>慢慢来，比较快。</div>`},
+        {label:'记账', body: moneyHtml.map(sheet).join('')},
+        {label:'健康', body: healthHtml.map(sheet).join('')},
+        {label:'行动', body: actionHtml.map(sheet).join('')},
+      ];
+      const empty = `<div class="sect"><div class="card pad"><div class="cardhead">该模块暂无显示内容</div><div class="row"><div class="txt"><div class="a">到设置里打开对应区块</div></div></div></div></div>`;
+      sumArea.classList.add('pager-mode');
+      const pagerNav = state.pagerTabs
+        ? `<div class="ptabs" id="ptabs">${pages.map((p,i)=>`<div class="t ${i===state.pagerPage?'on':''}" data-page="${i}">${p.label}</div>`).join('')}</div>`
+        : `<div class="swipehint">‹ 左右滑动查看 <b>记账</b> · <b>健康</b> · <b>行动</b> ›</div>`;
+      sumArea.innerHTML = `
+        ${head}
+        ${pagerNav}
+        <div class="pager" id="pager">
+          ${pages.map(p=>`<div class="page">${p.body||empty}</div>`).join('')}
+        </div>
+        <div class="pagemeta" id="pagemeta">${pages.map((p,i)=>`<i class="${i===state.pagerPage?'on':''}"></i>`).join('')}</div>
+      `;
+      wirePager();
+    } else {
+      sumArea.classList.remove('pager-mode');
+      sumArea.innerHTML = `
+        ${head}
+        <div class="sect">${board()}</div>
+        ${remHtml?`<div class="sect">${remHtml}</div>`:''}
+        ${moneyHtml.length?`<div class="sect">${moneyHtml.join('')}</div>`:''}
+        ${healthHtml.length?`<div class="sect">${healthHtml.join('')}</div>`:''}
+        ${actionHtml.length?`<div class="sect">${actionHtml.join('')}</div>`:''}
+        ${insightHtml.length?`<div class="sect">${insightHtml.join('')}</div>`:''}
+        <div class="quote"><div class="q">“</div>慢慢来，比较快。</div>
+      `;
+    }
+  }
+
+  document.getElementById('scenName').textContent = d.name;
+  document.getElementById('annot').style.display = state.annotate ? 'block' : 'none';
+  document.body.classList.toggle('annotate', state.annotate);
+}
+
+function toggleTodo(i){
+  const m=ovMap();
+  m[i]=!isTodoDone(i);
+  render();
+}
+
+/* ============================================================
+   控制面板
+   ============================================================ */
+function buildToggles(){
+  const box=document.getElementById('toggles');
+  box.innerHTML=BLOCKS.map(b=>`
+    <div class="tg ${state.blocks[b.id]?'on':''}" data-block="${b.id}">
+      <div class="sw"></div><span>${b.label}</span>${b.note?`<small>${b.note}</small>`:''}
+    </div>`).join('');
+  box.querySelectorAll('[data-block]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const id=el.dataset.block;
+      state.blocks[id]=!state.blocks[id];
+      el.classList.toggle('on',state.blocks[id]);
+      render();
+    });
+  });
+}
+function syncToggles(){
+  document.querySelectorAll('#toggles [data-block]').forEach(el=>{
+    el.classList.toggle('on', state.blocks[el.dataset.block]);
+  });
+}
+
+function wirePager(){
+  const pager=document.getElementById('pager');
+  if(!pager) return;
+  const tabs=[...document.querySelectorAll('#ptabs .t')];
+  const dots=[...document.querySelectorAll('#pagemeta i')];
+  const go=(i)=>{
+    state.pagerPage=i;
+    pager.scrollTo({left: pager.clientWidth*i, behavior:'smooth'});
+  };
+  tabs.forEach((t,i)=>t.addEventListener('click',()=>go(i)));
+  dots.forEach((d,i)=>d.addEventListener('click',()=>go(i)));
+  pager.addEventListener('scroll', ()=>{
+    const i=Math.max(0, Math.min(tabs.length-1, Math.round(pager.scrollLeft/Math.max(1,pager.clientWidth))));
+    if(i!==state.pagerPage){
+      state.pagerPage=i;
+      tabs.forEach((t,j)=>t.classList.toggle('on', j===i));
+      dots.forEach((d,j)=>d.classList.toggle('on', j===i));
+    }
+  });
+  requestAnimationFrame(()=>{ pager.scrollLeft = pager.clientWidth*state.pagerPage; });
+}
+
+function applyTheme(theme){
+  state.theme=theme;
+  document.documentElement.dataset.theme=theme;
+  document.querySelectorAll('[data-theme-btn]').forEach(x=>x.classList.toggle('on',x.dataset.themeBtn===theme));
+}
+function applyScenario(scen){
+  state.scen=scen; state.overrides={};
+  const preset=SCENARIOS[scen]._preset;
+  if(preset) state.blocks=Object.assign({},state.blocks,preset);
+  document.querySelectorAll('#scen button').forEach(x=>x.classList.toggle('on',x.dataset.scen===scen));
+}
+function applyLayout(mode){
+  state.layoutMode=mode;
+  document.querySelectorAll('[data-layout]').forEach(x=>x.classList.toggle('on',x.dataset.layout===mode));
+  document.getElementById('layoutHint').textContent = mode==='pager'
+    ? '首页内左右滑动 · 概览/记账/健康/行动'
+    : '单列手机 · 平板走 8/4 双栏';
+}
+
+document.querySelectorAll('[data-theme-btn]').forEach(b=>b.addEventListener('click',()=>{applyTheme(b.dataset.themeBtn); render();}));
+document.querySelectorAll('#scen button').forEach(b=>b.addEventListener('click',()=>{applyScenario(b.dataset.scen); syncToggles(); render();}));
+document.querySelectorAll('[data-layout]').forEach(b=>b.addEventListener('click',()=>{applyLayout(b.dataset.layout); render();}));
+document.getElementById('pagerTabsToggle').addEventListener('click',function(){
+  state.pagerTabs=!state.pagerTabs;
+  this.classList.toggle('on',state.pagerTabs);
+  render();
+});
+document.getElementById('annotToggle').addEventListener('click',function(){
+  state.annotate=!state.annotate;
+  this.classList.toggle('on',state.annotate);
+  render();
+});
+
+// 深链：#theme=dark&scen=health&layout=pager&page=2
+(function initFromHash(){
+  const raw=(location.hash||'').replace(/^#/,'');
+  if(!raw) return;
+  const h=new URLSearchParams(raw);
+  if(h.get('theme')) applyTheme(h.get('theme'));
+  if(h.get('scen') && SCENARIOS[h.get('scen')]) applyScenario(h.get('scen'));
+  if(h.get('layout')) applyLayout(h.get('layout'));
+  if(h.get('page')) state.pagerPage=Math.max(0,parseInt(h.get('page'))||0);
+  if(h.get('tabs')) state.pagerTabs = h.get('tabs')==='1';
+})();
+
+window.toggleTodo=toggleTodo;
+buildToggles();
+document.getElementById('pagerTabsToggle').classList.toggle('on', state.pagerTabs);
+applyTheme(state.theme);
+applyLayout(state.layoutMode);
+render();
+</script>
+</body>
+</html>
