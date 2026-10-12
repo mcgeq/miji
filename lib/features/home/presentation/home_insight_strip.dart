@@ -143,6 +143,10 @@ class _InsightRow extends StatelessWidget {
       HomeInsightKind.spendingVsAverage => Icons.insights_rounded,
       HomeInsightKind.noSpendingToday => Icons.edit_calendar_outlined,
       HomeInsightKind.topCategory => Icons.donut_small_rounded,
+      HomeInsightKind.actionCompletion => Icons.task_alt_rounded,
+      HomeInsightKind.actionOverdue => Icons.error_outline_rounded,
+      HomeInsightKind.healthSleep => Icons.bedtime_rounded,
+      HomeInsightKind.healthWeight => Icons.monitor_weight_rounded,
     };
   }
 

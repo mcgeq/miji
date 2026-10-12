@@ -350,13 +350,17 @@ enum HomeInsightKind {
   topCategory,
   budgetPace,
   budgetExceeded,
+  actionCompletion,
+  actionOverdue,
+  healthSleep,
+  healthWeight,
 }
 
 /// 洞察的语气，决定颜色与排序权重。
 enum HomeInsightTone { positive, neutral, warning, danger }
 
 /// 点击洞察后跳转的去处。
-enum HomeInsightTarget { transactions, categories, budgets }
+enum HomeInsightTarget { transactions, categories, budgets, gtd, health }
 
 /// 一条洞察。
 ///

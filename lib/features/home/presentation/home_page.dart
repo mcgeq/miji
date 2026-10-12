@@ -19,9 +19,11 @@ import 'package:miji/features/home/application/home_preference_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/home/application/home_health_brief_providers.dart';
+import 'package:miji/features/home/application/home_health_forecast_providers.dart';
 import 'package:miji/features/home/application/home_health_hint_providers.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 import 'package:miji/features/home/application/home_money_dashboard_providers.dart';
+import 'package:miji/features/home/application/home_cross_insight_providers.dart';
 import 'package:miji/features/home/application/home_today_board_providers.dart';
 import 'package:miji/features/home/application/home_action_brief_providers.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
@@ -45,6 +47,7 @@ import 'package:miji/features/home/presentation/home_greeting_header.dart';
 import 'package:miji/features/home/presentation/home_today_board.dart';
 import 'package:miji/features/home/presentation/home_health_cycle_card.dart';
 import 'package:miji/features/home/presentation/home_health_today_card.dart';
+import 'package:miji/features/home/presentation/home_health_forecast_card.dart';
 import 'package:miji/features/home/presentation/home_collapsible.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/health/presentation/health_quick_dialogs.dart';
@@ -143,7 +146,7 @@ class _HomeDataPreloaderState extends ConsumerState<_HomeDataPreloader> {
         ref.read(homeNetAssetSummaryProvider.future),
         ref.read(homeCategoryBudgetSummaryProvider.future),
         ref.read(homeStreakProvider.future),
-        ref.read(homeInsightProvider.future),
+        ref.read(homeCrossInsightProvider.future),
         ref.read(currentUserPendingReminderCenterItemsProvider.future),
         ref.read(allTodoTasksProvider.future),
         ref.read(todayProgressProvider.future),
@@ -157,6 +160,9 @@ class _HomeDataPreloaderState extends ConsumerState<_HomeDataPreloader> {
 
     if (ref.read(homeShowHealthStripProvider)) {
       await _ignoreErrors(ref.read(homeHealthHintProvider.future));
+      if (ref.read(homeBlockVisibleProvider(HomeBlockId.healthForecast))) {
+        await _ignoreErrors(ref.read(homeHealthForecastProvider.future));
+      }
     }
   }
 
@@ -195,7 +201,7 @@ class _HomeDashboard extends ConsumerWidget {
     final categoryType = ref.watch(homeCategoryStructureTypeProvider);
     final categoryItems = ref.watch(homeCategoryStructureProvider);
     final recentItems = ref.watch(homeRecentTransactionsProvider);
-    final insight = ref.watch(homeInsightProvider);
+    final insight = ref.watch(homeCrossInsightProvider);
     final netAsset = ref.watch(homeNetAssetSummaryProvider);
     final streak = ref.watch(homeStreakProvider);
     final reminders = ref.watch(homeUnifiedRemindersProvider);
@@ -365,6 +371,18 @@ class _HomeDashboard extends ConsumerWidget {
             onTapMetric: (kind) => _quickLogHealth(context, ref, kind),
             onEdit: () => context.go(AppRoutes.health),
           );
+    final showForecast = ref.watch(
+      homeBlockVisibleProvider(HomeBlockId.healthForecast),
+    );
+    final forecastValue = showForecast
+        ? ref.watch(homeHealthForecastProvider).valueOrNull
+        : null;
+    final healthForecastCard = forecastValue == null
+        ? null
+        : HomeHealthForecastCard(
+            forecast: forecastValue,
+            onOpenHealth: () => context.go(AppRoutes.health),
+          );
 
     final actionBrief = ref.watch(homeActionBriefProvider);
     final actionBriefValue = actionBrief.valueOrNull ?? HomeActionBrief.empty;
@@ -435,6 +453,7 @@ class _HomeDashboard extends ConsumerWidget {
                 recentPanel: recentPanel,
                 healthCycleCard: healthCycleCard,
                 healthTodayCard: healthTodayCard,
+                healthForecastCard: healthForecastCard,
                 todoCard: todoCard,
                 habitCard: habitCard,
                 upNextCard: upNextCard,
@@ -473,6 +492,10 @@ class _HomeDashboard extends ConsumerWidget {
                 if (healthTodayCard != null) ...[
                   _gap,
                   _section(5, healthTodayCard),
+                ],
+                if (healthForecastCard != null) ...[
+                  _gap,
+                  _section(5, healthForecastCard),
                 ],
                 _gap,
                 _section(6, categoryPanel),
@@ -527,6 +550,10 @@ class _HomeDashboard extends ConsumerWidget {
                         ],
                         if (healthTodayCard != null) ...[
                           _section(7, healthTodayCard),
+                          _gap,
+                        ],
+                        if (healthForecastCard != null) ...[
+                          _section(7, healthForecastCard),
                           _gap,
                         ],
                         _section(8, categoryPanel),
@@ -753,6 +780,10 @@ class _HomeDashboard extends ConsumerWidget {
         _openBookkeepingSection(context, 'categories');
       case HomeInsightTarget.budgets:
         _openBookkeepingSection(context, 'budgets');
+      case HomeInsightTarget.gtd:
+        context.push(AppRoutes.gtd);
+      case HomeInsightTarget.health:
+        context.go(AppRoutes.health);
     }
   }
 
@@ -843,6 +874,7 @@ List<_HomePageData> _buildPagerPages({
   required Widget recentPanel,
   required Widget? healthCycleCard,
   required Widget? healthTodayCard,
+  required Widget? healthForecastCard,
   required Widget? todoCard,
   required Widget? habitCard,
   required Widget? upNextCard,
@@ -856,7 +888,10 @@ List<_HomePageData> _buildPagerPages({
       label: '记账',
       children: [overviewCard, netAssetTile, categoryPanel, recentPanel],
     ),
-    _HomePageData(label: '健康', children: [?healthCycleCard, ?healthTodayCard]),
+    _HomePageData(
+      label: '健康',
+      children: [?healthCycleCard, ?healthTodayCard, ?healthForecastCard],
+    ),
     _HomePageData(label: '行动', children: [?todoCard, ?habitCard]),
   ];
 }
