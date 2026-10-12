@@ -47,6 +47,10 @@ class UserPreferencesEntity {
     this.showHomeTodayAction = true,
     this.maskMoneyAmounts = false,
     this.showHomeHealthStrip = false,
+    this.homeBlockVisibility,
+    this.homeBlockOrder,
+    this.homeLayoutMode = 'pager',
+    this.homePagerTabs = false,
   });
 
   final String userId;
@@ -60,8 +64,21 @@ class UserPreferencesEntity {
   /// 首页金额隐私：开启后所有金额以模糊 / 占位方式展示。
   final bool maskMoneyAmounts;
 
-  /// 首页是否显示健康窄条。
+  /// 首页是否显示健康窄条。v2 起由区块注册表控制，此字段保留向后兼容。
   final bool showHomeHealthStrip;
+
+  /// 首页区块可见性 JSON。
+  final String? homeBlockVisibility;
+
+  /// 首页区块顺序 JSON。
+  final String? homeBlockOrder;
+
+  /// 首页布局：`list` / `pager`（默认）。
+  final String homeLayoutMode;
+
+  /// 横向分页是否显示顶部标签。
+  final bool homePagerTabs;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 }

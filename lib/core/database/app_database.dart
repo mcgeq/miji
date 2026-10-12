@@ -99,7 +99,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration {
@@ -305,6 +305,25 @@ class AppDatabase extends _$AppDatabase {
           await migrator.addColumn(
             moneyAutoPostingTemplates,
             moneyAutoPostingTemplates.takenOverByPlanId,
+          );
+        }
+        if (from < 25) {
+          // 首页 v2：区块可见性 / 顺序 + 布局模式。默认横向分页、无顶部标签。
+          await migrator.addColumn(
+            userPreferences,
+            userPreferences.homeBlockVisibility,
+          );
+          await migrator.addColumn(
+            userPreferences,
+            userPreferences.homeBlockOrder,
+          );
+          await migrator.addColumn(
+            userPreferences,
+            userPreferences.homeLayoutMode,
+          );
+          await migrator.addColumn(
+            userPreferences,
+            userPreferences.homePagerTabs,
           );
         }
       },

@@ -24,7 +24,24 @@ class UserPreferences extends Table {
       boolean().withDefault(const Constant(false))();
 
   /// 首页是否显示健康窄条（经期 / 孕期提示）。
+  ///
+  /// v2 起健康显示改由区块注册表控制（`HomeBlockId.healthCycle`），
+  /// 这一列保留仅为向后兼容，不再写入。
   BoolColumn get showHomeHealthStrip =>
+      boolean().withDefault(const Constant(false))();
+
+  /// 首页区块可见性，`{storageKey: bool}` 的 JSON。
+  TextColumn get homeBlockVisibility => text().nullable()();
+
+  /// 首页区块顺序，`[storageKey, ...]` 的 JSON。
+  TextColumn get homeBlockOrder => text().nullable()();
+
+  /// 首页布局：`list`（纵向单列）或 `pager`（横向分页，默认）。
+  TextColumn get homeLayoutMode =>
+      text().withDefault(const Constant('pager'))();
+
+  /// 横向分页时是否显示顶部标签。默认关。
+  BoolColumn get homePagerTabs =>
       boolean().withDefault(const Constant(false))();
 
   DateTimeColumn get createdAt => dateTime()();

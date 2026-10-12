@@ -18,6 +18,14 @@ abstract class PreferencesRepository {
   Future<void> updateMaskMoneyAmounts(String userId, bool mask);
 
   Future<void> updateShowHomeHealthStrip(String userId, bool show);
+
+  Future<void> updateHomeBlockVisibility(String userId, String? json);
+
+  Future<void> updateHomeBlockOrder(String userId, String? json);
+
+  Future<void> updateHomeLayoutMode(String userId, String mode);
+
+  Future<void> updateHomePagerTabs(String userId, bool show);
 }
 
 enum PreferencesRepositoryErrorCode {

@@ -149,7 +149,7 @@ class DriftPreferencesRepository implements PreferencesRepository {
 
   @override
   Future<void> updateMaskMoneyAmounts(String userId, bool mask) async {
-    await _updateBooleanPreference(
+    await _update(
       userId,
       UserPreferencesCompanion(maskMoneyAmounts: Value(mask)),
     );
@@ -157,13 +157,45 @@ class DriftPreferencesRepository implements PreferencesRepository {
 
   @override
   Future<void> updateShowHomeHealthStrip(String userId, bool show) async {
-    await _updateBooleanPreference(
+    await _update(
       userId,
       UserPreferencesCompanion(showHomeHealthStrip: Value(show)),
     );
   }
 
-  Future<void> _updateBooleanPreference(
+  @override
+  Future<void> updateHomeBlockVisibility(String userId, String? json) async {
+    await _update(
+      userId,
+      UserPreferencesCompanion(homeBlockVisibility: Value(json)),
+    );
+  }
+
+  @override
+  Future<void> updateHomeBlockOrder(String userId, String? json) async {
+    await _update(
+      userId,
+      UserPreferencesCompanion(homeBlockOrder: Value(json)),
+    );
+  }
+
+  @override
+  Future<void> updateHomeLayoutMode(String userId, String mode) async {
+    await _update(
+      userId,
+      UserPreferencesCompanion(homeLayoutMode: Value(mode)),
+    );
+  }
+
+  @override
+  Future<void> updateHomePagerTabs(String userId, bool show) async {
+    await _update(
+      userId,
+      UserPreferencesCompanion(homePagerTabs: Value(show)),
+    );
+  }
+
+  Future<void> _update(
     String userId,
     UserPreferencesCompanion companion,
   ) async {
@@ -203,6 +235,10 @@ class DriftPreferencesRepository implements PreferencesRepository {
       showHomeTodayAction: preferences.showHomeTodayAction,
       maskMoneyAmounts: preferences.maskMoneyAmounts,
       showHomeHealthStrip: preferences.showHomeHealthStrip,
+      homeBlockVisibility: preferences.homeBlockVisibility,
+      homeBlockOrder: preferences.homeBlockOrder,
+      homeLayoutMode: preferences.homeLayoutMode,
+      homePagerTabs: preferences.homePagerTabs,
       createdAt: preferences.createdAt,
       updatedAt: preferences.updatedAt,
     );

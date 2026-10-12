@@ -33,6 +33,23 @@ Future<void> _dropTakenOverByPlanColumn(AppDatabase db) async {
   );
 }
 
+/// V1.7（v25）给 `user_preferences` 加了首页 v2 的四列。伪造 v24 及更早版本
+/// 时必须把它们删掉，否则迁移里的 `addColumn` 会因重复列失败。
+Future<void> _dropV25HomeBlockColumns(AppDatabase db) async {
+  await db.customStatement(
+    'ALTER TABLE user_preferences DROP COLUMN home_block_visibility',
+  );
+  await db.customStatement(
+    'ALTER TABLE user_preferences DROP COLUMN home_block_order',
+  );
+  await db.customStatement(
+    'ALTER TABLE user_preferences DROP COLUMN home_layout_mode',
+  );
+  await db.customStatement(
+    'ALTER TABLE user_preferences DROP COLUMN home_pager_tabs',
+  );
+}
+
 /// V1.4 给 `user_preferences` 增加了两列。迁移测试通过「建当前 schema →
 /// 删列 → 回退 user_version」来伪造旧库，所以伪造 v20 及更早版本时
 /// 必须把这两列一并删掉，否则迁移会因重复列而失败。
@@ -97,6 +114,7 @@ void main() {
     await _dropV15SortOrderColumns(v18db);
     await _restoreThemeSeedColorColumn(v18db);
     await _dropTakenOverByPlanColumn(v18db);
+    await _dropV25HomeBlockColumns(v18db);
     await v18db.customStatement('PRAGMA user_version = 15');
     await v18db.close();
 
@@ -170,6 +188,7 @@ void main() {
     await v18db.customStatement('DROP TABLE IF EXISTS todo_recurrence_rules');
     await _restoreThemeSeedColorColumn(v18db);
     await _dropTakenOverByPlanColumn(v18db);
+    await _dropV25HomeBlockColumns(v18db);
     await v18db.customStatement('PRAGMA user_version = 16');
     await v18db.close();
 
@@ -221,6 +240,7 @@ void main() {
     await _dropV15SortOrderColumns(v18db);
     await _restoreThemeSeedColorColumn(v18db);
     await _dropTakenOverByPlanColumn(v18db);
+    await _dropV25HomeBlockColumns(v18db);
     await v18db.customStatement('PRAGMA user_version = 17');
     await v18db.close();
 
@@ -279,6 +299,7 @@ void main() {
       await _dropV15SortOrderColumns(v19db);
       await _restoreThemeSeedColorColumn(v19db);
       await _dropTakenOverByPlanColumn(v19db);
+      await _dropV25HomeBlockColumns(v19db);
       await v19db.customStatement('PRAGMA user_version = 18');
       await v19db.close();
 
@@ -349,6 +370,7 @@ void main() {
       await _dropV15SortOrderColumns(v21db);
       await _restoreThemeSeedColorColumn(v21db);
       await _dropTakenOverByPlanColumn(v21db);
+      await _dropV25HomeBlockColumns(v21db);
       await v21db.customStatement('PRAGMA user_version = 21');
       await v21db.close();
 
@@ -413,6 +435,7 @@ void main() {
       await _dropV15SortOrderColumns(v20db);
       await _restoreThemeSeedColorColumn(v20db);
       await _dropTakenOverByPlanColumn(v20db);
+      await _dropV25HomeBlockColumns(v20db);
       await v20db.customStatement('PRAGMA user_version = 20');
       await v20db.close();
 
@@ -437,4 +460,60 @@ void main() {
       await db.close();
     },
   );
+
+  test('v24 -> v25 upgrade adds home block layout columns', () async {
+    final now = DateTime.now().toUtc();
+
+    final v24db = AppDatabase(NativeDatabase(dbFile));
+    await v24db
+        .into(v24db.users)
+        .insert(
+          UsersCompanion.insert(
+            id: 'user-1',
+            username: 'demo',
+            email: 'demo@example.com',
+            displayName: 'Demo',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await v24db
+        .into(v24db.userPreferences)
+        .insert(
+          UserPreferencesCompanion.insert(
+            userId: 'user-1',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+    // Simulate a v24 release: no home block columns.
+    await _dropV25HomeBlockColumns(v24db);
+    await v24db.customStatement('PRAGMA user_version = 24');
+    await v24db.close();
+
+    final db = AppDatabase(NativeDatabase(dbFile));
+    await db.customSelect('SELECT COUNT(*) FROM users').getSingle();
+
+    final columns = await db
+        .customSelect('PRAGMA table_info(user_preferences)')
+        .get()
+        .then((rows) => rows.map((r) => r.read<String>('name')).toList());
+    expect(
+      columns,
+      containsAll([
+        'home_block_visibility',
+        'home_block_order',
+        'home_layout_mode',
+        'home_pager_tabs',
+      ]),
+    );
+
+    final preferences = await (db.select(db.userPreferences)).getSingle();
+    expect(preferences.homeBlockVisibility, isNull);
+    expect(preferences.homeBlockOrder, isNull);
+    expect(preferences.homeLayoutMode, 'pager');
+    expect(preferences.homePagerTabs, isFalse);
+    await db.close();
+  });
 }
