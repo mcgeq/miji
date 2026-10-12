@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import 'package:miji/core/presentation/components/app_surface.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
@@ -33,24 +34,12 @@ class HomeAlertsStrip extends StatelessWidget {
     }
 
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final warning = theme.moneyColors.warning;
     final visible = items.take(maxItems).toList(growable: false);
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
-        border: Border.all(color: warning.withValues(alpha: 0.24)),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            warning.withValues(alpha: 0.13),
-            colorScheme.surfaceContainerLow,
-          ],
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+    return AppSurface(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+      borderColor: warning.withValues(alpha: 0.30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -74,13 +63,13 @@ class HomeAlertsStrip extends StatelessWidget {
                     vertical: 1,
                   ),
                   decoration: BoxDecoration(
-                    color: warning,
+                    color: warning.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     '${items.length}',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.surface,
+                      color: warning,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0,
                     ),
