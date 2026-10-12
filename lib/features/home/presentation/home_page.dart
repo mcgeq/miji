@@ -20,6 +20,8 @@ import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/home/application/home_health_hint_providers.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 import 'package:miji/features/home/application/home_money_dashboard_providers.dart';
+import 'package:miji/features/home/application/home_today_board_providers.dart';
+import 'package:miji/features/home/domain/home_block.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/features/home/presentation/home_alerts_strip.dart';
 import 'package:miji/features/home/presentation/home_balance_hero_card.dart';
@@ -27,6 +29,7 @@ import 'package:miji/features/home/presentation/home_category_structure_panel.da
 import 'package:miji/features/home/presentation/home_overview_card.dart';
 import 'package:miji/features/home/presentation/home_spending_calendar.dart';
 import 'package:miji/features/home/presentation/home_greeting_header.dart';
+import 'package:miji/features/home/presentation/home_today_board.dart';
 import 'package:miji/features/home/presentation/home_health_strip.dart';
 import 'package:miji/features/home/presentation/home_insight_strip.dart';
 import 'package:miji/features/home/presentation/home_onboarding_view.dart';
@@ -342,6 +345,11 @@ class _HomeDashboard extends ConsumerWidget {
 
     final quote = HomeQuoteFooter();
 
+    final board = HomeTodayBoard(
+      data: ref.watch(homeTodayBoardProvider),
+      onTapCell: (id) => _openBoardCell(context, id),
+    );
+
     final hasAlerts =
         reminders.isLoading || (reminders.valueOrNull ?? const []).isNotEmpty;
 
@@ -355,6 +363,8 @@ class _HomeDashboard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _section(0, greeting),
+                _gap,
+                _section(1, board),
                 _gap,
                 _section(1, overviewCard),
                 _gap,
@@ -387,6 +397,8 @@ class _HomeDashboard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _section(0, greeting),
+              _gap,
+              _section(1, board),
               const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,6 +487,19 @@ class _HomeDashboard extends ConsumerWidget {
         queryParameters: {'section': 'reminders'},
       ).toString(),
     );
+  }
+
+  void _openBoardCell(BuildContext context, HomeBlockId id) {
+    switch (id) {
+      case HomeBlockId.boardMoney:
+        _openTransactionsPage(context);
+      case HomeBlockId.boardHealth:
+        context.go(AppRoutes.health);
+      case HomeBlockId.boardAction:
+        context.push(AppRoutes.gtd);
+      default:
+        break;
+    }
   }
 
   void _openTransactionsPage(BuildContext context) {
