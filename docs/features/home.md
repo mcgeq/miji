@@ -7,6 +7,7 @@ Home is a "life dashboard" that puts **money / health / action** side by side. I
 ## Layout
 
 - **Horizontal pager (default)**: four pages `Overview / Money / Health / Action`, switched by swiping left/right, with page dots at the bottom. The top tab bar is off by default and can be enabled in settings.
+  - **Wraps around**: swiping past `Action` returns to `Overview`, and swiping back from `Overview` goes to `Action` — no dead ends at either end. Tapping a tab takes the shortest path (Overview → Action steps back one page instead of sweeping across three).
 - **Vertical single column**: one scroll; tablets and desktops (≥840dp) use an 8/4 two-column layout.
 - Switch under **Settings → Home → Layout**. Both layouts share the same block configuration.
 

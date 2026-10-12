@@ -2,23 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
-import 'package:miji/core/theme/app_design_tokens.dart';
-import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 
-/// 首页问候头：左侧问候 + 日期，右侧连续记账天数。
+/// 首页问候头：左侧问候 + 日期，右侧金额隐私开关。
 ///
 /// 原来的随机理财金句已移到页面底部（见 [HomeQuoteFooter]），
-/// 避免每次重建都在跳动。
+/// 避免每次重建都在跳动。连续记账天数已上收到 [HomeStatusChips] 的
+/// L0 胶囊行——那里和健康 / 今日进度并排，比挤在问候行右侧更成体系。
 class HomeGreetingHeader extends StatelessWidget {
-  const HomeGreetingHeader({
-    super.key,
-    this.userDisplayName,
-    this.streak,
-    this.now,
-  });
+  const HomeGreetingHeader({super.key, this.userDisplayName, this.now});
 
   final String? userDisplayName;
-  final HomeStreak? streak;
   final DateTime? now;
 
   static const _weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'];
@@ -33,8 +26,6 @@ class HomeGreetingHeader extends StatelessWidget {
     final greetingText = (name != null && name.isNotEmpty)
         ? '$greeting，$name'
         : greeting;
-
-    final streak = this.streak;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
@@ -70,10 +61,6 @@ class HomeGreetingHeader extends StatelessWidget {
               ],
             ),
           ),
-          if (streak != null && streak.days > 0) ...[
-            const SizedBox(width: 8),
-            _StreakChip(streak: streak),
-          ],
           const SizedBox(width: 4),
           const HomeMaskToggle(),
         ],
@@ -146,53 +133,6 @@ class HomeMaskToggle extends ConsumerWidget {
     } catch (_) {
       messenger?.showSnackBar(const SnackBar(content: Text('切换失败，请重试')));
     }
-  }
-}
-
-class _StreakChip extends StatelessWidget {
-  const _StreakChip({required this.streak});
-
-  final HomeStreak streak;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.moneyColors.warning;
-    final label = streak.hasRecordedToday
-        ? '连续 ${streak.days}${streak.isCapped ? '+' : ''} 天'
-        : '今天还没记账';
-
-    return Tooltip(
-      message: streak.hasRecordedToday ? '连续记账天数' : '记一笔即可延续连续记录',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              streak.hasRecordedToday
-                  ? Icons.local_fire_department_rounded
-                  : Icons.edit_calendar_outlined,
-              size: 14,
-              color: color,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

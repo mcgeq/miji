@@ -353,6 +353,9 @@ void main() {
       expect(hint, isNotNull);
       expect(hint!.title, '还没有周期记录');
       expect(hint.detail, contains('记录'));
+      // 宫格不能用整句当主值，这里必须是短值 + 口径标签。
+      expect(hint.digest.value, '—');
+      expect(hint.digest.label, '周期记录');
     });
 
     test('reports days until the next period', () {
@@ -377,6 +380,10 @@ void main() {
       expect(hint.title, '距下次经期还有 5 天');
       expect(hint.detail, contains('10月21日预计开始'));
       expect(hint.detail, contains('今天还没记录'));
+      // 宫格只留短值，「还有 5 天」拆成「5 天」+「距下次经期」。
+      expect(hint.digest.value, '5 天');
+      expect(hint.digest.label, '距下次经期');
+      expect(hint.digest.note, '今天还没记录');
     });
 
     test('reports a late period', () {
@@ -397,6 +404,8 @@ void main() {
       );
 
       expect(hint!.title, '经期已推迟 4 天');
+      expect(hint.digest.value, '4 天');
+      expect(hint.digest.label, '经期已推迟');
     });
 
     test('reports the current period day', () {
@@ -412,6 +421,8 @@ void main() {
 
       expect(hint!.title, '经期第 2 天');
       expect(hint.detail, '今天已记录');
+      expect(hint.digest.value, '第 2 天');
+      expect(hint.digest.label, '经期');
     });
   });
 }

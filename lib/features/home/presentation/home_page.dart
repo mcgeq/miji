@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:miji/core/presentation/components/app_surface.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/components/app_section_entrance.dart';
@@ -44,6 +43,8 @@ import 'package:miji/features/home/presentation/home_category_structure_panel.da
 import 'package:miji/features/home/presentation/home_overview_card.dart';
 import 'package:miji/features/home/presentation/home_spending_calendar.dart';
 import 'package:miji/features/home/presentation/home_greeting_header.dart';
+import 'package:miji/features/home/presentation/home_pager.dart';
+import 'package:miji/features/home/presentation/home_status_chips.dart';
 import 'package:miji/features/home/presentation/home_today_board.dart';
 import 'package:miji/features/home/presentation/home_health_cycle_card.dart';
 import 'package:miji/features/home/presentation/home_health_today_card.dart';
@@ -203,7 +204,6 @@ class _HomeDashboard extends ConsumerWidget {
     final recentItems = ref.watch(homeRecentTransactionsProvider);
     final insight = ref.watch(homeCrossInsightProvider);
     final netAsset = ref.watch(homeNetAssetSummaryProvider);
-    final streak = ref.watch(homeStreakProvider);
     final reminders = ref.watch(homeUnifiedRemindersProvider);
     final accounts = ref.watch(currentUserVisibleAccountsProvider);
     final budgets = ref.watch(currentUserBudgetsProvider);
@@ -418,9 +418,19 @@ class _HomeDashboard extends ConsumerWidget {
       onTap: () => _openOverview(context),
     );
 
-    final greeting = HomeGreetingHeader(
-      userDisplayName: userDisplayName,
-      streak: streak.valueOrNull,
+    // 问候头 + L0 状态胶囊一起固定在顶部（横向分页时也不随页滑动）。
+    // 连续记账天数从问候行右侧搬到了胶囊行：那里和健康 / 今日进度并排，
+    // 才是设计稿里「状态胶囊」该有的样子。
+    final header = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HomeGreetingHeader(userDisplayName: userDisplayName),
+        HomeStatusChips(
+          onOpenMoney: () => _openTransactionsPage(context),
+          onOpenHealth: () => context.go(AppRoutes.health),
+          onOpenAction: () => context.push(AppRoutes.gtd),
+        ),
+      ],
     );
 
     final quote = HomeQuoteFooter();
@@ -436,10 +446,10 @@ class _HomeDashboard extends ConsumerWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          greeting,
+          header,
           const SizedBox(height: 12),
           Expanded(
-            child: _HomePager(
+            child: HomePager(
               tabs: ref.watch(homePagerTabsProvider),
               pages: _buildPagerPages(
                 board: board,
@@ -473,7 +483,7 @@ class _HomeDashboard extends ConsumerWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _section(0, greeting),
+                _section(0, header),
                 _gap,
                 _section(1, board),
                 _gap,
@@ -510,7 +520,7 @@ class _HomeDashboard extends ConsumerWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _section(0, greeting),
+              _section(0, header),
               _gap,
               _section(1, board),
               const SizedBox(height: 16),
@@ -859,7 +869,7 @@ class _HomeDashboard extends ConsumerWidget {
 }
 
 /// 横向分页：概览 / 记账 / 健康 / 行动。
-List<_HomePageData> _buildPagerPages({
+List<HomePagerPage> _buildPagerPages({
   required Widget board,
   required bool hasAlerts,
   required Widget alerts,
@@ -877,195 +887,20 @@ List<_HomePageData> _buildPagerPages({
   required Widget? upNextCard,
 }) {
   return [
-    _HomePageData(
+    HomePagerPage(
       label: '概览',
       children: [board, ?upNextCard, if (hasAlerts) alerts, insight, quote],
     ),
-    _HomePageData(
+    HomePagerPage(
       label: '记账',
       children: [overviewCard, netAssetTile, categoryPanel, recentPanel],
     ),
-    _HomePageData(
+    HomePagerPage(
       label: '健康',
       children: [?healthCycleCard, ?healthTodayCard, ?healthForecastCard],
     ),
-    _HomePageData(label: '行动', children: [?todoCard, ?habitCard]),
+    HomePagerPage(label: '行动', children: [?todoCard, ?habitCard]),
   ];
-}
-
-class _HomePageData {
-  const _HomePageData({required this.label, required this.children});
-
-  final String label;
-  final List<Widget> children;
-}
-
-class _HomePager extends StatefulWidget {
-  const _HomePager({required this.pages, required this.tabs});
-
-  final List<_HomePageData> pages;
-  final bool tabs;
-
-  @override
-  State<_HomePager> createState() => _HomePagerState();
-}
-
-class _HomePagerState extends State<_HomePager> {
-  final _controller = PageController();
-  int _index = 0;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _goTo(int index) {
-    if (index < 0 || index >= widget.pages.length) {
-      return;
-    }
-    _controller.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 240),
-      curve: Curves.easeOut,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (widget.tabs)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              children: [
-                for (var i = 0; i < widget.pages.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 6),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _goTo(i),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: i == _index
-                              ? theme.colorScheme.surfaceContainerLow
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: Text(
-                          widget.pages[i].label,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: i == _index
-                                ? theme.colorScheme.onSurface
-                                : theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              '‹ 左右滑动查看 '
-              '${widget.pages.skip(1).map((p) => p.label).join(' · ')} ›',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        Expanded(
-          child: PageView.builder(
-            controller: _controller,
-            itemCount: widget.pages.length,
-            onPageChanged: (index) => setState(() => _index = index),
-            itemBuilder: (context, index) {
-              final page = widget.pages[index];
-              return SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 96),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (page.children.isEmpty)
-                      _PagerEmpty(label: page.label)
-                    else
-                      for (var i = 0; i < page.children.length; i++) ...[
-                        if (i > 0) const SizedBox(height: 12),
-                        page.children[i],
-                      ],
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (var i = 0; i < widget.pages.length; i++)
-              GestureDetector(
-                onTap: () => _goTo(i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: i == _index ? 16 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: i == _index
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _PagerEmpty extends StatelessWidget {
-  const _PagerEmpty({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AppSurface(
-      child: Column(
-        children: [
-          Text(
-            '$label暂无显示内容',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '到设置里打开对应区块',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// 首屏骨架：高度固定，避免数据回来时整页重排。

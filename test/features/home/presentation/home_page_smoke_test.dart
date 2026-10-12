@@ -86,7 +86,9 @@ void main() {
     expect(tester.takeException(), isNull);
     // 单列布局下两个 bento 磁贴并排。
     expect(find.text('净资产'), findsOneWidget);
-    expect(find.textContaining('今日待办'), findsOneWidget);
+    // 三宫格里的「计划」格与「今日待办」摘要都会出现，所以这里只校验存在。
+    expect(find.byType(HomeTodayBoard), findsOneWidget);
+    expect(find.textContaining('今日待办'), findsWidgets);
   });
 
   testWidgets('renders the dashboard branch once an account exists', (
@@ -143,14 +145,14 @@ void main() {
     }
 
     expect(tester.takeException(), isNull);
-    // 无预算 -> Hero 退化为「本月结余」。
-    expect(find.text('本月结余'), findsOneWidget);
+    // 无预算 -> Hero 与三宫格的「记账」格都退化为「本月结余」。
+    expect(find.text('本月结余'), findsWidgets);
     expect(find.text('支出趋势'), findsOneWidget);
     expect(find.text('最近账单'), findsOneWidget);
     expect(find.text('本月分类'), findsOneWidget);
     // 双栏右侧栏。
     expect(find.text('净资产'), findsOneWidget);
-    expect(find.textContaining('今日待办'), findsOneWidget);
+    expect(find.textContaining('今日待办'), findsWidgets);
     // 空数据提示。
     expect(find.text('这个月还没有账单'), findsOneWidget);
   });
@@ -244,9 +246,11 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(HomeTodayBoard), findsOneWidget);
     expect(find.text('概览'), findsOneWidget);
-    expect(find.text('记账'), findsOneWidget);
+    // 页签「记账」与三宫格模块名「记账」同名，用 key 精确点页签那一个。
+    final moneyTab = find.byKey(const ValueKey('home-pager-tab-记账'));
+    expect(moneyTab, findsOneWidget);
 
-    await tester.tap(find.text('记账'));
+    await tester.tap(moneyTab);
     await tester.pumpAndSettle();
     expect(find.text('净资产'), findsOneWidget);
   });
