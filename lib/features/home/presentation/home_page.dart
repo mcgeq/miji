@@ -17,6 +17,7 @@ import 'package:miji/features/bookkeeping/presentation/transactions/money_transa
 import 'package:miji/features/home/application/home_preference_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/features/home/application/home_health_brief_providers.dart';
 import 'package:miji/features/home/application/home_health_hint_providers.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 import 'package:miji/features/home/application/home_money_dashboard_providers.dart';
@@ -30,7 +31,10 @@ import 'package:miji/features/home/presentation/home_overview_card.dart';
 import 'package:miji/features/home/presentation/home_spending_calendar.dart';
 import 'package:miji/features/home/presentation/home_greeting_header.dart';
 import 'package:miji/features/home/presentation/home_today_board.dart';
-import 'package:miji/features/home/presentation/home_health_strip.dart';
+import 'package:miji/features/home/presentation/home_health_cycle_card.dart';
+import 'package:miji/features/home/presentation/home_health_today_card.dart';
+import 'package:miji/features/health/presentation/health_quick_dialogs.dart';
+import 'package:miji/features/health/providers/health_providers.dart';
 import 'package:miji/features/home/presentation/home_insight_strip.dart';
 import 'package:miji/features/home/presentation/home_onboarding_view.dart';
 import 'package:miji/features/home/presentation/home_recent_transactions_panel.dart';
@@ -181,9 +185,9 @@ class _HomeDashboard extends ConsumerWidget {
     final accounts = ref.watch(currentUserVisibleAccountsProvider);
     final budgets = ref.watch(currentUserBudgetsProvider);
     final showHealthStrip = ref.watch(homeShowHealthStripProvider);
-    final healthHint = showHealthStrip
-        ? ref.watch(homeHealthHintProvider)
-        : const AsyncValue<HomeHealthHint?>.data(null);
+    final healthBrief = showHealthStrip
+        ? ref.watch(homeHealthBriefProvider)
+        : const AsyncValue<HomeHealthBrief?>.data(null);
     final masked = ref.watch(moneyAmountsMaskedProvider);
     final showTodayAction = ref.watch(homeShowTodayActionProvider);
     final userDisplayName = ref
@@ -316,12 +320,20 @@ class _HomeDashboard extends ConsumerWidget {
       onRecordTransaction: () => launcher.run(MoneyQuickAction.expense),
     );
 
-    final healthHintValue = healthHint.valueOrNull;
-    final healthStrip = healthHintValue == null
+    final healthBriefValue = healthBrief.valueOrNull;
+    final healthCycleCard = healthBriefValue == null
         ? null
-        : HomeHealthStrip(
-            hint: healthHintValue,
-            onTap: () => context.go(AppRoutes.health),
+        : HomeHealthCycleCard(
+            brief: healthBriefValue,
+            onOpenHealth: () => context.go(AppRoutes.health),
+          );
+    final healthTodayCard =
+        healthBriefValue == null || !healthBriefValue.trackingEnabled
+        ? null
+        : HomeHealthTodayCard(
+            metrics: healthBriefValue.todayMetrics,
+            onTapMetric: (kind) => _quickLogHealth(context, ref, kind),
+            onEdit: () => context.go(AppRoutes.health),
           );
 
     final todayActionTile = showTodayAction
@@ -382,7 +394,14 @@ class _HomeDashboard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (healthStrip != null) ...[_gap, _section(5, healthStrip)],
+                if (healthCycleCard != null) ...[
+                  _gap,
+                  _section(5, healthCycleCard),
+                ],
+                if (healthTodayCard != null) ...[
+                  _gap,
+                  _section(5, healthTodayCard),
+                ],
                 _gap,
                 _section(6, categoryPanel),
                 _gap,
@@ -429,8 +448,12 @@ class _HomeDashboard extends ConsumerWidget {
                         ],
                         _section(6, netAssetTile),
                         _gap,
-                        if (healthStrip != null) ...[
-                          _section(7, healthStrip),
+                        if (healthCycleCard != null) ...[
+                          _section(7, healthCycleCard),
+                          _gap,
+                        ],
+                        if (healthTodayCard != null) ...[
+                          _section(7, healthTodayCard),
                           _gap,
                         ],
                         _section(8, categoryPanel),
@@ -487,6 +510,40 @@ class _HomeDashboard extends ConsumerWidget {
         queryParameters: {'section': 'reminders'},
       ).toString(),
     );
+  }
+
+  Future<void> _quickLogHealth(
+    BuildContext context,
+    WidgetRef ref,
+    HomeHealthMetricKind kind,
+  ) async {
+    final snapshot = ref
+        .read(currentUserHealthTodaySnapshotProvider)
+        .asData
+        ?.value;
+    if (snapshot == null) {
+      context.go(AppRoutes.health);
+      return;
+    }
+    final log = snapshot.dailyLog;
+    final writer = ref.read(currentUserHealthWriteControllerProvider);
+    switch (kind) {
+      case HomeHealthMetricKind.mood:
+        await showHealthMoodDialog(
+          context: context,
+          existing: log,
+          onSave: writer.upsertDailyLog,
+        );
+      case HomeHealthMetricKind.sleep:
+        await showHealthTemperatureSleepDialog(
+          context: context,
+          existing: log,
+          onSave: writer.upsertDailyLog,
+        );
+      case HomeHealthMetricKind.water:
+      case HomeHealthMetricKind.weight:
+        context.go(AppRoutes.health);
+    }
   }
 
   void _openBoardCell(BuildContext context, HomeBlockId id) {
