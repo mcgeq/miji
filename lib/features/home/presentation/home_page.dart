@@ -22,6 +22,15 @@ import 'package:miji/features/home/application/home_health_hint_providers.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 import 'package:miji/features/home/application/home_money_dashboard_providers.dart';
 import 'package:miji/features/home/application/home_today_board_providers.dart';
+import 'package:miji/features/home/application/home_action_brief_providers.dart';
+import 'package:miji/core/auth/application/auth_session_controller.dart';
+import 'package:miji/features/gtd/domain/checkin_models.dart';
+import 'package:miji/features/gtd/providers/checkin_providers.dart';
+import 'package:miji/features/home/presentation/home_action_todo_card.dart';
+import 'package:miji/features/home/presentation/home_action_habit_card.dart';
+import 'package:miji/features/todo/domain/todo_models.dart';
+import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
+import 'package:miji/features/todo/presentation/todo_task_detail_page.dart';
 import 'package:miji/features/home/domain/home_block.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/features/home/presentation/home_alerts_strip.dart';
@@ -181,7 +190,6 @@ class _HomeDashboard extends ConsumerWidget {
     final netAsset = ref.watch(homeNetAssetSummaryProvider);
     final streak = ref.watch(homeStreakProvider);
     final reminders = ref.watch(currentUserPendingReminderCenterItemsProvider);
-    final todayActions = ref.watch(todayActionItemsProvider);
     final accounts = ref.watch(currentUserVisibleAccountsProvider);
     final budgets = ref.watch(currentUserBudgetsProvider);
     final showHealthStrip = ref.watch(homeShowHealthStripProvider);
@@ -336,13 +344,25 @@ class _HomeDashboard extends ConsumerWidget {
             onEdit: () => context.go(AppRoutes.health),
           );
 
-    final todayActionTile = showTodayAction
-        ? HomeTodayActionTile(
-            view: todayActions.valueOrNull,
-            isLoading: todayActions.isLoading,
-            onTap: () => context.push(AppRoutes.gtd),
+    final actionBrief = ref.watch(homeActionBriefProvider);
+    final actionBriefValue = actionBrief.valueOrNull ?? HomeActionBrief.empty;
+    final todoCard = showTodayAction
+        ? HomeActionTodoCard(
+            brief: actionBriefValue,
+            onToggle: (task) => _toggleTodo(ref, task),
+            onAdd: () => _addTodo(context, ref),
+            onEdit: (task) => _editTodo(context, task),
+            onDelete: (task) => _deleteTodo(ref, task),
+            onOpenAll: () => context.push(AppRoutes.gtd),
           )
         : null;
+    final habitCard = actionBriefValue.habits.isEmpty
+        ? null
+        : HomeActionHabitCard(
+            habits: actionBriefValue.habits,
+            onTapHabit: (habit) => _checkInHabit(ref, habit),
+            onManage: () => context.push(AppRoutes.gtd),
+          );
 
     final netAssetTile = HomeNetAssetTile(
       summary: netAsset.valueOrNull,
@@ -383,17 +403,9 @@ class _HomeDashboard extends ConsumerWidget {
                 _section(2, insightStrip),
                 if (hasAlerts) ...[_gap, _section(3, alerts)],
                 _gap,
-                _section(
-                  4,
-                  Row(
-                    children: [
-                      if (todayActionTile != null)
-                        Expanded(child: todayActionTile),
-                      if (todayActionTile != null) const SizedBox(width: 12),
-                      Expanded(child: netAssetTile),
-                    ],
-                  ),
-                ),
+                _section(4, netAssetTile),
+                if (todoCard != null) ...[_gap, _section(4, todoCard)],
+                if (habitCard != null) ...[_gap, _section(4, habitCard)],
                 if (healthCycleCard != null) ...[
                   _gap,
                   _section(5, healthCycleCard),
@@ -442,8 +454,12 @@ class _HomeDashboard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (hasAlerts) ...[_section(4, alerts), _gap],
-                        if (todayActionTile != null) ...[
-                          _section(5, todayActionTile),
+                        if (todoCard != null) ...[
+                          _section(5, todoCard),
+                          _gap,
+                        ],
+                        if (habitCard != null) ...[
+                          _section(5, habitCard),
                           _gap,
                         ],
                         _section(6, netAssetTile),
@@ -544,6 +560,61 @@ class _HomeDashboard extends ConsumerWidget {
       case HomeHealthMetricKind.weight:
         context.go(AppRoutes.health);
     }
+  }
+
+  Future<void> _toggleTodo(WidgetRef ref, TodoTask task) async {
+    final repo = ref.read(todoRepositoryProvider);
+    if (task.status == TodoTaskStatus.completed) {
+      await repo.reopenTask(task.id);
+    } else {
+      await repo.completeTask(task.id);
+    }
+    ref.invalidate(todayActionItemsProvider);
+    ref.invalidate(homeActionBriefProvider);
+  }
+
+  Future<void> _addTodo(BuildContext context, WidgetRef ref) async {
+    await showTodoQuickCreateSheet(context);
+    if (!context.mounted) {
+      return;
+    }
+    ref.invalidate(todayActionItemsProvider);
+    ref.invalidate(homeActionBriefProvider);
+  }
+
+  void _editTodo(BuildContext context, TodoTask task) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TodoTaskDetailPage(taskId: task.id),
+      ),
+    );
+  }
+
+  Future<void> _deleteTodo(WidgetRef ref, TodoTask task) async {
+    await ref.read(todoRepositoryProvider).softDeleteTask(task.id);
+    ref.invalidate(todayActionItemsProvider);
+    ref.invalidate(homeActionBriefProvider);
+  }
+
+  Future<void> _checkInHabit(WidgetRef ref, HomeHabitEntry habit) async {
+    final userId = ref.read(authSessionControllerProvider).userId;
+    if (userId == null) {
+      return;
+    }
+    final now = DateTime.now();
+    await ref
+        .read(checkinRepositoryProvider)
+        .upsertRecord(
+          CheckinRecordDraft(
+            planId: habit.progress.plan.id,
+            recordDate: DateTime(now.year, now.month, now.day),
+            completedAt: now,
+            numericValue: habit.progress.plan.targetValue,
+          ),
+          userId,
+        );
+    invalidateTodayActionData(ref);
+    ref.invalidate(homeActionBriefProvider);
   }
 
   void _openBoardCell(BuildContext context, HomeBlockId id) {

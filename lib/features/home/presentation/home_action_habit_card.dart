@@ -58,7 +58,7 @@ class HomeActionHabitCard extends StatelessWidget {
             )
           else
             SizedBox(
-              height: 118,
+              height: 128,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: habits.length,

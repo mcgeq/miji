@@ -80,7 +80,7 @@ void main() {
     expect(tester.takeException(), isNull);
     // 单列布局下两个 bento 磁贴并排。
     expect(find.text('净资产'), findsOneWidget);
-    expect(find.text('今日行动'), findsOneWidget);
+    expect(find.textContaining('今日待办'), findsOneWidget);
   });
 
   testWidgets('renders the dashboard branch once an account exists', (
@@ -143,7 +143,7 @@ void main() {
     expect(find.text('本月分类'), findsOneWidget);
     // 双栏右侧栏。
     expect(find.text('净资产'), findsOneWidget);
-    expect(find.text('今日行动'), findsOneWidget);
+    expect(find.textContaining('今日待办'), findsOneWidget);
     // 空数据提示。
     expect(find.text('这个月还没有账单'), findsOneWidget);
   });
