@@ -238,6 +238,8 @@ class _HomeDashboard extends ConsumerWidget {
             onCreateAccount: () => launcher.run(MoneyQuickAction.account),
             onSetBudget: () => launcher.run(MoneyQuickAction.budget),
             onRecordTransaction: () => launcher.run(MoneyQuickAction.expense),
+            onOpenHealth: () => context.go(AppRoutes.health),
+            onCreateAction: () => context.push(AppRoutes.gtd),
           ),
         ),
       );

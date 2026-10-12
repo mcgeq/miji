@@ -15,6 +15,8 @@ class HomeOnboardingView extends StatelessWidget {
     required this.onCreateAccount,
     required this.onSetBudget,
     required this.onRecordTransaction,
+    this.onOpenHealth,
+    this.onCreateAction,
   });
 
   final bool hasAccount;
@@ -23,6 +25,8 @@ class HomeOnboardingView extends StatelessWidget {
   final VoidCallback onCreateAccount;
   final VoidCallback onSetBudget;
   final VoidCallback onRecordTransaction;
+  final VoidCallback? onOpenHealth;
+  final VoidCallback? onCreateAction;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +68,7 @@ class HomeOnboardingView extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '三步开始你的记账：先建账户，再设预算，然后记下第一笔。',
+                '记账、健康、待办，一个首页全搞定。先从记账开始：',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: Colors.white.withValues(alpha: 0.9),
                   height: 1.6,
@@ -120,6 +124,28 @@ class HomeOnboardingView extends StatelessWidget {
           cta: hasTransaction ? '已完成' : '记一笔',
           onTap: hasTransaction ? null : onRecordTransaction,
         ),
+        if (onOpenHealth != null) ...[
+          const SizedBox(height: 10),
+          _Step(
+            index: 4,
+            done: false,
+            title: '开启健康追踪',
+            subtitle: '记录周期、预测经期与易孕期',
+            cta: '去开启',
+            onTap: onOpenHealth,
+          ),
+        ],
+        if (onCreateAction != null) ...[
+          const SizedBox(height: 10),
+          _Step(
+            index: 5,
+            done: false,
+            title: '添加待办或习惯',
+            subtitle: '让首页的今日行动活起来',
+            cta: '去添加',
+            onTap: onCreateAction,
+          ),
+        ],
         const SizedBox(height: 14),
         AppSurface(
           child: Row(

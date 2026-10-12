@@ -40,6 +40,8 @@ void main() {
     expect(find.text('创建第一个账户'), findsOneWidget);
     expect(find.text('设置本月预算'), findsOneWidget);
     expect(find.text('记下第一笔支出'), findsOneWidget);
+    expect(find.text('开启健康追踪'), findsOneWidget);
+    expect(find.text('添加待办或习惯'), findsOneWidget);
   });
 
   testWidgets('compact dashboard does not overflow on a phone-sized surface', (
