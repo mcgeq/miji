@@ -871,6 +871,29 @@ function actionHabit(){
   </div>`;
 }
 
+function upNext(){
+  const a=D().action;
+  const todos=(a.todos||[]).slice(0,3);
+  const done=doneCount();
+  const rows=todos.map((t,i)=>{
+    const isDone=isTodoDone(i);
+    return `<div class="todo ${isDone?'done':''} ${t.over&&!isDone?'overdue':''}" onclick="toggleTodo(${i})">
+      <span class="box">✓</span>
+      ${t.tag==='high'?`<span class="pdot" style="background:var(--expense)"></span>`:''}
+      <span class="tl">${t.t}</span>
+      ${t.tag?`<span class="tag ${t.tag}">${t.tagText}</span>`:`<span class="tag due">${t.sched}</span>`}
+    </div>`;
+  }).join('');
+  const body = todos.length
+    ? rows
+    : `<div class="row"><div class="txt"><div class="a">今天没有待办</div></div></div>`;
+  return `<div class="stack"><div class="card pad">
+    <div class="cardhead">✅ 接下来
+      <span class="more">${a.total>0?`${done}/${a.total} · `:''}查看全部 ›</span></div>
+    ${body}
+  </div></div>`;
+}
+
 function insight(){
   const ins=D().insight;
   if(!ins.length) return '';
@@ -957,7 +980,7 @@ function render(){
     if(state.layoutMode==='pager'){
       const sheet = (html) => html ? `<div class="sect">${html}</div>` : '';
       const pages=[
-        {label:'概览', body: sheet(board()) + sheet(remHtml) + sheet(insightHtml) + `<div class="quote"><div class="q">“</div>慢慢来，比较快。</div>`},
+        {label:'概览', body: sheet(board()) + sheet(upNext()) + sheet(remHtml) + sheet(insightHtml) + `<div class="quote"><div class="q">“</div>慢慢来，比较快。</div>`},
         {label:'记账', body: moneyHtml.map(sheet).join('')},
         {label:'健康', body: healthHtml.map(sheet).join('')},
         {label:'行动', body: actionHtml.map(sheet).join('')},

@@ -16,6 +16,7 @@ Home is a "life dashboard" that puts **money / health / action** side by side. I
 | --- | --- |
 | **Greeting header** | Time-aware greeting, streak and month selector |
 | **Today board** | Money / health / action side by side: remaining budget (or month net), period/pregnancy status, today's todo progress. Each cell can be turned off (at least 2 remain) |
+| **Up next · Today's todos** | Up to 3 todos on the overview page, checkable inline; "view all" opens GTD |
 | **Alerts strip** | Bookkeeping reminders that need attention now (bills due, budget alerts) |
 | **Money · Budget hero** | Budget / trend / calendar combined into one card |
 | **Money · Categories** | Collapsed to a one-line summary by default; tap to expand |

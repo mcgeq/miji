@@ -29,6 +29,7 @@ import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/home/presentation/home_action_todo_card.dart';
 import 'package:miji/features/home/presentation/home_action_habit_card.dart';
+import 'package:miji/features/home/presentation/home_up_next_card.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
 import 'package:miji/features/todo/presentation/todo_task_detail_page.dart';
@@ -378,6 +379,14 @@ class _HomeDashboard extends ConsumerWidget {
             onTapHabit: (habit) => _checkInHabit(ref, habit),
             onManage: () => context.push(AppRoutes.gtd),
           );
+    final upNextCard = showTodayAction
+        ? HomeUpNextCard(
+            brief: actionBriefValue,
+            onToggle: (task) => _toggleTodo(ref, task),
+            onAdd: () => _addTodo(context, ref),
+            onOpenAll: () => context.push(AppRoutes.gtd),
+          )
+        : null;
 
     final netAssetTile = HomeNetAssetTile(
       summary: netAsset.valueOrNull,
@@ -423,6 +432,7 @@ class _HomeDashboard extends ConsumerWidget {
                 healthTodayCard: healthTodayCard,
                 todoCard: todoCard,
                 habitCard: habitCard,
+                upNextCard: upNextCard,
               ),
             ),
           ),
@@ -799,11 +809,12 @@ List<_HomePageData> _buildPagerPages({
   required Widget? healthTodayCard,
   required Widget? todoCard,
   required Widget? habitCard,
+  required Widget? upNextCard,
 }) {
   return [
     _HomePageData(
       label: '概览',
-      children: [board, if (hasAlerts) alerts, insight, quote],
+      children: [board, ?upNextCard, if (hasAlerts) alerts, insight, quote],
     ),
     _HomePageData(
       label: '记账',
