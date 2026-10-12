@@ -344,15 +344,15 @@ void main() {
   group('buildHomeHealthHint', () {
     final reference = DateTime(2024, 10, 16);
 
-    test('returns null when tracking is off or there is no history', () {
-      expect(
-        buildHomeHealthHint(
-          prediction: const HealthCyclePrediction.noHistory(mainStatus: '暂无记录'),
-          hasDailyLogToday: false,
-          referenceDate: reference,
-        ),
-        isNull,
+    test('reports no history with a record prompt instead of null', () {
+      final hint = buildHomeHealthHint(
+        prediction: const HealthCyclePrediction.noHistory(mainStatus: '暂无记录'),
+        hasDailyLogToday: false,
+        referenceDate: reference,
       );
+      expect(hint, isNotNull);
+      expect(hint!.title, '还没有周期记录');
+      expect(hint.detail, contains('记录'));
     });
 
     test('reports days until the next period', () {

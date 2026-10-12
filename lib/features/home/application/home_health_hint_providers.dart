@@ -19,7 +19,7 @@ class HomeHealthHint {
   final String detail;
 }
 
-/// 未开启经期追踪、或没有足够历史时返回 null，首页不渲染窄条。
+/// 未开启经期追踪时返回 null；已开启但还没记录时返回「还没有周期记录」。
 final homeHealthHintProvider = FutureProvider<HomeHealthHint?>((ref) async {
   final session = ref.watch(authSessionControllerProvider);
   final userId = session.userId;
@@ -79,7 +79,12 @@ HomeHealthHint? buildHomeHealthHint({
     case HealthTodayStatusKind.cycleDay:
       final nextStart = prediction.nextPeriodStart;
       if (nextStart == null) {
-        return null;
+        // 周期可预测但算不出下次经期（理论上少见）：不要回退成「未开启」。
+        return HomeHealthHint(
+          kind: HomeHealthHintKind.period,
+          title: '周期记录中',
+          detail: hasDailyLogToday ? '今天已记录' : '今天还没记录',
+        );
       }
       final daysUntil = _dateOnly(nextStart).difference(today).inDays;
       final nextLabel = '${nextStart.month}月${nextStart.day}日预计开始';
@@ -104,7 +109,13 @@ HomeHealthHint? buildHomeHealthHint({
       );
 
     case HealthTodayStatusKind.noPeriodHistory:
-      return null;
+      // 已开启追踪但还没记过一次经期。这里必须返回 hint，否则首页会把
+      // 「未开启」的文案错误地套到「已开启、只是没数据」上。
+      return HomeHealthHint(
+        kind: HomeHealthHintKind.period,
+        title: '还没有周期记录',
+        detail: hasDailyLogToday ? '今天已记录' : '记录一次经期即可预测',
+      );
   }
 }
 
