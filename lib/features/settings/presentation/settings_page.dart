@@ -18,6 +18,8 @@ import 'package:miji/core/auth/presentation/app_pattern_lock_input.dart';
 import 'package:miji/core/auth/providers/app_lock_providers.dart';
 import 'package:miji/core/auth/providers/auth_providers.dart';
 import 'package:miji/core/preferences/domain/user_preferences_entity.dart';
+import 'package:miji/features/home/application/home_preference_providers.dart';
+import 'package:miji/features/home/domain/home_block.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/app_toast.dart';
@@ -1511,6 +1513,10 @@ class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
           subtitle: '控制首页各区块的显示与金额隐私',
           child: Column(
             children: [
+              _buildHomeLayoutEditor(),
+              const SizedBox(height: 16),
+              _buildHomeBlocksList(),
+              const SizedBox(height: 16),
               AppSwitchField(
                 title: '今日行动',
                 subtitle: '在首页顶部显示今日行动卡片',
@@ -1615,6 +1621,183 @@ class _AppearanceSectionState extends ConsumerState<_AppearanceSection> {
       successText: '首页显示已更新',
       failureText: '首页显示更新失败，请重试',
     );
+  }
+
+  Widget _buildHomeLayoutEditor() {
+    final theme = Theme.of(context);
+    final layoutMode = ref.watch(homeLayoutModeProvider);
+    final pagerTabs = ref.watch(homePagerTabsProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.view_carousel_outlined,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '首页布局',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SegmentedButton<HomeLayoutMode>(
+          segments: const [
+            ButtonSegment(
+              value: HomeLayoutMode.list,
+              label: Text('纵向单列'),
+            ),
+            ButtonSegment(
+              value: HomeLayoutMode.pager,
+              label: Text('横向分页'),
+            ),
+          ],
+          selected: {layoutMode},
+          onSelectionChanged: (selection) =>
+              _updateHomeLayoutMode(selection.single),
+          showSelectedIcon: false,
+        ),
+        if (layoutMode == HomeLayoutMode.pager) ...[
+          const SizedBox(height: 10),
+          AppSwitchField(
+            title: '分页显示顶部标签',
+            subtitle: '关闭时靠左右滑动 + 底部圆点切换',
+            icon: Icons.tab_rounded,
+            value: pagerTabs,
+            onChanged: _updateHomePagerTabs,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildHomeBlocksList() {
+    final theme = Theme.of(context);
+    final layout = ref.watch(homeBlockLayoutProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.widgets_outlined,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '首页模块',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '长按拖动排序',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        ReorderableListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: layout.order.length,
+          onReorderItem: (oldIndex, newIndex) =>
+              _reorderHomeBlock(layout, oldIndex, newIndex),
+          itemBuilder: (context, index) {
+            final id = layout.order[index];
+            final locked =
+                id.isBoardCell &&
+                layout.isVisible(id) &&
+                layout.visibleBoardCellCount <= 2;
+            return ListTile(
+              key: ValueKey('home-block-${id.storageKey}'),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: Text(id.label),
+              subtitle: Text(id.module.label),
+              trailing: Switch(
+                value: layout.isVisible(id),
+                onChanged: locked
+                    ? null
+                    : (value) => _toggleHomeBlock(layout, id, value),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _updateHomeLayoutMode(HomeLayoutMode mode) async {
+    await _updateHomePreference(
+      apply: () {},
+      clear: () {},
+      action: (userId) => ref
+          .read(preferencesRepositoryProvider)
+          .updateHomeLayoutMode(userId, mode.storageValue),
+      successText: '首页布局已更新',
+      failureText: '首页布局更新失败，请重试',
+    );
+  }
+
+  Future<void> _updateHomePagerTabs(bool show) async {
+    await _updateHomePreference(
+      apply: () {},
+      clear: () {},
+      action: (userId) => ref
+          .read(preferencesRepositoryProvider)
+          .updateHomePagerTabs(userId, show),
+      successText: '首页分页标签已更新',
+      failureText: '首页分页标签更新失败，请重试',
+    );
+  }
+
+  Future<void> _toggleHomeBlock(
+    HomeBlockLayout layout,
+    HomeBlockId id,
+    bool value,
+  ) async {
+    if (layout.isVisible(id) == value) {
+      return;
+    }
+    await _persistHomeLayout(layout.toggle(id, value));
+  }
+
+  Future<void> _reorderHomeBlock(
+    HomeBlockLayout layout,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    await _persistHomeLayout(layout.reorder(oldIndex, newIndex));
+  }
+
+  Future<void> _persistHomeLayout(HomeBlockLayout next) async {
+    final userId = widget.userId;
+    if (userId == null) {
+      return;
+    }
+    try {
+      final repo = ref.read(preferencesRepositoryProvider);
+      await repo.updateHomeBlockVisibility(userId, next.visibilityJson);
+      await repo.updateHomeBlockOrder(userId, next.orderJson);
+      ref.invalidate(currentUserPreferencesProvider);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      AppToast.error(_ensureToast(), context, '首页模块设置更新失败，请重试');
+    }
   }
 
   FToast _ensureToast() {
