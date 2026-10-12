@@ -8,7 +8,10 @@ import 'package:miji/core/database/database_providers.dart';
 import 'package:miji/core/theme/app_theme.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/features/home/application/home_preference_providers.dart';
+import 'package:miji/features/home/domain/home_block.dart';
 import 'package:miji/features/home/presentation/home_page.dart';
+import 'package:miji/features/home/presentation/home_today_board.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:miji/features/home/presentation/home_overview_card.dart';
 
@@ -58,6 +61,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
+        homeLayoutModeProvider.overrideWithValue(HomeLayoutMode.list),
         currentUserVisibleAccountsProvider.overrideWith(
           (ref) => Stream.value([_cashAccount(now)]),
         ),
@@ -113,6 +117,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
+        homeLayoutModeProvider.overrideWithValue(HomeLayoutMode.list),
         // 有一个账户即代表「不是首次使用」，从而进入 dashboard 分支；
         // 其余数据保持为空，顺带覆盖各区块的空状态。
         currentUserVisibleAccountsProvider.overrideWith(
@@ -162,6 +167,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
+        homeLayoutModeProvider.overrideWithValue(HomeLayoutMode.list),
         currentUserVisibleAccountsProvider.overrideWith(
           (ref) => Stream.value([_cashAccount(now)]),
         ),
@@ -200,6 +206,49 @@ void main() {
     expect(find.byType(BarChart), findsOneWidget);
     final chartRect = tester.getRect(find.byType(BarChart));
     expect(chartRect.bottom, lessThan(844), reason: '趋势图应该在首屏内，不需要滚动');
+  });
+
+  testWidgets('pager mode shows tabs and switches pages', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    final now = DateTime.utc(2026, 7, 18, 8);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        currentUserVisibleAccountsProvider.overrideWith(
+          (ref) => Stream.value([_cashAccount(now)]),
+        ),
+        homePagerTabsProvider.overrideWithValue(true),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const Scaffold(body: HomePage()),
+        ),
+      ),
+    );
+    for (var index = 0; index < 12; index++) {
+      await tester.pump(const Duration(milliseconds: 150));
+    }
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(HomeTodayBoard), findsOneWidget);
+    expect(find.text('概览'), findsOneWidget);
+    expect(find.text('记账'), findsOneWidget);
+
+    await tester.tap(find.text('记账'));
+    await tester.pumpAndSettle();
+    expect(find.text('净资产'), findsOneWidget);
   });
 }
 

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:miji/core/presentation/components/app_surface.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/components/app_section_entrance.dart';
@@ -399,6 +400,36 @@ class _HomeDashboard extends ConsumerWidget {
     final hasAlerts =
         reminders.isLoading || (reminders.valueOrNull ?? const []).isNotEmpty;
 
+    if (ref.watch(homeLayoutModeProvider) == HomeLayoutMode.pager) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          greeting,
+          const SizedBox(height: 12),
+          Expanded(
+            child: _HomePager(
+              tabs: ref.watch(homePagerTabsProvider),
+              pages: _buildPagerPages(
+                board: board,
+                hasAlerts: hasAlerts,
+                alerts: alerts,
+                insight: insightStrip,
+                quote: quote,
+                overviewCard: overviewCard,
+                netAssetTile: netAssetTile,
+                categoryPanel: categoryPanel,
+                recentPanel: recentPanel,
+                healthCycleCard: healthCycleCard,
+                healthTodayCard: healthTodayCard,
+                todoCard: todoCard,
+                habitCard: habitCard,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return SingleChildScrollView(
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -753,6 +784,222 @@ class _HomeDashboard extends ConsumerWidget {
       }
     }
     return null;
+  }
+}
+
+/// 横向分页：概览 / 记账 / 健康 / 行动。
+List<_HomePageData> _buildPagerPages({
+  required Widget board,
+  required bool hasAlerts,
+  required Widget alerts,
+  required Widget insight,
+  required Widget quote,
+  required Widget overviewCard,
+  required Widget netAssetTile,
+  required Widget categoryPanel,
+  required Widget recentPanel,
+  required Widget? healthCycleCard,
+  required Widget? healthTodayCard,
+  required Widget? todoCard,
+  required Widget? habitCard,
+}) {
+  return [
+    _HomePageData(
+      label: '概览',
+      children: [
+        board,
+        if (hasAlerts) alerts,
+        insight,
+        quote,
+      ],
+    ),
+    _HomePageData(
+      label: '记账',
+      children: [overviewCard, netAssetTile, categoryPanel, recentPanel],
+    ),
+    _HomePageData(
+      label: '健康',
+      children: [?healthCycleCard, ?healthTodayCard],
+    ),
+    _HomePageData(
+      label: '行动',
+      children: [?todoCard, ?habitCard],
+    ),
+  ];
+}
+
+class _HomePageData {
+  const _HomePageData({required this.label, required this.children});
+
+  final String label;
+  final List<Widget> children;
+}
+
+class _HomePager extends StatefulWidget {
+  const _HomePager({required this.pages, required this.tabs});
+
+  final List<_HomePageData> pages;
+  final bool tabs;
+
+  @override
+  State<_HomePager> createState() => _HomePagerState();
+}
+
+class _HomePagerState extends State<_HomePager> {
+  final _controller = PageController();
+  int _index = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _goTo(int index) {
+    if (index < 0 || index >= widget.pages.length) {
+      return;
+    }
+    _controller.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.tabs)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                for (var i = 0; i < widget.pages.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 6),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _goTo(i),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: i == _index
+                              ? theme.colorScheme.surfaceContainerLow
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Text(
+                          widget.pages[i].label,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: i == _index
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              '‹ 左右滑动查看 '
+              '${widget.pages.skip(1).map((p) => p.label).join(' · ')} ›',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        Expanded(
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: widget.pages.length,
+            onPageChanged: (index) => setState(() => _index = index),
+            itemBuilder: (context, index) {
+              final page = widget.pages[index];
+              return SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 96),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (page.children.isEmpty)
+                      _PagerEmpty(label: page.label)
+                    else
+                      for (var i = 0; i < page.children.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 12),
+                        page.children[i],
+                      ],
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < widget.pages.length; i++)
+              GestureDetector(
+                onTap: () => _goTo(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: i == _index ? 16 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: i == _index
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PagerEmpty extends StatelessWidget {
+  const _PagerEmpty({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppSurface(
+      child: Column(
+        children: [
+          Text(
+            '$label暂无显示内容',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '到设置里打开对应区块',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
