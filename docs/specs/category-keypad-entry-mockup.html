@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>米记 · 分类宫格 + 键盘式记账（可行性分析与方案 v1 · 人工确认稿）</title>
+<title>米记 · 分类记账方案 v8（列表 + 吸底记账条 · 差异记录稿）</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800;900&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#F2EDE6; --surface:#FBF6F0; --raised:#F6F1EB; --sunken:#ECE7E1;
@@ -50,11 +51,14 @@
     min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:0;
     transition:background .3s ease,color .3s ease;
   }
+  .ms{font-family:"Material Symbols Rounded";font-weight:400;font-style:normal;line-height:1;
+    font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;letter-spacing:normal;white-space:nowrap;direction:ltr;
+    -webkit-font-feature-settings:'liga';font-feature-settings:'liga';display:inline-block;vertical-align:middle}
   .app{display:flex;gap:30px;max-width:1360px;margin:0 auto;padding:26px 24px 70px;align-items:flex-start}
   @media (max-width:1080px){.app{flex-direction:column;align-items:center}}
 
   /* ---------- left panel ---------- */
-  .panel{position:sticky;top:22px;width:368px;flex:0 0 368px;max-height:calc(100vh - 44px);overflow:auto;scrollbar-width:thin}
+  .panel{position:sticky;top:22px;width:372px;flex:0 0 372px;max-height:calc(100vh - 44px);overflow:auto;scrollbar-width:thin}
   @media (max-width:1080px){.panel{position:static;width:min(760px,100%);flex:auto;max-height:none}}
   .panel::-webkit-scrollbar{width:5px}
   .panel::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
@@ -101,14 +105,13 @@
   ul.list li .n{position:absolute;left:0;top:5px;width:15px;height:15px;border-radius:99px;font-size:9.5px;font-weight:900;
     display:flex;align-items:center;justify-content:center;background:var(--primary-soft);color:var(--on-primary-soft)}
   ul.list li.warn .n{background:var(--danger-soft);color:var(--danger)}
-  ul.list li.ok .n{background:color-mix(in srgb,var(--income) 14%,transparent);color:var(--income)}
+  ul.list li.ok .n{background:color-mix(in srgb,var(--income) 16%,transparent);color:var(--income)}
   ul.list li code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;background:var(--chip);
     padding:1px 4px;border-radius:4px;color:var(--text)}
   .tag{display:inline-block;font-size:9.5px;font-weight:900;letter-spacing:.04em;border-radius:5px;padding:1.5px 5px;margin-right:5px;vertical-align:1px}
   .tag.p0{background:var(--danger-soft);color:var(--danger)}
   .tag.p1{background:var(--primary-soft);color:var(--on-primary-soft)}
   .tag.p2{background:var(--chip);color:var(--text2)}
-  .tag.no{background:color-mix(in srgb,var(--warning) 16%,transparent);color:var(--warning)}
 
   .confirm{display:flex;flex-direction:column;gap:1px}
   .ck{display:flex;gap:9px;align-items:flex-start;padding:7px 6px;border-radius:9px;cursor:pointer;font-size:12.3px;
@@ -116,7 +119,14 @@
   .ck:hover{background:var(--chip)}
   .ck input{margin:2px 0 0;accent-color:var(--primary);flex:0 0 auto}
   .ck.on{color:var(--text)}
+  .ck.done{cursor:default;opacity:.74}
+  .ck.done:hover{background:transparent}
   .ck small{display:block;color:var(--outline);font-size:10.8px;margin-top:2px}
+  .ck.locked small{color:color-mix(in srgb,var(--income) 62%,var(--outline))}
+  /* 「仍待确认」顶部的状态说明行 */
+  .qlead{font-size:11.5px;line-height:1.6;color:var(--text2);background:var(--chip);border-radius:8px;
+    padding:7px 9px;margin-bottom:5px}
+  .qlead b{color:var(--text)}
 
   /* ---------- stage ---------- */
   .stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0}
@@ -138,9 +148,6 @@
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
   .screen{background:var(--bg);border-radius:34px;overflow:hidden;height:846px;max-height:calc(100vh - 124px);position:relative;display:flex;flex-direction:column}
   @media (max-width:520px){.phone{width:100%;border-radius:32px}.phone.desktop{width:100%}.screen{border-radius:24px;height:calc(100vh - 200px)}}
-  .scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;padding-bottom:14px}
-  .scroll::-webkit-scrollbar{width:5px}
-  .scroll::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
 
   .statusbar{display:flex;justify-content:space-between;align-items:center;padding:9px 20px 2px;font-size:12px;font-weight:700;color:var(--text);flex:0 0 auto}
   .statusbar .inds{font-size:11px;color:var(--text2);letter-spacing:1px}
@@ -156,64 +163,81 @@
   .khead .book{font-size:12px;font-weight:800;color:var(--primary);flex:0 0 auto}
 
   .kbody{flex:1;min-height:0;display:flex;flex-direction:column}
-  .gridwrap{flex:1 1 auto;min-height:0;overflow-y:auto;padding:10px 12px 4px;scrollbar-width:none}
+  .gridwrap{flex:1 1 auto;min-height:0;overflow-y:auto;padding:10px 8px 4px;scrollbar-width:none}
   .gridwrap::-webkit-scrollbar{display:none}
-  .cgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px 2px}
-  .cell{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px 5px;border-radius:12px;
+  .cgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px 0}
+  /* 与现有 _LeafTile 同一套语言：圆角方块 + 淡色底 + 同色 Material 图标 + 一行名称 */
+  .cell{display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 2px 6px;border-radius:12px;
     cursor:pointer;transition:.15s;position:relative;border:1px solid transparent}
   .cell:hover{background:var(--pad)}
-  .cell.on{background:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 30%,transparent)}
-  .cell .bub{width:42px;height:42px;border-radius:999px;display:flex;align-items:center;justify-content:center;
-    font-size:21px;background:var(--surface);border:1px solid var(--hair);position:relative;transition:.15s}
-  .cell.on .bub{border-color:color-mix(in srgb,var(--primary) 46%,transparent);box-shadow:0 0 0 3px var(--mark)}
-  .cell .bub .dot{position:absolute;right:-1px;top:-1px;width:9px;height:9px;border-radius:99px;
-    background:var(--primary);border:2px solid var(--bg)}
-  .cell .bub .cnt{position:absolute;right:-4px;top:-4px;min-width:16px;height:16px;border-radius:99px;padding:0 3px;
-    background:var(--text2);color:var(--bg);font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center}
-  .cell .lb{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .cell.on{background:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 28%,transparent)}
   .cell.on .lb{color:var(--on-primary-soft);font-weight:900}
-  .cell.more .bub{background:transparent;border-style:dashed;color:var(--text2);font-size:19px}
+  .cell .bub{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:color-mix(in srgb,var(--tint) 15%,var(--surface));
+    border:1px solid color-mix(in srgb,var(--tint) 20%,var(--hair));position:relative}
+  .cell .bub .ms{font-size:19px;color:var(--tint)}
+  .cell .lb{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .cell.more .bub{background:transparent;border-style:dashed;border-color:var(--outline)}
+  .cell.more .bub .ms{color:var(--text2)}
   .cell.more .lb{color:var(--text2)}
-  [data-mark]{position:relative}
-  [data-mark]::after{content:attr(data-mark);position:absolute;left:-7px;top:-9px;width:17px;height:17px;border-radius:99px;
-    background:var(--danger);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;
-    z-index:4;box-shadow:0 2px 6px rgba(0,0,0,.24)}
+  .cell[data-mark]::after{content:attr(data-mark);position:absolute;right:5px;top:0;width:17px;height:17px;border-radius:99px;
+    background:var(--danger);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:4;
+    box-shadow:0 2px 6px rgba(0,0,0,.24)}
   body.no-annot [data-mark]::after{display:none}
-  .cell[data-mark]::after{left:auto;right:4px;top:0}
-
-  /* sub-category strip */
-  .substrip{flex:0 0 auto;padding:6px 12px 4px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:7px}
-  .substrip .pn{font-size:11px;font-weight:900;color:var(--text2);flex:0 0 auto;display:flex;align-items:center;gap:4px}
-  .substrip .sl{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:1px 0}
-  .substrip .sl::-webkit-scrollbar{display:none}
-  .sleaf{flex:0 0 auto;display:flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--hair);
-    border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:700;color:var(--text);white-space:nowrap;cursor:pointer}
-  .sleaf.on{background:var(--primary);border-color:var(--primary);color:#fff}
-  html[data-theme="dark"] .sleaf.on{color:#0b1020}
-  .sleaf.all{background:transparent;border-style:dashed;color:var(--text2)}
+  /* 「整屏都是餐饮」提示（新用户场景） */
+  .gridhint{flex:0 0 auto;margin:0 12px 6px;display:flex;gap:8px;align-items:flex-start;
+    background:var(--danger-soft);border-radius:10px;padding:8px 10px;font-size:11.5px;font-weight:700;color:var(--text);line-height:1.55}
+  .gridhint .ms{font-size:16px;color:var(--danger);flex:0 0 auto}
+  .gridhint b{color:var(--danger)}
+  /* 「问题已修」态：同一条提示条换成主色，绿底会与收入的语义色打架 */
+  .gridhint.ok{background:var(--primary-soft)}
+  .gridhint.ok .ms,.gridhint.ok b{color:var(--on-primary-soft)}
+  .badge .ms{font-size:14px}
+  /* 宫格格子上的「轮询轮次」角标（R1 = 每类各取第 1 个，R2 = 第二轮补位）。
+     靠左放，避免与右侧的 ①②③ 标注圆点叠在一起。 */
+  .cell[data-rr]::after{content:attr(data-rr);position:absolute;left:4px;top:4px;font-size:8.5px;font-weight:900;
+    color:var(--text2);opacity:.6;letter-spacing:0;font-variant-numeric:tabular-nums}
+  body.no-annot .cell[data-rr]::after{display:none}
+  /* 转账：宫格位置改放转出 / 转入账户 */
+  .acctbox{flex:1 1 auto;min-height:0;overflow-y:auto;padding:14px 14px 4px;display:flex;flex-direction:column;gap:10px}
+  .acctbox .arow{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:12px 13px;
+    display:flex;align-items:center;gap:10px;position:relative}
+  .acctbox .arow .ab{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:color-mix(in srgb,var(--tint) 15%,var(--surface));flex:0 0 auto}
+  .acctbox .arow .ab .ms{font-size:20px;color:var(--tint)}
+  .acctbox .arow .ac{flex:1;min-width:0}
+  .acctbox .arow .ac .k{font-size:10.5px;font-weight:900;color:var(--text2);letter-spacing:.02em}
+  .acctbox .arow .ac .v{font-size:14px;font-weight:800;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acctbox .arow .ac .s{font-size:11px;color:var(--text2);margin-top:1px}
+  .acctbox .arow .chev{color:var(--outline)}
+  .acctbox .swap{align-self:center;width:34px;height:34px;border-radius:999px;background:var(--sunken);
+    border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;color:var(--text2);margin:-2px 0}
 
   /* amount + meta */
   .kamount{flex:0 0 auto;padding:8px 16px 2px;border-top:1px solid var(--hair);background:var(--bg)}
+  .kamount.sel{border-top-color:color-mix(in srgb,var(--primary) 26%,var(--hair))}
   .kamount .am{display:flex;align-items:baseline;gap:8px}
-  .kamount .am .cur{font-size:19px;font-weight:900;color:var(--expense)}
-  .kamount .am .num{font-size:33px;font-weight:900;color:var(--expense);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .kamount .am .cur{font-size:19px;font-weight:900}
+  .kamount .am .num{font-size:33px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
   .kamount .am .cat{margin-left:auto;font-size:11px;font-weight:800;color:var(--text2);background:var(--surface);
-    border:1px solid var(--hair);border-radius:999px;padding:3px 10px;white-space:nowrap}
+    border:1px solid var(--hair);border-radius:999px;padding:3px 10px;white-space:nowrap;display:flex;align-items:center;gap:5px}
   .kamount .meta{display:flex;align-items:center;gap:8px;margin-top:3px;font-size:11.5px;color:var(--outline)}
   .kamount .meta .t{display:flex;align-items:center;gap:4px;font-weight:700;color:var(--text2)}
   .kamount .meta .note{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    border-bottom:1px dashed var(--hair);padding-bottom:2px}
+    border-bottom:1px dashed var(--hair);padding-bottom:2px;color:var(--text2);font-weight:600}
+  .kamount .meta .note.ph{color:var(--outline);font-weight:500}
   .kamount .meta .up{width:24px;height:24px;border-radius:999px;border:1px solid var(--hair);display:flex;align-items:center;
-    justify-content:center;color:var(--text2);font-size:12px;flex:0 0 auto;background:var(--surface)}
+    justify-content:center;color:var(--text2);flex:0 0 auto;background:var(--surface)}
 
   /* chip row */
   .crow{flex:0 0 auto;display:flex;gap:6px;padding:7px 12px 6px;overflow-x:auto;scrollbar-width:none;background:var(--bg)}
   .crow::-webkit-scrollbar{display:none}
   .cchip{flex:0 0 auto;display:flex;align-items:center;gap:5px;border-radius:999px;padding:5px 10px;font-size:11.5px;
     font-weight:800;white-space:nowrap;cursor:pointer;border:1px solid var(--hair);background:var(--surface);color:var(--text)}
-  .cchip .em{font-size:12.5px}
+  .cchip .ms{font-size:14px;color:var(--text2)}
   .cchip.gh{background:transparent;color:var(--text2)}
   .cchip.hot{border-color:color-mix(in srgb,var(--primary) 42%,transparent);color:var(--on-primary-soft);background:var(--primary-soft)}
+  .cchip.hot .ms{color:var(--on-primary-soft)}
 
   /* keypad */
   .pad{flex:0 0 auto;padding:6px 12px 12px;background:var(--bg)}
@@ -224,10 +248,9 @@
     box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
   .key.op{background:var(--raised);color:var(--text2);font-size:17px}
   .key.act{background:var(--primary);color:#fff;font-size:14px;font-weight:900}
-  .key.sub{background:var(--primary-soft);color:var(--on-primary-soft);font-size:13px;font-weight:900}
+  .key.sub{background:var(--primary-soft);color:var(--on-primary-soft);font-size:12.5px;font-weight:900}
+  .key .ms{font-size:19px}
   html[data-theme="dark"] .key.act{color:#0b1020}
-  .key.w2{flex:2}
-  .key.tall{height:auto}
 
   /* ============ BEFORE: form sheet ============ */
   .fsheet{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--scrim);padding:0 10px 10px;justify-content:flex-end}
@@ -239,28 +262,31 @@
   .fbody::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
   .fld{background:var(--surface);border:1px solid var(--hair);border-radius:11px;padding:9px 11px;display:flex;align-items:center;gap:8px;position:relative}
   .fld .lbl{position:absolute;top:-7px;left:9px;font-size:9.5px;font-weight:800;color:var(--text2);background:var(--bg);padding:0 4px}
-  .fld .ic{font-size:14px;color:var(--text2)}
+  .fld .ic{font-size:15px;color:var(--text2)}
   .fld .val{flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .fld .val.ph{color:var(--outline);font-weight:500}
-  .fld .chev{color:var(--outline);font-size:13px}
+  .fld .chev{color:var(--outline);font-size:14px}
   .fld.amt{align-items:baseline;padding:12px 11px}
   .fld.amt .big{font-size:26px;font-weight:900;color:var(--outline);font-variant-numeric:tabular-nums}
   .fld.amt .calc{margin-left:auto;font-size:11px;font-weight:800;color:var(--primary);background:var(--primary-soft);border-radius:999px;padding:3px 9px}
   .fsub{font-size:10.5px;font-weight:900;color:var(--text2);margin:1px 0 -4px}
   .leafgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
   .lf{background:var(--surface);border:1px solid var(--hair);border-radius:9px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px}
-  .lf .b{width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;background:var(--chip)}
+  .lf .b{width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    background:color-mix(in srgb,var(--tint) 15%,var(--surface))}
+  .lf .b .ms{font-size:14px;color:var(--tint)}
   .lf .t{font-size:9.5px;font-weight:700;color:var(--text);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .lf.dup .t{color:var(--danger)}
   .falld{background:transparent;border:1px dashed var(--outline);border-radius:9px;padding:8px;text-align:center;
     font-size:11.5px;font-weight:800;color:var(--text2)}
   .fsw{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--text);padding:2px 2px}
+  .fsw .ms{font-size:16px;color:var(--primary)}
   .fsw .tgb{margin-left:auto;width:34px;height:20px;border-radius:99px;background:var(--sunken);border:1px solid var(--hair);position:relative}
   .fsw .tgb::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:99px;background:var(--outline)}
   .facts{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--hair);flex:0 0 auto}
   .fas{flex:1;height:38px;border-radius:10px;border:1px solid var(--hair);background:transparent;color:var(--text2);
     font:inherit;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:5px}
   .fas.primary{background:var(--primary);border-color:transparent;color:#fff}
+  .fas .ms{font-size:16px}
   html[data-theme="dark"] .fas.primary{color:#0b1020}
   .fbody .foldhint{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--text2);
     background:var(--surface);border:1px solid var(--hair);border-radius:11px;padding:10px 11px}
@@ -270,11 +296,10 @@
   .sseg .s.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
 
   /* annotations */
-  .mk{position:absolute;z-index:5;width:19px;height:19px;border-radius:99px;background:var(--primary);color:#fff;
-    font-size:10.5px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-  html[data-theme="dark"] .mk{color:#0b1020}
-  .mk.bad{background:var(--danger)}
-  body.no-annot .mk{display:none}
+  .fld[data-mark]::after,.fsub[data-mark]::after,.foldhint[data-mark]::after{content:attr(data-mark);position:absolute;
+    left:-7px;top:-9px;width:17px;height:17px;border-radius:99px;background:var(--danger);color:#fff;font-size:10px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;z-index:4;box-shadow:0 2px 6px rgba(0,0,0,.24)}
+  body.no-annot [data-mark]::after{display:none}
   .rel{position:relative}
 
   /* notes below stage */
@@ -283,6 +308,7 @@
   .note{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:13px;box-shadow:var(--shadow)}
   .note h4{margin:0 0 9px;font-size:12px;font-weight:900;display:flex;align-items:center;gap:7px}
   .note h4 .dot{width:6px;height:6px;border-radius:99px;background:var(--primary)}
+  .note h4 .ms{font-size:16px;color:var(--text2);margin-left:auto}
   table.cmp{width:100%;border-collapse:collapse;font-size:11.8px}
   table.cmp th,table.cmp td{text-align:left;padding:6px 7px;border-bottom:1px solid var(--hair);vertical-align:top;line-height:1.55}
   table.cmp th{font-size:10px;font-weight:900;letter-spacing:.06em;color:var(--text2);text-transform:uppercase}
@@ -303,12 +329,15 @@
   <aside class="panel">
     <div class="brand">
       <span class="mark">米记</span>
-      <span class="t">分类宫格 + 键盘式记账</span>
-      <span class="v">v1 待确认</span>
+      <span class="t">宫格 + 键盘式记账</span>
+      <span class="v">v8 列表 + 吸底记账条</span>
     </div>
     <p class="lead">
-      你给的参考图（<code>IMG_4595.PNG</code>）是一种<b>「一屏完成」</b>的记账范式：分类宫格在上、金额与备注居中、键盘常驻在下，全程不滚动。
-      这份稿子把米记<b>现状</b>与<b>可落地的重构后</b>并排摆出来，并指出<b>哪些能直接复用、哪些是真成本、哪几条必须你拍板</b>。
+      <b>已定</b>：分类沿用现有的「常用叶子」宫格 + 「全部分类」面板；图标沿用现有 Material 图标名与「圆角方块 + 淡色底」样式，<b>不引任何资产</b>；
+      空历史的兜底按 <b>A · 按父分类轮询取样</b>；「常用」排序口径按 <b>B1 · 时间分层</b>（<b>已在代码落地</b>，见右下「B1 落地」）。
+      <b>A 轮询补位</b>与 <b>B1 时间分层</b>已落地；「分类」tab 的<b>最终形态定为「上半屏分类列表 + 底部吸底记账条」</b>——键盘缩小到 170px，
+      一级导航在这一页整排收起。分类整理收进右上角「分类管理」弹窗，FAB 里<b>不再有</b>独立入口——差异记录见右下「本轮落地」。
+      这版把「常用排序」拆成<b>两层填充</b>（用过的按 B1 分层排 → 没用过的按轮询补），并新增一个排序变化的对照场景（<b>④B1 分层</b>）。
     </p>
 
     <div class="group">
@@ -318,20 +347,37 @@
         <button data-v="after" class="on">重构后 · 一屏键盘</button>
       </div>
       <div class="tg" id="tgAnnot" style="margin-top:8px">
-        <span class="sw"></span><span>显示问题标注 ①②③</span><small>现状视图</small>
+        <span class="sw"></span><span>显示问题标注 ①②③</span>
       </div>
     </div>
 
     <div class="group">
       <h3><span class="dot"></span>场景</h3>
       <div class="chips" id="segScen">
-        <button data-s="grid" class="on">支出 · 一级宫格</button>
-        <button data-s="sub">选中后 · 子分类条</button>
-        <button data-s="income">收入 · 10 类</button>
+        <button data-s="grid" class="on">支出 · 常用宫格</button>
+        <button data-s="typing">输入中 · 12.50</button>
+        <button data-s="newuser">①无使用记录 · 现状</button>
+        <button data-s="sparse">②低频 3 类 · 现状</button>
+        <button data-s="rollout">③轮询后 · A 生效</button>
+        <button data-s="layered">④B1 分层 · 排序变化</button>
+        <button data-s="income">收入 · 50 个叶子</button>
         <button data-s="transfer">转账 · 第三 tab</button>
         <button data-s="more">「更多」字段面板</button>
-        <button data-s="wide">宽屏 · 左右两栏</button>
       </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>常用排序：两层填充</h3>
+      <ul class="list">
+        <li class="ok"><span class="n">1</span><b>第一层 · 用过的</b>：按「常用」排序取满
+          <small>口径 <b>B1 · 时间分层</b>：近 7 天 &gt; 近 30 天 &gt; 近 90 天 &gt; 更早，<b>同档内按使用次数</b></small></li>
+        <li class="ok"><span class="n">2</span><b>第二层 · 没用过的</b>：<b>按父分类轮询</b>补位
+          <small>每轮从每个父分类各取 1 个叶子，取完再开下一轮；父分类之间按目录顺序</small></li>
+        <li><span class="n">3</span>空位怎么来：先按第一层填满，剩下的格子交给第二层
+          <small>所以「用满 15 个」和「只用过 3 个」走的是同一条规则，不需要两套逻辑</small></li>
+        <li class="warn"><span class="n">4</span>支出侧首轮即得 <b>15 个不同的一级分类</b>（种子 18 个支出父分类）
+          <small>早餐 / 公交地铁 / 日用品 / 房租 / 门诊挂号 / 电影演出 / 课程 / 交通票务 / 软件订阅 / 发红包 / 健康保险 / 宠物食品 / 办公用品 / 现金捐赠 / 子女</small></li>
+      </ul>
     </div>
 
     <div class="group">
@@ -348,25 +394,40 @@
     <div class="group">
       <h3><span class="dot"></span>结论速览</h3>
       <ul class="list">
-        <li class="ok"><span class="n">✓</span><b>技术上完全可行</b>，而且不是从零造：宫格、键盘、常用排序、收支分段<b>都已存在</b>，主要是「重排 + 抽公共件」。</li>
-        <li><span class="n">1</span>宫格放<b>一级分类</b>（支出 18 / 收入 10），子分类走<b>同屏横滑条</b>——这是与图片唯一必须偏离的地方（我们有 193 个子分类）。</li>
-        <li class="warn"><span class="n">2</span>最大的真成本是<b>图标资产</b>：图片是手绘插画，现有是 Material 图标名 + emoji。</li>
-        <li class="warn"><span class="n">3</span>键盘常驻与<b>系统键盘</b>会互相打架；宽屏/矮屏要降级成表单版。</li>
-        <li><span class="n">4</span>表单被 <b>6 处入口</b>调用、还要兼顾编辑态/模板/提醒/截图/分期，<b>不能直接替换</b>——建议新增「快速记账」通道而非改写老表单。</li>
+        <li class="ok"><span class="n">✓</span><b>分类与图标都不动</b>：宫格仍铺现有叶子（按「常用」排序），图标仍走 <code>CategoryIconWidget</code> + Material 图标名，<b>零新增资产</b>。</li>
+        <li class="ok"><span class="n">✓</span><b>不需要两级联动</b>：叶子自带父分类（一次写回 <code>categoryId</code> + <code>subCategoryId</code>），点一下即选中，逻辑与现在完全一致。</li>
+        <li><span class="n">1</span>宫格从 <b>4 列 × 2 行（8 个）</b>扩到 <b>5 列 × 3 行（15 个）+「全部」格</b>，一屏放下。</li>
+        <li class="ok"><span class="n">✓</span><b>空历史兜底已定 A（按父分类轮询）</b>：见「常用排序：两层填充」。<small>原问题是 <code>pickFrequentLeaves</code> 在无历史时退化成目录顺序，而餐饮的 10 个子分类排在最前</small></li>
+        <li class="ok"><span class="n">✓</span><b>「常用」口径已定 B1（时间分层）并已落地代码</b>：<code>compareUsageStats</code> + 新增 <code>recencyLevel</code><small>零迁移、零新列；同档内看次数，昨天只记一次的分类不再压过近 7 天的高频（见「④B1 分层」场景与右下对照表）</small></li>
+        <li class="warn"><span class="n">2</span><b>新发现：只记过 3 类时，尾部 9 格又是「餐饮」。</b>兜底只在<b>整表为空</b>时生效，历史一旦非空，剩下的空位仍按目录顺序回填 ⟶ 这条也得一并修（<b>低频 3 类 · 现状</b> 场景可复现）。</li>
+        <li><span class="n">3</span>键盘常驻与<b>系统键盘</b>会互相打架；宽屏 / 矮屏要降级。</li>
+        <li><span class="n">4</span>表单有 <b>6 处入口</b>、还要兼顾编辑态 / 模板 / 提醒 / 截图 / 分期 / 分摊 → <b>老表单保留</b>，新增「快速记账」通道。</li>
       </ul>
     </div>
 
     <div class="group">
-      <h3><span class="dot"></span>待确认问题</h3>
+      <h3><span class="dot"></span>已确认（本轮锁定）</h3>
+      <div class="confirm">
+        <div class="ck done locked"><input type="checkbox" checked disabled /><span>宫格用<b>现有叶子</b>（早餐 / 午餐 / 外卖 / 咖啡茶饮…），按「常用」排序<small>不做一级 / 二级联动</small></span></div>
+        <div class="ck done locked"><input type="checkbox" checked disabled /><span>图标<b>沿用现有 Material 图标名</b>与「圆角方块 + 淡色底」样式<small>仅把方块从 26dp 放大到 34dp 以适配宫格，不引插画资产</small></span></div>
+        <div class="ck done locked"><input type="checkbox" checked disabled /><span>保留「全部分类（193）」入口，复用现有底部搜索面板<small>193 = 现有叶子总数（支出 143 + 收入 50）</small></span></div>
+        <div class="ck done locked"><input type="checkbox" checked disabled /><span>空历史兜底采用 <b>A · 按父分类轮询取样</b><small>每轮从每个父分类各取 1 个，直到填满；不动宫格内容与图标</small></span></div>
+        <div class="ck done locked"><input type="checkbox" checked disabled /><span>轮询是<b>第二层的填充策略</b>，而非只在「全空」时才走<small>把「只用过 3 类」也一并修掉</small></span></div>
+        <div class="ck done locked"><input type="checkbox" checked disabled /><span>「常用」口径采用 <b>B1 · 时间分层</b><small>近 7 天 &gt; 近 30 天 &gt; 近 90 天 &gt; 更早 &gt; 从未用过；同档内按使用次数 → 累计金额 → 谁更近。只改一个函数，零迁移</small></span></div>
+        <div class="ck done locked"><input type="checkbox" checked disabled /><span>「最近使用」与「使用次数」的优先级已由 B1 回答<small>跨档看时间（刚用过优先），同档看次数（长期高频优先）——不再二选一</small></span></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>仍待确认</h3>
       <div class="confirm" id="qbox">
-        <label class="ck on"><input type="checkbox" checked /><span>用<b>一级分类宫格 + 子分类横滑条</b>，而不是像图片那样只放一层叶子<small>唯一的结构性偏离，见右侧「选中后」场景</small></span></label>
-        <label class="ck on"><input type="checkbox" checked /><span>宫格 5 列 × 图标 + 名称，<b>不做角标数字</b>，只用圆点表示「有子分类」<small>角标在小格子里噪音大于信息量</small></span></label>
-        <label class="ck on"><input type="checkbox" checked /><span>金额用<b>自绘键盘常驻</b>；名称/备注聚焦时临时切回系统键盘<small>否则文本框没法输入</small></span></label>
-        <label class="ck"><input type="checkbox" /><span>接受<b>手势/图标资产</b>这套方案：引一套插画图标（约 30 个）做成本<small>不勾就沿用 Material 图标 + 柔和底色圆，观感约还原 80%</small></span></label>
-        <label class="ck on"><input type="checkbox" checked /><span>低频字段（支付方式/他人代付/分期/日期/标签/商家/地点/分摊）收进<b>一行 chip + 「更多」面板</b><small>对应图片里的「选择账户 / 优惠 / 报销 / 标签 / 图片 / 设置」那一行</small></span></label>
+        <div class="qlead">只剩<b>最后一项</b>没定；其余都是推荐默认（已勾选），回一句「按推荐的来」即可。</div>
+        <label class="ck on"><input type="checkbox" checked /><span>宫格列数 <b>4 → 5</b><small>4 列只能放 12 个；5 列能放 15 个 + 全部，且与参考图一致</small></span></label>
+        <label class="ck on"><input type="checkbox" checked /><span>金额用<b>自绘键盘常驻</b>；名称 / 备注聚焦时临时切回系统键盘<small>否则文本框没法输入</small></span></label>
+        <label class="ck on"><input type="checkbox" checked /><span>低频字段（支付方式 / 他人代付 / 分期 / 日期 / 状态 / 商家 / 地点 / 标签 / 分摊）收进<b>一行 chip + 「更多」面板</b><small>对应图片里「选择账户 / 优惠 / 报销 / 标签 / 图片 / 设置」那一行</small></span></label>
         <label class="ck on"><input type="checkbox" checked /><span>新增「快速记账」通道，<b>老表单继续保留</b>给编辑态与特殊入口<small>把回归面控制在新增路径上</small></span></label>
+        <label class="ck on"><input type="checkbox" checked /><span>保留「<b>保存再记</b>」<small>连续记账场景，参考图里也有</small></span></label>
         <label class="ck"><input type="checkbox" /><span>本期就做<b>转账第三 tab</b>（复用现有转账表单内容）<small>不做的话 tab 里先只留「支出 / 收入」</small></span></label>
-        <label class="ck"><input type="checkbox" checked /><span>保留「<b>保存再记</b>」按钮<small>连续记账场景很实用，图片里也有</small></span></label>
       </div>
     </div>
   </aside>
@@ -374,9 +435,10 @@
   <!-- ============ RIGHT: stage ============ -->
   <main class="stage">
     <div class="stagehead">
-      <span class="title" id="stageTitle">快速记账 · 支出 / 一级宫格</span>
-      <span class="badge" id="badgeView">重构后</span>
+      <span class="title" id="stageTitle">快速记账 · 支出 / 常用宫格</span>
+      <span class="badge ok" id="badgeView">重构后</span>
       <span class="badge ok" id="badgeFit">一屏完成 · 无需滚动</span>
+      <span class="badge ok" id="badgeIcon">分类与图标沿用现状</span>
       <span class="badge amber" id="badgeDevice" style="display:none">宽屏 · 左右两栏</span>
     </div>
     <div id="legend" style="align-self:stretch;display:flex;flex-wrap:wrap;gap:6px"></div>
@@ -390,82 +452,247 @@
 
     <div class="notes">
       <div class="note">
-        <h4><span class="dot"></span>为什么现状要滚三屏</h4>
+        <h4><span class="dot"></span>现状要滚三屏，宫格被埋在第三行<span class="ms">swipe_vertical</span></h4>
         <table class="cmp">
-          <tr><th>字段</th><th>现状</th><th>图片范式里的位置</th></tr>
-          <tr><td class="h">金额</td><td class="b">输入框 + 系统键盘（点击弹计算器面板）</td><td class="a">键盘上方大号显示区</td></tr>
-          <tr><td class="h">分类</td><td class="b">4 列 × 8 个「常用叶子」+ 全部分类面板</td><td class="a">5 列宫格（一级）</td></tr>
-          <tr><td class="h">支付方式</td><td class="b">独立下拉，紧跟分类</td><td class="a">收进 chip 行 / 更多</td></tr>
+          <tr><th>字段</th><th>现状位置</th><th>新布局位置</th></tr>
+          <tr><td class="h">金额</td><td class="b">输入框 + 系统键盘（另开计算器面板）</td><td class="a">键盘上方大号显示区</td></tr>
+          <tr><td class="h">分类</td><td class="b">4 列 × 8 个常用叶子 + 全部分类按钮</td><td class="a">5 列 × 15 个常用叶子 + 「全部 193」格</td></tr>
+          <tr><td class="h">支付方式</td><td class="b">紧跟分类的独立下拉</td><td class="a">chip 行 / 更多</td></tr>
           <tr><td class="h">账户</td><td class="b">独立选择器（+ 他人代付开关）</td><td class="a">chip 行首位</td></tr>
           <tr><td class="h">日期</td><td class="b">日期组件</td><td class="a">chip 行</td></tr>
-          <tr><td class="h">名称 / 备注</td><td class="b">两个文本框，位置靠后</td><td class="a">金额下方单行内联</td></tr>
+          <tr><td class="h">名称 / 备注</td><td class="b">两个文本框，排在表单第 7、8 位</td><td class="a">金额下方单行内联</td></tr>
           <tr><td class="h">状态</td><td class="b">已完成 / 待处理 分段</td><td class="a">更多面板</td></tr>
-          <tr><td class="h">商家 / 地点 / 标签</td><td class="b">折叠在「更多信息」里</td><td class="a">更多面板</td></tr>
+          <tr><td class="h">商家 / 地点 / 标签</td><td class="b">折叠在「更多信息」</td><td class="a">更多面板</td></tr>
           <tr><td class="h">分摊 / 分期</td><td class="b">条件出现，在表单最末</td><td class="a">更多面板 / chip 徽标</td></tr>
         </table>
         <p style="font-size:11.5px;color:var(--text2);line-height:1.75;margin:9px 0 0">
-          新建支出时手机上约有 <b>10~14 个控件</b>纵向排布，远超一屏；而其中真正每笔都要动的只有
-          <b>分类</b>与<b>金额</b>两项 ⟶ 这正是图片把这两件事铺满整屏、把其余全部降级的原因。
+          新建支出约有 <b>10~14 个控件</b>纵向排布，远超一屏；而真正每笔都要动的只有<b>分类</b>与<b>金额</b>两项
+          ⟶ 这正是参考图把这两件事铺满整屏、把其余全部降级的原因。
         </p>
       </div>
 
       <div class="note">
-        <h4><span class="dot"></span>已存在的零件（不用重造）</h4>
+        <h4><span class="dot"></span>空历史兜底：已定 A（按父分类轮询）<span class="ms">report</span></h4>
+        <p style="font-size:11.8px;color:var(--text2);line-height:1.75;margin:0 0 9px">
+          <code>pickFrequentLeaves</code> 在 <code>usage</code> 为空时会退化成<b>按目录顺序取前 N 个</b>，而种子数据里
+          <b>餐饮的 10 个子分类排在最前</b> ⟶ 新用户首屏会看到 10 个餐饮叶子连着铺两行。
+          但同一个函数还有个<b>更常见的分支</b>：历史一旦非空，排序只把「用过的」提到前面，<b>剩下的空位仍是目录顺序回填</b>——
+          用户只用过 3 类时，第 4~12 格照样是 9 个餐饮叶子。
+        </p>
         <table class="cmp">
-          <tr><th>能力</th><th>现有实现</th><th>复用方式</th></tr>
-          <tr><td class="h">分类宫格</td><td class="b"><code>category_leaf_selector.dart</code> · <code>_LeafTile</code><br>4 列 · 固定 60dp 高 · 图标+名称</td><td class="a">改 5 列、放宽到一级分类</td></tr>
-          <tr><td class="h">数字键盘</td><td class="b"><code>amount_calculator_sheet.dart</code> · <code>_KeyButton</code><br>0-9 . + − × ÷ ( ) = AC ⌫</td><td class="a">抽成公共 <code>MoneyKeypad</code></td></tr>
-          <tr><td class="h">收支分段</td><td class="b"><code>AppSlidingSegmentedControl</code>（分类页已在用）</td><td class="a">直接搬进顶栏</td></tr>
-          <tr><td class="h">常用优先</td><td class="b"><code>MoneyCategoryUsage</code><br><code>compareLeavesByUsage</code> / <code>pickFrequentLeaves</code></td><td class="a">直接驱动宫格排序</td></tr>
-          <tr><td class="h">图标渲染</td><td class="b"><code>CategoryIconWidget</code>：Material 图标名 / emoji / 回退</td><td class="a">原地扩展即可</td></tr>
-          <tr><td class="h">金额表达式</td><td class="b"><code>MoneyAmountExpression</code>（<code>12.5+38+6</code>）</td><td class="a">键盘直接吐表达式</td></tr>
-          <tr><td class="h">低频字段面板</td><td class="b"><code>_AdvancedTransactionFields</code>（商家/地点/标签）</td><td class="a">扩成「更多」</td></tr>
-          <tr><td class="h">转账</td><td class="b"><code>TransferFormDialog</code>（转出/转入/手续费）</td><td class="a">第三 tab 内嵌复用</td></tr>
+          <tr><th>场景</th><th>现状（目录顺序回填）</th><th>按 A 轮询后</th></tr>
+          <tr><td class="h">无使用记录</td><td class="b">早餐 / 午餐 / 晚餐 / 餐厅堂食 / 外卖 / 生鲜杂货 / 烹饪原料 / 咖啡茶饮 / 酒水饮料 / 零食，<b>再 5 个交通</b> → 15 格里 10 个是餐饮</td><td class="a">早餐 / 公交地铁 / 日用品 / 房租 / 门诊挂号 / 电影演出 / 课程 / 交通票务 / 软件订阅 / 发红包 / 健康保险 / 宠物食品 / 办公用品 / 现金捐赠 / 子女 → <b>15 个不同的一级分类</b></td></tr>
+          <tr><td class="h">只用过 3 类<br/>（午餐 / 公交地铁 / 日用品）</td><td class="b">3 个常用 + 早餐 / 晚餐 / 餐厅堂食 / 外卖 / 生鲜杂货 / 烹饪原料 / 咖啡茶饮 / 酒水饮料 / 零食 + 打车网约车 / 火车高铁 / 飞机 → <b>12/15 挤在餐饮与交通</b></td><td class="a">3 个常用 + 早餐 / 打车网约车 / 服饰 / 房租 / 门诊挂号 / 电影演出 / 课程 / 交通票务 / 软件订阅 / 发红包 / 健康保险 / 宠物食品 → 每类各 1 个补位</td></tr>
+          <tr><td class="h">轮询的实现</td><td class="b" colspan="2">父分类按目录顺序排队，每轮各取 1 个叶子；某父分类取空就跳过；叶子本身可能没有子分类（父分类即叶子），此时它就是该父分类的第 1 个候选。<b>只改 <code>pickFrequentLeaves</code> 的一个分支，宫格内容与图标完全不变。</b></td></tr>
         </table>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.75;margin:9px 0 0">
+          两个复现场景在左侧场景列表里：<b>①无使用记录 · 现状</b>、<b>②低频 3 类 · 现状</b>；<b>③轮询后 · A 生效</b> 是生效后的对照
+          （格子里左上角的 <code>R1 / R2</code> 标出这一格来自第几轮轮询）。
+        </p>
+      </div>
+
+      <div class="note">
+        <h4><span class="dot"></span>使用次数与频率：能用，但「频率」现在算不出来<span class="ms">tune</span></h4>
+        <p style="font-size:11.8px;color:var(--text2);line-height:1.75;margin:0 0 9px">
+          表里现有的三个字段（<code>money_category_usage_stats</code> / <code>money_sub_category_usage_stats</code>，写在
+          <code>_rebuildUsageStatsForUser</code> 里，整表重建自流水）：
+        </p>
+        <table class="cmp">
+          <tr><th>字段</th><th>含义</th><th>能不能当「频率」用</th></tr>
+          <tr><td class="h">useCount</td><td>历史累计次数（全时段）</td><td class="b">是「总量」，不是频率——天天用的和一年用一次的会打成平手</td></tr>
+          <tr><td class="h">lastUsedAt</td><td>最近一次使用时间</td><td class="b">只能回答「最近记过没」，不能回答「近 30 天记了几次」</td></tr>
+          <tr><td class="h">totalAmountMinor</td><td>累计金额</td><td class="b">已有，但只作第三顺位兜底（金额大 ≠ 常用）</td></tr>
+        </table>
+        <p style="font-size:11.8px;color:var(--text2);line-height:1.75;margin:9px 0 9px">
+          现口径 <code>最近使用 → 次数 → 金额</code> 的副作用：上个月只记过一次的「罚款」会插到第一格，而天天用的「午餐」若最近没记就会往后掉。
+          <b>真「频率」需要事件序列或时间分桶，表里都没有</b>，所以有两条路：
+        </p>
+        <table class="cmp">
+          <tr><th>方案</th><th>做法</th><th>代价 / 风险</th></tr>
+          <tr><td class="h">B1 · 时间分层<br/><span style="color:var(--primary);font-weight:900">（已定 · 已落地）</span></td><td class="a">用现有两字段做<b>时段分层</b>：近 7 天用过 &gt; 近 30 天 &gt; 近 90 天 &gt; 更早 &gt; 从未用过；<b>同档内按 useCount 降序</b></td><td class="b">只改 <code>compareUsageStats</code> 一个函数 + 单测；<b>零迁移、零新列</b>。用「层」代替连续分数，排序结果可解释</td></tr>
+          <tr><td class="h">B2 · 加计数列</td><td class="a">两张用量表各加 <code>useCount30d</code> / <code>useCount90d</code>，重建时按 <code>transactionAt</code> 分桶累加（重建函数已在扫全表流水，纯附加）</td><td class="b">schemaVersion <b>25 → 26</b> + <code>migrator.addColumn</code> ×4 + 重建逻辑 + 迁移测试。表是派生缓存，<b>不用回填历史</b>（下次重建即填好）</td></tr>
+          <tr><td class="h">B3 · 加权评分</td><td class="a"><code>score = w₁·次数30d + w₂·次数90d + w₃·总次数 − 衰减(距今天数)</code>，需要 B2 的列</td><td class="b">B2 + 调参。分数不可解释，用户会觉得「排序怎么老是变」——<b>不建议</b></td></tr>
+        </table>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.75;margin:9px 0 0">
+          <b>已定 B1</b>：宫格只有 15 格，用户感知的是「我常记的在不在第一屏」，不是精确名次；时间分层已能覆盖「最近换了分类」与「长期高频」两种情况。
+          <b>B2 留作后续</b>（比如统计页要出「近 30 天 TOP 10」时再一起做）。
+          另外注意：A（轮询）与 B（频率排序）不冲突，是两层——<b>频率决定第一层怎么排，轮询决定第二层怎么补</b>。
+          次数与频率<b>只用于排序，不在格子上显示</b>：15 个格子再加一层次数角标会压过分类名，反而更难扫。
+        </p>
+      </div>
+
+      <div class="note">
+        <h4><span class="dot"></span>B1 落地：时间分层口径（已实现）<span class="ms">check_circle</span></h4>
+        <p style="font-size:11.8px;color:var(--text2);line-height:1.75;margin:0 0 9px">
+          <code>MoneyCategoryUsage.compareUsageStats</code> 里原来第一顺位是<b>「最近使用时间」直接比大小</b>——
+          等于「昨天记过一次」就能压过「近 7 天记了 62 次」。B1 把它换成<b>先分档、档内看次数</b>：
+        </p>
+        <table class="cmp">
+          <tr><th>档位</th><th>判定（按自然日，忽略时分秒）</th><th>档内排序</th></tr>
+          <tr><td class="h">0 · 近 7 天</td><td class="a">距今天 ≤ 7 天（含端点；未来时间也归这里）</td><td class="b" rowspan="4">使用次数 ↓<br/>→ 累计金额 ↓<br/>→ 谁更近</td></tr>
+          <tr><td class="h">1 · 近 30 天</td><td class="a">8 ~ 30 天</td></tr>
+          <tr><td class="h">2 · 近 90 天</td><td class="a">31 ~ 90 天</td></tr>
+          <tr><td class="h">3 · 更早</td><td class="a">&gt; 90 天</td></tr>
+          <tr><td class="h">4 · 从未用过</td><td class="a"><code>lastUsedAt == null</code>，单独垫底</td><td class="b">同档内才比次数/金额</td></tr>
+        </table>
+        <p style="font-size:11.8px;color:var(--text2);line-height:1.75;margin:9px 0 9px">
+          排序结果变化（同一份用量，<b>「④B1 分层」场景</b>里是生效后的宫格）：
+        </p>
+        <table class="cmp">
+          <tr><th>叶子</th><th>最近使用</th><th>累计次数</th><th>现状（纯最近）</th><th>B1 分层</th></tr>
+          <tr><td class="h">早餐</td><td>5 天前</td><td>62</td><td class="b">第 3 格</td><td class="a"><b>第 1 格 ↑</b></td></tr>
+          <tr><td class="h">公交地铁</td><td>3 天前</td><td>40</td><td class="b">第 2 格</td><td class="a">第 2 格</td></tr>
+          <tr><td class="h">咖啡茶饮</td><td>6 天前</td><td>18</td><td class="b">第 4 格</td><td class="a">第 3 格 ↑</td></tr>
+          <tr><td class="h">电影演出</td><td>昨天</td><td>1</td><td class="b"><b>第 1 格</b></td><td class="a">第 4 格 ↓</td></tr>
+          <tr><td class="h">午餐</td><td>20 天前</td><td>88</td><td class="b">第 5 格</td><td class="a">第 5 格</td></tr>
+        </table>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.75;margin:9px 0 0">
+          <b>实现面</b>：只动 <code>money_category_usage.dart</code> —— <code>compareUsageStats</code> 改为分档比较 +
+          新增 <code>MoneyCategoryUsage.recencyLevel(...)</code>（公开，便于单测断言档位边界）。
+          调用方 <code>compareLeavesByUsage</code> / <code>sortLeavesByUsage</code> / <code>pickFrequentLeaves</code>
+          <b>签名与行为都不用改</b>，宫格与「全部分类」面板沿用同一个比较器，口径不会分裂。
+          <br/><b>测试</b>：域层新增 7 例（档位顺序、档位边界 7/8/30/31/90/91、档内次数、跨档时间、从未用过垫底、同档同次比金额/更近、相等），
+          选择器层新增 1 例端到端；另外把原先写死 <code>2026-09-xx</code> 的用例改成<b>相对日期</b>——
+          分层口径依赖「今天」，写死日期会在跨过档位边界后变成随机失败。
+          <br/><b>仍然做不到的</b>（诚实说明）：B1 <b>跨档不看次数</b>。88 次的「午餐」只要近 20 天没记，仍排在昨天只记 1 次的「电影演出」之后。
+          要消掉这条得上 B2/B3（加计数列或加权评分）。当前认为可接受：档位已经把「最近换分类」和「长期高频」都覆盖住了。
+          <br/><b>影响面</b>：分类宫格 + 「全部分类」面板（同一比较器）。<code>转账 / 账户</code> 侧另有一套次数优先的比较器，<b>本次不动</b>。
+        </p>
+      </div>
+
+      <div class="note">
+        <h4><span class="dot"></span>本轮落地：分类列表 + 吸底记账条（已实现）<span class="ms">check_circle</span></h4>
+        <p style="font-size:11.8px;color:var(--text2);line-height:1.75;margin:0 0 9px">
+          <b>新增文件</b>：<code>presentation/transactions/quick_entry_sheet.dart</code>（一屏界面）、
+          <code>presentation/components/money_keypad.dart</code>（公共键盘）、
+          <code>presentation/transactions/transaction_account_rules.dart</code>（账户可选范围与支付方式锁定，新旧两条入口共用）。
+          <b>改动文件</b>：<code>category_leaf_selector.dart</code>（<code>pickFrequentLeaves</code> 两层填充）、
+          <code>amount_calculator_sheet.dart</code>（改用公共键盘，行为不变）、
+          <code>transaction_form_dialog.dart</code>（账户/支付方式规则改调公共函数，删掉私有副本）、
+          <code>money_categories_section.dart</code>（<b>分类 tab 改成「分类列表 + 吸底记账条」</b>，原有管理整体留在 <code>CategoryManagerPanel</code> 弹窗）、
+          <code>bookkeeping_page.dart</code>（分类页把一级导航整排收起，退路交给页面顶栏）。
+          <br/><b>回退项</b>：<code>money_quick_action_launcher.dart</code> / <code>money_quick_action_fab.dart</code> / <code>home_quick_actions_row.dart</code>
+          里的「快速记账」动作<b>已删除</b>——这个界面就是分类页，不必再在 FAB 里单开一格。
+        </p>
+        <table class="cmp">
+          <tr><th>稿件</th><th>落地做法</th><th>原因</th></tr>
+          <tr><td class="h">宫格 5 列 × 15 常用 + 「全部 193」格</td><td class="a">照做：<code>pickFrequentLeaves(count: 15)</code> + 第 16 格「全部 N」</td><td class="b">与稿件一致</td></tr>
+          <tr><td class="h">A · 按父分类轮询补位</td><td class="a">照做，且<b>作为第二层填充</b>：第一层用过的按 B1 排，剩下的空位交给轮询（不再只在「整表为空」时生效）</td><td class="b">顺手修掉「只用过 3 类时尾部 9 格又是餐饮」</td></tr>
+          <tr><td class="h">自绘键盘常驻</td><td class="a">照做：4×4 数字键盘（<code>⌫ + C</code> 一列，右下「保存」）；<b>备注框聚焦时让位给系统键盘</b></td><td class="b">否则备注没法输入</td></tr>
+          <tr><td class="h">一行 chip + 「更多」面板</td><td class="a">chip = 账户 / 日期 / 更多；面板内 = 名称 / 家庭账本 / 支付方式（含自定义名）/ 他人代付 / 状态</td><td class="b">名称比备注低频，移到面板；备注留在主界面</td></tr>
+          <tr><td class="h">「保存再记」</td><td class="a">顶部开关（FilterChip）：开 = 保存后不关闭，只清金额与备注，分类/账户沿用</td><td class="b">与老表单的复位口径一致</td></tr>
+          <tr><td class="h">承载位置（<b>本轮改过</b>）</td><td class="a">记账模块的<b>「分类」tab</b>，形态是<b>上半屏分类列表 + 底部吸底记账条</b>（<code>QuickEntrySheet(dock: true)</code>）：上面点子分类即选中，下面输金额保存。分类整理收进右上角「分类管理」弹窗，<b>FAB 里不再有入口</b></td><td class="b">整页都是键盘会<b>看不见分类</b>，而用户是照着自己的分类结构记账的；列表必须留着</td></tr>
+          <tr><td class="h">键盘尺寸（<b>本轮改过</b>）</td><td class="a">dock 上键高 <code>48→38</code>、间距 <code>8→6</code>，四行从 216px 压到 <b>170px</b>；弹窗形态 48→44</td><td class="b">键宽远大于键高，纵向缩一点不影响命中，但能把空间还给分类列表</td></tr>
+          <tr><td class="h">一级导航（<b>本轮新增</b>）</td><td class="a">分类页把「流水 / 账户 / 预算 / 统计 / 更多」整排<b>收起</b>，换成页面自带的顶栏：返回 + 标题 + 收支分段 + 分类管理</td><td class="b">那排导航约 60px，收掉正好是一个分类卡片的高度；收了必须给返回，否则这一页没有出口</td></tr>
+          <tr><td class="h">chip 行新增「详细填写」</td><td class="a">转老表单并<b>带上已填的金额 / 分类 / 备注 / 账户 / 日期</b></td><td class="b">要分摊 / 分期 / 商家 / 标签时一步可达，且不用从空白重填</td></tr>
+          <tr><td class="h">宽屏（≥900）</td><td class="a">左右两栏：左栏宫格 + chip 行，右栏金额 + 备注 + 键盘</td><td class="b">单栏卡片在宽屏上会被拉成细高条</td></tr>
+          <tr><td class="h">记住上次账户</td><td class="a">读 <code>TransactionEntryDefaultsStore</code>（保存时本来就在写这一份），用户已手选则不覆盖</td><td class="b">写入零新代码，只补了读取</td></tr>
+          <tr><td class="h">编辑态 / 模板 / 提醒 / 截图 / 分期等入口</td><td class="a"><b>一个都没动</b>，继续走老表单</td><td class="b">这些入口带的字段（商家 / 地点 / 标签 / 分摊 / 期数）本页根本没有</td></tr>
+        </table>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.75;margin:9px 0 0">
+          <b>与稿件不一致、需要你知道的 3 条</b>：
+          <br/>① <b>转账第三 tab 未做</b>（稿件里唯一未确认项），先只有「支出 / 收入」。
+          <br/>② <b>日期不记「上次」</b>：只记住账户与支付方式。补记场景下默认「今天」才对，带出上次日期反而会悄悄记错日子。
+          <br/>③ <b>完整形态（宫格 + 键盘的弹窗 / 内嵌）目前没有入口</b>：<code>showQuickEntrySheet</code> 保留着但没人调，因为入口按你要求从 FAB 撤了，分类页用的是 dock 形态。确认不用了可以连带它的 16 例测试一起删。
+          <br/><b>入口策略（改过两轮，留个记录）</b>：第一版把 <code>支出 / 收入</code> 快捷动作接管到这版界面 → <b>按你要求回退</b>；第二版在 FAB 加一格「快速记账」→ <b>也按你要求撤掉</b>。现在这版界面就住在「分类」tab 里，没有第二个入口。
+          <br/><b>dock 上的取舍</b>：账户 / 日期 / 更多收成金额行右侧的图标，备注改成一行弹窗，「更多」里再分「更多字段」与「详细填写」两条——都是为了把纵向空间让给分类列表。
+          <br/><b>「详细填写」的两个实现要点</b>：① 老表单带 <code>onSubmit</code> 时成功只 <code>pop()</code> 不带返回值，所以用「写过才关」的标志位判断；② 内嵌在分类 tab 时保存成功<b>不 pop</b>（会把整个记账页弹掉），改为清空复位。
+          <br/><b>测试</b>：一屏界面 16 例（新增 dock 结构与「没选分类时的提示」）；分类页 14 例（10 例管理用例直接挂 <code>CategoryManagerPanel</code>，另 4 例验证分类列表 + 吸底条、点选联动、返回回调、管理入口）；
+          <code>flutter analyze</code> 全项目无 issue。
+        </p>
       </div>
     </div>
   </main>
 </div>
 
 <div class="foot">
-  <div><b>说明</b>：本文件只是分析与方案确认稿，<b>未改动任何生产代码</b>。图标以 emoji 占位，用于表达「宫格 + 圆形底」的观感；实际是否引插画资产见左侧待确认项。</div>
+  <div><b>说明</b>：本文件是<b>差异记录稿</b>——A 轮询补位、B1 时间分层、公共键盘与账户规则、以及「分类」tab 的<b>分类列表 + 吸底记账条</b>形态<b>都已落地生产代码</b>（新建 <code>quick_entry_sheet.dart</code> / <code>money_keypad.dart</code> / <code>transaction_account_rules.dart</code>，改造 <code>money_categories_section.dart</code> 与 <code>bookkeeping_page.dart</code>）。稿件里画的<b>整屏宫格</b>在分类页没有采用（会挡住分类列表），只在弹窗形态里保留；转账第三 tab 仍未落地。宫格里的图标是 Material Symbols Rounded（与 <code>materialIconForCategoryIcon</code> 同名的那批），用于示意「现有图标放进宫格」的观感。</div>
   <div class="strip">
-    <span>参考：docs/specs/installments-refactor-mockup.html</span>
-    <span>现有实现：money_installments_section / category_leaf_selector / amount_calculator_sheet</span>
-    <span>配色沿用 app 主题 token：支出红 #A7463C · 收入绿 #006E30</span>
+    <span>分类数据：种子 18 支出父 / 10 收入父 → 叶子 193（支出 143 + 收入 50）</span>
+    <span>复用：category_leaf_selector · amount_calculator_sheet · AppSlidingSegmentedControl · MoneyCategoryUsage</span>
+    <span>排序现状：B1 分层 = 近 7 天 &gt; 近 30 天 &gt; 近 90 天 &gt; 更早 &gt; 未用 → 档内次数 → 金额 → 更近 → 目录顺序</span>
   </div>
 </div>
 
 <script>
 /* ---------------- data ---------------- */
-var EXPENSE = [
-  ['餐饮','🍜',10],['交通','🚌',10],['购物','🛍️',24],['居住缴费','🏠',16],['医疗健康','💊',10],
-  ['娱乐','🎮',10],['教育','📚',8],['旅行','✈️',8],['订阅服务','📺',6],['人情礼金','🧧',6],
-  ['保险','🛡️',5],['宠物','🐾',5],['商务支出','💼',5],['公益慈善','🎗️',4],['家庭','👨‍👩‍👧',6],
-  ['转账','💸',3],['贷款还款','🏦',4],['其他支出','📦',0]
+/* 有使用记录：按「常用」排序 → 跨父分类混合。tint 用所属父分类的种子色 */
+var L_MIXED = [
+  ['早餐','breakfast_dining','#F97316'],['午餐','lunch_dining','#F97316'],['外卖','delivery_dining','#F97316'],
+  ['咖啡茶饮','local_cafe','#F97316'],['零食','bakery_dining','#F97316'],
+  ['公交地铁','subway','#0EA5E9'],['打车网约车','local_taxi','#0EA5E9'],['加油','local_gas_station','#0EA5E9'],
+  ['日用品','inventory_2','#EC4899'],['超市','storefront','#EC4899'],
+  ['房租','apartment','#6366F1'],['水电燃气','bolt','#6366F1'],['话费','phone_iphone','#6366F1'],
+  ['电影演出','theaters','#8B5CF6'],['药品','medication','#10B981']
 ];
-var INCOME = [
-  ['工资','💰',3],['奖金','🎁',2],['投资收益','📈',4],['储蓄收益','🏦',3],['礼金','🧧',2],
-  ['转账','💸',3],['报销','🧾',2],['经营收入','🏪',3],['借贷款项','🤝',2],['其他收入','✨',0]
+/* 无使用记录 · 现状：目录顺序取前 15 个 → 前 10 格全是餐饮 */
+var L_NEW = [
+  ['早餐','breakfast_dining','#F97316'],['午餐','lunch_dining','#F97316'],['晚餐','dinner_dining','#F97316'],
+  ['餐厅堂食','restaurant','#F97316'],['外卖','delivery_dining','#F97316'],['生鲜杂货','local_grocery_store','#F97316'],
+  ['烹饪原料','kitchen','#F97316'],['咖啡茶饮','local_cafe','#F97316'],['酒水饮料','local_cafe','#F97316'],
+  ['零食','bakery_dining','#F97316'],
+  ['公交地铁','subway','#0EA5E9'],['打车网约车','local_taxi','#0EA5E9'],['火车高铁','train','#0EA5E9'],
+  ['飞机','flight','#0EA5E9'],['加油','local_gas_station','#0EA5E9']
 ];
-var SUBS = {
-  '餐饮':[['早餐','🥐'],['午餐','🍚'],['晚餐','🍲'],['餐厅堂食','🍽️'],['外卖','🛵'],['生鲜杂货','🥬'],['咖啡茶饮','☕'],['酒水饮料','🍺'],['零食','🍪'],['烹饪原料','🧂']],
-  '交通':[['公交地铁','🚇'],['打车网约车','🚕'],['火车高铁','🚄'],['飞机','✈️'],['加油','⛽'],['停车','🅿️'],['共享单车','🚲']]
-};
+/* 只用过 3 类 · 现状：3 个常用提到前面，剩余 12 格仍按目录顺序回填 → 9 格又是餐饮 */
+var L_SPARSE = [
+  ['午餐','lunch_dining','#F97316'],['公交地铁','subway','#0EA5E9'],['日用品','inventory_2','#EC4899'],
+  ['早餐','breakfast_dining','#F97316'],['晚餐','dinner_dining','#F97316'],['餐厅堂食','restaurant','#F97316'],
+  ['外卖','delivery_dining','#F97316'],['生鲜杂货','local_grocery_store','#F97316'],['烹饪原料','kitchen','#F97316'],
+  ['咖啡茶饮','local_cafe','#F97316'],['酒水饮料','local_cafe','#F97316'],['零食','bakery_dining','#F97316'],
+  ['打车网约车','local_taxi','#0EA5E9'],['火车高铁','train','#0EA5E9'],['飞机','flight','#0EA5E9']
+];
+/* 只用过 3 类 · 按 A 轮询后：3 个常用（★）+ 12 格每类各取 1 个（R1） → 覆盖 15 个不同的一级分类 */
+var L_ROLL = [
+  ['午餐','lunch_dining','#F97316','★'],['公交地铁','subway','#0EA5E9','★'],['日用品','inventory_2','#EC4899','★'],
+  ['早餐','breakfast_dining','#F97316','R1'],['打车网约车','local_taxi','#0EA5E9','R1'],['服饰','checkroom','#EC4899','R1'],
+  ['房租','apartment','#6366F1','R1'],['门诊挂号','medical_services','#10B981','R1'],['电影演出','theaters','#8B5CF6','R1'],
+  ['课程','cast_for_education','#14B8A6','R1'],['交通票务','confirmation_number','#06B6D4','R1'],['软件订阅','apps','#0D9488','R1'],
+  ['发红包','payments','#F43F5E','R1'],['健康保险','health_and_safety','#2563EB','R1'],['宠物食品','pets','#65A30D','R1']
+];
+/* ④B1 分层后的结果：前 4 格同属「近 7 天」档 → 档内按次数；角标 7d/30d/90d/旧 = 所属档位，
+   R1 = 第二层轮询补位。（角标只是本稿的标注，产品里不在格子显示次数/档位） */
+var L_LAYERED = [
+  ['早餐','breakfast_dining','#F97316','7d'],['公交地铁','subway','#0EA5E9','7d'],
+  ['咖啡茶饮','local_cafe','#F97316','7d'],['电影演出','theaters','#8B5CF6','7d'],
+  ['午餐','lunch_dining','#F97316','30d'],['房租','apartment','#6366F1','30d'],['药品','medication','#10B981','30d'],
+  ['外卖','delivery_dining','#F97316','90d'],['日用品','inventory_2','#EC4899','90d'],
+  ['打车网约车','local_taxi','#0EA5E9','旧'],['话费','phone_iphone','#6366F1','旧'],['零食','bakery_dining','#F97316','旧'],
+  ['课程','cast_for_education','#14B8A6','R1'],['交通票务','confirmation_number','#06B6D4','R1'],
+  ['软件订阅','apps','#0D9488','R1']
+];
+var L_INCOME = [
+  ['基本工资','payments','#22C55E'],['加班费','more_time','#22C55E'],['兼职收入','work','#22C55E'],
+  ['年终奖','card_giftcard','#EAB308'],['绩效奖金','workspace_premium','#EAB308'],['项目奖金','emoji_events','#EAB308'],
+  ['基金收益','show_chart','#3B82F6'],['股票收益','candlestick_chart','#3B82F6'],['分红','donut_large','#3B82F6'],
+  ['银行利息','savings','#0891B2'],['定期存款','account_balance','#0891B2'],
+  ['红包','redeem','#F43F5E'],['商务报销','receipt_long','#0F766E'],['退款','keyboard_return','#0F766E']
+];
+var ALLCOUNT = { grid:193, newuser:193, sparse:193, rollout:193, layered:193, income:50, typing:193 };
+
 var CROWS = {
-  grid:[['💳','现金',0],['📅','今天 10:18',0],['🏷️','标签',0],['📝','备注',1]],
-  income:[['💳','工资卡',1],['📅','今天 10:18',0],['🏷️','标签',0],['💸','报销',0]],
-  transfer:[['🏦','招商储蓄',1],['➡️','余额宝',1],['📅','今天 10:18',0],['🧾','手续费 0',1]]
+  grid:[['account_balance_wallet','现金',1],['calendar_month','今天 10:18',0],['label','标签',0],['edit_note','备注',0]],
+  typing:[['account_balance_wallet','现金',1],['calendar_month','今天 10:18',0],['label','标签',0]],
+  newuser:[['account_balance_wallet','现金',1],['calendar_month','今天 10:18',0],['label','标签',0],['edit_note','备注',0]],
+  sparse:[['account_balance_wallet','现金',1],['calendar_month','今天 10:18',0],['label','标签',0],['edit_note','备注',0]],
+  rollout:[['account_balance_wallet','现金',1],['calendar_month','今天 10:18',0],['label','标签',0],['edit_note','备注',0]],
+  layered:[['account_balance_wallet','现金',1],['calendar_month','今天 10:18',0],['label','标签',0],['edit_note','备注',0]],
+  income:[['savings','工资卡',1],['calendar_month','今天 10:18',0],['label','标签',0],['receipt','报销',0]],
+  transfer:[['calendar_month','今天 10:18',1],['label','标签',0],['receipt','手续费 0',0]],
+  more:[['account_balance_wallet','现金',1],['calendar_month','今天 10:18',0]]
 };
-var CHIPMETA = {grid:'更多',income:'更多',transfer:'更多'};
 
 var TITLES = {
-  before:'现状 · 记支出表单（需滚动）',
-  after:'快速记账 · 支出 / 一级宫格'
-};
-var BADGES = {
-  before:['现状','表单弹窗 460px · 字段纵向堆叠','需滚 2~3 屏'],
-  after:['重构后','一屏完成 · 无需滚动','']
+  grid:'快速记账 · 支出 / 常用宫格（15 个叶子）',
+  typing:'快速记账 · 输入中（已选 餐饮 · 午餐）',
+  newuser:'快速记账 · 无使用记录（现状兜底）',
+  sparse:'快速记账 · 只记过 3 类（现状兜底）',
+  rollout:'快速记账 · 按父分类轮询后（A 生效）',
+  layered:'快速记账 · B1 时间分层后的「常用」排序',
+  income:'快速记账 · 收入 / 常用宫格',
+  transfer:'快速记账 · 转账',
+  more:'快速记账 · 「更多」字段面板',
+  before:'现状 · 记支出表单（需滚动）'
 };
 
 /* ---------------- state ---------------- */
@@ -473,71 +700,73 @@ var state = { view:'after', scen:'grid', device:'phone', annot:true, theme:'ligh
 
 /* ---------------- helpers ---------------- */
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function ic(name,size){ return '<span class="ms" style="font-size:'+size+'px">'+name+'</span>'; }
 
-/* ---------------- AFTER: keypad ---------------- */
-function cells(list, kind){
+/* ---------------- AFTER: grid ---------------- */
+function cells(list, showAll){
   var html = '';
   for (var i=0;i<list.length;i++){
-    var name=list[i][0], em=list[i][1], sub=list[i][2];
-    var on = (state.scen==='sub' && name==='餐饮');
-    html += '<div class="cell'+(on?' on':'')+'" data-cat="'+esc(name)+'">'
-          +   '<div class="bub">'+em
-          +     (sub>0 ? '<span class="dot"></span>' : '')
-          +   '</div>'
+    var name=list[i][0], sym=list[i][1], tint=list[i][2];
+    var rr = list[i][3] ? ' data-rr="'+list[i][3]+'"' : '';
+    var on = (state.scen==='typing' && name==='午餐');
+    html += '<div class="cell'+(on?' on':'')+'" style="--tint:'+tint+'" data-cat="'+esc(name)+'"'+rr+'>'
+          +   '<div class="bub">'+ic(sym,19)+'</div>'
           +   '<div class="lb">'+esc(name)+'</div>'
           + '</div>';
   }
-  html += '<div class="cell more" data-mark="1"><div class="bub">＋</div><div class="lb">管理分类</div></div>';
-  return '<div class="cgrid">'+html+'</div>';
-}
-
-function substrip(){
-  var subs = SUBS['餐饮'] || [];
-  if(!subs.length) return '';
-  var s = '';
-  for (var i=0;i<subs.length;i++){
-    s += '<span class="sleaf'+(i===1?' on':'')+'">'+subs[i][1]+' '+esc(subs[i][0])+'</span>';
+  if(showAll){
+    var n = ALLCOUNT[state.scen] || 193;
+    /* ①②③ 已被提示条占用的场景里不再给「全部」格挂角标 */
+    var noMark = (state.scen==='newuser'||state.scen==='sparse'||state.scen==='rollout'||state.scen==='layered');
+    var mark = noMark ? '' : ' data-mark="1"';
+    html += '<div class="cell more"'+mark+'><div class="bub">'+ic('apps',19)+'</div>'
+          + '<div class="lb">全部 '+n+'</div></div>';
   }
-  s += '<span class="sleaf all">全部分类（221）</span>';
-  return '<div class="substrip"><span class="pn">🍜 餐饮 ▸</span><span class="sl">'+s+'</span></div>';
+  return '<div class="cgrid">'+html+'</div>';
 }
 
 function chiprow(kind){
   var rows = CROWS[kind] || CROWS.grid;
   var h = '';
   for (var i=0;i<rows.length;i++){
-    var em=rows[i][0], lb=rows[i][1], hot=rows[i][2];
-    h += '<span class="cchip'+(hot?' hot':'')+'"><span class="em">'+em+'</span>'+esc(lb)+'</span>';
+    var sym=rows[i][0], lb=rows[i][1], hot=rows[i][2];
+    h += '<span class="cchip'+(hot?' hot':'')+'">'+ic(sym,14)+esc(lb)+'</span>';
   }
-  h += '<span class="cchip gh" data-mark="3"><span class="em">＋</span>'+esc(CHIPMETA[kind]||'更多')+'</span>';
+  h += '<span class="cchip gh" data-mark="3">'+ic('add',14)+'更多</span>';
   return '<div class="crow">'+h+'</div>';
 }
 
-function amount(kind, big){
-  var cat = '餐饮 · 午餐';
-  var cur = '¥', num = '0.00', cls = 'expense';
-  if(kind==='income'){ cat='工资'; cur='+¥'; cls='income'; num='0.00'; }
-  if(kind==='transfer'){ cat='账户间转账'; cur='¥'; num='0.00'; }
-  return '<div class="kamount" data-mark="2">'
+function amount(kind){
+  var cur='¥', num='0.00', cls='expense', cat='', catIcon='', catTint='#4269D3', note='点这里填备注', ph=true;
+  if(kind==='income'){ cur='+¥'; cls='income'; cat='工资 · 基本工资'; catIcon='savings'; catTint='#006E30'; }
+  if(kind==='transfer'){ cur='¥'; cls='transfer'; cat='账户间转账'; catIcon='sync_alt'; catTint='#004557'; }
+  if(kind==='expense' && state.scen==='typing'){
+    cat='餐饮 · 午餐'; catIcon='lunch_dining'; catTint='#A7463C'; num='12.50'; note='和老王吃饭'; ph=false;
+  }
+  var catChip = cat
+    ? '<span class="cat" style="color:'+catTint+';border-color:color-mix(in srgb,'+catTint+' 30%,var(--hair))">'
+      + ic(catIcon,14)+' '+esc(cat)+'</span>'
+    : '<span class="cat">未选分类</span>';
+  return '<div class="kamount'+(cat?' sel':'')+'" data-mark="2">'
        +   '<div class="am">'
        +     '<span class="cur" style="color:var(--'+cls+')">'+cur+'</span>'
        +     '<span class="num" style="color:var(--'+cls+')">'+num+'</span>'
-       +     '<span class="cat">'+esc(cat)+'</span>'
+       +     catChip
        +   '</div>'
        +   '<div class="meta">'
-       +     '<span class="t">🕙 '+(kind==='income'?'09:30':'10:18')+'</span>'
-       +     '<span class="note">'+(big?'写点备注…':'点这里填备注')+'</span>'
-       +     '<span class="up">⌃</span>'
+       +     '<span class="t">'+ic('schedule',14)+' '+(kind==='income'?'09:30':'10:18')+'</span>'
+       +     '<span class="note'+(ph?' ph':'')+'">'+esc(note)+'</span>'
+       +     '<span class="up">'+ic('keyboard_arrow_up',16)+'</span>'
        +   '</div>'
        + '</div>';
 }
 
-function keypad(kind){
+function keypad(){
   var rows = [
     ['1','2','3',{t:'＋×',c:'op'}],
     ['4','5','6',{t:'－÷',c:'op'}],
     ['7','8','9',{t:'再记',c:'sub'}],
-    ['.','0',{t:'⌫',c:'op'},{t:'完成',c:'act'}]
+    ['.','0',{t:'backspace',c:'op',i:1},{t:'完成',c:'act'}]
   ];
   var h = '';
   for (var r=0;r<rows.length;r++){
@@ -545,6 +774,7 @@ function keypad(kind){
     for (var c=0;c<rows[r].length;c++){
       var k = rows[r][c];
       if(typeof k === 'string') h += '<button class="key">'+k+'</button>';
+      else if(k.i) h += '<button class="key '+k.c+'">'+ic(k.t,19)+'</button>';
       else h += '<button class="key '+k.c+'">'+k.t+'</button>';
     }
     h += '</div>';
@@ -559,95 +789,156 @@ function mkTopbar(kind){
     h += '<button class="s'+(tabs[i][0]===kind?' on':'')+'">'+tabs[i][1]+'</button>';
   }
   return '<div class="khead">'
-       +   '<span class="xbtn">✕</span>'
+       +   '<span class="xbtn">'+ic('close',16)+'</span>'
        +   '<span class="kseg">'+h+'</span>'
        +   '<span class="book">My Life</span>'
        + '</div>';
 }
 
+function chipKindFor(kind){
+  if(kind==='transfer') return 'transfer';
+  if(kind==='income') return 'income';
+  if(state.scen==='typing') return 'typing';
+  if(state.scen==='more') return 'more';
+  return 'grid';
+}
+
+/* 转账：宫格位置换成一进一出两个账户块 */
+function accountBox(){
+  function row(k, sym, tint, v, s, mark){
+    return '<div class="arow"'+(mark?' data-mark="'+mark+'"':'')+' style="--tint:'+tint+'">'
+         +   '<span class="ab">'+ic(sym,20)+'</span>'
+         +   '<span class="ac"><span class="k">'+k+'</span>'
+         +     '<div class="v">'+esc(v)+'</div><div class="s">'+esc(s)+'</div></span>'
+         +   '<span class="chev">'+ic('chevron_right',18)+'</span>'
+         + '</div>';
+  }
+  return '<div class="acctbox">'
+       +   row('转出账户','account_balance','#4269D3','招商储蓄','尾号 6821 · 余额 ¥12,480.00',1)
+       +   '<span class="swap">'+ic('swap_vert',18)+'</span>'
+       +   row('转入账户','savings','#006E30','余额宝','当前 ¥3,200.00')
+       + '</div>';
+}
+
+var GRIDHINT = {
+  newuser:'<div class="gridhint" data-mark="1">'+ic('report',16)
+    +'<span>没有使用记录 → 按目录顺序取前 15 个 → 前 <b>10 格全是「餐饮」</b>，再 5 个交通。'
+    +'这条按 <b>A · 按父分类轮询</b> 修掉（切到「③轮询后」看效果）。</span></div>',
+  sparse:'<div class="gridhint" data-mark="1">'+ic('report',16)
+    +'<span>只记过 3 类：排序只把「用过的」提到前面，<b>剩余 12 格仍是目录顺序回填 → 9 格又是「餐饮」</b>。'
+    +'原来的兜底只在<b>整表为空</b>时生效，所以这条也得一并修。</span></div>',
+  rollout:'<div class="gridhint ok" data-mark="1">'+ic('check_circle',16)
+    +'<span>3 个常用（★）+ 12 格<b>每个父分类各取 1 个</b>（R1）→ 首屏覆盖 <b>15 个不同的一级分类</b>，'
+    +'不再一眼全是餐饮。（收入侧父分类只有 10 个 → 第 2 轮补 5 格 R2）</span></div>',
+  layered:'<div class="gridhint ok" data-mark="1">'+ic('check_circle',16)
+    +'<span>角标 = 所属<b>时间档</b>（7d / 30d / 90d / 旧），R1 = 第二层轮询补位。'
+    +'前 4 格同属「近 7 天」→ 档内按次数：<b>早餐 62 次</b> &gt; 公交地铁 40 &gt; 咖啡茶饮 18 &gt; 电影演出 1。'
+    +'原来排第 1 的「电影演出」（昨天只用过一次）落到<b>第 4 格</b>。</span></div>'
+};
+
 function afterView(kind, wide){
-  var grid = wide
-    ? '<div class="gridwrap">'+cells(kind==='income'?INCOME:EXPENSE, kind)+'</div>'
-    : '';
-  var right = '<div class="kbody">'
-            +   '<div class="gridwrap">'+cells(kind==='income'?INCOME:EXPENSE, kind)+'</div>'
-            +   (state.scen==='sub' && kind==='expense' ? substrip() : '')
-            +   chiprow(kind)
-            +   amount(kind, state.scen!=='grid')
-            +   keypad(kind)
-            + '</div>';
+  var list = kind==='income' ? L_INCOME
+           : state.scen==='newuser' ? L_NEW
+           : state.scen==='sparse' ? L_SPARSE
+           : state.scen==='rollout' ? L_ROLL
+           : state.scen==='layered' ? L_LAYERED
+           : L_MIXED;
+  var hint = GRIDHINT[state.scen] || '';
+  var grid = (kind==='transfer')
+    ? accountBox()
+    : '<div class="gridwrap">'+cells(list, true)+'</div>';
+  var chips = chiprow(chipKindFor(kind));
+
   if(wide){
     return '<div class="ksheet">'+mkTopbar(kind)
-         + '<div style="flex:1;min-height:0;display:flex;gap:0;border-top:1px solid var(--hair)">'
+         + '<div style="flex:1;min-height:0;display:flex;border-top:1px solid var(--hair)">'
          +   '<div style="flex:1.05;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--hair)">'
-         +     grid
-         +     (state.scen==='sub' ? substrip() : '<div class="substrip"><span class="pn">选一个分类 ▸</span></div>')
-         +     chiprow(kind)
+         +     hint + grid + chips
          +   '</div>'
          +   '<div style="flex:1;min-width:0;display:flex;flex-direction:column">'
-         +     amount(kind, true)
+         +     amount(kind)
          +     '<div style="flex:1;min-height:0"></div>'
-         +     keypad(kind)
+         +     keypad()
          +   '</div>'
          + '</div>'
          + '</div>';
   }
-  return '<div class="ksheet">'+mkTopbar(kind)+right+'</div>';
+  return '<div class="ksheet">'+mkTopbar(kind)
+       + '<div class="kbody">'+hint+grid+chips+amount(kind)+keypad()+'</div>'
+       + '</div>';
 }
 
-/* 更多字段面板 */
+/* 「更多」字段面板 */
 function moreView(){
+  function fld(label, sym, val, isPh, mark){
+    return '<div class="fld"'+(mark?' data-mark="'+mark+'"':'')+'>'
+         + '<span class="lbl">'+label+'</span>'+ic(sym,15)
+         + '<span class="val'+(isPh?' ph':'')+'">'+esc(val)+'</span>'
+         + '<span class="chev">'+ic('chevron_right',16)+'</span></div>';
+  }
   return '<div class="ksheet">'
-       + '<div class="khead"><span class="xbtn">✕</span><span class="kseg">'
+       + '<div class="khead"><span class="xbtn">'+ic('arrow_back',16)+'</span><span class="kseg">'
        +   '<button class="s">支出</button><button class="s on">更多</button><button class="s">收入</button>'
        + '</span><span class="book">My Life</span></div>'
-       + '<div class="gridwrap" style="padding:8px 14px">'
+       + '<div class="gridwrap" style="padding:10px 14px">'
        +   '<div class="fbody" style="padding:0">'
-       +     '<div class="fld"><span class="lbl">支付方式</span><span class="ic">💳</span><span class="val">支付宝</span><span class="chev">›</span></div>'
-       +     '<div class="fsw">🙋 他人代付<span class="tgb"></span></div>'
-       +     '<div class="fld"><span class="lbl">日期</span><span class="ic">📅</span><span class="val">2026-10-13 周一</span><span class="chev">›</span></div>'
+       +     fld('支付方式','credit_card','支付宝',false,1)
+       +     '<div class="fsw">'+ic('handshake',16)+' 他人代付<span class="tgb"></span></div>'
+       +     fld('日期','calendar_month','2026-10-13 周一',false,0)
        +     '<div class="sseg"><span class="s on">已完成</span><span class="s">待处理</span></div>'
-       +     '<div class="fld"><span class="lbl">商家</span><span class="ic">🏪</span><span class="val ph">可选</span><span class="chev">›</span></div>'
-       +     '<div class="fld"><span class="lbl">地点</span><span class="ic">📍</span><span class="val ph">可选</span><span class="chev">›</span></div>'
-       +     '<div class="fld"><span class="lbl">标签</span><span class="ic">🏷️</span><span class="val ph">可选，多选</span><span class="chev">›</span></div>'
-       +     '<div class="fld"><span class="lbl">分期</span><span class="ic">🧮</span><span class="val ph">仅信用账户</span><span class="chev">›</span></div>'
-       +     '<div class="foldhint"><span>🧾</span>参与分摊（家庭账本）<span class="chev">›</span></div>'
+       +     fld('名称','sell','和老王吃饭',false,0)
+       +     fld('商家','storefront','可选',true,0)
+       +     fld('地点','map','可选',true,0)
+       +     fld('标签','label','可选，可多选',true,0)
+       +     fld('分期','calculate','仅信用账户可用',true,0)
+       +     '<div class="foldhint" data-mark="3">'+ic('receipt_long',16)+' 参与分摊（家庭账本）'
+       +       '<span class="chev">'+ic('chevron_right',16)+'</span></div>'
        +   '</div>'
        + '</div>'
-       + amount('expense', true)
-       + keypad('expense')
+       + amount('expense')
+       + keypad()
        + '</div>';
 }
 
 /* ---------------- BEFORE: form ---------------- */
 function beforeView(){
-  var leaves = ['早餐','午餐','晚餐','餐厅堂食','外卖','生鲜杂货','咖啡茶饮','酒水饮料'];
+  var leaves = L_MIXED.slice(0,8);
   var lg = '';
   for(var i=0;i<leaves.length;i++){
-    lg += '<div class="lf'+(i>=6?' dup':'')+'"><div class="b">'+(i%2?'🍚':'🥐')+'</div><div class="t">'+leaves[i]+'</div></div>';
+    lg += '<div class="lf" style="--tint:'+leaves[i][2]+'"><div class="b">'+ic(leaves[i][1],14)+'</div>'
+        + '<div class="t">'+esc(leaves[i][0])+'</div></div>';
+  }
+  function row(label, sym, val, isPh, mark){
+    return '<div class="fld"'+(mark?' data-mark="'+mark+'"':'')+'>'
+         + '<span class="lbl">'+label+'</span>'+ic(sym,15)
+         + '<span class="val'+(isPh?' ph':'')+'">'+esc(val)+'</span>'
+         + '<span class="chev">'+ic('chevron_right',16)+'</span></div>';
   }
   var body = ''
-    + '<div class="fld amt"><span class="lbl">金额</span><span class="big">0.00</span><span class="calc">🧮 计算器</span></div>'
+    + '<div class="fld amt"><span class="lbl">金额</span><span class="big">0.00</span>'
+    +   '<span class="calc">'+ic('calculate',13)+' 计算器</span></div>'
     + '<div class="fsub" data-mark="1">分类 · 常用 8 个叶子</div>'
     + '<div class="leafgrid">'+lg+'</div>'
-    + '<div class="falld">全部分类（221）</div>'
-    + '<div class="fld"><span class="lbl">支付方式</span><span class="ic">💳</span><span class="val">现金</span><span class="chev">›</span></div>'
-    + '<div class="fsw">🙋 他人代付<span class="tgb"></span></div>'
-    + '<div class="fld"><span class="lbl">账户</span><span class="ic">🏦</span><span class="val">微信零钱</span><span class="chev">›</span></div>'
-    + '<div class="fld"><span class="lbl">日期</span><span class="ic">📅</span><span class="val">2026-10-13 周一</span><span class="chev">›</span></div>'
-    + '<div class="fld"><span class="lbl">名称</span><span class="ic">🏷️</span><span class="val ph">可选，如：和老王吃饭</span><span class="chev">›</span></div>'
-    + '<div class="fld" data-mark="2"><span class="lbl">备注</span><span class="ic">📝</span><span class="val ph">在此输入</span><span class="chev">›</span></div>'
+    + '<div class="falld">全部分类（193）</div>'
+    + row('支付方式','credit_card','现金',false,0)
+    + '<div class="fsw">'+ic('handshake',16)+' 他人代付<span class="tgb"></span></div>'
+    + row('账户','account_balance','微信零钱',false,0)
+    + row('日期','calendar_month','2026-10-13 周一',false,0)
+    + row('名称','sell','可选，如：和老王吃饭',true,0)
+    + row('备注','edit_note','在此输入',true,2)
     + '<div class="sseg"><span class="s on">已完成</span><span class="s">待处理</span></div>'
-    + '<div class="foldhint" data-mark="3"><span>⚙️</span>更多信息（商家 / 地点 / 标签）<span class="chev">›</span></div>';
+    + '<div class="foldhint" data-mark="3">'+ic('settings',16)+' 更多信息（商家 / 地点 / 标签）'
+    +   '<span class="chev">'+ic('chevron_right',16)+'</span></div>';
 
   return '<div class="fsheet">'
        +   '<div class="fdialog" style="flex:1;min-height:0">'
-       +     '<div class="fh"><span class="xbtn">✕</span><span class="ft">记支出</span><span style="width:32px"></span></div>'
+       +     '<div class="fh"><span class="xbtn">'+ic('close',16)+'</span><span class="ft">记支出</span>'
+       +       '<span style="width:32px"></span></div>'
        +     '<div class="fbody">'+body+'</div>'
        +     '<div class="facts">'
-       +       '<button class="fas">取消</button>'
-       +       '<button class="fas">↻ 保存并继续</button>'
-       +       '<button class="fas primary">✓ 创建</button>'
+       +       '<button class="fas">'+ic('close',16)+' 取消</button>'
+       +       '<button class="fas">'+ic('playlist_add',16)+' 保存并继续</button>'
+       +       '<button class="fas primary">'+ic('check',16)+' 创建</button>'
        +     '</div>'
        +   '</div>'
        + '</div>';
@@ -657,95 +948,98 @@ function beforeView(){
 function render(){
   var kind = state.scen==='income' ? 'income'
            : state.scen==='transfer' ? 'transfer' : 'expense';
-  var wide = state.device==='desktop' || state.scen==='wide';
+  var wide = (state.device==='desktop') && state.view==='after';
   var body = document.getElementById('appBody');
-  var phone = document.getElementById('phone');
+  document.getElementById('phone').classList.toggle('desktop', wide);
 
-  phone.classList.toggle('desktop', state.view==='after' && wide);
+  if(state.view==='before'){ body.innerHTML = beforeView(); }
+  else if(state.scen==='more'){ body.innerHTML = moreView(); }
+  else { body.innerHTML = afterView(kind, wide); }
 
-  if(state.view==='before'){
-    body.innerHTML = beforeView();
-  } else if(state.scen==='more'){
-    body.innerHTML = moreView();
-  } else {
-    body.innerHTML = afterView(kind, wide);
-  }
+  document.getElementById('stageTitle').textContent =
+    state.view==='before' ? TITLES.before : (TITLES[state.scen] || TITLES.grid);
 
-  /* badges + title */
-  var t = document.getElementById('stageTitle');
-  var names = {
-    grid:'快速记账 · 支出 / 一级宫格',
-    sub:'快速记账 · 选中分类后的子分类条',
-    income:'快速记账 · 收入 / 10 类',
-    transfer:'快速记账 · 转账',
-    more:'快速记账 · 「更多」字段面板',
-    wide:'快速记账 · 宽屏左右两栏'
-  };
-  if(state.view==='before'){
-    t.textContent = '现状 · 记支出表单（需滚动）';
-  } else {
-    t.textContent = names[state.scen] || names.grid;
-  }
-
-  var bv = document.getElementById('badgeView');
-  var bf = document.getElementById('badgeFit');
-  var bd = document.getElementById('badgeDevice');
+  var bv = document.getElementById('badgeView'), bf = document.getElementById('badgeFit'),
+      bd = document.getElementById('badgeDevice'), bi = document.getElementById('badgeIcon');
   if(state.view==='before'){
     bv.textContent='现状'; bv.className='badge';
     bf.textContent='需滚 2~3 屏'; bf.className='badge amber';
+    bi.style.display='none';
+    bd.style.display='none';
   } else {
     bv.textContent='重构后'; bv.className='badge ok';
     bf.textContent = wide ? '宽屏降级为左右两栏（不常驻键盘）' : '一屏完成 · 无需滚动';
     bf.className = wide ? 'badge amber' : 'badge ok';
+    bi.style.display='';
+    var fallbackScen = (state.scen==='newuser' || state.scen==='sparse');
+    bi.className = fallbackScen ? 'badge amber' : 'badge ok';
+    bi.textContent = fallbackScen ? '空历史兜底 · 现状（待修）'
+                   : state.scen==='rollout' ? '空历史兜底 · 按父分类轮询'
+                   : state.scen==='layered' ? '排序口径 · B1 时间分层（已落地）'
+                   : '分类与图标沿用现状';
+    bd.style.display = wide ? '' : 'none';
   }
-  bd.style.display = (state.view==='after' && wide) ? '' : 'none';
 
   document.body.classList.toggle('no-annot', !state.annot);
 
-  /* annotation legend */
-  var lg = document.getElementById('legend');
+  /* 图例 */
   var legend = {
     before:[
-      '① 分类只放 8 个「常用叶子」，其余 213 个在二级面板里',
+      '① 分类只铺 8 个常用叶子，其余 185 个在二级面板里',
       '② 备注在表单第 8 位——滚过一屏半才看得到',
       '③ 商家 / 地点 / 标签 折叠在「更多信息」'
     ],
     grid:[
-      '① 右上角「管理分类」直达分类管理页',
-      '② 金额与备注始终贴在键盘上方，不用滚',
+      '① 15 个常用叶子 + 「全部 193」格，一屏放下',
+      '② 金额与备注贴在键盘上方，始终可见',
       '③ 低频字段全部收进这一行 chip'
     ],
-    sub:[
-      '① 横滑条＝一级分类下的子分类，点叶子即选中',
-      '② 已选分类名同时出现在左侧与金额条右侧',
-      '③ 再往后才是「全部分类（221）」搜索面板'
+    typing:[
+      '① 选中的格子高亮，金额条右侧同步显示「餐饮 · 午餐」',
+      '② 备注就在金额下方，不用滚',
+      '③ 键盘直接吐算式（12.5+38+6 走同一套 MoneyAmountExpression）'
+    ],
+    newuser:[
+      '① 没有使用记录 → 目录顺序取前 15 个，前 10 格全是餐饮',
+      '② 金额与备注照旧贴在键盘上方，不受影响',
+      '③ 兜底只动排序函数，宫格内容与图标完全不变'
+    ],
+    sparse:[
+      '① 历史非空时兜底不生效：3 个常用提到前面，剩余 12 格仍按目录顺序 → 9 格又是餐饮',
+      '② 这条比「新用户」更常见——只要用过的叶子不足 15 个就会撞到',
+      '③ 修法与 A 同一处：轮询是「第二层」的填充策略，而不是只在全空时才走'
+    ],
+    rollout:[
+      '① ★ = 用过的（按常用排序），R1 = 第 1 轮轮询每类各取 1 个',
+      '② 15 格分属 15 个不同一级分类，一眼看得到分类体系全貌',
+      '③ 宫格内容与图标仍是现有叶子，只是「取哪些」的规则变了'
+    ],
+    layered:[
+      '① 角标 = 时间档（7d / 30d / 90d / 旧），R1 = 第二层轮询补位',
+      '② 同档内按次数：早餐 62 次压过昨天只用过一次的电影演出',
+      '③ 档位只在稿里标注——产品里次数与档位都不上格子，避免压过分类名'
     ],
     income:[
-      '① 同一宫格切成 10 个收入分类，布局不变',
+      '① 宫格换成收入叶子（现有 50 个），布局不变',
       '② 金额按国内习惯用绿色（收入）',
-      '③ chip 行默认落到工资卡'
+      '③ 工资类叶子靠前（常用优先）'
     ],
     transfer:[
       '① 第三 tab 复用现有转账表单内容（转出 / 转入 / 手续费）',
-      '② 转账分类是固定的，宫格位置改放「转出 / 转入账户」两个大块（此处仍示意分类宫格）',
+      '② 转账分类固定，宫格位置改放转出 / 转入两个账户块',
       '③ 手续费等低频项收进 chip 行'
     ],
     more:[
-      '① 「更多」= 现有的「更多信息」+ 支付方式 / 日期 / 状态 / 分期 / 分摊',
+      '① 「更多」= 现有「更多信息」+ 支付方式 / 日期 / 状态 / 名称 / 分期',
       '② 键盘与金额条仍在，展开面板不打断输入',
-      '③ 进过一次就记住，下次默认展开'
-    ],
-    wide:[
-      '① 宽屏改成左右两栏：左分类、右金额＋键盘',
-      '② 弹窗宽度由现在的 460px 放宽到 820px',
-      '③ 键盘高度可按窗口高度自适应，矮屏可隐藏'
+      '③ 分摊是家庭账本专属，条件出现'
     ]
   };
   var key = state.view==='before' ? 'before' : state.scen;
   var list = legend[key] || legend.grid;
   var lh = '';
   for(var i=0;i<list.length;i++) lh += '<span class="badge">'+esc(list[i])+'</span>';
-  lg.innerHTML = state.annot ? lh : '';
+  document.getElementById('legend').innerHTML = state.annot ? lh : '';
 }
 
 /* ---------------- wiring ---------------- */
@@ -768,9 +1062,7 @@ document.getElementById('segScen').addEventListener('click', function(e){
 });
 function syncViewSeg(){
   var btns = document.getElementById('segView').querySelectorAll('button');
-  for(var i=0;i<btns.length;i++){
-    btns[i].classList.toggle('on', btns[i].dataset.v===state.view);
-  }
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle('on', btns[i].dataset.v===state.view);
 }
 document.getElementById('segDevice').addEventListener('click', function(e){
   var b = e.target.closest('button'); if(!b) return;
@@ -794,7 +1086,6 @@ document.getElementById('tgTheme').addEventListener('click', function(){
 });
 document.getElementById('tgAnnot').classList.add('on');
 
-/* checklist toggling */
 (function(){
   var cks = document.querySelectorAll('#qbox .ck');
   for(var i=0;i<cks.length;i++){

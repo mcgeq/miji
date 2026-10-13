@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/presentation/app_color_utils.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
+import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/components/app_badge.dart';
 import 'package:miji/core/presentation/components/app_color_picker.dart';
@@ -19,16 +20,35 @@ import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/category_icon.dart';
+import 'package:miji/features/bookkeeping/presentation/categories/components/category_leaf_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_panel_header.dart';
 import 'package:miji/features/bookkeeping/presentation/tags/money_tag_manager_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/money_transaction_actions.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/quick_entry_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:flutter/services.dart';
 
+/// 记账模块的「分类」页（与「统计」「预算」并列的那个 tab）。
+///
+/// 一屏两件事，上下分区：
+/// * **上半屏是分类列表**——按父分类分组，点子分类就选中它；
+/// * **底部常驻记账条**（[QuickEntrySheet] 的 dock 形态）——金额 + 键盘。
+///
+/// 分开的理由：记账条吸底后键盘一直可用，但分类列表仍然看得见——用户是照着
+/// 自己的分类结构记账的，把列表藏掉（改成宫格或收进弹窗）就退化成猜。
+///
+/// 分类的**整理**（新增 / 编辑 / 拖拽子分类 / 停用 / 标签）不是高频动作，
+/// 收进右上角「分类管理」弹窗，全部状态与交互留在 [CategoryManagerPanel] 里。
 class MoneyCategoriesSection extends ConsumerStatefulWidget {
-  const MoneyCategoriesSection({super.key});
+  const MoneyCategoriesSection({super.key, this.onExit});
+
+  /// 退出分类页、回到进来的那个面板。
+  ///
+  /// 这一页会把记账模块的一级导航（流水 / 账户 / 预算 / 统计）整排收起来，
+  /// 换出分类列表与键盘的空间；收了就得给一条回去的路，否则用户被困在这一页。
+  final VoidCallback? onExit;
 
   @override
   ConsumerState<MoneyCategoriesSection> createState() =>
@@ -37,6 +57,535 @@ class MoneyCategoriesSection extends ConsumerStatefulWidget {
 
 class _MoneyCategoriesSectionState
     extends ConsumerState<MoneyCategoriesSection> {
+  MoneyCategoryKind _kind = MoneyCategoryKind.expense;
+  CategoryLeaf? _selectedLeaf;
+  final _searchController = TextEditingController();
+  String _keyword = '';
+
+  /// 搜索框默认**收起**：这一页上半屏要留给分类列表，而底部还压着一条记账
+  /// 键盘，一行常驻输入框等于永远少看一张分类卡。搜索是「找不到才用」的动作，
+  /// 收进顶栏的图标里；展开时它顶掉标题而不是多占一行。
+  bool _searchExpanded = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final catalog = ref.watch(
+      currentUserCategoryManagementCatalogProvider(_kind),
+    );
+    final usage = ref
+        .watch(currentUserMonthCategoryUsageProvider(_kind))
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const MoneyCategoryUsage.empty(),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _EntryHeader(
+          kind: _kind,
+          onKindChanged: _switchKind,
+          onManage: () => _openManager(context),
+          onExit: widget.onExit,
+          searchExpanded: _searchExpanded,
+          searchController: _searchController,
+          onSearchChanged: (value) =>
+              setState(() => _keyword = value.trim().toLowerCase()),
+          onToggleSearch: _toggleSearch,
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: catalog.when(
+            data: (value) => _CategoryPickList(
+              catalog: value,
+              usage: usage,
+              keyword: _keyword,
+              selectedKey: _selectedLeaf?.key,
+              onPick: (leaf) => setState(() => _selectedLeaf = leaf),
+            ),
+            loading: () => const AppSkeletonList(),
+            error: (error, stackTrace) => AppErrorState(
+              title: '读取分类失败',
+              onRetry: () => ref.invalidate(
+                currentUserCategoryManagementCatalogProvider(_kind),
+              ),
+            ),
+          ),
+        ),
+        // 记账条吸底：分类列表滚多远它都在，输了金额随时能保存。
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              child: QuickEntrySheet(
+                initialType: _kind == MoneyCategoryKind.income
+                    ? MoneyTransactionType.income
+                    : MoneyTransactionType.expense,
+                dock: true,
+                embedded: true,
+                selectedLeaf: _selectedLeaf,
+                onSelectedLeafChanged: (leaf) =>
+                    setState(() => _selectedLeaf = leaf),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 展开 / 收起搜索。收起时顺手清空关键词——不然列表还带着上一次的过滤
+  /// 条件，而输入框已经看不见了，用户会以为分类少了。
+  void _toggleSearch() {
+    setState(() {
+      _searchExpanded = !_searchExpanded;
+      if (!_searchExpanded) {
+        _searchController.clear();
+        _keyword = '';
+      }
+    });
+  }
+
+  void _switchKind(MoneyCategoryKind kind) {
+    if (kind == _kind) {
+      return;
+    }
+    setState(() {
+      _kind = kind;
+      // 收支两套目录，切过去后原来选中的分类一定不在新目录里。
+      _selectedLeaf = null;
+    });
+  }
+
+  Future<void> _openManager(BuildContext context) async {
+    await showAppResponsiveDialog<void>(
+      context: context,
+      expandCompactSheet: true,
+      builder: (context) => const CategoryManagerPanel(),
+    );
+  }
+}
+
+/// 分类页顶栏：返回 + 标题（或搜索框）+ 收支分段 + 搜索 + 分类管理。
+///
+/// 它顶替了被收起的一级导航，所以**必须有返回**——否则这一页没有出口。
+///
+/// 搜索收起时显示标题，展开时标题的位置换成输入框：**展开不额外占一行**，
+/// 因为这一页的纵向预算被分类列表与吸底键盘两头夹着，多一行就少一张分类卡。
+class _EntryHeader extends StatelessWidget {
+  const _EntryHeader({
+    required this.kind,
+    required this.onKindChanged,
+    required this.onManage,
+    required this.searchExpanded,
+    required this.searchController,
+    required this.onSearchChanged,
+    required this.onToggleSearch,
+    this.onExit,
+  });
+
+  final MoneyCategoryKind kind;
+  final ValueChanged<MoneyCategoryKind> onKindChanged;
+  final VoidCallback onManage;
+  final bool searchExpanded;
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onToggleSearch;
+  final VoidCallback? onExit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: '返回',
+            onPressed: onExit,
+            icon: const Icon(Icons.arrow_back_rounded, size: 22),
+          ),
+          const SizedBox(width: 2),
+          if (searchExpanded)
+            Expanded(
+              child: _SearchField(
+                controller: searchController,
+                autofocus: true,
+                onChanged: onSearchChanged,
+              ),
+            )
+          else ...[
+            Text(
+              '分类记账',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+            const Spacer(),
+          ],
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 140,
+            child: AppSlidingSegmentedControl<MoneyCategoryKind>(
+              minSegmentWidth: 64,
+              value: kind,
+              onChanged: onKindChanged,
+              segments: const [
+                AppSlidingSegment(
+                  value: MoneyCategoryKind.expense,
+                  label: '支出',
+                ),
+                AppSlidingSegment(value: MoneyCategoryKind.income, label: '收入'),
+              ],
+            ),
+          ),
+          AppIconActionButton(
+            tooltip: searchExpanded ? '关闭搜索' : '搜索分类',
+            onPressed: onToggleSearch,
+            icon: searchExpanded ? Icons.close_rounded : Icons.search_rounded,
+            variant: AppIconActionVariant.plain,
+          ),
+          AppIconActionButton(
+            tooltip: '分类管理',
+            onPressed: onManage,
+            icon: Icons.tune_rounded,
+            variant: AppIconActionVariant.outlined,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatelessWidget {
+  const _SearchField({
+    required this.controller,
+    required this.onChanged,
+    this.autofocus = false,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  /// 顶栏里展开时自动聚焦：手动再点一次输入框才算白点了一下。
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return TextField(
+      controller: controller,
+      autofocus: autofocus,
+      onChanged: onChanged,
+      textInputAction: TextInputAction.search,
+      style: theme.textTheme.bodyMedium?.copyWith(letterSpacing: 0),
+      decoration: InputDecoration(
+        hintText: '搜索分类 / 子分类',
+        hintStyle: theme.textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          letterSpacing: 0,
+        ),
+        prefixIcon: const Icon(Icons.search_rounded, size: 19),
+        isDense: true,
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+/// 供记账时挑选的分类列表：父分类一张卡，子分类是 chip，点一下即选中。
+///
+/// 与 [CategoryManagerPanel] 的区别是**目的**：这里只做「选一个分类」，所以
+/// 没有编辑 / 拖拽 / 停用这些整理动作；那里是整理，不做选中。
+class _CategoryPickList extends StatelessWidget {
+  const _CategoryPickList({
+    required this.catalog,
+    required this.usage,
+    required this.keyword,
+    required this.selectedKey,
+    required this.onPick,
+  });
+
+  final MoneyCategoryCatalog catalog;
+  final MoneyCategoryUsage usage;
+  final String keyword;
+  final String? selectedKey;
+  final ValueChanged<CategoryLeaf> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    if (catalog.categories.isEmpty) {
+      return AppEmptyState(
+        title: '暂无分类',
+        message: '到「分类管理」里新增分类后就能开始记账。',
+        icon: Icons.category_rounded,
+        padding: EdgeInsets.zero,
+      );
+    }
+
+    final cards = <Widget>[];
+    for (final category in catalog.categories) {
+      if (category.isDeleted) {
+        continue;
+      }
+      final subs = catalog
+          .subCategoriesFor(category.id)
+          .where((sub) => !sub.isDeleted)
+          .toList(growable: false);
+      final nameMatch =
+          keyword.isEmpty || category.name.toLowerCase().contains(keyword);
+      final visibleSubs = keyword.isEmpty
+          ? subs
+          : subs
+                .where((sub) => sub.name.toLowerCase().contains(keyword))
+                .toList(growable: false);
+      if (!nameMatch && visibleSubs.isEmpty) {
+        continue;
+      }
+      cards.add(
+        _PickCard(
+          category: category,
+          subCategories: nameMatch ? subs : visibleSubs,
+          usageMinor: usage.amountFor(category.id),
+          currencyCode: usage.currencyCode,
+          selectedKey: selectedKey,
+          onPick: onPick,
+        ),
+      );
+      cards.add(const SizedBox(height: 8));
+    }
+
+    if (cards.isEmpty) {
+      return AppEmptyState(
+        title: '没有匹配的分类',
+        message: '试试换个关键词。',
+        icon: Icons.search_off_rounded,
+        padding: EdgeInsets.zero,
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      children: cards,
+    );
+  }
+}
+
+class _PickCard extends StatelessWidget {
+  const _PickCard({
+    required this.category,
+    required this.subCategories,
+    required this.usageMinor,
+    required this.currencyCode,
+    required this.selectedKey,
+    required this.onPick,
+  });
+
+  final MoneyCategoryEntity category;
+  final List<MoneySubCategoryEntity> subCategories;
+  final int usageMinor;
+  final String currencyCode;
+  final String? selectedKey;
+  final ValueChanged<CategoryLeaf> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final color = appColorFromHex(
+      category.color,
+      fallback: colorScheme.primary,
+    );
+    final parentLeaf = CategoryLeaf(category: category);
+    final parentSelected = parentLeaf.key == selectedKey;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: CategoryIconWidget(
+                  category.icon,
+                  size: 15,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  category.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+              if (usageMinor > 0)
+                Text(
+                  formatMoneyMinor(usageMinor, currencyCode),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+            ],
+          ),
+          if (subCategories.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final sub in subCategories)
+                  _PickChip(
+                    label: sub.name,
+                    colorHex: sub.color ?? category.color,
+                    selected:
+                        CategoryLeaf(
+                          category: category,
+                          subCategory: sub,
+                        ).key ==
+                        selectedKey,
+                    onTap: () => onPick(
+                      CategoryLeaf(category: category, subCategory: sub),
+                    ),
+                  ),
+              ],
+            ),
+          ] else ...[
+            // 没有子分类的父分类自己就是叶子，整张卡可点。
+            const SizedBox(height: 6),
+            _PickChip(
+              label: '选它',
+              colorHex: category.color,
+              selected: parentSelected,
+              onTap: () => onPick(parentLeaf),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PickChip extends StatelessWidget {
+  const _PickChip({
+    required this.label,
+    required this.colorHex,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String? colorHex;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final color = appColorFromHex(colorHex, fallback: colorScheme.primary);
+
+    return Material(
+      color: selected ? color.withValues(alpha: 0.16) : colorScheme.surface,
+      borderRadius: BorderRadius.circular(theme.radiusTokens.pill),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Semantics(
+          button: true,
+          selected: selected,
+          label: label,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(theme.radiusTokens.pill),
+              border: Border.all(
+                color: selected
+                    ? color.withValues(alpha: 0.55)
+                    : colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: selected ? color : colorScheme.onSurface,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 分类管理面板：新增 / 编辑 / 拖拽排序 / 停用 / 标签。
+///
+/// 公开是为了让测试能直接挂载它——它的断言（排序、折叠、搜索）与「一屏记账」
+/// 那一半互不相干，没必要每条都先穿过记账界面把弹窗点开。
+class CategoryManagerPanel extends ConsumerStatefulWidget {
+  const CategoryManagerPanel({super.key});
+
+  @override
+  ConsumerState<CategoryManagerPanel> createState() =>
+      _CategoryManagerPanelState();
+}
+
+class _CategoryManagerPanelState extends ConsumerState<CategoryManagerPanel> {
   MoneyCategoryKind _kind = MoneyCategoryKind.expense;
   final _searchController = TextEditingController();
   String _keyword = '';
@@ -61,6 +610,9 @@ class _MoneyCategoriesSectionState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final radius = theme.radiusTokens;
+    final compact = AppResponsive.of(context).isCompact;
     final catalog = ref.watch(
       currentUserCategoryManagementCatalogProvider(_kind),
     );
@@ -71,84 +623,119 @@ class _MoneyCategoriesSectionState
           orElse: () => const MoneyCategoryUsage.empty(),
         );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        BookkeepingPanelHeader(
-          // 搜索在工具行之上，与流水 / 预算 / 自动记账一致。
-          searchRow: _reorderMode
-              ? null
-              : BookkeepingPanelSearchField(
-                  controller: _searchController,
-                  hintText: '搜索分类 / 子分类',
-                  onChanged: (value) =>
-                      setState(() => _keyword = value.trim().toLowerCase()),
+    final content = Material(
+      color: theme.colorScheme.surface,
+      borderRadius: compact
+          ? BorderRadius.vertical(top: Radius.circular(radius.lg))
+          : BorderRadius.circular(radius.lg),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: compact ? double.infinity : 560,
+          maxHeight: compact ? double.infinity : 720,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BookkeepingPanelHeader(
+              // 搜索在工具行之上，与流水 / 预算 / 自动记账一致。
+              searchRow: _reorderMode
+                  ? null
+                  : BookkeepingPanelSearchField(
+                      controller: _searchController,
+                      hintText: '搜索分类 / 子分类',
+                      onChanged: (value) =>
+                          setState(() => _keyword = value.trim().toLowerCase()),
+                    ),
+              leading: Center(
+                child: AppSlidingSegmentedControl<MoneyCategoryKind>(
+                  minSegmentWidth: 72,
+                  value: _kind,
+                  onChanged: (value) => setState(() => _kind = value),
+                  segments: const [
+                    AppSlidingSegment(
+                      value: MoneyCategoryKind.expense,
+                      icon: Icons.trending_down_rounded,
+                      label: '支出',
+                    ),
+                    AppSlidingSegment(
+                      value: MoneyCategoryKind.income,
+                      icon: Icons.trending_up_rounded,
+                      label: '收入',
+                    ),
+                  ],
                 ),
-          leading: Center(
-            child: AppSlidingSegmentedControl<MoneyCategoryKind>(
-              minSegmentWidth: 72,
-              value: _kind,
-              onChanged: (value) => setState(() => _kind = value),
-              segments: const [
-                AppSlidingSegment(
-                  value: MoneyCategoryKind.expense,
-                  icon: Icons.trending_down_rounded,
-                  label: '支出',
+              ),
+              actions: [
+                // 排序模式开关（拖拽调整顺序）。
+                AppIconActionButton(
+                  tooltip: _reorderMode ? '退出排序' : '排序',
+                  onPressed: _reorderMode
+                      ? _exitReorderMode
+                      : _enterReorderMode,
+                  icon: Icons.swap_vert_rounded,
+                  variant: _reorderMode
+                      ? AppIconActionVariant.filledTonal
+                      : AppIconActionVariant.outlined,
                 ),
-                AppSlidingSegment(
-                  value: MoneyCategoryKind.income,
-                  icon: Icons.trending_up_rounded,
-                  label: '收入',
+                // 常驻新增入口。
+                //
+                // 原来的「新增分类」只存在于 categories 为空的 AppEmptyState 里，
+                // 而种子数据总有分类，空态永远不会出现——用户因此永远无法新增分类。
+                AppIconActionButton(
+                  tooltip: '标签管理',
+                  onPressed: () => _openTagManager(context),
+                  icon: Icons.label_rounded,
+                  variant: AppIconActionVariant.outlined,
+                ),
+                AppIconActionButton(
+                  tooltip: '新增分类',
+                  onPressed: () => _openCategoryDialog(context),
+                  icon: Icons.add_rounded,
+                  variant: AppIconActionVariant.filled,
+                ),
+                // 面板现在是弹窗，需要一个明确的关闭路径：拖拽模式里的「完成」
+                // 只退出排序，不关面板。
+                AppIconActionButton(
+                  tooltip: '关闭',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icons.close_rounded,
+                  variant: AppIconActionVariant.outlined,
                 ),
               ],
             ),
-          ),
-          actions: [
-            // 排序模式开关（拖拽调整顺序）。
-            AppIconActionButton(
-              tooltip: _reorderMode ? '退出排序' : '排序',
-              onPressed: _reorderMode ? _exitReorderMode : _enterReorderMode,
-              icon: Icons.swap_vert_rounded,
-              variant: _reorderMode
-                  ? AppIconActionVariant.filledTonal
-                  : AppIconActionVariant.outlined,
-            ),
-            // 常驻新增入口。
-            //
-            // 原来的「新增分类」只存在于 categories 为空的 AppEmptyState 里，
-            // 而种子数据总有分类，空态永远不会出现——用户因此永远无法新增分类。
-            AppIconActionButton(
-              tooltip: '标签管理',
-              onPressed: () => _openTagManager(context),
-              icon: Icons.label_rounded,
-              variant: AppIconActionVariant.outlined,
-            ),
-            AppIconActionButton(
-              tooltip: '新增分类',
-              onPressed: () => _openCategoryDialog(context),
-              icon: Icons.add_rounded,
-              variant: AppIconActionVariant.filled,
+            if (_reorderMode) ...[
+              const SizedBox(height: 10),
+              _ReorderHint(showDeletedCount: 0),
+            ] else
+              const SizedBox(height: 12),
+            Expanded(
+              child: catalog.when(
+                data: (catalog) => _buildCatalog(context, catalog, usage),
+                loading: () => const AppSkeletonList(),
+                error: (error, stackTrace) => AppErrorState(
+                  title: '读取分类失败',
+                  onRetry: () => ref.invalidate(
+                    currentUserCategoryManagementCatalogProvider(_kind),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
-        if (_reorderMode) ...[
-          const SizedBox(height: 10),
-          _ReorderHint(showDeletedCount: 0),
-        ] else
-          const SizedBox(height: 12),
-        Expanded(
-          child: catalog.when(
-            data: (catalog) => _buildCatalog(context, catalog, usage),
-            loading: () => const AppSkeletonList(),
-            error: (error, stackTrace) => AppErrorState(
-              title: '读取分类失败',
-              onRetry: () => ref.invalidate(
-                currentUserCategoryManagementCatalogProvider(_kind),
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
+    );
+
+    if (compact) {
+      return content;
+    }
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(radius.lg),
+      ),
+      child: content,
     );
   }
 

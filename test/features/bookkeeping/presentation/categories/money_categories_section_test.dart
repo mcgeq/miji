@@ -4,9 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/auth/domain/auth_session.dart';
 import 'package:miji/core/theme/app_theme.dart';
+import 'package:miji/features/bookkeeping/application/transaction_entry_defaults_store.dart';
+import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/money_categories_section.dart';
 
@@ -225,7 +228,7 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: AppTheme.light(),
-          home: const Scaffold(body: MoneyCategoriesSection()),
+          home: const Scaffold(body: CategoryManagerPanel()),
         ),
       ),
     );
@@ -241,8 +244,202 @@ void main() {
       greaterThan(before),
     );
   });
+
+  testWidgets('分类 tab 上半屏是分类列表、底部是吸底记账条', (tester) async {
+    await tester.pumpWidget(_wrapSection());
+    await tester.pumpAndSettle();
+
+    // 分类必须看得见：父分类卡片 + 它的子分类 chip。
+    expect(find.text('餐饮'), findsOneWidget);
+    expect(find.text('早餐'), findsOneWidget);
+    // 记账条吸底，键盘常驻、右下是保存。
+    expect(find.byKey(const ValueKey('quick-entry-dock')), findsOneWidget);
+    expect(find.text('保存'), findsOneWidget);
+    // 顶栏自带返回、标题与分类管理——一级导航被收起后它是唯一出口。
+    expect(find.text('分类记账'), findsOneWidget);
+    expect(find.byTooltip('返回'), findsOneWidget);
+    expect(find.byTooltip('分类管理'), findsOneWidget);
+  });
+
+  testWidgets('点子分类即选中，记账条跟着显示它', (tester) async {
+    await tester.pumpWidget(_wrapSection());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('早餐'));
+    await tester.pumpAndSettle();
+
+    final dock = find.byKey(const ValueKey('quick-entry-dock'));
+    expect(dock, findsOneWidget);
+    expect(
+      find.descendant(of: dock, matching: find.text('早餐')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('顶栏「返回」把退出交给外层', (tester) async {
+    var exited = 0;
+    await tester.pumpWidget(_wrapSection(onExit: () => exited++));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
+
+    expect(exited, 1);
+  });
+
+  testWidgets('搜索默认收起，展开后顶替标题而不多占一行', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_wrapSection());
+    await tester.pumpAndSettle();
+
+    // 默认没有输入框：这一页的纵向预算被分类列表与吸底键盘两头夹着。
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('分类记账'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('搜索分类'));
+    await tester.pumpAndSettle();
+
+    // 展开时输入框占的是标题的位置，不是新的一行。
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('分类记账'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), '早餐');
+    await tester.pumpAndSettle();
+    expect(find.text('餐饮'), findsOneWidget);
+    expect(find.text('交通'), findsNothing);
+
+    // 收起顺手清空关键词：列表不能带着看不见的过滤条件。
+    await tester.tap(find.byTooltip('关闭搜索'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('分类记账'), findsOneWidget);
+    expect(find.text('交通'), findsOneWidget);
+  });
+
+  testWidgets('记账条把账户与日期的值写出来', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_wrapSection());
+    await tester.pumpAndSettle();
+
+    final dock = find.byKey(const ValueKey('quick-entry-dock'));
+    expect(dock, findsOneWidget);
+    // 回归：账户与日期曾经只是图标，不点开看不出这一笔的参数。
+    expect(
+      find.descendant(of: dock, matching: find.text('现金')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: dock, matching: find.text('今天')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('「分类管理」仍能打开原来的管理面板', (tester) async {
+    await tester.pumpWidget(_wrapSection());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('分类管理'));
+    await tester.pumpAndSettle();
+
+    // 管理该有的一个都没少：新增、排序、分类卡片。
+    expect(find.byTooltip('新增分类'), findsWidgets);
+    expect(find.byTooltip('排序'), findsOneWidget);
+    expect(find.text('餐饮'), findsWidgets);
+  });
 }
 
+/// 整个分类 tab（分类列表 + 吸底记账条 + 管理入口）的脚手架。
+Widget _wrapSection({VoidCallback? onExit}) {
+  return ProviderScope(
+    overrides: [
+      currentUserCategoryManagementCatalogProvider.overrideWith(
+        (ref, kind) => Stream.value(_sectionCatalog),
+      ),
+      currentUserMonthCategoryUsageProvider.overrideWith(
+        (ref, kind) async => const MoneyCategoryUsage.empty(),
+      ),
+      // 一屏记账那一半要的 provider：不挂桩就会去读真实数据库。
+      currentUserCategoryCatalogProvider.overrideWith(
+        (ref, kind) => Stream.value(_sectionCatalog),
+      ),
+      currentUserCategoryUsageStatsProvider.overrideWith(
+        (ref) async => const MoneyCategoryUsage.empty(),
+      ),
+      currentUserVisibleAccountsProvider.overrideWith(
+        (ref) => Stream.value([_cashAccount]),
+      ),
+      currentUserMoneyInternalAccountsProvider.overrideWith(
+        (ref) => Stream.value(const <MoneyAccountEntity>[]),
+      ),
+      currentUserEffectiveTransactionLedgerValueProvider.overrideWithValue(
+        null,
+      ),
+      authSessionControllerProvider.overrideWith(_UnlockedSession.new),
+      transactionEntryDefaultsStoreProvider.overrideWithValue(
+        const _NoDefaultsStore(),
+      ),
+    ],
+    child: MaterialApp(
+      theme: AppTheme.light(),
+      home: Scaffold(body: MoneyCategoriesSection(onExit: onExit)),
+    ),
+  );
+}
+
+const _sectionCatalog = MoneyCategoryCatalog(
+  categories: [_category, _transport],
+  subCategories: [_breakfast],
+);
+
+final _cashAccount = MoneyAccountEntity(
+  id: 'cash-1',
+  userId: 'user-1',
+  name: '现金',
+  type: MoneyAccountType.cash,
+  balanceMinor: 100000,
+  initialBalanceMinor: 0,
+  creditLimitMinor: 0,
+  postedDebtMinor: 0,
+  frozenCreditMinor: 0,
+  statementDay: 1,
+  budgetCycleStartDay: 1,
+  repaymentDay: 1,
+  autoRepaymentReminderEnabled: false,
+  currencyCode: 'CNY',
+  isShared: false,
+  isVirtual: false,
+  isActive: true,
+  isDeleted: false,
+  createdAt: _createdAt,
+  updatedAt: _createdAt,
+);
+
+final _createdAt = DateTime(2026, 1, 1);
+
+/// 没有「上次选择」可读：一屏记账会去读它，测试环境里不能碰真实存储。
+class _NoDefaultsStore extends TransactionEntryDefaultsStore {
+  const _NoDefaultsStore();
+
+  @override
+  Future<TransactionEntryDefaults?> readDefaults({
+    required String userId,
+    required String? ledgerId,
+    required MoneyTransactionType type,
+  }) async {
+    return null;
+  }
+}
+
+/// 管理面板的测试脚手架。
+///
+/// 默认挂载的就是 [CategoryManagerPanel]（而不是整个分类 tab）——这些断言
+/// 全部只关于管理，直接从面板进入，不用每条都先穿过记账界面点弹窗。
 Widget _wrap(
   List<MoneyCategoryEntity> categories, {
   Map<String, int> usageMinor = const {},
@@ -273,7 +470,7 @@ Widget _wrap(
     ],
     child: MaterialApp(
       theme: AppTheme.light(),
-      home: const Scaffold(body: MoneyCategoriesSection()),
+      home: const Scaffold(body: CategoryManagerPanel()),
     ),
   );
 }

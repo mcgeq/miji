@@ -5,6 +5,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_expression.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_currency_codes.dart';
+import 'package:miji/features/bookkeeping/presentation/components/money_keypad.dart';
 
 /// 金额计算器面板：合计小票这类现场运算不用再切出去按系统计算器。
 ///
@@ -223,44 +224,86 @@ class _AmountCalculatorSheetState extends State<_AmountCalculatorSheet> {
             ),
           ],
           const SizedBox(height: 12),
-          _keyRow([
-            _KeySpec('AC', _clear, tone: _KeyTone.neutral),
-            _KeySpec('⌫', _backspace, tone: _KeyTone.neutral),
-            _KeySpec('(', () => _append('('), tone: _KeyTone.neutral),
-            _KeySpec(')', () => _append(')'), tone: _KeyTone.neutral),
-          ]),
-          const SizedBox(height: 8),
-          _keyRow([
-            _KeySpec('7', () => _append('7')),
-            _KeySpec('8', () => _append('8')),
-            _KeySpec('9', () => _append('9')),
-            _KeySpec('÷', () => _append('/'), tone: _KeyTone.operator),
-          ]),
-          const SizedBox(height: 8),
-          _keyRow([
-            _KeySpec('4', () => _append('4')),
-            _KeySpec('5', () => _append('5')),
-            _KeySpec('6', () => _append('6')),
-            _KeySpec('×', () => _append('*'), tone: _KeyTone.operator),
-          ]),
-          const SizedBox(height: 8),
-          _keyRow([
-            _KeySpec('1', () => _append('1')),
-            _KeySpec('2', () => _append('2')),
-            _KeySpec('3', () => _append('3')),
-            _KeySpec('−', () => _append('-'), tone: _KeyTone.operator),
-          ]),
-          const SizedBox(height: 8),
-          _keyRow([
-            _KeySpec('0', () => _append('0'), flex: 2),
-            _KeySpec('.', () => _append('.')),
-            _KeySpec('+', () => _append('+'), tone: _KeyTone.operator),
-          ]),
+          MoneyKeypad(
+            rows: [
+              [
+                MoneyKeySpec(
+                  'AC',
+                  _clear,
+                  tone: MoneyKeyTone.neutral,
+                  semanticLabel: '清空',
+                ),
+                MoneyKeySpec(
+                  '⌫',
+                  _backspace,
+                  tone: MoneyKeyTone.neutral,
+                  semanticLabel: '退格',
+                ),
+                MoneyKeySpec(
+                  '(',
+                  () => _append('('),
+                  tone: MoneyKeyTone.neutral,
+                ),
+                MoneyKeySpec(
+                  ')',
+                  () => _append(')'),
+                  tone: MoneyKeyTone.neutral,
+                ),
+              ],
+              [
+                MoneyKeySpec('7', () => _append('7')),
+                MoneyKeySpec('8', () => _append('8')),
+                MoneyKeySpec('9', () => _append('9')),
+                MoneyKeySpec(
+                  '÷',
+                  () => _append('/'),
+                  tone: MoneyKeyTone.operator,
+                  semanticLabel: '除',
+                ),
+              ],
+              [
+                MoneyKeySpec('4', () => _append('4')),
+                MoneyKeySpec('5', () => _append('5')),
+                MoneyKeySpec('6', () => _append('6')),
+                MoneyKeySpec(
+                  '×',
+                  () => _append('*'),
+                  tone: MoneyKeyTone.operator,
+                  semanticLabel: '乘',
+                ),
+              ],
+              [
+                MoneyKeySpec('1', () => _append('1')),
+                MoneyKeySpec('2', () => _append('2')),
+                MoneyKeySpec('3', () => _append('3')),
+                MoneyKeySpec(
+                  '−',
+                  () => _append('-'),
+                  tone: MoneyKeyTone.operator,
+                  semanticLabel: '减',
+                ),
+              ],
+              [
+                MoneyKeySpec('0', () => _append('0'), flex: 2),
+                MoneyKeySpec('.', () => _append('.')),
+                MoneyKeySpec(
+                  '+',
+                  () => _append('+'),
+                  tone: MoneyKeyTone.operator,
+                ),
+              ],
+            ],
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
-              _KeyButton(
-                spec: _KeySpec('=', _equals, tone: _KeyTone.operator),
+              MoneyKeyButton(
+                spec: MoneyKeySpec(
+                  '=',
+                  _equals,
+                  tone: MoneyKeyTone.operator,
+                  semanticLabel: '等于',
+                ),
                 height: 48,
               ),
               const SizedBox(width: 8),
@@ -275,84 +318,6 @@ class _AmountCalculatorSheetState extends State<_AmountCalculatorSheet> {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _keyRow(List<_KeySpec> specs) {
-    return Row(
-      children: [
-        for (var i = 0; i < specs.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          _KeyButton(spec: specs[i]),
-        ],
-      ],
-    );
-  }
-}
-
-enum _KeyTone { digit, neutral, operator }
-
-class _KeySpec {
-  const _KeySpec(
-    this.label,
-    this.onTap, {
-    this.tone = _KeyTone.digit,
-    this.flex = 1,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final _KeyTone tone;
-  final int flex;
-}
-
-class _KeyButton extends StatelessWidget {
-  const _KeyButton({required this.spec, this.height = 52});
-
-  final _KeySpec spec;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final radius = theme.radiusTokens;
-
-    final isOperator = spec.tone == _KeyTone.operator;
-    final background = switch (spec.tone) {
-      _KeyTone.operator => colorScheme.primaryContainer,
-      _KeyTone.neutral => colorScheme.surfaceContainerHighest,
-      _KeyTone.digit => colorScheme.surfaceContainerHigh,
-    };
-    final foreground = isOperator
-        ? colorScheme.onPrimaryContainer
-        : colorScheme.onSurface;
-
-    return Expanded(
-      flex: spec.flex,
-      child: SizedBox(
-        height: height,
-        child: Material(
-          color: background,
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radius.md),
-          ),
-          child: InkWell(
-            onTap: spec.onTap,
-            child: Center(
-              child: Text(
-                spec.label,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: foreground,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

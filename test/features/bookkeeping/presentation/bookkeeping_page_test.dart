@@ -82,10 +82,17 @@ void main() {
     await tester.tap(find.text('分类').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('暂无分类'), findsOneWidget);
+    // 分类页自带顶栏（返回 + 标题 + 分类管理），一级导航整排收起让出空间。
+    expect(find.text('分类记账'), findsOneWidget);
+    expect(find.byTooltip('分类管理'), findsOneWidget);
+    expect(find.byTooltip('返回'), findsOneWidget);
+    // 收起的一级导航不再出现：否则两排导航叠着，用户分不清哪排管用。
+    // 断言容器而不是文字——记账条的字段行里也有一个「更多」。
+    expect(
+      find.byKey(const ValueKey('bookkeeping-primary-tabs')),
+      findsNothing,
+    );
     expect(router.state.uri.queryParameters['section'], 'categories');
-    // 二级面板激活时，「更多」标签显示当前面板名。
-    expect(find.text('分类'), findsWidgets);
   });
 
   testWidgets('deep link opens the section from the query parameter', (

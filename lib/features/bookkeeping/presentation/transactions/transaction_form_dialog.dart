@@ -33,6 +33,7 @@ import 'package:miji/features/bookkeeping/presentation/categories/components/cat
 import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/amount_calculator_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/suggestion_autocomplete_field.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/transaction_account_rules.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_split_dialog.dart';
 
 /// 表单提交回调：返回错误文案（null = 成功）。
@@ -284,13 +285,16 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           .where((account) => account.isActive)
           .toList(growable: false),
     );
-    final selectableAccounts = _selectableAccountsForType(accountRows);
+    final selectableAccounts = selectableAccountsForType(
+      widget.type,
+      accountRows,
+    );
     final selectedAccount = _paidByOthers
         ? null
         : _selectedAccountFrom(selectableAccounts);
     final accountRuleHint = _accountRuleHint(selectedAccount);
-    final lockedPaymentMethod = _lockedPaymentMethodForAccount(selectedAccount);
-    final availablePaymentMethods = _availablePaymentMethodsForAccount(
+    final lockedPaymentMethod = lockedPaymentMethodForAccount(selectedAccount);
+    final availablePaymentMethods = availablePaymentMethodsForAccount(
       selectedAccount,
     );
     final paymentMethodUsageRanks = ref
@@ -309,8 +313,9 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       availablePaymentMethods,
       paymentMethodUsageRanks,
     );
-    final effectivePaymentMethod = _effectivePaymentMethodForAccount(
+    final effectivePaymentMethod = effectivePaymentMethodForAccount(
       selectedAccount,
+      _paymentMethod,
     );
     final selectedLedgerMembers = _isEditing || selectedLedger == null
         ? const <MoneyMemberEntity>[]
@@ -503,7 +508,8 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
           else
             accounts.when(
               data: (value) => AccountSelector(
-                accounts: _selectableAccountsForType(
+                accounts: selectableAccountsForType(
+                  widget.type,
                   value.where((account) => account.isActive).toList(),
                 ),
                 selectedAccountId: _accountId,
@@ -513,13 +519,11 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
                 onChanged: (account) {
                   setState(() {
                     _accountId = account?.id;
-                    final lockedMethod = _lockedPaymentMethodForAccount(
-                      account,
-                    );
+                    final lockedMethod = lockedPaymentMethodForAccount(account);
                     if (lockedMethod != null) {
                       _paymentMethod = lockedMethod;
                     } else {
-                      final methods = _availablePaymentMethodsForAccount(
+                      final methods = availablePaymentMethodsForAccount(
                         account,
                       );
                       if (!methods.contains(_paymentMethod)) {
@@ -933,7 +937,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
         return null;
       }
       final selectedAccount = _selectedAccountFrom(
-        _selectableAccountsForType([
+        selectableAccountsForType(widget.type, [
           ...accounts.maybeWhen(
             data: (value) =>
                 value.where((account) => account.isActive).toList(),
@@ -970,8 +974,9 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
       final location = _locationController.text.trim();
       final tagText = _tagController.text.trim();
       final tags = tagText.isEmpty ? const <String>[] : <String>[tagText];
-      final effectivePaymentMethod = _effectivePaymentMethodForAccount(
+      final effectivePaymentMethod = effectivePaymentMethodForAccount(
         selectedAccount,
+        _paymentMethod,
       );
       if (_isSplitConfigStale) {
         setState(() => _errorText = '金额变化后请重新设置分摊');
@@ -1192,86 +1197,8 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
     return null;
   }
 
-  List<MoneyAccountEntity> _selectableAccountsForType(
-    List<MoneyAccountEntity> accounts,
-  ) {
-    if (widget.type == MoneyTransactionType.income) {
-      return accounts
-          .where(
-            (account) => account.type.isAssetLike && !account.type.isDebtLike,
-          )
-          .toList();
-    }
-    if (widget.type == MoneyTransactionType.expense) {
-      return accounts
-          .where(
-            (account) =>
-                account.type.isAssetLike ||
-                account.type.isCreditLike ||
-                account.type.isInternal,
-          )
-          .toList();
-    }
-    return accounts;
-  }
-
-  MoneyPaymentMethod? _lockedPaymentMethodForAccount(
-    MoneyAccountEntity? account,
-  ) {
-    return switch (account?.type) {
-      MoneyAccountType.cash => MoneyPaymentMethod.cash,
-      MoneyAccountType.huabei => MoneyPaymentMethod.huabei,
-      MoneyAccountType.baitiao => MoneyPaymentMethod.baitiao,
-      MoneyAccountType.alipay => MoneyPaymentMethod.alipay,
-      MoneyAccountType.wechat => MoneyPaymentMethod.wechatPay,
-      MoneyAccountType.cloudQuickPass => MoneyPaymentMethod.unionPay,
-      _ => null,
-    };
-  }
-
-  List<MoneyPaymentMethod> _availablePaymentMethodsForAccount(
-    MoneyAccountEntity? account,
-  ) {
-    final lockedMethod = _lockedPaymentMethodForAccount(account);
-    if (lockedMethod != null) {
-      return [lockedMethod];
-    }
-    return switch (account?.type) {
-      MoneyAccountType.creditCard => const [
-        MoneyPaymentMethod.creditCard,
-        MoneyPaymentMethod.bankTransfer,
-        MoneyPaymentMethod.alipay,
-        MoneyPaymentMethod.wechatPay,
-        MoneyPaymentMethod.unionPay,
-        MoneyPaymentMethod.onlinePayment,
-        MoneyPaymentMethod.thirdParty,
-        MoneyPaymentMethod.other,
-      ],
-      MoneyAccountType.meituanCredit || MoneyAccountType.otherCredit => const [
-        MoneyPaymentMethod.onlinePayment,
-        MoneyPaymentMethod.thirdParty,
-        MoneyPaymentMethod.alipay,
-        MoneyPaymentMethod.wechatPay,
-        MoneyPaymentMethod.bankTransfer,
-        MoneyPaymentMethod.other,
-      ],
-      _ => MoneyPaymentMethod.values,
-    };
-  }
-
-  MoneyPaymentMethod _effectivePaymentMethodForAccount(
-    MoneyAccountEntity? account,
-  ) {
-    final lockedMethod = _lockedPaymentMethodForAccount(account);
-    if (lockedMethod != null) {
-      return lockedMethod;
-    }
-    final methods = _availablePaymentMethodsForAccount(account);
-    if (methods.contains(_paymentMethod)) {
-      return _paymentMethod;
-    }
-    return methods.first;
-  }
+  // 账户可选范围与支付方式锁定的规则搬到了 transaction_account_rules.dart，
+  // 与「一屏记账」界面共用同一口径。
 
   List<MoneyPaymentMethod> _sortPaymentMethodsByUsage(
     List<MoneyPaymentMethod> methods,

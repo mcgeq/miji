@@ -57,6 +57,13 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
   MoneyTransactionFilterContext? _transactionFilterContext;
   bool _initialActionConsumed = false;
 
+  /// 进分类页之前的那个面板。
+  ///
+  /// 分类页会把一级导航整排收起，退路由它自己的顶栏提供；收起的那排导航
+  /// 回不去，所以得记住用户是从哪儿进来的（直接带 `?section=categories`
+  /// 进来时没有「上一个」，退回流水）。
+  _BookkeepingPanel? _panelBeforeCategories;
+
   @override
   void initState() {
     super.initState();
@@ -110,6 +117,9 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
   Widget build(BuildContext context) {
     _consumeInitialAction();
     final showPageLedgerSelector = !AppResponsive.of(context).isCompact;
+    // 分类页自己带顶栏（返回 + 收支分段 + 分类管理），而且要把整整一排
+    // 一级导航的高度让给分类列表与键盘——再压一层导航就什么都看不见了。
+    final hidePrimaryTabs = _selectedPanel == _BookkeepingPanel.categories;
 
     return Stack(
       children: [
@@ -125,11 +135,13 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
                 ),
                 const SizedBox(height: 6),
               ],
-              _BookkeepingTabBar(
-                selected: _selectedPanel,
-                onSelect: _selectPanel,
-              ),
-              const SizedBox(height: 16),
+              if (!hidePrimaryTabs) ...[
+                _BookkeepingTabBar(
+                  selected: _selectedPanel,
+                  onSelect: _selectPanel,
+                ),
+                const SizedBox(height: 16),
+              ],
               Expanded(
                 child: _LazyBookkeepingPanelStack(
                   selectedPanel: _selectedPanel,
@@ -162,7 +174,9 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
       _BookkeepingPanel.statistics => MoneyStatisticsSection(
         onOpenTransactions: _showTransactionsFromStatistics,
       ),
-      _BookkeepingPanel.categories => const MoneyCategoriesSection(),
+      _BookkeepingPanel.categories => MoneyCategoriesSection(
+        onExit: _exitCategories,
+      ),
       _BookkeepingPanel.budgets => MoneyBudgetsSection(
         onViewTransactions: _showBudgetTransactions,
       ),
@@ -183,10 +197,18 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
     // 切换一级导航给一次轻微触感，移动端「操作被接住」的感觉主要来自这里。
     unawaited(HapticFeedback.selectionClick());
     setState(() {
+      if (panel == _BookkeepingPanel.categories) {
+        _panelBeforeCategories = _selectedPanel;
+      }
       _selectedPanel = panel;
       _loadedPanels.add(panel);
     });
     _syncPanelToUrl(panel);
+  }
+
+  /// 分类页顶栏的「返回」：回到进来时的那个面板。
+  void _exitCategories() {
+    _selectPanel(_panelBeforeCategories ?? _BookkeepingPanel.transactions);
   }
 
   /// 把当前面板写回 URL。
@@ -351,6 +373,9 @@ class _BookkeepingTabBar extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560),
         child: Container(
+          // 分类页会把这排整排收起，测试用它断言「一级导航确实不在了」——
+          // 光断言文字会撞上页面上其它同名文本（比如记账条的「更多」）。
+          key: const ValueKey('bookkeeping-primary-tabs'),
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest.withValues(

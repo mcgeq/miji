@@ -39,7 +39,7 @@ void main() {
   });
 
   group('pickFrequentLeaves', () {
-    test('orders by usage and pads with catalog order', () {
+    test('orders used leaves by usage', () {
       final leaves = buildCategoryLeaves(_catalog);
       // 父分类自己作叶子 → 用量记在 categoryStats；子分类记在 subCategoryStats。
       final usage = MoneyCategoryUsage.fromStats(
@@ -55,13 +55,73 @@ void main() {
       expect(picked.map((leaf) => leaf.name), contains('午餐'));
     });
 
-    test('falls back to catalog order without usage', () {
+    test('无使用记录时按父分类轮询补位（不再退化成目录顺序）', () {
       final leaves = buildCategoryLeaves(_catalog);
 
+      // 目录顺序是 午餐 / 晚餐 / 交通。目录顺序的前 2 个会把「餐饮」连铺两个格子；
+      // 轮询的第 1 轮是「每个父分类各取 1 个」→ 午餐（餐饮）+ 交通。
       expect(
         pickFrequentLeaves(leaves, null, count: 2).map((leaf) => leaf.name),
-        ['午餐', '晚餐'],
+        ['午餐', '交通'],
       );
+      // 目录顺序仍保留在轮询的轮次里：第 3 格才是餐饮的第 2 个叶子。
+      expect(
+        pickFrequentLeaves(leaves, null, count: 3).map((leaf) => leaf.name),
+        ['午餐', '交通', '晚餐'],
+      );
+    });
+
+    test('只用过 3 类时，空位按父分类轮询补而不是被同一批叶子填满', () {
+      final leaves = buildCategoryLeaves(_roundRobinCatalog);
+      // 只用过「日用品 d0」（昨天 5 次）→ 它排第一，其余空位交给轮询。
+      final usage = MoneyCategoryUsage.fromStats(
+        categoryStats: const {},
+        subCategoryStats: {
+          'p2_d0': MoneyUsageStat(
+            useCount: 5,
+            lastUsedAt: DateTime.now().subtract(const Duration(days: 1)),
+          ),
+        },
+      );
+
+      final picked = pickFrequentLeaves(leaves, usage, count: 5);
+
+      // 第 1 格用过的；后面 4 格轮询第 1 轮依次取 p0 / p1 / p2 / p3 各一个
+      // （p2 的一个已被用过占走，轮到它的第 2 个叶子）。旧口径下这里会是
+      // 餐饮的 s0 / s1 / s2 / s3 连着铺满，一格换不到一个新分类。
+      expect(picked.map((leaf) => leaf.name).toList(), [
+        '日用品0',
+        '餐饮0',
+        '交通0',
+        '日用品1',
+        '房租',
+      ]);
+      expect(picked.map((leaf) => leaf.categoryId).toSet(), {
+        'p0',
+        'p1',
+        'p2',
+        'p3',
+      });
+    });
+
+    test('用过的叶子够填满时不再轮询补位', () {
+      final leaves = buildCategoryLeaves(_roundRobinCatalog);
+      final usage = MoneyCategoryUsage.fromStats(
+        categoryStats: const {
+          'p3': MoneyUsageStat(useCount: 9, lastUsedAt: null),
+        },
+        subCategoryStats: {
+          'p0_s1': MoneyUsageStat(
+            useCount: 3,
+            lastUsedAt: DateTime.now().subtract(const Duration(days: 2)),
+          ),
+        },
+      );
+
+      final picked = pickFrequentLeaves(leaves, usage, count: 2);
+
+      // 两个都用过 → 直接按 B1 排（p0_s1 近 2 天 > p3 无最近时间），不掺轮询。
+      expect(picked.map((leaf) => leaf.key).toList(), ['p0::p0_s1', 'p3::']);
     });
   });
 
@@ -137,12 +197,13 @@ void main() {
   ) async {
     // 晚餐最近用过 → 网格里第一个；打开面板后它也应该在「餐饮」分组的最前面，
     // 而不是按目录顺序或另一套口径。
+    // 用相对日期：B1 是时间分层口径，写死日期会随运行日期跨档而失效。
     final usage = MoneyCategoryUsage.fromStats(
       categoryStats: const {},
       subCategoryStats: {
         'expense_food_dinner': MoneyUsageStat(
           useCount: 2,
-          lastUsedAt: DateTime(2026, 9, 21),
+          lastUsedAt: DateTime.now().subtract(const Duration(days: 1)),
         ),
       },
     );
@@ -218,6 +279,7 @@ void main() {
     test('最近使用优先于历史次数（月初不再归零）', () {
       final leaves = buildCategoryLeaves(_catalog);
       // 午餐：本月没用过（窗口口径会归零）但昨天用过 → 仍应排前。
+      // 相对日期：B1 按「距今天数」分档，写死日期会随运行日期跨档而失效。
       final usage = MoneyCategoryUsage.fromStats(
         categoryStats: const {
           'expense_transport': MoneyUsageStat(useCount: 50, lastUsedAt: null),
@@ -225,11 +287,11 @@ void main() {
         subCategoryStats: {
           'expense_food_lunch': MoneyUsageStat(
             useCount: 1,
-            lastUsedAt: DateTime(2026, 9, 21),
+            lastUsedAt: DateTime.now().subtract(const Duration(days: 1)),
           ),
           'expense_food_dinner': MoneyUsageStat(
             useCount: 30,
-            lastUsedAt: DateTime(2026, 9, 10),
+            lastUsedAt: DateTime.now().subtract(const Duration(days: 35)),
           ),
         },
       );
@@ -238,6 +300,29 @@ void main() {
 
       // 午餐最近用过 → 第一；晚餐其次；从未用过的交通最后。
       expect(picked.map((leaf) => leaf.name).toList(), ['午餐', '晚餐', '交通']);
+    });
+
+    test('同档内高频优先：昨天只记一次的不再压过同档高频', () {
+      final leaves = buildCategoryLeaves(_catalog);
+      // 午餐昨天记 1 次、晚餐 5 天前记 30 次 —— 同属「近 7 天」档。
+      // 旧口径（纯最近优先）会把午餐排第一；B1 同档内看次数 → 晚餐第一。
+      final usage = MoneyCategoryUsage.fromStats(
+        categoryStats: const {},
+        subCategoryStats: {
+          'expense_food_lunch': MoneyUsageStat(
+            useCount: 1,
+            lastUsedAt: DateTime.now().subtract(const Duration(days: 1)),
+          ),
+          'expense_food_dinner': MoneyUsageStat(
+            useCount: 30,
+            lastUsedAt: DateTime.now().subtract(const Duration(days: 5)),
+          ),
+        },
+      );
+
+      final picked = pickFrequentLeaves(leaves, usage, count: 3);
+
+      expect(picked.map((leaf) => leaf.name).toList(), ['晚餐', '午餐', '交通']);
     });
 
     test('从未用过的叶子退回目录顺序，且排在用过的之后', () {
@@ -537,6 +622,84 @@ const _catalog = MoneyCategoryCatalog(
       icon: 'dinner_dining',
       isSystem: true,
     ),
+  ],
+);
+
+/// 轮询补位的 fixture：复现真实种子数据的形状——「餐饮」下叶子最多且排在
+/// 目录最前面，所以任何「按目录顺序取前 N」的兜底都会连着铺一堆餐饮。
+final _roundRobinCatalog = MoneyCategoryCatalog(
+  categories: const [
+    MoneyCategoryEntity(
+      id: 'p0',
+      userId: 'user-1',
+      name: '餐饮',
+      kind: MoneyCategoryKind.expense,
+      color: '#F97316',
+      icon: 'restaurant',
+      isSystem: true,
+    ),
+    MoneyCategoryEntity(
+      id: 'p1',
+      userId: 'user-1',
+      name: '交通',
+      kind: MoneyCategoryKind.expense,
+      color: '#4F7DD9',
+      icon: 'directions_bus',
+      isSystem: true,
+    ),
+    MoneyCategoryEntity(
+      id: 'p2',
+      userId: 'user-1',
+      name: '日用品',
+      kind: MoneyCategoryKind.expense,
+      color: '#0F766E',
+      icon: 'shopping_bag',
+      isSystem: true,
+    ),
+    MoneyCategoryEntity(
+      id: 'p3',
+      userId: 'user-1',
+      name: '房租',
+      kind: MoneyCategoryKind.expense,
+      color: '#7C3AED',
+      icon: 'home',
+      isSystem: true,
+    ),
+  ],
+  subCategories: [
+    for (var i = 0; i < 10; i++)
+      MoneySubCategoryEntity(
+        id: 'p0_s$i',
+        categoryId: 'p0',
+        userId: 'user-1',
+        name: '餐饮$i',
+        kind: MoneyCategoryKind.expense,
+        color: '#FDBA74',
+        icon: 'lunch_dining',
+        isSystem: true,
+      ),
+    for (var i = 0; i < 3; i++)
+      MoneySubCategoryEntity(
+        id: 'p1_t$i',
+        categoryId: 'p1',
+        userId: 'user-1',
+        name: '交通$i',
+        kind: MoneyCategoryKind.expense,
+        color: '#93C5FD',
+        icon: 'directions_bus',
+        isSystem: true,
+      ),
+    for (var i = 0; i < 2; i++)
+      MoneySubCategoryEntity(
+        id: 'p2_d$i',
+        categoryId: 'p2',
+        userId: 'user-1',
+        name: '日用品$i',
+        kind: MoneyCategoryKind.expense,
+        color: '#5EEAD4',
+        icon: 'shopping_bag',
+        isSystem: true,
+      ),
   ],
 );
 

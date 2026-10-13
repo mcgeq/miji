@@ -72,10 +72,13 @@ List<CategoryLeaf> buildCategoryLeaves(
   return leaves;
 }
 
-/// 「常用」比较器：最近使用 → 使用次数 → 累计金额 → 目录顺序。
+/// 「常用」比较器：B1 时间分层（近 7 天 > 近 30 天 > 近 90 天 > 更早 > 从未用过）
+/// → 同档内使用次数 → 累计金额 → 谁更近 → 目录顺序。
 ///
 /// 网格（扁平取前 N）和「全部分类」面板（按父分类分组后组内排序）**共用这一个**，
 /// 避免出现「格子里排第一、面板里却翻很久才找到」的两套口径。
+/// 宫格的第二层填充（没用过的叶子）另见 [pickFrequentLeaves]，那是补位策略、
+/// 不是排序口径，面板仍按本比较器全量排序。
 int compareLeavesByUsage(
   CategoryLeaf left,
   CategoryLeaf right,
@@ -108,18 +111,100 @@ List<CategoryLeaf> sortLeavesByUsage(
 }
 
 /// 按「常用」排序后的前 [count] 个叶子。
+///
+/// **两层填充**（稿子 A + B1，两者不冲突）：
+/// 1. 第一层 · 用过的叶子：按 [compareLeavesByUsage] 排（B1 时间分层：近 7 天 >
+///    近 30 天 > 近 90 天 > 更早 > 从未用过；同档内次数 → 金额 → 更近）；
+/// 2. 第二层 · 没用过的叶子：**按父分类轮询补位** —— 父分类之间按目录顺序排队，
+///    每轮各取 1 个叶子，取完再开下一轮，直到把剩下的空位填满。
+///
+/// 为什么第二层不是「按目录顺序取前 N」：目录里餐饮的子分类排在最前，于是
+/// 新用户（无历史）首屏会连着铺两行餐饮；而「只用过 3 类」时，历史一旦非空，
+/// 排序只把用过的提到前面，**剩下的空位照样按目录顺序回填**，尾部又是同一批
+/// 餐饮叶子。两种症状同源，用轮询一起解决：同样的格子数换到更多不同的一级分类。
 List<CategoryLeaf> pickFrequentLeaves(
   List<CategoryLeaf> leaves,
   MoneyCategoryUsage? usage, {
   int count = 9,
 }) {
-  if (leaves.isEmpty) {
+  if (leaves.isEmpty || count <= 0) {
     return const <CategoryLeaf>[];
   }
-  if (usage == null || usage.isEmpty) {
-    return leaves.take(count).toList();
+  final used = <CategoryLeaf>[];
+  final unused = <CategoryLeaf>[];
+  for (final leaf in leaves) {
+    if (_hasUsage(usage, leaf)) {
+      used.add(leaf);
+    } else {
+      unused.add(leaf);
+    }
   }
-  return sortLeavesByUsage(leaves, usage).take(count).toList();
+
+  final catalogIndex = <String, int>{
+    for (var i = 0; i < leaves.length; i++) leaves[i].key: i,
+  };
+  final ranked = List<CategoryLeaf>.of(used)
+    ..sort((a, b) => compareLeavesByUsage(a, b, usage, catalogIndex));
+
+  final picked = ranked.take(count).toList();
+  if (picked.length >= count) {
+    return picked;
+  }
+  picked.addAll(_padByParentRoundRobin(unused, count - picked.length));
+  return picked;
+}
+
+/// 叶子是否「用过」。
+///
+/// 除了次数与最近使用时间，**金额非零也算**：统计窗口口径（[MoneyCategoryUsage
+/// .fromSlices]）只带金额与笔数、不带 `lastUsedAt`，只认 `useCount` 会让这些
+/// 入口的「常用」全部失效、退化成轮询。
+bool _hasUsage(MoneyCategoryUsage? usage, CategoryLeaf leaf) {
+  if (usage == null || usage.isEmpty) {
+    return false;
+  }
+  final stat = usage.statForLeaf(leaf.categoryId, leaf.subCategoryId);
+  return stat.isUsed || stat.amountMinor > 0;
+}
+
+/// 父分类轮询补位：父分类按**首次出现的顺序**（即目录顺序）排队，
+/// 每轮从每个父分类各取 1 个叶子；某个父分类取空就跳过它。
+///
+/// 叶子在自己父分类内的顺序仍是目录顺序，所以每轮的「第 1 轮」取到的正是
+/// 每个父分类的第一个叶子——支出侧 18 个父分类下，第一轮就能得到 15 个
+/// 互不相同的一级分类。
+List<CategoryLeaf> _padByParentRoundRobin(
+  List<CategoryLeaf> leaves,
+  int limit,
+) {
+  if (leaves.isEmpty || limit <= 0) {
+    return const <CategoryLeaf>[];
+  }
+  final groups = <String, List<CategoryLeaf>>{};
+  for (final leaf in leaves) {
+    groups.putIfAbsent(leaf.categoryId, () => <CategoryLeaf>[]).add(leaf);
+  }
+  final picked = <CategoryLeaf>[];
+  var round = 0;
+  while (picked.length < limit) {
+    var addedInRound = false;
+    for (final group in groups.values) {
+      if (round >= group.length) {
+        continue;
+      }
+      picked.add(group[round]);
+      addedInRound = true;
+      if (picked.length >= limit) {
+        break;
+      }
+    }
+    // 所有父分类都取空了：叶子总数不够 limit，直接收工。
+    if (!addedInRound) {
+      break;
+    }
+    round++;
+  }
+  return picked;
 }
 
 /// 叶子分类选择器。

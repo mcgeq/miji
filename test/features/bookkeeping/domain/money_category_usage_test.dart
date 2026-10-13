@@ -100,56 +100,121 @@ void main() {
     });
   });
 
-  group('compareUsageStats（统一的「常用」口径）', () {
-    test('more recent wins', () {
-      final recent = MoneyUsageStat(
-        useCount: 1,
-        lastUsedAt: DateTime(2026, 9, 20),
-      );
-      final older = MoneyUsageStat(
-        useCount: 50,
-        lastUsedAt: DateTime(2026, 1, 1),
-      );
+  group('compareUsageStats（B1 · 时间分层口径）', () {
+    // 固定「今天」再断言，否则结果会随运行日期漂移（跨过 7/30/90 天边界就变）。
+    final now = DateTime(2026, 10, 13);
 
-      expect(MoneyCategoryUsage.compareUsageStats(recent, older), lessThan(0));
+    MoneyUsageStat used(DateTime at, {int count = 1, int amount = 0}) =>
+        MoneyUsageStat(useCount: count, lastUsedAt: at, amountMinor: amount);
+
+    test('档位顺序：近 7 天 > 近 30 天 > 近 90 天 > 更早 > 从未用过', () {
+      final week = used(now.subtract(const Duration(days: 7)));
+      final month = used(now.subtract(const Duration(days: 8)));
+      final quarter = used(now.subtract(const Duration(days: 31)));
+      final old = used(now.subtract(const Duration(days: 91)));
+
+      final ordered = <MoneyUsageStat>[week, month, quarter, old];
+      for (var i = 0; i < ordered.length - 1; i++) {
+        expect(
+          MoneyCategoryUsage.compareUsageStats(
+            ordered[i],
+            ordered[i + 1],
+            now: now,
+          ),
+          lessThan(0),
+          reason: '第 $i 档应排在下一档之前',
+        );
+      }
+      expect(
+        MoneyCategoryUsage.compareUsageStats(
+          old,
+          MoneyUsageStat.empty,
+          now: now,
+        ),
+        lessThan(0),
+      );
     });
 
-    test('never used sorts last even with a big amount', () {
-      final used = MoneyUsageStat(
-        useCount: 1,
-        lastUsedAt: DateTime(2020, 1, 1),
+    test('同一档内按次数：天天用的压过「昨天只用过一次」的新分类', () {
+      // 早餐：近 7 天内记了 62 次；电影演出：昨天只记过 1 次。
+      // 旧口径（纯最近优先）会把电影演出排到早餐前面，B1 不会。
+      final breakfast = used(now.subtract(const Duration(days: 5)), count: 62);
+      final movie = used(now.subtract(const Duration(days: 1)));
+
+      expect(
+        MoneyCategoryUsage.compareUsageStats(breakfast, movie, now: now),
+        lessThan(0),
       );
+      expect(
+        MoneyCategoryUsage.compareUsageStats(movie, breakfast, now: now),
+        greaterThan(0),
+      );
+    });
+
+    test('跨档仍看时间：近 20 天的高频仍排在近 90 天之前', () {
+      final lunch = used(now.subtract(const Duration(days: 20)), count: 88);
+      final takeout = used(now.subtract(const Duration(days: 45)), count: 200);
+
+      expect(
+        MoneyCategoryUsage.compareUsageStats(lunch, takeout, now: now),
+        lessThan(0),
+      );
+    });
+
+    test('从未用过排最后，金额再大也不动', () {
+      final old = used(now.subtract(const Duration(days: 365)));
       const never = MoneyUsageStat(amountMinor: 9999999);
 
-      expect(MoneyCategoryUsage.compareUsageStats(used, never), lessThan(0));
-      expect(MoneyCategoryUsage.compareUsageStats(never, used), greaterThan(0));
+      expect(
+        MoneyCategoryUsage.compareUsageStats(old, never, now: now),
+        lessThan(0),
+      );
+      expect(
+        MoneyCategoryUsage.compareUsageStats(never, old, now: now),
+        greaterThan(0),
+      );
     });
 
-    test('falls back to use count, then amount', () {
-      final sameDay = DateTime(2026, 9, 20);
-      final busy = MoneyUsageStat(useCount: 10, lastUsedAt: sameDay);
-      final rare = MoneyUsageStat(useCount: 2, lastUsedAt: sameDay);
-      expect(MoneyCategoryUsage.compareUsageStats(busy, rare), lessThan(0));
+    test('同档同次数比金额，再同则比谁更近（保证排序稳定）', () {
+      final day = now.subtract(const Duration(days: 3));
+      final big = used(day, count: 2, amount: 90000);
+      final small = used(day, count: 2, amount: 100);
+      expect(
+        MoneyCategoryUsage.compareUsageStats(big, small, now: now),
+        lessThan(0),
+      );
 
-      final big = MoneyUsageStat(
-        amountMinor: 90000,
-        useCount: 2,
-        lastUsedAt: sameDay,
+      final nearer = used(now.subtract(const Duration(days: 1)), count: 2);
+      final farther = used(now.subtract(const Duration(days: 6)), count: 2);
+      expect(
+        MoneyCategoryUsage.compareUsageStats(nearer, farther, now: now),
+        lessThan(0),
       );
-      final small = MoneyUsageStat(
-        amountMinor: 100,
-        useCount: 2,
-        lastUsedAt: sameDay,
-      );
-      expect(MoneyCategoryUsage.compareUsageStats(big, small), lessThan(0));
     });
 
     test('equal stats compare equal so callers can tie-break', () {
-      final same = DateTime(2026, 9, 20);
-      final left = MoneyUsageStat(useCount: 3, lastUsedAt: same);
-      final right = MoneyUsageStat(useCount: 3, lastUsedAt: same);
+      final same = now.subtract(const Duration(days: 2));
+      final left = used(same, count: 3);
+      final right = used(same, count: 3);
 
-      expect(MoneyCategoryUsage.compareUsageStats(left, right), 0);
+      expect(MoneyCategoryUsage.compareUsageStats(left, right, now: now), 0);
+    });
+
+    test('recencyLevel 的边界含端点，未来时间归到最新档', () {
+      int level(int daysAgo) => MoneyCategoryUsage.recencyLevel(
+        now.subtract(Duration(days: daysAgo)),
+        now: now,
+      );
+
+      expect(level(0), 0);
+      expect(level(7), 0);
+      expect(level(8), 1);
+      expect(level(30), 1);
+      expect(level(31), 2);
+      expect(level(90), 2);
+      expect(level(91), 3);
+      expect(MoneyCategoryUsage.recencyLevel(null, now: now), 4);
+      expect(level(-1), 0);
     });
   });
 
