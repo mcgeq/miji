@@ -4050,6 +4050,9 @@ class _TransactionSummaryBar extends ConsumerWidget {
   ///
   /// 视觉上只留金额、靠颜色区分方向，但「支出 / 收入 / 净」没有真正丢掉：
   /// 它作为语义标签与长按提示保留，否则读屏用户与色觉缺陷用户拿不到方向信息。
+  ///
+  /// 三格都可点按切换显隐：收入走自己的 [IncomePrivacy]（默认 `****`），
+  /// 支出与净走全局「隐藏金额」（默认明文）—— 两套开关互不影响。
   Widget _amount(
     ThemeData theme,
     String label,
@@ -4080,7 +4083,11 @@ class _TransactionSummaryBar extends ConsumerWidget {
         ),
       ),
     );
-    return Expanded(child: income ? IncomeAmountTap(child: body) : body);
+    return Expanded(
+      child: income
+          ? IncomeAmountTap(child: body)
+          : MoneyPrivacyTap(child: body),
+    );
   }
 
   static bool _hasAnyFilter(MoneyTransactionQuery query) {
@@ -4175,14 +4182,16 @@ class _DayGroupHeader extends StatelessWidget {
           if (currencyCode != null) ...[
             const SizedBox(width: 8),
             if (expenseMinor > 0)
-              Text(
-                maskedMoneyOr(
-                  '支出 ${formatMoneyMinor(expenseMinor, currencyCode!)}',
-                  MoneyPrivacy.of(context),
-                ),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.moneyColors.expense,
-                  letterSpacing: 0,
+              MoneyPrivacyTap(
+                child: Text(
+                  maskedMoneyOr(
+                    '支出 ${formatMoneyMinor(expenseMinor, currencyCode!)}',
+                    MoneyPrivacy.of(context),
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.moneyColors.expense,
+                    letterSpacing: 0,
+                  ),
                 ),
               ),
             if (expenseMinor > 0 && incomeMinor > 0) const SizedBox(width: 10),

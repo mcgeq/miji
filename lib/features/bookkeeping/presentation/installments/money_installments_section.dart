@@ -247,7 +247,7 @@ class _MoneyInstallmentsSectionState
   }
 }
 
-class _MoneyInstallmentsContent extends StatelessWidget {
+class _MoneyInstallmentsContent extends StatefulWidget {
   const _MoneyInstallmentsContent({
     required this.plans,
     required this.accounts,
@@ -271,12 +271,30 @@ class _MoneyInstallmentsContent extends StatelessWidget {
   final ValueChanged<MoneyInstallmentDetailEntity> onPostDetail;
 
   @override
+  State<_MoneyInstallmentsContent> createState() =>
+      _MoneyInstallmentsContentState();
+}
+
+class _MoneyInstallmentsContentState extends State<_MoneyInstallmentsContent> {
+  final _searchController = TextEditingController();
+  String _keyword = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final creditAccounts = accounts
+    final creditAccounts = widget.accounts
         .where((account) => account.isActive && account.type.isCreditLike)
         .toList();
     final canCreate =
-        creditAccounts.isNotEmpty && categoryCatalog.categories.isNotEmpty;
+        creditAccounts.isNotEmpty &&
+        widget.categoryCatalog.categories.isNotEmpty;
+    // 只有真正会渲染出列表时才给搜索框 —— 空态上挂一个搜索框没有意义。
+    final showList = canCreate && widget.plans.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -286,12 +304,25 @@ class _MoneyInstallmentsContent extends StatelessWidget {
         //
         // 原来 _MoneyInstallmentsContent 声明了 required onCreate，
         // 但 build 里从未引用，页面实际没有任何新增入口。
+        //
+        // 搜索框从列表内部上提到页头：分期原来是唯一把搜索放在面板**内容**
+        // 里的面板，与流水 / 预算 / 分类 / 自动记账不一致（见
+        // BookkeepingPanelHeader 的注释：搜索在最上、工具行其次）。
         BookkeepingPanelHeader(
+          searchRow: showList
+              ? BookkeepingPanelSearchField(
+                  controller: _searchController,
+                  hintText: '搜索分期名称 / 分类 / 账户',
+                  onChanged: (value) =>
+                      setState(() => _keyword = value.trim().toLowerCase()),
+                )
+              : null,
           actions: [
             AppIconActionButton(
               tooltip: canCreate ? '新增分期' : '需要先有信用账户和支出分类',
               onPressed: canCreate
-                  ? () => onCreate(accounts, categoryCatalog)
+                  ? () =>
+                        widget.onCreate(widget.accounts, widget.categoryCatalog)
                   : null,
               icon: Icons.add_rounded,
               variant: AppIconActionVariant.filled,
@@ -309,33 +340,34 @@ class _MoneyInstallmentsContent extends StatelessWidget {
               message: '分期只能挂在信用卡、花呗、白条等信用账户上',
               icon: Icons.credit_card_rounded,
               action: FilledButton.icon(
-                onPressed: onCreateAccount,
+                onPressed: widget.onCreateAccount,
                 icon: const Icon(Icons.add_card_rounded, size: 18),
                 label: const Text('新建信用账户'),
               ),
             ),
           )
-        else if (categoryCatalog.categories.isEmpty)
+        else if (widget.categoryCatalog.categories.isEmpty)
           Expanded(
             child: AppEmptyState(
               title: '还没有支出分类',
               message: '先创建支出分类，再回来设置分期',
               icon: Icons.category_rounded,
               action: OutlinedButton.icon(
-                onPressed: onManageCategories,
+                onPressed: widget.onManageCategories,
                 icon: const Icon(Icons.arrow_forward_rounded, size: 18),
                 label: const Text('去管理分类'),
               ),
             ),
           )
-        else if (plans.isEmpty)
+        else if (widget.plans.isEmpty)
           Expanded(
             child: AppEmptyState(
               title: '还没有分期计划',
               message: '新增分期后会冻结信用账户本金，并按期生成支出',
               icon: Icons.calendar_month_rounded,
               action: FilledButton.icon(
-                onPressed: () => onCreate(accounts, categoryCatalog),
+                onPressed: () =>
+                    widget.onCreate(widget.accounts, widget.categoryCatalog),
                 icon: const Icon(Icons.add_rounded, size: 18),
                 label: const Text('新增分期'),
               ),
@@ -344,12 +376,13 @@ class _MoneyInstallmentsContent extends StatelessWidget {
         else
           Expanded(
             child: _InstallmentPlanList(
-              plans: plans,
+              plans: widget.plans,
+              keyword: _keyword,
               accountForPlan: _accountForPlan,
               categoryText: _categoryText,
-              onPostDetail: onPostDetail,
-              onCancel: onCancel,
-              onRefresh: onRefresh,
+              onPostDetail: widget.onPostDetail,
+              onCancel: widget.onCancel,
+              onRefresh: widget.onRefresh,
             ),
           ),
       ],
@@ -357,7 +390,7 @@ class _MoneyInstallmentsContent extends StatelessWidget {
   }
 
   MoneyAccountEntity? _accountForPlan(MoneyInstallmentPlanEntity plan) {
-    for (final account in accounts) {
+    for (final account in widget.accounts) {
       if (account.id == plan.accountId) {
         return account;
       }
@@ -366,8 +399,10 @@ class _MoneyInstallmentsContent extends StatelessWidget {
   }
 
   String _categoryText(MoneyInstallmentPlanEntity plan) {
-    final category = categoryCatalog.categoryById(plan.categoryId);
-    final subCategory = categoryCatalog.subCategoryById(plan.subCategoryId);
+    final category = widget.categoryCatalog.categoryById(plan.categoryId);
+    final subCategory = widget.categoryCatalog.subCategoryById(
+      plan.subCategoryId,
+    );
     if (category == null) {
       return '分类不可用';
     }
@@ -445,9 +480,10 @@ class _InstallmentConflictBanner extends ConsumerWidget {
 }
 
 /// 分期列表：按状态分段（进行中 / 已结束折叠），避免已完成的老计划一直占首屏。
-class _InstallmentPlanList extends StatefulWidget {
+class _InstallmentPlanList extends ConsumerStatefulWidget {
   const _InstallmentPlanList({
     required this.plans,
+    required this.keyword,
     required this.accountForPlan,
     required this.categoryText,
     required this.onPostDetail,
@@ -456,6 +492,7 @@ class _InstallmentPlanList extends StatefulWidget {
   });
 
   final List<MoneyInstallmentPlanEntity> plans;
+  final String keyword;
   final MoneyAccountEntity? Function(MoneyInstallmentPlanEntity plan)
   accountForPlan;
   final String Function(MoneyInstallmentPlanEntity plan) categoryText;
@@ -464,25 +501,18 @@ class _InstallmentPlanList extends StatefulWidget {
   final Future<void> Function() onRefresh;
 
   @override
-  State<_InstallmentPlanList> createState() => _InstallmentPlanListState();
+  ConsumerState<_InstallmentPlanList> createState() =>
+      _InstallmentPlanListState();
 }
 
-class _InstallmentPlanListState extends State<_InstallmentPlanList> {
+class _InstallmentPlanListState extends ConsumerState<_InstallmentPlanList> {
   bool _showFinished = false;
-  final _searchController = TextEditingController();
-  String _keyword = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final keyword = _keyword;
+    final keyword = widget.keyword;
     final visible = keyword.isEmpty
         ? widget.plans
         : widget.plans.where((plan) {
@@ -495,6 +525,7 @@ class _InstallmentPlanListState extends State<_InstallmentPlanList> {
           }).toList();
     final active = visible.where((plan) => plan.isActive).toList();
     final finished = visible.where((plan) => !plan.isActive).toList();
+    final overdue = _collectOverdue(active);
 
     Widget card(MoneyInstallmentPlanEntity plan) {
       return _InstallmentPlanCard(
@@ -512,24 +543,15 @@ class _InstallmentPlanListState extends State<_InstallmentPlanList> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 12),
         children: [
-          AppTextField(
-            controller: _searchController,
-            hintText: '搜索分期名称 / 分类 / 账户',
-            prefixIcon: const Icon(Icons.search_rounded, size: 19),
-            onChanged: (value) =>
-                setState(() => _keyword = value.trim().toLowerCase()),
-            suffixIcon: _keyword.isEmpty
-                ? null
-                : IconButton(
-                    tooltip: '清除搜索',
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _keyword = '');
-                    },
-                  ),
-          ),
-          const SizedBox(height: 12),
+          // 逾期优先：不用逐个卡片翻，顶部直接给结论。
+          if (overdue.detailCount > 0) ...[
+            _InstallmentOverdueBanner(
+              detailCount: overdue.detailCount,
+              amountMinor: overdue.amountMinor,
+              currencyCode: overdue.currencyCode,
+            ),
+            const SizedBox(height: 12),
+          ],
           if (visible.isEmpty)
             const AppEmptyState(title: '没有匹配的分期计划')
           else if (active.isNotEmpty)
@@ -593,6 +615,104 @@ class _InstallmentPlanListState extends State<_InstallmentPlanList> {
       ),
     );
   }
+
+  /// 汇总「进行中」计划里已过期但仍未入账的期数。
+  ///
+  /// 卡片本来就各自订阅了明细 provider，这里再 watch 一遍不会产生额外查询，
+  /// 只是把散在各卡里的小字提示提前汇总成一句结论。
+  _InstallmentOverdueSummary _collectOverdue(
+    List<MoneyInstallmentPlanEntity> plans,
+  ) {
+    var detailCount = 0;
+    var amountMinor = 0;
+    var currencyCode = 'CNY';
+
+    for (final plan in plans) {
+      final details = ref
+          .watch(currentUserInstallmentDetailsProvider(plan.id))
+          .maybeWhen(data: (rows) => rows, orElse: () => null);
+      if (details == null) {
+        continue;
+      }
+      for (final detail in details) {
+        if (detail.status != MoneyInstallmentDetailStatus.pending) {
+          continue;
+        }
+        if (!_isOverdue(detail.dueDate)) {
+          continue;
+        }
+        detailCount += 1;
+        amountMinor += detail.amountMinor;
+        currencyCode = plan.currencyCode;
+      }
+    }
+
+    return _InstallmentOverdueSummary(
+      detailCount: detailCount,
+      amountMinor: amountMinor,
+      currencyCode: currencyCode,
+    );
+  }
+}
+
+/// 「N 期已逾期，共 ¥X」的顶部汇总条。
+class _InstallmentOverdueBanner extends StatelessWidget {
+  const _InstallmentOverdueBanner({
+    required this.detailCount,
+    required this.amountMinor,
+    required this.currencyCode,
+  });
+
+  final int detailCount;
+  final int amountMinor;
+  final String currencyCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Material(
+      color: colorScheme.errorContainer.withValues(alpha: 0.35),
+      borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(Icons.schedule_rounded, size: 18, color: colorScheme.error),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                maskedMoneyOr(
+                  '$detailCount 期已逾期，共 '
+                  '${formatMoneyMinor(amountMinor, currencyCode)} · 请尽快入账',
+                  MoneyPrivacy.of(context),
+                ),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InstallmentOverdueSummary {
+  const _InstallmentOverdueSummary({
+    required this.detailCount,
+    required this.amountMinor,
+    required this.currencyCode,
+  });
+
+  final int detailCount;
+  final int amountMinor;
+  final String currencyCode;
 }
 
 class _PlanSectionHeader extends StatelessWidget {
@@ -696,6 +816,7 @@ class _InstallmentPlanCardState extends ConsumerState<_InstallmentPlanCard> {
             categoryText: widget.categoryText,
             details: rows,
             onOpenDetails: () => _showDetails(context),
+            onPostDetail: widget.onPostDetail,
             showMetrics: !terminal || _expanded,
             terminalMode: terminal,
             onToggleMetrics: terminal
@@ -765,6 +886,7 @@ class _InstallmentPlanSummary extends StatelessWidget {
     required this.categoryText,
     required this.details,
     required this.onOpenDetails,
+    this.onPostDetail,
     this.loadingDetails = false,
     this.showMetrics = true,
     this.terminalMode = false,
@@ -776,6 +898,9 @@ class _InstallmentPlanSummary extends StatelessWidget {
   final String categoryText;
   final List<MoneyInstallmentDetailEntity>? details;
   final VoidCallback onOpenDetails;
+
+  /// 卡片上直接入账（原来只有明细弹窗里才有入口）。
+  final ValueChanged<MoneyInstallmentDetailEntity>? onPostDetail;
   final bool loadingDetails;
   final bool showMetrics;
   final bool terminalMode;
@@ -803,7 +928,6 @@ class _InstallmentPlanSummary extends StatelessWidget {
           width: constraints.maxWidth,
         );
         final compact = responsive.isCompact;
-        final metricGap = compact ? 8.0 : 10.0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -932,100 +1056,102 @@ class _InstallmentPlanSummary extends StatelessWidget {
                     ),
                   ],
                 )
-              else if (compact)
-                Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _InstallmentSummaryMetric(
-                            label: '每期',
-                            amountMinor: plan.periodAmountMinor,
-                            currencyCode: plan.currencyCode,
-                            tone: MoneyAmountTone.expense,
-                          ),
-                        ),
-                        SizedBox(width: metricGap),
-                        Expanded(
-                          child: _InstallmentSummaryMetric(
-                            label: '剩余',
-                            text: status == MoneyInstallmentPlanStatus.completed
-                                ? '0 期'
-                                : '$pendingCount 期',
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: metricGap),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _InstallmentSummaryMetric(
-                            label: '下一期',
-                            text: nextDetail == null
-                                ? status.label
-                                : _nextDueText(nextDetail.dueDate),
-                          ),
-                        ),
-                        SizedBox(width: metricGap),
-                        Expanded(
-                          child: _InstallmentSummaryMetric(
-                            label: '总应还',
-                            amountMinor: plan.totalPayableMinor,
-                            currencyCode: plan.currencyCode,
-                            tone: MoneyAmountTone.expense,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                )
-              else
-                Wrap(
-                  spacing: metricGap,
-                  runSpacing: metricGap,
-                  children: [
-                    _InstallmentSummaryMetric(
-                      label: '总应还',
-                      amountMinor: plan.totalPayableMinor,
-                      currencyCode: plan.currencyCode,
-                      tone: MoneyAmountTone.expense,
-                      width: 132,
-                    ),
-                    _InstallmentSummaryMetric(
-                      label: '本金',
-                      amountMinor: plan.totalPrincipalMinor,
-                      currencyCode: plan.currencyCode,
-                      tone: MoneyAmountTone.credit,
-                      width: 132,
-                    ),
-                    _InstallmentSummaryMetric(
-                      label: '利息',
-                      amountMinor: plan.totalInterestMinor,
-                      currencyCode: plan.currencyCode,
-                      tone: MoneyAmountTone.warning,
-                      width: 132,
-                    ),
-                    _InstallmentSummaryMetric(
-                      label: '下一期',
-                      text: nextDetail == null
-                          ? status.label
-                          : _nextDueText(nextDetail.dueDate),
-                      width: 132,
-                    ),
-                    _InstallmentSummaryMetric(
-                      label: '剩余',
-                      text: status == MoneyInstallmentPlanStatus.completed
-                          ? '0 期'
-                          : '$pendingCount 期',
-                      width: 96,
-                    ),
-                  ],
+              else ...[
+                // 「下一期」原来是指标格里的一小格（宽屏写死 132px、紧凑屏半行），
+                // 值是 `2026-10-03 · 已逾期` 这种复合长串，单行省略号一截就只剩
+                // `2026-10-03 · 已..`。这里把它提升成独立一行：日期与相对时间分
+                // 两段表述、必要时可换行，顺带把「去入账」放到手边。
+                _InstallmentDueBanner(
+                  status: status,
+                  detail: nextDetail,
+                  pendingCount: pendingCount,
+                  totalPayableMinor: plan.totalPayableMinor,
+                  currencyCode: plan.currencyCode,
+                  loading: loadingDetails,
+                  onPost:
+                      status == MoneyInstallmentPlanStatus.active &&
+                          nextDetail != null &&
+                          onPostDetail != null
+                      ? () => onPostDetail!(nextDetail)
+                      : null,
                 ),
+                const SizedBox(height: 10),
+                _metricsGrid(
+                  theme: theme,
+                  status: status,
+                  pendingCount: pendingCount,
+                  maxWidth: constraints.maxWidth,
+                  compact: compact,
+                ),
+              ],
             ],
           ],
         );
       },
+    );
+  }
+
+  /// 等宽自适应的指标网格。
+  ///
+  /// 原来非紧凑布局是 `Wrap` + 写死 `132 / 132 / 132 / 132 / 96`：既放不下长
+  /// 文案，尾行两个格还因为宽度不同而参差。这里按可用宽度算出列数与统一格宽，
+  /// 所有格等宽、末行左对齐，观感整齐。
+  Widget _metricsGrid({
+    required ThemeData theme,
+    required MoneyInstallmentPlanStatus status,
+    required int pendingCount,
+    required double maxWidth,
+    required bool compact,
+  }) {
+    final gap = compact ? 8.0 : 10.0;
+    final minCell = compact ? 128.0 : 112.0;
+    // 5 格优先铺满一行；放不下退到 3 列（3+2），再放不下退到 2 列。
+    final columns = maxWidth >= 5 * minCell + 4 * gap
+        ? 5
+        : maxWidth >= 3 * minCell + 2 * gap
+        ? 3
+        : 2;
+    final cellWidth = (maxWidth - (columns - 1) * gap) / columns;
+
+    final cells = <Widget>[
+      _InstallmentSummaryMetric(
+        label: '总应还',
+        amountMinor: plan.totalPayableMinor,
+        currencyCode: plan.currencyCode,
+        tone: MoneyAmountTone.expense,
+      ),
+      _InstallmentSummaryMetric(
+        label: '每期',
+        amountMinor: plan.periodAmountMinor,
+        currencyCode: plan.currencyCode,
+        tone: MoneyAmountTone.expense,
+      ),
+      _InstallmentSummaryMetric(
+        label: '剩余',
+        text: status == MoneyInstallmentPlanStatus.completed
+            ? '0 期'
+            : '$pendingCount 期',
+      ),
+      _InstallmentSummaryMetric(
+        label: '本金',
+        amountMinor: plan.totalPrincipalMinor,
+        currencyCode: plan.currencyCode,
+        tone: MoneyAmountTone.credit,
+      ),
+      _InstallmentSummaryMetric(
+        label: '利息',
+        amountMinor: plan.totalInterestMinor,
+        currencyCode: plan.currencyCode,
+        tone: MoneyAmountTone.warning,
+      ),
+    ];
+
+    return Wrap(
+      spacing: gap,
+      runSpacing: gap,
+      children: [
+        for (final cell in cells) SizedBox(width: cellWidth, child: cell),
+      ],
     );
   }
 }
@@ -1123,6 +1249,11 @@ class _InstallmentTimelineItem extends StatelessWidget {
   }
 }
 
+/// 汇总指标格（总应还 / 每期 / 剩余 / 本金 / 利息）。
+///
+/// 宽度由 [Wrap] 的父级 `SizedBox` 决定，保证同排等宽；值一律 `scaleDown`
+/// 自适应缩小而不是省略号截断 —— 这正是原来「下一期」被截成
+/// `2026-10-03 · 已..` 的根因。
 class _InstallmentSummaryMetric extends StatelessWidget {
   const _InstallmentSummaryMetric({
     required this.label,
@@ -1130,7 +1261,6 @@ class _InstallmentSummaryMetric extends StatelessWidget {
     this.currencyCode = 'CNY',
     this.tone = MoneyAmountTone.neutral,
     this.text,
-    this.width,
   }) : assert(amountMinor != null || text != null);
 
   final String label;
@@ -1138,57 +1268,296 @@ class _InstallmentSummaryMetric extends StatelessWidget {
   final String currencyCode;
   final MoneyAmountTone tone;
   final String? text;
-  final double? width;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final valueStyle = theme.textTheme.titleSmall?.copyWith(
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0,
+    );
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.36),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                letterSpacing: 0,
+              ),
+            ),
+            const SizedBox(height: 3),
+            // 宽度不够时缩字号，绝不截断。
+            SizedBox(
+              width: double.infinity,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: amountMinor == null
+                    ? Text(text!, maxLines: 1, style: valueStyle)
+                    : MoneyText(
+                        amountMinor: amountMinor!,
+                        currencyCode: currencyCode,
+                        tone: tone,
+                        textStyle: valueStyle,
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 卡片里的「下一期」条。
+///
+/// 原来「下一期」是底部指标格里的一小格，值是 `2026-10-03 · 已逾期` 这类复合
+/// 长串，单行省略号一截就只剩 `2026-10-03 · 已..`。提升成独立一行后，日期与
+/// 相对时间分两段表述、不再挤在一格里；顺带把「去入账」放到手边（原来入账只能
+/// 进明细弹窗）。
+class _InstallmentDueBanner extends StatelessWidget {
+  const _InstallmentDueBanner({
+    required this.status,
+    required this.detail,
+    required this.pendingCount,
+    required this.totalPayableMinor,
+    required this.currencyCode,
+    this.loading = false,
+    this.onPost,
+  });
+
+  final MoneyInstallmentPlanStatus status;
+  final MoneyInstallmentDetailEntity? detail;
+  final int pendingCount;
+  final int totalPayableMinor;
+  final String currencyCode;
+  final bool loading;
+  final VoidCallback? onPost;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return SizedBox(
-      width: width,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.36),
+    if (loading) {
+      return _shell(
+        theme: theme,
+        colorScheme: colorScheme,
+        accent: colorScheme.outlineVariant,
+        label: '下一期',
+        title: '读取中…',
+        subtitle: Text(
+          '正在汇总每期明细',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            letterSpacing: 0,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+      );
+    }
+
+    final deadline = detail;
+    if (deadline == null) {
+      final cancelled = status == MoneyInstallmentPlanStatus.cancelled;
+      return _shell(
+        theme: theme,
+        colorScheme: colorScheme,
+        accent: colorScheme.outlineVariant,
+        label: cancelled ? '已取消' : '下一期',
+        title: cancelled ? '计划已取消，无需继续还款' : '暂无待入账期次',
+        subtitle: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              cancelled ? '冻结本金已释放' : '共 ',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                letterSpacing: 0,
+              ),
+            ),
+            if (!cancelled)
+              MoneyText(
+                amountMinor: totalPayableMinor,
+                currencyCode: currencyCode,
+                tone: MoneyAmountTone.expense,
+                textStyle: theme.textTheme.bodySmall,
+              ),
+          ],
+        ),
+      );
+    }
+
+    final overdue = _isOverdue(deadline.dueDate);
+    final soon = _isDueSoon(deadline.dueDate);
+    final accent = overdue
+        ? colorScheme.error
+        : soon
+        ? colorScheme.primary
+        : colorScheme.outlineVariant;
+    final (chipForeground, chipBackground) = overdue
+        ? (
+            colorScheme.onErrorContainer,
+            colorScheme.errorContainer.withValues(alpha: 0.6),
+          )
+        : soon
+        ? (
+            colorScheme.onPrimaryContainer,
+            colorScheme.primaryContainer.withValues(alpha: 0.6),
+          )
+        : (colorScheme.onSurfaceVariant, colorScheme.surfaceContainerHighest);
+
+    return _shell(
+      theme: theme,
+      colorScheme: colorScheme,
+      accent: accent,
+      label: '下一期 · 第 ${deadline.periodNumber} 期',
+      title: _dueDateLabel(deadline.dueDate),
+      subtitle: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            '${_dueWeekdayLabel(deadline.dueDate)} · 应还 ',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 0,
+            ),
+          ),
+          MoneyText(
+            amountMinor: deadline.amountMinor,
+            currencyCode: currencyCode,
+            tone: MoneyAmountTone.expense,
+            textStyle: theme.textTheme.bodySmall,
+          ),
+          if (pendingCount > 1)
+            Text(
+              ' · 尚有 $pendingCount 期',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                letterSpacing: 0,
+              ),
+            ),
+        ],
+      ),
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _chip(
+            theme: theme,
+            text: _dueRelativeLabel(deadline.dueDate),
+            foreground: chipForeground,
+            background: chipBackground,
+          ),
+          if (onPost != null) ...[
+            const SizedBox(height: 6),
+            FilledButton(
+              onPressed: onPost,
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                minimumSize: const Size(0, 32),
+                textStyle: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 0,
                 ),
               ),
-              const SizedBox(height: 3),
-              if (amountMinor == null)
-                Text(
-                  text!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0,
+              child: const Text('去入账'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _shell({
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required Color accent,
+    required String label,
+    required String title,
+    required Widget subtitle,
+    Widget? trailing,
+  }) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          accent.withValues(alpha: 0.07),
+          colorScheme.surfaceContainerLowest,
+        ),
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: accent.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
+                    ),
                   ),
-                )
-              else
-                MoneyText(
-                  amountMinor: amountMinor!,
-                  currencyCode: currencyCode,
-                  tone: tone,
-                  textStyle: theme.textTheme.titleSmall,
-                ),
-            ],
-          ),
+                  const SizedBox(height: 3),
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  subtitle,
+                ],
+              ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 10), trailing],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip({
+    required ThemeData theme,
+    required String text,
+    required Color foreground,
+    required Color background,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: foreground,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0,
         ),
       ),
     );
@@ -1982,23 +2351,53 @@ class _InstallmentPlanFormDialogState extends State<InstallmentPlanFormDialog> {
   }
 }
 
-/// 「下一期 10-20 · 还剩 2 天」。
+/// 到期日的主文案：「10月20日」；跨年才补年份（「2027年1月3日」）。
 ///
-/// 只给裸日期用户还要自己算，这里把紧迫感直接写出来。
-String _nextDueText(DateTime dueDate) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
-  final daysLeft = due.difference(today).inDays;
-  if (daysLeft < 0) {
-    return '${_dateText(dueDate)} · 已逾期';
-  }
-  if (daysLeft == 0) {
-    return '${_dateText(dueDate)} · 今天';
-  }
-  return '${_dateText(dueDate)} · 还剩 $daysLeft 天';
+/// 原来「下一期」用的是 `_dateText`（`2026-10-03`，永远带年份），本身就是一
+/// 串长文本，再拼上「· 已逾期」塞进一格就必然被省略号截掉。当年省略年份后
+/// 主文案只剩 6~7 个字符。
+String _dueDateLabel(DateTime date) {
+  final local = date.toLocal();
+  final today = DateTime.now();
+  final base = '${local.month}月${local.day}日';
+  return local.year == today.year ? base : '${local.year}年$base';
 }
 
+/// 「周二」。日期旁给个星期，用户不必自己数日历。
+String _dueWeekdayLabel(DateTime date) {
+  const labels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  return labels[date.toLocal().weekday - 1];
+}
+
+/// 「还剩 3 天」/「今天到期」/「已逾期 10 天」。
+///
+/// 只给裸日期用户还要自己算，这里把紧迫感直接写出来。
+String _dueRelativeLabel(DateTime dueDate) {
+  final daysLeft = _daysUntil(dueDate);
+  if (daysLeft < 0) {
+    return '已逾期 ${-daysLeft} 天';
+  }
+  if (daysLeft == 0) {
+    return '今天到期';
+  }
+  return '还剩 $daysLeft 天';
+}
+
+bool _isOverdue(DateTime dueDate) => _daysUntil(dueDate) < 0;
+
+/// 距到期 ≤7 天算「临近」，用于给到期条上主色而不是中性色。
+bool _isDueSoon(DateTime dueDate) => _daysUntil(dueDate) <= 7;
+
+/// 到期日相对「今天」的天数（按自然日，忽略时分秒）。
+int _daysUntil(DateTime date) {
+  final local = date.toLocal();
+  final today = DateTime.now();
+  final target = DateTime(local.year, local.month, local.day);
+  final base = DateTime(today.year, today.month, today.day);
+  return target.difference(base).inDays;
+}
+
+/// 明细弹窗里用的完整日期（`2026-10-03`）。
 String _dateText(DateTime date) {
   final local = date.toLocal();
   final year = local.year.toString().padLeft(4, '0');

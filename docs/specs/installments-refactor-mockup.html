@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>米记 · 分期界面重构方案 v1（人工确认稿）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800;900&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2EDE6; --surface:#FBF6F0; --raised:#F6F1EB; --sunken:#ECE7E1;
+    --text:#1B1813; --text2:#615D58; --outline:#998D80; --hair:#DAD5CF;
+    --primary:#4269D3; --primary-soft:#DDE8FF; --on-primary-soft:#2E488E;
+    --secondary:#626E8A; --tertiary:#8B608C;
+    --income:#006E30; --expense:#A7463C; --transfer:#004557; --credit:#7B428C;
+    --warning:#473D00; --success:#006E30;
+    --danger:#A7463C; --danger-soft:#F7E0DD;
+    --scrim:rgba(27,24,19,.42);
+    --shadow:0 1px 2px rgba(30,20,10,.06),0 8px 24px -12px rgba(30,20,10,.18);
+    --shadow-lg:0 24px 60px -24px rgba(30,20,10,.42);
+    --chip:rgba(0,0,0,.045);
+    --mark:rgba(66,105,211,.10);
+  }
+  html[data-theme="dark"]{
+    --bg:#0E0A07; --surface:#17130F; --raised:#221D18; --sunken:#090604;
+    --text:#E7E2DC; --text2:#98938D; --outline:#6B6257; --hair:#322E2A;
+    --primary:#759DFF; --primary-soft:#1E2A4A; --on-primary-soft:#AEC6FF;
+    --secondary:#919EBB; --tertiary:#BE8FBE;
+    --income:#9DF7B0; --expense:#FFB5AA; --transfer:#3FCDF6; --credit:#F7DDFF;
+    --warning:#C8B648; --success:#9DF7B0;
+    --danger:#FFB5AA; --danger-soft:#3A2320;
+    --scrim:rgba(0,0,0,.62);
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 28px -14px rgba(0,0,0,.7);
+    --shadow-lg:0 30px 70px -30px rgba(0,0,0,.9);
+    --chip:rgba(255,255,255,.06);
+    --mark:rgba(117,157,255,.14);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:"Noto Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 12% -10%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 60%),
+      radial-gradient(900px 600px at 108% 6%, color-mix(in srgb, var(--credit) 10%, transparent), transparent 55%),
+      var(--bg);
+    min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:0;
+    transition:background .3s ease,color .3s ease;
+  }
+  .app{display:flex;gap:30px;max-width:1320px;margin:0 auto;padding:26px 24px 70px;align-items:flex-start}
+  @media (max-width:1080px){.app{flex-direction:column;align-items:center}}
+
+  /* ---------- left panel ---------- */
+  .panel{position:sticky;top:22px;width:352px;flex:0 0 352px;max-height:calc(100vh - 44px);overflow:auto;scrollbar-width:thin}
+  @media (max-width:1080px){.panel{position:static;width:min(720px,100%);flex:auto;max-height:none}}
+  .panel::-webkit-scrollbar{width:5px}
+  .panel::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
+  .brand{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+  .brand .mark{font-family:"Noto Serif SC",serif;font-weight:900;font-size:28px;line-height:1;
+    background:linear-gradient(120deg,var(--primary),var(--credit));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .t{font-size:14px;font-weight:700;color:var(--text2)}
+  .brand .v{font-size:11px;font-weight:800;color:var(--on-primary-soft);background:var(--primary-soft);padding:2px 8px;border-radius:999px}
+  .lead{font-size:12.5px;color:var(--text2);line-height:1.8;margin:8px 0 16px}
+  .lead b{color:var(--text)}
+
+  .group{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:13px;margin-bottom:11px;box-shadow:var(--shadow)}
+  .group h3{margin:0 0 10px;font-size:10.5px;font-weight:900;letter-spacing:.09em;color:var(--text2);
+    text-transform:uppercase;display:flex;align-items:center;gap:7px}
+  .group h3 .dot{width:6px;height:6px;border-radius:99px;background:var(--primary)}
+  .seg{display:flex;background:var(--sunken);border-radius:11px;padding:3px;gap:3px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--text2);font:inherit;font-size:12.5px;font-weight:700;
+    padding:8px 6px;border-radius:8px;cursor:pointer;transition:.18s}
+  .seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .seg.hl button.on{background:var(--primary);color:#fff}
+  html[data-theme="dark"] .seg.hl button.on{color:#0b1020}
+
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .chips button{border:1px solid var(--hair);background:var(--raised);color:var(--text2);font:inherit;font-size:12px;
+    font-weight:700;padding:8px 6px;border-radius:10px;cursor:pointer;transition:.18s}
+  .chips button:hover{border-color:var(--outline)}
+  .chips button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  html[data-theme="dark"] .chips button.on{color:#0b1020}
+
+  .tg{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:9px;cursor:pointer;font-size:12.5px;
+    color:var(--text2);user-select:none;transition:.15s}
+  .tg:hover{background:var(--chip)}
+  .tg.on{color:var(--text)}
+  .tg .sw{width:34px;height:20px;border-radius:99px;background:var(--sunken);border:1px solid var(--hair);
+    position:relative;flex:0 0 34px;transition:.2s}
+  .tg .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:99px;background:var(--outline);transition:.2s}
+  .tg.on .sw{background:var(--primary);border-color:var(--primary)}
+  .tg.on .sw::after{left:16px;background:#fff}
+  .tg small{margin-left:auto;font-size:10.5px;color:var(--outline);font-weight:700}
+
+  ul.list{margin:0;padding-left:0;list-style:none}
+  ul.list li{position:relative;padding:5px 0 5px 22px;font-size:12.3px;line-height:1.65;color:var(--text2)}
+  ul.list li b{color:var(--text)}
+  ul.list li .n{position:absolute;left:0;top:5px;width:15px;height:15px;border-radius:99px;font-size:9.5px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;background:var(--primary-soft);color:var(--on-primary-soft)}
+  ul.list li.warn .n{background:var(--danger-soft);color:var(--danger)}
+  ul.list li code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;background:var(--chip);
+    padding:1px 4px;border-radius:4px;color:var(--text)}
+  .tag{display:inline-block;font-size:9.5px;font-weight:900;letter-spacing:.04em;border-radius:5px;padding:1.5px 5px;margin-right:5px;vertical-align:1px}
+  .tag.p0{background:var(--danger-soft);color:var(--danger)}
+  .tag.p1{background:var(--primary-soft);color:var(--on-primary-soft)}
+  .tag.p2{background:var(--chip);color:var(--text2)}
+
+  .confirm{display:flex;flex-direction:column;gap:1px}
+  .ck{display:flex;gap:9px;align-items:flex-start;padding:7px 6px;border-radius:9px;cursor:pointer;font-size:12.3px;
+    line-height:1.6;color:var(--text2);transition:.15s}
+  .ck:hover{background:var(--chip)}
+  .ck input{margin:2px 0 0;accent-color:var(--primary);flex:0 0 auto}
+  .ck.on{color:var(--text)}
+
+  /* ---------- stage ---------- */
+  .stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0}
+  .stagehead{align-self:stretch;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .stagehead .title{font-family:"Noto Serif SC",serif;font-weight:700;font-size:19px;margin-right:2px}
+  .badge{font-size:11px;font-weight:800;color:var(--text2);background:var(--surface);border:1px solid var(--hair);
+    border-radius:999px;padding:4px 11px}
+  .badge.amber{color:#6b4200;background:#FFE6BC;border-color:#f0d29a}
+  .badge.ok{color:var(--income);background:var(--primary-soft);border-color:transparent}
+  html[data-theme="dark"] .badge.amber{color:#FFE6BC;background:#3a2c10;border-color:#5a4416}
+
+  .phone{
+    width:392px;flex:0 0 auto;background:linear-gradient(160deg,#2a2622,#14110e);
+    border-radius:44px;padding:11px;box-shadow:var(--shadow-lg);position:relative;transition:width .25s ease;
+  }
+  html[data-theme="dark"] .phone{background:linear-gradient(160deg,#3a352f,#0a0806)}
+  .phone.desktop{width:min(760px,100%)}
+  .phone::after{content:"";position:absolute;inset:11px;border-radius:34px;pointer-events:none;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  .screen{background:var(--bg);border-radius:34px;overflow:hidden;height:1560px;max-height:calc(100vh - 120px);position:relative}
+  @media (max-width:520px){.phone{width:100%;border-radius:32px}.phone.desktop{width:100%}.screen{border-radius:24px;height:calc(100vh - 200px)}}
+  .scroll{height:100%;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;padding-bottom:80px}
+  .scroll::-webkit-scrollbar{width:5px}
+  .scroll::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
+
+  /* in-app chrome */
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 2px;font-size:12px;font-weight:700;color:var(--text)}
+  .statusbar .inds{font-size:11px;color:var(--text2);letter-spacing:1px}
+  .topbar{display:flex;align-items:center;gap:8px;padding:6px 14px 2px}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--hair);
+    border-radius:999px;padding:6px 11px;font-size:12px;font-weight:800;color:var(--text);box-shadow:var(--shadow)}
+  .pill.ghost{color:var(--text2);box-shadow:none;background:transparent;border-color:transparent}
+  .topbar .spacer{flex:1}
+  .avatar{width:28px;height:28px;border-radius:999px;border:2px solid var(--surface)}
+  .tabs{display:flex;gap:6px;overflow:hidden;padding:2px 0}
+  .tabs .t{font-size:11.5px;font-weight:800;color:var(--text2);white-space:nowrap;padding:5px 9px;border-radius:8px}
+  .tabs .t.on{color:var(--text);background:var(--chip)}
+
+  .body{padding:10px 14px 0}
+  .hdr{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .search{flex:1;display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--hair);
+    border-radius:10px;padding:8px 11px;font-size:12px;color:var(--outline)}
+  .search.moved{border-color:var(--primary);box-shadow:0 0 0 3px var(--mark)}
+  .iconbtn{width:31px;height:31px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    background:var(--primary);color:#fff;font-size:15px;font-weight:900;flex:0 0 auto}
+  .iconbtn.ghost{background:transparent;border:1px solid var(--hair);color:var(--text2)}
+
+  .banner{display:flex;align-items:center;gap:8px;background:var(--danger-soft);border-radius:10px;
+    padding:8px 10px;font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:9px}
+  .banner .go{margin-left:auto;color:var(--danger);font-weight:900}
+
+  .sechead{display:flex;align-items:center;gap:6px;margin:2px 0 6px}
+  .sechead .l{font-size:12.5px;font-weight:900}
+  .sechead .c{font-size:10px;font-weight:900;background:var(--primary-soft);color:var(--on-primary-soft);
+    border-radius:6px;padding:1px 5px}
+
+  /* plan card */
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:13px;box-shadow:var(--shadow);margin-bottom:9px;position:relative}
+  .card .row1{display:flex;gap:9px;align-items:flex-start}
+  .ic{width:38px;height:38px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    background:var(--primary-soft);color:var(--on-primary-soft);font-size:17px}
+  .r1main{flex:1;min-width:0}
+  .name{display:flex;align-items:center;gap:7px}
+  .name .n{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+  .stp{font-size:10px;font-weight:900;border-radius:999px;padding:2.5px 8px;white-space:nowrap;flex:0 0 auto}
+  .stp.active{color:var(--primary);background:var(--primary-soft)}
+  .stp.done{color:var(--tertiary);background:var(--chip)}
+  .stp.cancel{color:var(--text2);background:var(--sunken)}
+  .meta{font-size:11.5px;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acts{display:flex;gap:5px;flex:0 0 auto}
+  .mini{width:27px;height:27px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--hair);color:var(--text2);font-size:12px;background:transparent}
+
+  .prog{margin-top:11px}
+  .prog .line{display:flex;align-items:baseline;gap:8px;font-size:11.5px;font-weight:700;color:var(--text2)}
+  .prog .line .pct{margin-left:auto;color:var(--primary);font-weight:900}
+  .bar{height:7px;border-radius:999px;background:var(--sunken);margin-top:6px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:999px;background:var(--primary)}
+
+  /* metrics */
+  .metrics{margin-top:11px}
+  .mgrid{display:grid;gap:8px}
+  .mgrid.before-wrap{display:flex;flex-wrap:wrap;gap:8px}
+  .mgrid.before-wrap .m{flex:0 0 132px}
+  .mgrid.before-wrap .m.w-sm{flex:0 0 96px}
+  .mgrid.before-2{grid-template-columns:1fr 1fr}
+  .mgrid.after{grid-template-columns:repeat(auto-fit,minmax(92px,1fr))}
+  .m{background:var(--raised);border:1px solid var(--hair);border-radius:9px;padding:8px 10px;min-width:0}
+  .m .k{font-size:10.5px;color:var(--text2);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m .v{font-size:13px;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m .v.money{font-variant-numeric:tabular-nums}
+  .m .v.clip{color:var(--danger)}
+  .v-exp{color:var(--expense)} .v-cred{color:var(--credit)} .v-warn{color:var(--warning)} .v-neu{color:var(--text)}
+
+  /* the fixed "next due" banner (after) */
+  .due{display:flex;align-items:center;gap:10px;margin-top:11px;border-radius:11px;padding:10px 11px;
+    border:1px solid color-mix(in srgb, var(--primary) 30%, var(--hair));
+    background:color-mix(in srgb, var(--primary) 7%, var(--surface))}
+  .due.over{border-color:color-mix(in srgb, var(--danger) 34%, var(--hair));
+    background:color-mix(in srgb, var(--danger) 8%, var(--surface))}
+  .due .dl{flex:1;min-width:0}
+  .due .dl .t{font-size:10.5px;font-weight:900;color:var(--text2);letter-spacing:.02em}
+  .due .dl .d{font-size:14px;font-weight:800;margin-top:2px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+  .due .dl .d .sub{font-size:11px;font-weight:700;color:var(--text2)}
+  .due .dl .s{font-size:11px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .due .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:0 0 auto}
+  .chip{font-size:11px;font-weight:900;border-radius:999px;padding:3px 9px;white-space:nowrap}
+  .chip.soon{color:var(--on-primary-soft);background:var(--primary-soft)}
+  .chip.over{color:#fff;background:var(--danger)}
+  html[data-theme="dark"] .chip.over{color:#2a0f0c}
+  .chip.today{color:var(--warning);background:color-mix(in srgb, var(--warning) 14%, transparent)}
+  .btn{font-size:11.5px;font-weight:900;border-radius:9px;padding:6px 11px;border:0;cursor:default;
+    background:var(--primary);color:#fff;white-space:nowrap}
+  html[data-theme="dark"] .btn{color:#0b1020}
+  .btn.line{background:transparent;border:1px solid var(--hair);color:var(--text2)}
+
+  /* timeline dialog */
+  .scrim{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:16px}
+  .dlg{width:100%;max-width:430px;max-height:88%;overflow:auto;background:var(--bg);border:1px solid var(--hair);
+    border-radius:16px;box-shadow:var(--shadow-lg);padding:14px}
+  .dlg .dh{display:flex;align-items:flex-start;gap:8px}
+  .dlg .dh .n{font-size:14.5px;font-weight:800;flex:1}
+  .dlg .dh .s{font-size:11.5px;color:var(--text2);margin-top:3px}
+  .tl{margin-top:11px}
+  .tli{display:flex;gap:8px}
+  .tli .rail{width:20px;flex:0 0 20px;display:flex;flex-direction:column;align-items:center}
+  .tli .rail .ln{width:2px;flex:1;background:var(--hair)}
+  .tli .rail .dot{width:10px;height:10px;border-radius:99px;background:var(--outline)}
+  .tli.now .rail .dot{background:var(--primary);box-shadow:0 0 0 4px var(--mark)}
+  .tli.posted .rail .dot{background:var(--income)}
+  .tli .cnt{flex:1;min-width:0;padding-bottom:9px}
+  .drow{background:var(--surface);border:1px solid var(--hair);border-radius:9px;padding:9px 10px;display:flex;gap:9px;align-items:flex-start}
+  .drow .num{width:30px;height:30px;border-radius:99px;background:var(--primary-soft);color:var(--on-primary-soft);
+    font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .drow .c{flex:1;min-width:0}
+  .drow .c .l1{display:flex;align-items:baseline;gap:8px}
+  .drow .c .l1 .p{font-size:12px;font-weight:800}
+  .drow .c .l1 .s{margin-left:auto;font-size:10.5px;font-weight:900;color:var(--text2)}
+  .drow .c .l1 .s.pending{color:var(--primary)}
+  .drow .c .date{font-size:10.5px;color:var(--text2);margin-top:2px}
+  .drow .c .amts{display:flex;flex-wrap:wrap;gap:11px;margin-top:6px;font-size:10.5px;color:var(--text2)}
+  .drow .c .amts b{font-variant-numeric:tabular-nums}
+  .drow .post{align-self:center;width:27px;height:27px;border-radius:8px;background:var(--primary);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto}
+  html[data-theme="dark"] .drow .post{color:#0b1020}
+
+  .empty{display:flex;flex-direction:column;align-items:center;gap:9px;padding:44px 18px;text-align:center}
+  .empty .ei{width:56px;height:56px;border-radius:18px;background:var(--primary-soft);color:var(--on-primary-soft);
+    display:flex;align-items:center;justify-content:center;font-size:25px}
+  .empty .et{font-size:14.5px;font-weight:800}
+  .empty .em{font-size:12px;color:var(--text2);line-height:1.7;max-width:250px}
+
+  /* annotations */
+  .mk{position:absolute;z-index:5;width:19px;height:19px;border-radius:99px;background:var(--primary);color:#fff;
+    font-size:10.5px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  html[data-theme="dark"] .mk{color:#0b1020}
+  .mk.bad{background:var(--danger)}
+  body.no-annot .mk{display:none}
+  .rel{position:relative}
+
+  /* notes below stage */
+  .notes{align-self:stretch;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  @media (max-width:900px){.notes{grid-template-columns:1fr}}
+  .note{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:13px;box-shadow:var(--shadow)}
+  .note h4{margin:0 0 9px;font-size:12px;font-weight:900;display:flex;align-items:center;gap:7px}
+  .note h4 .dot{width:6px;height:6px;border-radius:99px;background:var(--primary)}
+  table.cmp{width:100%;border-collapse:collapse;font-size:11.8px}
+  table.cmp th,table.cmp td{text-align:left;padding:6px 7px;border-bottom:1px solid var(--hair);vertical-align:top;line-height:1.55}
+  table.cmp th{font-size:10px;font-weight:900;letter-spacing:.06em;color:var(--text2);text-transform:uppercase}
+  table.cmp td.b{color:var(--text2)}
+  table.cmp td.a{color:var(--text);font-weight:600}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;background:var(--chip);padding:1px 4px;border-radius:4px}
+
+  .foot{max-width:1320px;margin:0 auto;padding:0 24px 40px;color:var(--outline);font-size:11.5px;line-height:1.8}
+  .strip{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .strip span{font-size:10.5px;font-weight:700;color:var(--text2);background:var(--chip);border-radius:6px;padding:3px 7px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ LEFT: control panel ============ -->
+  <aside class="panel">
+    <div class="brand">
+      <span class="mark">米记</span>
+      <span class="t">分期界面重构</span>
+      <span class="v">v1 待确认</span>
+    </div>
+    <p class="lead">
+      分期页底部指标格里 <b>「下一期」被截断</b>（显示成 <code style="font-size:10.5px">2026-10-03 · 已..</code>）。
+      左边切「现状 / 重构后」，右边实时对比。<b>请确认下方「待确认问题」。</b>
+    </p>
+
+    <div class="group">
+      <h3><span class="dot"></span>视图对比</h3>
+      <div class="seg hl" id="segView">
+        <button data-v="before">现状（问题）</button>
+        <button data-v="after" class="on">重构后（方案）</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>场景</h3>
+      <div class="chips" id="segScen">
+        <button data-s="due" class="on">临近到期</button>
+        <button data-s="overdue">已逾期</button>
+        <button data-s="today">今天到期</button>
+        <button data-s="done">已完成</button>
+        <button data-s="empty">空态</button>
+        <button data-s="details">明细弹窗</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>屏幕</h3>
+      <div class="seg" id="segDevice">
+        <button data-d="phone" class="on">手机（compact）</button>
+        <button data-d="desktop">桌面（宽屏）</button>
+      </div>
+      <div class="tg on" id="tgAnnot" style="margin-top:6px">
+        <span class="sw"></span><span>显示问题标注</span><small>①②③</small>
+      </div>
+      <div class="tg" id="tgTheme">
+        <span class="sw"></span><span>深色主题</span><small>dark</small>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>问题定位（P0）</h3>
+      <ul class="list">
+        <li class="warn"><span class="n">1</span><b>数值格写死单行省略</b>：<code>_InstallmentSummaryMetric</code> 用
+          <code>maxLines:1 + ellipsis</code>，装不下就截断，不换行、不缩字号。</li>
+        <li class="warn"><span class="n">2</span><b>「下一期」的值是复合长串</b>：<code>_nextDueText()</code> 产出
+          <code>2026-10-03 · 已逾期</code>（≈16 字符），却塞进一格短指标里。</li>
+        <li class="warn"><span class="n">3</span><b>宽屏用固定像素宽度</b>：非紧凑布局是
+          <code>Wrap</code> + 写死 <code>132 / 132 / 132 / 132 / 96</code>，既放不下长串，尾行两个格还右对齐参差。</li>
+        <li class="warn"><span class="n">4</span><b>紧凑布局同病</b>：手机上是 2 列 <code>Expanded</code>，每格约
+          150px，<code>2026-10-03 · 已逾期</code> 依旧溢出。</li>
+      </ul>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>重构清单</h3>
+      <ul class="list">
+        <li><span class="n">P0</span><b>把「下一期」从指标格提升为到期条</b>：独立一行，左「日期 + 第 N 期」，右「还剩 N 天」chip；主次分离，永不截断。</li>
+        <li><span class="n">P0</span><b>缩短日期文案</b>：当年省略年份（<code>10月20日</code>），跨年才带年；相对时间压成 <code>还剩 3 天</code>。</li>
+        <li><span class="n">P0</span><b>指标格改等宽自适应网格</b>：<code>auto-fit + minmax(92px, 1fr)</code> 取代固定 132px，金额仍走 <code>MoneyText</code> 并可自适应缩字。</li>
+        <li><span class="n">P1</span><b>到期条内联「去入账」</b>：现在入账只能进明细弹窗（卡片只有「查看明细」）。</li>
+        <li><span class="n">P1</span><b>搜索框上提到页头</b>：分期是唯一把搜索放在面板内容里的面板，与流水/预算/分类/自动记账不一致。</li>
+        <li><span class="n">P1</span><b>逾期优先</b>：有逾期时顶部出一条汇总条（<code>2 期逾期 · 共 ¥2,400</code>），一键跳第一条逾期。</li>
+        <li><span class="n">P2</span><b>状态筛选</b>：进行中 / 已结束 / 已取消 分段，取代只靠「已结束」折叠。</li>
+      </ul>
+    </div>
+
+    <div class="group" style="border-color:color-mix(in srgb, var(--income) 40%, var(--hair))">
+      <h3><span class="dot" style="background:var(--income)"></span>落地说明（P0 + P1 已实现）</h3>
+      <ul class="list">
+        <li><span class="n">✓</span>到期条、短日期、等宽指标网格、搜索上提、逾期汇总条均已落地。</li>
+        <li class="warn"><span class="n">!</span><b>逾期条改为纯信息</b>：原设计右侧的「去处理」要靠 GlobalKey + <code>ensureVisible</code> 滚到那笔逾期，实测在懒加载列表里会触发
+          <code>!childSemantics.renderObject._needsLayout</code> 断言，故去掉按钮，改为一句可读的结论（卡片上的「已逾期 N 天」仍然高亮）。</li>
+        <li class="warn"><span class="n">!</span><b>无待入账时文案</b>：终态计划默认收起金额，所以到期条只在「已跳过 / 无待入账」时出现，文案定为
+          <code>暂无待入账期次</code> 而非「已全部入账」（后者由状态胶囊表达）。</li>
+        <li><span class="n">+</span>另加了一条卡片内「去入账」路径（到期条右下角按钮），仍在设计内。</li>
+      </ul>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>待确认问题</h3>
+      <div class="confirm" id="qbox">
+        <label class="ck on"><input type="checkbox" checked><span>到期条方案（推荐）取代指标格里的「下一期」——是否同意？</span></label>
+        <label class="ck on"><input type="checkbox" checked><span>当年日期省略年份（10月20日）；跨年才显示 2027-01-03。</span></label>
+        <label class="ck"><input type="checkbox"><span>到期条里直接放「去入账」按钮（P1，改动较大）。</span></label>
+        <label class="ck"><input type="checkbox"><span>指标格从 5 项精简为 4 项（去掉「本金」，只留总应还/每期/剩余/利息）？</span></label>
+        <label class="ck"><input type="checkbox"><span>顶部加「逾期汇总条」（P1）。</span></label>
+        <label class="ck"><input type="checkbox"><span>搜索框上提到页头（P1）。</span></label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ RIGHT: stage ============ -->
+  <main class="stage">
+    <div class="stagehead">
+      <span class="title" id="stageTitle">分期计划 · 临近到期</span>
+      <span class="badge" id="badgeView">重构后</span>
+      <span class="badge ok" id="badgeFix">P0 截断已修复</span>
+      <span class="badge amber" id="badgeDevice" style="display:none">宽屏 · 固定 132px</span>
+    </div>
+
+    <div class="phone rel" id="phone">
+      <div class="screen">
+        <div class="scroll">
+          <div class="statusbar"><span>19:54</span><span class="inds">▮▮▮ ⌁ 82%</span></div>
+          <div class="topbar">
+            <span class="pill">2026年10月 ▾</span>
+            <div class="spacer"></div>
+            <span class="pill ghost" style="padding:6px">🔔</span>
+            <span class="avatar" style="background:conic-gradient(from 210deg,#e0a94a,#7a5a2a,#e6c176,#4a6b3a)"></span>
+          </div>
+          <div class="topbar" style="padding-top:6px">
+            <div class="tabs">
+              <span class="t">流水</span><span class="t">账户</span><span class="t">预算</span>
+              <span class="t">统计</span><span class="t">分类</span><span class="t on">分期</span><span class="t">更多</span>
+            </div>
+          </div>
+
+          <div class="body" id="appBody"><!-- rendered by JS --></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- notes -->
+    <div class="notes">
+      <div class="note">
+        <h4><span class="dot"></span>改动对照</h4>
+        <table class="cmp">
+          <thead><tr><th>位置</th><th>现在</th><th>重构后</th></tr></thead>
+          <tbody>
+            <tr><td>下一期</td><td class="b">指标格里一个 132px 小格，<code class="code">2026-10-03 · 已..</code></td><td class="a">独立的「到期条」：日期 + 第 N 期 + 剩余天数 chip</td></tr>
+            <tr><td>日期文案</td><td class="b"><code class="code">2026-10-03</code>（总带年份）</td><td class="a"><code class="code">10月20日 周二</code>，跨年才带年份</td></tr>
+            <tr><td>指标网格</td><td class="b">固定 132 / 132 / 132 / 132 / 96，尾行参差</td><td class="a">等宽自适应，一屏铺满、无参差</td></tr>
+            <tr><td>入账入口</td><td class="b">只能进「查看明细」弹窗</td><td class="a">到期条上直接「去入账」</td></tr>
+            <tr><td>搜索框</td><td class="b">在面板内容里（与其他面板不一致）</td><td class="a">上提到页头</td></tr>
+            <tr><td>逾期</td><td class="b">只有格里的小字提示</td><td class="a">顶部汇总条 + 状态色高亮</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <h4><span class="dot"></span>代码落点</h4>
+        <ul class="list">
+          <li><span class="n">1</span><code>_InstallmentSummaryMetric</code>（约 L1126）：值改 <code>FittedBox(scaleDown)</code> 或 2 行；补 <code>valueStyle</code>。</li>
+          <li><span class="n">2</span><code>_nextDueText()</code>（L1988）/ <code>_dateText()</code>（L2002）：拆出 <code>dueLabel</code> 与 <code>relativeLabel</code> 两个纯函数，单测友好。</li>
+          <li><span class="n">3</span><code>_InstallmentPlanSummary</code>（L761）：新增 <code>_InstallmentDueBanner</code> 子组件，插在进度条与指标格之间。</li>
+          <li><span class="n">4</span><code>Wrap</code> 指标区（L983–1024）：换成 <code>GridView</code>/<code>Wrap</code> 等宽方案。</li>
+          <li><span class="n">5</span><code>_InstallmentPlanList</code>（L448）与 <code>BookkeepingPanelHeader</code>：搜索上提，用 <code>searchRow</code> 槽位（L49）。</li>
+        </ul>
+        <div class="strip">
+          <span>不改数据模型</span><span>不改 provider</span><span>不改详情弹窗逻辑</span><span>纯表现层 + 1 处入口</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="foot">
+  米记 · 分期界面重构方案 v1 ｜ 依据 <span class="code">lib/features/bookkeeping/presentation/installments/money_installments_section.dart</span>（2008 行）现行实现整理 ｜ 本文件仅供人工确认，未改动任何生产代码。
+</div>
+
+<script>
+(function(){
+  var state = { view:'after', scen:'due', device:'phone', annot:true, theme:'light' };
+
+  function money(n){ // n in yuan
+    var s = n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return '¥' + s;
+  }
+
+  // ---------- data ----------
+  var DATA = {
+    due: {
+      title:'分期计划 · 临近到期',
+      plan:{ name:'招行信用卡分期', periods:12, posted:4, pending:8, period:1200, total:14400, principal:12000, interest:2400,
+             account:'招商银行信用卡', cat:'数码家电 / 手机', status:'active',
+             next:{ period:5, date:'2026-10-20', rel:'还剩 3 天', kind:'soon', idx:4 } },
+      conflict:true, overdue:0
+    },
+    overdue: {
+      title:'分期计划 · 已逾期',
+      plan:{ name:'花呗 24 期分期', periods:24, posted:5, pending:19, period:860, total:20640, principal:18000, interest:2640,
+             account:'花呗', cat:'家居家装', status:'active',
+             next:{ period:6, date:'2026-10-03', rel:'已逾期 10 天', kind:'over', idx:5 } },
+      conflict:false, overdue:1
+    },
+    today: {
+      title:'分期计划 · 今天到期',
+      plan:{ name:'白条分期 6 期', periods:6, posted:2, pending:4, period:499.5, total:2997, principal:2800, interest:197,
+             account:'京东白条', cat:'数码家电', status:'active',
+             next:{ period:3, date:'2026-10-13', rel:'今天到期', kind:'today', idx:2 } },
+      conflict:false, overdue:0
+    },
+    done: {
+      title:'分期计划 · 已完成',
+      plan:{ name:'笔记本 12 期', periods:12, posted:12, pending:0, period:999, total:11988, principal:11000, interest:988,
+             account:'招商银行信用卡', cat:'数码家电 / 电脑', status:'done',
+             next:null },
+      conflict:false, overdue:0
+    },
+    details: {
+      title:'分期明细 · 时间轴',
+      plan:{ name:'招行信用卡分期', periods:12, posted:4, pending:8, period:1200, total:14400, principal:12000, interest:2400,
+             account:'招商银行信用卡', cat:'数码家电 / 手机', status:'active',
+             next:{ period:5, date:'2026-10-20', rel:'还剩 3 天', kind:'soon', idx:4 } },
+      conflict:false, overdue:0
+    },
+    empty: { title:'分期计划 · 空态', plan:null, conflict:false, overdue:0 }
+  };
+
+  function shortDate(iso, compact){
+    var p = iso.split('-'); var y=p[0], m=+p[1], d=+p[2];
+    if(!compact) return y+'-'+(m<10?'0':'')+m+'-'+(d<10?'0':'')+d;
+    var now = 2026;
+    var base = m+'月'+d+'日';
+    return (+y === now) ? base : (y+'年'+base);
+  }
+  function weekday(iso){
+    var p = iso.split('-'); var d = new Date(+p[0], +p[1]-1, +p[2]);
+    return '周' + '日一二三四五六'.charAt(d.getDay());
+  }
+
+  // ---------- builders ----------
+  function metricCell(k, v, cls){
+    return '<div class="m"><div class="k">'+k+'</div><div class="v '+(cls||'v-neu')+(cls==='money'?' money':'')+'">'+v+'</div></div>';
+  }
+  function moneyCell(k, v, tone){
+    var cls = {exp:'v-exp', cred:'v-cred', warn:'v-warn'}[tone] || 'v-neu';
+    return '<div class="m"><div class="k">'+k+'</div><div class="v money '+cls+'">'+v+'</div></div>';
+  }
+
+  function statusPill(status){
+    var m = {active:['active','进行中'], done:['done','已完成'], cancel:['cancel','已取消']}[status] || ['active','进行中'];
+    return '<span class="stp '+m[0]+'">'+m[1]+'</span>';
+  }
+
+  function progressHtml(p){
+    var pct = Math.round(p.posted / p.periods * 100);
+    return '<div class="prog">'+
+      '<div class="line"><span>已入账 '+p.posted+'/'+p.periods+' 期</span><span class="pct">'+pct+'%</span></div>'+
+      '<div class="bar"><i style="width:'+pct+'%"></i></div></div>';
+  }
+
+  // ---- BEFORE metrics: fixed 132/96 + single-line ellipsis (reproduces the bug) ----
+  function beforeMetrics(p, compact){
+    var wrapCls = compact ? 'mgrid before-2' : 'mgrid before-wrap';
+    var nextText = p.next ? shortDate(p.next.date, false) + ' · ' + p.next.rel.replace('还剩','还剩 ') : '已完成';
+    var html = '<div class="metrics"><div class="'+wrapCls+'">';
+    if(compact){
+      html += metricCell('每期', money(p.period), 'v-exp');
+      html += metricCell('剩余', p.pending+' 期');
+      html += '<div class="m"><div class="k">下一期</div><div class="v clip">'+nextText+'</div></div>';
+      html += metricCell('总应还', money(p.total), 'v-exp');
+    }else{
+      html += metricCell('总应还', money(p.total), 'v-exp');
+      html += metricCell('本金', money(p.principal), 'v-cred');
+      html += metricCell('利息', money(p.interest), 'v-warn');
+      html += '<div class="m"><div class="k">下一期</div><div class="v clip">'+nextText+'</div></div>';
+      html += '<div class="m w-sm"><div class="k">剩余</div><div class="v">'+p.pending+' 期</div></div>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  // ---- AFTER: due banner + even auto-fit grid ----
+  function afterDueBanner(p){
+    var n = p.next;
+    if(!n){
+      return '<div class="due" style="border-color:var(--hair);background:var(--raised)">'+
+        '<div class="dl"><div class="t">已全部入账</div>'+
+        '<div class="d">'+p.periods+' 期已完成 <span class="sub">'+money(p.total)+'</span></div>'+
+        '<div class="s">无需再还款</div></div>'+
+        '<div class="right"><span class="chip" style="color:var(--text2);background:var(--chip)">已完成</span></div></div>';
+    }
+    var over = n.kind === 'over';
+    var chipCls = {soon:'soon', over:'over', today:'today'}[n.kind];
+    return '<div class="due '+(over?'over':'')+'">'+
+      '<div class="dl">'+
+        '<div class="t">下一期 · 第 '+n.period+' 期</div>'+
+        '<div class="d">'+shortDate(n.date, true)+' <span class="sub">'+weekday(n.date)+'</span></div>'+
+        '<div class="s">应还 '+money(p.period)+'　·　入账后剩余 '+(p.pending-1)+' 期</div>'+
+      '</div>'+
+      '<div class="right">'+
+        '<span class="chip '+chipCls+'">'+n.rel+'</span>'+
+        '<button class="btn">去入账</button>'+
+      '</div></div>';
+  }
+  function afterMetrics(p){
+    return '<div class="metrics"><div class="mgrid after">'+
+      moneyCell('总应还', money(p.total), 'exp')+
+      moneyCell('每期', money(p.period), 'exp')+
+      metricCell('剩余', p.pending+' 期')+
+      moneyCell('本金', money(p.principal), 'cred')+
+      moneyCell('利息', money(p.interest), 'warn')+
+      '</div></div>';
+  }
+
+  function planCard(p, view, compact, mk){
+    var metrics = view==='before'
+      ? beforeMetrics(p, compact)
+      : (afterDueBanner(p) + afterMetrics(p));
+    var marks = '';
+    if(mk){
+      if(view==='before'){
+        marks = '<span class="mk bad" style="top:132px;right:12px">2</span>';
+      }else{
+        marks = '<span class="mk" style="top:150px;left:-6px">1</span>'
+              + '<span class="mk" style="bottom:12px;right:-6px">3</span>';
+      }
+    }
+    return '<div class="card rel">'+ marks +
+      '<div class="row1">'+
+        '<div class="ic">🔁</div>'+
+        '<div class="r1main">'+
+          '<div class="name"><span class="n">'+p.name+'</span>'+statusPill(p.status)+'</div>'+
+          '<div class="meta">'+p.account+' · '+p.cat+'</div>'+
+        '</div>'+
+        '<div class="acts"><span class="mini">☰</span>'+(p.status==='done'?'<span class="mini">⌃</span>':'')+'</div>'+
+      '</div>'+
+      progressHtml(p)+
+      metrics+
+    '</div>';
+  }
+
+  function searchRow(moved){
+    return '<div class="hdr">'+
+      '<div class="search '+(moved?'moved':'')+'">🔍 '+(moved?'搜索分期名称 / 分类 / 账户':'搜索分期名称 / 分类 / 账户')+(moved?'':'')+'</div>'+
+      '<div class="iconbtn">+</div></div>';
+  }
+
+  function timelineDialog(p){
+    var rows = '';
+    for(var i=1;i<=p.periods;i++){
+      var posted = i <= p.posted;
+      var isNow = p.next && i === p.next.period;
+      var due = '2026-'+String(6 + Math.ceil(i/3)).padStart(2,'0')+'-'+String(((i-1)%3)*10+3).padStart(2,'0');
+      if(i<=p.posted) due = '2026-0'+(6+Math.floor((i-1)/3))+'-'+String(((i-1)%3)*9+4).padStart(2,'0');
+      if(isNow) due = p.next.date;
+      var cls = ('tli ' + (posted?'posted':'') + (isNow?' now':'')).trim();
+      var st = posted ? '已入账' : '待入账';
+      rows += '<div class="'+cls+'"><div class="rail"><div class="ln"></div><div class="dot"></div><div class="ln"></div></div>'+
+        '<div class="cnt"><div class="drow"><div class="num">'+i+'</div><div class="c">'+
+          '<div class="l1"><span class="p">第 '+i+' 期</span><span class="s '+(posted?'':'pending')+'">'+st+'</span></div>'+
+          '<div class="date">'+shortDate(due, false)+'</div>'+
+          '<div class="amts"><span>应还 <b>'+money(p.period)+'</b></span><span>本金 <b>'+money(p.period*0.83)+'</b></span><span>利息 <b>'+money(p.period*0.17)+'</b></span></div>'+
+        '</div>'+(isNow?'<span class="post">⤓</span>':'')+'</div></div></div>';
+      if(i>=p.posted+3) break; // keep the mockup short
+    }
+    return '<div class="scrim"><div class="dlg">'+
+      '<div class="dh"><div style="flex:1"><div class="n">'+p.name+'</div><div class="s">'+p.account+' · '+p.cat+'</div></div>'+
+      '<span class="mini">✕</span></div>'+
+      '<div class="tl">'+rows+'</div></div></div>';
+  }
+
+  function emptyState(){
+    return '<div class="empty"><div class="ei">🗓</div>'+
+      '<div class="et">还没有分期计划</div>'+
+      '<div class="em">新增分期后会冻结信用账户本金，并按期生成支出</div>'+
+      '<button class="btn" style="margin-top:4px">＋ 新增分期</button></div>';
+  }
+
+  // ---------- render ----------
+  function render(){
+    var d = DATA[state.scen] || DATA.due;
+    var compact = state.device === 'phone';
+    var view = state.view;
+    var html = '';
+
+    document.getElementById('stageTitle').textContent = d.title;
+    document.getElementById('badgeView').textContent = view==='before' ? '现状' : '重构后';
+    var bf = document.getElementById('badgeFix');
+    bf.style.display = view==='before' ? 'none' : '';
+    var bd = document.getElementById('badgeDevice');
+    bd.style.display = (view==='before' && !compact) ? '' : 'none';
+
+    if(state.scen === 'empty'){
+      html = searchRow(view==='after') + emptyState();
+    } else {
+      html = searchRow(view==='after');
+      if(view==='after' && d.overdue>0){
+        html += '<div class="banner"><span>⚠️</span><span>'+d.overdue+' 期已逾期，共 '+money(d.plan.period*d.overdue)+' · 请尽快入账</span></div>';
+      }
+      if(d.conflict){
+        html += '<div class="banner" style="background:color-mix(in srgb, var(--warning) 12%, transparent)"><span>⚠️</span><span>检测到 1 处重复登记，同一笔还款会被记两遍账</span><span class="go" style="color:var(--warning)">去处理</span></div>';
+      }
+      var finished = d.plan.status === 'done';
+      if(!finished){
+        html += '<div class="sechead"><span class="l">进行中</span><span class="c">1</span></div>';
+        html += planCard(d.plan, view, compact, state.annot);
+      } else {
+        // 已完成：折叠在「已结束」分组里（默认收起，这里展开示意）
+        html += '<div class="sechead"><span class="l" style="color:var(--text2)">✓ 已结束 1 个</span><span class="mini" style="margin-left:auto">⌃</span></div>';
+        html += planCard(d.plan, view, compact, state.annot);
+      }
+    }
+
+    document.getElementById('appBody').innerHTML = html;
+    document.getElementById('appBody').insertAdjacentHTML('beforeend',
+      state.scen==='details' ? timelineDialog(d.plan) : '');
+
+    document.getElementById('phone').classList.toggle('desktop', !compact);
+    document.body.classList.toggle('no-annot', !state.annot);
+  }
+
+  // ---------- wiring ----------
+  function seg(id, key, attr){
+    var box = document.getElementById(id);
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      [].forEach.call(box.children, function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      state[key] = b.getAttribute(attr);
+      render();
+    });
+  }
+  seg('segView','view','data-v');
+  seg('segScen','scen','data-s');
+  seg('segDevice','device','data-d');
+
+  var tgA = document.getElementById('tgAnnot');
+  tgA.addEventListener('click', function(){ state.annot=!state.annot; tgA.classList.toggle('on',state.annot); render(); });
+
+  var tgT = document.getElementById('tgTheme');
+  tgT.addEventListener('click', function(){
+    state.theme = state.theme==='light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', state.theme);
+    tgT.classList.toggle('on', state.theme==='dark');
+    render();
+  });
+
+  var qbox = document.getElementById('qbox');
+  qbox.addEventListener('change', function(e){
+    var ck = e.target.closest('.ck'); if(ck) ck.classList.toggle('on', ck.querySelector('input').checked);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

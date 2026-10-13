@@ -64,6 +64,112 @@ void main() {
     expect(find.textContaining('今天'), findsWidgets);
   });
 
+  testWidgets('renders 下一期 as a dedicated banner with a short date', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    // 回归：原来「下一期」挤在指标格里（宽屏写死 132px、紧凑屏半行），值是
+    // `2026-10-03 · 已逾期` 这类复合长串，被单行省略号截成 `2026-10-03 · 已..`。
+    // 现在改成独立的到期条：日期与相对时间分两段，完整可见。
+    final due = DateTime.now().add(const Duration(days: 3));
+    final plan = _plan();
+    await tester.pumpWidget(
+      _wrap(
+        accounts: [_creditAccount],
+        plans: [plan],
+        details: [_detail(planId: plan.id, dueDate: due, periodNumber: 5)],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('下一期 · 第 5 期'), findsOneWidget);
+    expect(find.text('${due.month}月${due.day}日'), findsOneWidget);
+    expect(find.text('还剩 3 天'), findsOneWidget);
+    // 卡片上直接入账（原来只能进明细弹窗）。
+    expect(find.text('去入账'), findsOneWidget);
+  });
+
+  testWidgets('lays out without overflow on a narrow phone', (tester) async {
+    // 到期条右侧要放状态 chip + 「去入账」，窄屏最容易挤爆。
+    await tester.binding.setSurfaceSize(const Size(320, 780));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final due = DateTime.now().add(const Duration(days: 3));
+    final plan = _plan(name: '一个名字很长很长的信用卡分期计划');
+    await tester.pumpWidget(
+      _wrap(
+        accounts: [_creditAccount],
+        plans: [plan],
+        details: [_detail(planId: plan.id, dueDate: due, periodNumber: 5)],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('去入账'), findsOneWidget);
+  });
+
+  testWidgets('summarises overdue periods at the top of the list', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final overdueDue = DateTime.now().subtract(const Duration(days: 5));
+    final plan = _plan();
+    await tester.pumpWidget(
+      _wrap(
+        accounts: [_creditAccount],
+        plans: [plan],
+        details: [
+          _detail(planId: plan.id, dueDate: overdueDue, periodNumber: 6),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('1 期已逾期'), findsOneWidget);
+    expect(find.textContaining('请尽快入账'), findsOneWidget);
+    expect(find.text('已逾期 5 天'), findsOneWidget);
+  });
+
+  testWidgets('shows a neutral banner when no period is pending', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final today = DateTime.now();
+    final plan = _plan();
+    await tester.pumpWidget(
+      _wrap(
+        accounts: [_creditAccount],
+        plans: [plan],
+        details: [
+          _detail(
+            planId: plan.id,
+            dueDate: today.subtract(const Duration(days: 30)),
+            periodNumber: 1,
+            status: MoneyInstallmentDetailStatus.posted,
+          ),
+          _detail(
+            planId: plan.id,
+            dueDate: today,
+            periodNumber: 2,
+            status: MoneyInstallmentDetailStatus.skipped,
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 已入账 1/2、跳过 1/2 → 没有待入账期次，到期条给中性结论而不是空白。
+    expect(find.text('暂无待入账期次'), findsOneWidget);
+    expect(find.text('去入账'), findsNothing);
+  });
+
   testWidgets('groups plans by status and folds finished ones', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -140,8 +246,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // 时间轴：已入账 / 当前 两种状态都能看到。
-    expect(find.textContaining('第 1 期'), findsOneWidget);
-    expect(find.textContaining('第 2 期'), findsOneWidget);
+    // 用精确匹配：卡片上的「下一期 · 第 N 期」只是包含「第 N 期」。
+    expect(find.text('第 1 期'), findsOneWidget);
+    expect(find.text('第 2 期'), findsOneWidget);
   });
 }
 

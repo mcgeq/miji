@@ -230,13 +230,15 @@ void main() {
 
     // 三格金额只靠颜色区分方向，所以「支出 / 收入 / 净」必须留在语义标签与
     // 长按提示里，否则读屏用户与色觉缺陷用户拿不到方向信息。
+    //
+    // 三格现在都可点按切换显隐：各自外层包了一个「显示金额 / 隐藏金额」的
+    // 按钮语义，与金额语义合并成同一个节点（如 `显示金额\n支出 ¥0.00`），
+    // 所以用正则匹配其中的金额段。
     final semantics = tester.ensureSemantics();
-    expect(find.bySemanticsLabel('支出 ¥0.00'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'支出 ¥0\.00')), findsOneWidget);
     // 收入默认遮罩：语义标签里的金额是 `****` 而不是真实数字。
-    // 收入金额外层还包了一个「显示金额」的点按语义，两者合并成同一个节点
-    //（`显示金额\n收入 ****`），所以用正则匹配其中的金额段。
     expect(find.bySemanticsLabel(RegExp(r'收入 \*{4}')), findsOneWidget);
-    expect(find.bySemanticsLabel('净 +¥0.00'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'净 \+¥0\.00')), findsOneWidget);
     semantics.dispose();
 
     expect(find.byTooltip('支出'), findsOneWidget);

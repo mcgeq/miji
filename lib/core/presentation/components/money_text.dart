@@ -220,3 +220,49 @@ class IncomeAmountTap extends StatelessWidget {
     );
   }
 }
+
+/// 让**非 MoneyText** 的支出 / 净 / 中性金额展示也能点按切换全局「隐藏金额」
+/// （流水汇总栏、日头等）。
+///
+/// 与 [IncomeAmountTap] 对称：语义标成按钮，读屏可识别。点按走的是与首页那个
+/// 图标开关完全一致的逻辑 —— 写入用户偏好后失效 [currentUserPreferencesProvider]，
+/// 于是全站所有 [MoneyText] / [maskedMoneyOr] 随之同步刷新。
+class MoneyPrivacyTap extends ConsumerWidget {
+  const MoneyPrivacyTap({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final masked = ref.watch(moneyAmountsMaskedProvider);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => toggleMoneyPrivacy(context, ref),
+      child: Semantics(
+        button: true,
+        label: masked ? '显示金额' : '隐藏金额',
+        child: child,
+      ),
+    );
+  }
+}
+
+/// 切换全局「隐藏金额」（与首页那个图标开关、设置里的开关同一份偏好）。
+///
+/// 失败安全：读不到用户 id 时直接返回；写入失败只提示，不改动本地状态。
+Future<void> toggleMoneyPrivacy(BuildContext context, WidgetRef ref) async {
+  final userId = ref.read(currentUserPreferencesProvider).asData?.value?.userId;
+  if (userId == null) {
+    return;
+  }
+  final masked = ref.read(moneyAmountsMaskedProvider);
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  try {
+    await ref
+        .read(preferencesRepositoryProvider)
+        .updateMaskMoneyAmounts(userId, !masked);
+    ref.invalidate(currentUserPreferencesProvider);
+  } catch (_) {
+    messenger?.showSnackBar(const SnackBar(content: Text('切换失败，请重试')));
+  }
+}

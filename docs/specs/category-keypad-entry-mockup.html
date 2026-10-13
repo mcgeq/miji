@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>米记 · 分类宫格 + 键盘式记账（可行性分析与方案 v1 · 人工确认稿）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800;900&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2EDE6; --surface:#FBF6F0; --raised:#F6F1EB; --sunken:#ECE7E1;
+    --text:#1B1813; --text2:#615D58; --outline:#998D80; --hair:#DAD5CF;
+    --primary:#4269D3; --primary-soft:#DDE8FF; --on-primary-soft:#2E488E;
+    --secondary:#626E8A; --tertiary:#8B608C;
+    --income:#006E30; --expense:#A7463C; --transfer:#004557; --credit:#7B428C;
+    --warning:#473D00; --success:#006E30;
+    --danger:#A7463C; --danger-soft:#F7E0DD;
+    --scrim:rgba(27,24,19,.42);
+    --shadow:0 1px 2px rgba(30,20,10,.06),0 8px 24px -12px rgba(30,20,10,.18);
+    --shadow-lg:0 24px 60px -24px rgba(30,20,10,.42);
+    --chip:rgba(0,0,0,.045);
+    --mark:rgba(66,105,211,.10);
+    --pad:rgba(0,0,0,.035);
+  }
+  html[data-theme="dark"]{
+    --bg:#0E0A07; --surface:#17130F; --raised:#221D18; --sunken:#090604;
+    --text:#E7E2DC; --text2:#98938D; --outline:#6B6257; --hair:#322E2A;
+    --primary:#759DFF; --primary-soft:#1E2A4A; --on-primary-soft:#AEC6FF;
+    --secondary:#919EBB; --tertiary:#BE8FBE;
+    --income:#9DF7B0; --expense:#FFB5AA; --transfer:#3FCDF6; --credit:#F7DDFF;
+    --warning:#C8B648; --success:#9DF7B0;
+    --danger:#FFB5AA; --danger-soft:#3A2320;
+    --scrim:rgba(0,0,0,.62);
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 28px -14px rgba(0,0,0,.7);
+    --shadow-lg:0 30px 70px -30px rgba(0,0,0,.9);
+    --chip:rgba(255,255,255,.06);
+    --mark:rgba(117,157,255,.14);
+    --pad:rgba(255,255,255,.05);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:"Noto Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 12% -10%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 60%),
+      radial-gradient(900px 600px at 108% 6%, color-mix(in srgb, var(--credit) 10%, transparent), transparent 55%),
+      var(--bg);
+    min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:0;
+    transition:background .3s ease,color .3s ease;
+  }
+  .app{display:flex;gap:30px;max-width:1360px;margin:0 auto;padding:26px 24px 70px;align-items:flex-start}
+  @media (max-width:1080px){.app{flex-direction:column;align-items:center}}
+
+  /* ---------- left panel ---------- */
+  .panel{position:sticky;top:22px;width:368px;flex:0 0 368px;max-height:calc(100vh - 44px);overflow:auto;scrollbar-width:thin}
+  @media (max-width:1080px){.panel{position:static;width:min(760px,100%);flex:auto;max-height:none}}
+  .panel::-webkit-scrollbar{width:5px}
+  .panel::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
+  .brand{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+  .brand .mark{font-family:"Noto Serif SC",serif;font-weight:900;font-size:28px;line-height:1;
+    background:linear-gradient(120deg,var(--primary),var(--credit));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .t{font-size:14px;font-weight:700;color:var(--text2)}
+  .brand .v{font-size:11px;font-weight:800;color:var(--on-primary-soft);background:var(--primary-soft);padding:2px 8px;border-radius:999px}
+  .lead{font-size:12.5px;color:var(--text2);line-height:1.8;margin:8px 0 16px}
+  .lead b{color:var(--text)}
+
+  .group{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:13px;margin-bottom:11px;box-shadow:var(--shadow)}
+  .group h3{margin:0 0 10px;font-size:10.5px;font-weight:900;letter-spacing:.09em;color:var(--text2);
+    text-transform:uppercase;display:flex;align-items:center;gap:7px}
+  .group h3 .dot{width:6px;height:6px;border-radius:99px;background:var(--primary)}
+  .seg{display:flex;background:var(--sunken);border-radius:11px;padding:3px;gap:3px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--text2);font:inherit;font-size:12.5px;font-weight:700;
+    padding:8px 6px;border-radius:8px;cursor:pointer;transition:.18s;white-space:nowrap}
+  .seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .seg.hl button.on{background:var(--primary);color:#fff}
+  html[data-theme="dark"] .seg.hl button.on{color:#0b1020}
+
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .chips button{border:1px solid var(--hair);background:var(--raised);color:var(--text2);font:inherit;font-size:12px;
+    font-weight:700;padding:8px 6px;border-radius:10px;cursor:pointer;transition:.18s;text-align:left;padding-left:10px}
+  .chips button:hover{border-color:var(--outline)}
+  .chips button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  html[data-theme="dark"] .chips button.on{color:#0b1020}
+
+  .tg{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:9px;cursor:pointer;font-size:12.5px;
+    color:var(--text2);user-select:none;transition:.15s}
+  .tg:hover{background:var(--chip)}
+  .tg.on{color:var(--text)}
+  .tg .sw{width:34px;height:20px;border-radius:99px;background:var(--sunken);border:1px solid var(--hair);
+    position:relative;flex:0 0 34px;transition:.2s}
+  .tg .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:99px;background:var(--outline);transition:.2s}
+  .tg.on .sw{background:var(--primary);border-color:var(--primary)}
+  .tg.on .sw::after{left:16px;background:#fff}
+  .tg small{margin-left:auto;font-size:10.5px;color:var(--outline);font-weight:700}
+
+  ul.list{margin:0;padding-left:0;list-style:none}
+  ul.list li{position:relative;padding:5px 0 5px 22px;font-size:12.3px;line-height:1.65;color:var(--text2)}
+  ul.list li b{color:var(--text)}
+  ul.list li .n{position:absolute;left:0;top:5px;width:15px;height:15px;border-radius:99px;font-size:9.5px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;background:var(--primary-soft);color:var(--on-primary-soft)}
+  ul.list li.warn .n{background:var(--danger-soft);color:var(--danger)}
+  ul.list li.ok .n{background:color-mix(in srgb,var(--income) 14%,transparent);color:var(--income)}
+  ul.list li code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;background:var(--chip);
+    padding:1px 4px;border-radius:4px;color:var(--text)}
+  .tag{display:inline-block;font-size:9.5px;font-weight:900;letter-spacing:.04em;border-radius:5px;padding:1.5px 5px;margin-right:5px;vertical-align:1px}
+  .tag.p0{background:var(--danger-soft);color:var(--danger)}
+  .tag.p1{background:var(--primary-soft);color:var(--on-primary-soft)}
+  .tag.p2{background:var(--chip);color:var(--text2)}
+  .tag.no{background:color-mix(in srgb,var(--warning) 16%,transparent);color:var(--warning)}
+
+  .confirm{display:flex;flex-direction:column;gap:1px}
+  .ck{display:flex;gap:9px;align-items:flex-start;padding:7px 6px;border-radius:9px;cursor:pointer;font-size:12.3px;
+    line-height:1.6;color:var(--text2);transition:.15s}
+  .ck:hover{background:var(--chip)}
+  .ck input{margin:2px 0 0;accent-color:var(--primary);flex:0 0 auto}
+  .ck.on{color:var(--text)}
+  .ck small{display:block;color:var(--outline);font-size:10.8px;margin-top:2px}
+
+  /* ---------- stage ---------- */
+  .stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0}
+  .stagehead{align-self:stretch;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .stagehead .title{font-family:"Noto Serif SC",serif;font-weight:700;font-size:19px;margin-right:2px}
+  .badge{font-size:11px;font-weight:800;color:var(--text2);background:var(--surface);border:1px solid var(--hair);
+    border-radius:999px;padding:4px 11px}
+  .badge.amber{color:#6b4200;background:#FFE6BC;border-color:#f0d29a}
+  .badge.ok{color:var(--income);background:var(--primary-soft);border-color:transparent}
+  html[data-theme="dark"] .badge.amber{color:#FFE6BC;background:#3a2c10;border-color:#5a4416}
+
+  .phone{
+    width:392px;flex:0 0 auto;background:linear-gradient(160deg,#2a2622,#14110e);
+    border-radius:44px;padding:11px;box-shadow:var(--shadow-lg);position:relative;transition:width .25s ease;
+  }
+  html[data-theme="dark"] .phone{background:linear-gradient(160deg,#3a352f,#0a0806)}
+  .phone.desktop{width:min(820px,100%)}
+  .phone::after{content:"";position:absolute;inset:11px;border-radius:34px;pointer-events:none;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  .screen{background:var(--bg);border-radius:34px;overflow:hidden;height:846px;max-height:calc(100vh - 124px);position:relative;display:flex;flex-direction:column}
+  @media (max-width:520px){.phone{width:100%;border-radius:32px}.phone.desktop{width:100%}.screen{border-radius:24px;height:calc(100vh - 200px)}}
+  .scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;padding-bottom:14px}
+  .scroll::-webkit-scrollbar{width:5px}
+  .scroll::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
+
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:9px 20px 2px;font-size:12px;font-weight:700;color:var(--text);flex:0 0 auto}
+  .statusbar .inds{font-size:11px;color:var(--text2);letter-spacing:1px}
+
+  /* ============ AFTER: keypad sheet ============ */
+  .ksheet{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--bg)}
+  .khead{display:flex;align-items:center;gap:8px;padding:4px 14px 8px;flex:0 0 auto}
+  .xbtn{width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+    background:var(--surface);border:1px solid var(--hair);color:var(--text2);font-size:14px;flex:0 0 auto;box-shadow:var(--shadow)}
+  .kseg{display:flex;background:var(--sunken);border-radius:999px;padding:3px;gap:2px;margin:0 auto}
+  .kseg .s{border:0;background:transparent;color:var(--text2);font:inherit;font-size:12.5px;font-weight:800;padding:6px 14px;border-radius:999px;cursor:pointer}
+  .kseg .s.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .khead .book{font-size:12px;font-weight:800;color:var(--primary);flex:0 0 auto}
+
+  .kbody{flex:1;min-height:0;display:flex;flex-direction:column}
+  .gridwrap{flex:1 1 auto;min-height:0;overflow-y:auto;padding:10px 12px 4px;scrollbar-width:none}
+  .gridwrap::-webkit-scrollbar{display:none}
+  .cgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px 2px}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px 5px;border-radius:12px;
+    cursor:pointer;transition:.15s;position:relative;border:1px solid transparent}
+  .cell:hover{background:var(--pad)}
+  .cell.on{background:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 30%,transparent)}
+  .cell .bub{width:42px;height:42px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+    font-size:21px;background:var(--surface);border:1px solid var(--hair);position:relative;transition:.15s}
+  .cell.on .bub{border-color:color-mix(in srgb,var(--primary) 46%,transparent);box-shadow:0 0 0 3px var(--mark)}
+  .cell .bub .dot{position:absolute;right:-1px;top:-1px;width:9px;height:9px;border-radius:99px;
+    background:var(--primary);border:2px solid var(--bg)}
+  .cell .bub .cnt{position:absolute;right:-4px;top:-4px;min-width:16px;height:16px;border-radius:99px;padding:0 3px;
+    background:var(--text2);color:var(--bg);font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center}
+  .cell .lb{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .cell.on .lb{color:var(--on-primary-soft);font-weight:900}
+  .cell.more .bub{background:transparent;border-style:dashed;color:var(--text2);font-size:19px}
+  .cell.more .lb{color:var(--text2)}
+  [data-mark]{position:relative}
+  [data-mark]::after{content:attr(data-mark);position:absolute;left:-7px;top:-9px;width:17px;height:17px;border-radius:99px;
+    background:var(--danger);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;
+    z-index:4;box-shadow:0 2px 6px rgba(0,0,0,.24)}
+  body.no-annot [data-mark]::after{display:none}
+  .cell[data-mark]::after{left:auto;right:4px;top:0}
+
+  /* sub-category strip */
+  .substrip{flex:0 0 auto;padding:6px 12px 4px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:7px}
+  .substrip .pn{font-size:11px;font-weight:900;color:var(--text2);flex:0 0 auto;display:flex;align-items:center;gap:4px}
+  .substrip .sl{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:1px 0}
+  .substrip .sl::-webkit-scrollbar{display:none}
+  .sleaf{flex:0 0 auto;display:flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--hair);
+    border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:700;color:var(--text);white-space:nowrap;cursor:pointer}
+  .sleaf.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  html[data-theme="dark"] .sleaf.on{color:#0b1020}
+  .sleaf.all{background:transparent;border-style:dashed;color:var(--text2)}
+
+  /* amount + meta */
+  .kamount{flex:0 0 auto;padding:8px 16px 2px;border-top:1px solid var(--hair);background:var(--bg)}
+  .kamount .am{display:flex;align-items:baseline;gap:8px}
+  .kamount .am .cur{font-size:19px;font-weight:900;color:var(--expense)}
+  .kamount .am .num{font-size:33px;font-weight:900;color:var(--expense);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .kamount .am .cat{margin-left:auto;font-size:11px;font-weight:800;color:var(--text2);background:var(--surface);
+    border:1px solid var(--hair);border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .kamount .meta{display:flex;align-items:center;gap:8px;margin-top:3px;font-size:11.5px;color:var(--outline)}
+  .kamount .meta .t{display:flex;align-items:center;gap:4px;font-weight:700;color:var(--text2)}
+  .kamount .meta .note{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    border-bottom:1px dashed var(--hair);padding-bottom:2px}
+  .kamount .meta .up{width:24px;height:24px;border-radius:999px;border:1px solid var(--hair);display:flex;align-items:center;
+    justify-content:center;color:var(--text2);font-size:12px;flex:0 0 auto;background:var(--surface)}
+
+  /* chip row */
+  .crow{flex:0 0 auto;display:flex;gap:6px;padding:7px 12px 6px;overflow-x:auto;scrollbar-width:none;background:var(--bg)}
+  .crow::-webkit-scrollbar{display:none}
+  .cchip{flex:0 0 auto;display:flex;align-items:center;gap:5px;border-radius:999px;padding:5px 10px;font-size:11.5px;
+    font-weight:800;white-space:nowrap;cursor:pointer;border:1px solid var(--hair);background:var(--surface);color:var(--text)}
+  .cchip .em{font-size:12.5px}
+  .cchip.gh{background:transparent;color:var(--text2)}
+  .cchip.hot{border-color:color-mix(in srgb,var(--primary) 42%,transparent);color:var(--on-primary-soft);background:var(--primary-soft)}
+
+  /* keypad */
+  .pad{flex:0 0 auto;padding:6px 12px 12px;background:var(--bg)}
+  .prow{display:flex;gap:7px;margin-bottom:7px}
+  .prow:last-child{margin-bottom:0}
+  .key{flex:1;height:44px;border-radius:11px;border:0;background:var(--surface);color:var(--text);
+    font:inherit;font-size:19px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:var(--shadow);font-variant-numeric:tabular-nums}
+  .key.op{background:var(--raised);color:var(--text2);font-size:17px}
+  .key.act{background:var(--primary);color:#fff;font-size:14px;font-weight:900}
+  .key.sub{background:var(--primary-soft);color:var(--on-primary-soft);font-size:13px;font-weight:900}
+  html[data-theme="dark"] .key.act{color:#0b1020}
+  .key.w2{flex:2}
+  .key.tall{height:auto}
+
+  /* ============ BEFORE: form sheet ============ */
+  .fsheet{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--scrim);padding:0 10px 10px;justify-content:flex-end}
+  .fdialog{background:var(--bg);border:1px solid var(--hair);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;max-height:100%;box-shadow:var(--shadow-lg)}
+  .fdialog .fh{display:flex;align-items:center;gap:8px;padding:11px 12px 9px;border-bottom:1px solid var(--hair)}
+  .fdialog .fh .ft{flex:1;text-align:center;font-size:14.5px;font-weight:800}
+  .fbody{padding:12px;display:flex;flex-direction:column;gap:11px;overflow-y:auto;scrollbar-width:thin}
+  .fbody::-webkit-scrollbar{width:4px}
+  .fbody::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
+  .fld{background:var(--surface);border:1px solid var(--hair);border-radius:11px;padding:9px 11px;display:flex;align-items:center;gap:8px;position:relative}
+  .fld .lbl{position:absolute;top:-7px;left:9px;font-size:9.5px;font-weight:800;color:var(--text2);background:var(--bg);padding:0 4px}
+  .fld .ic{font-size:14px;color:var(--text2)}
+  .fld .val{flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fld .val.ph{color:var(--outline);font-weight:500}
+  .fld .chev{color:var(--outline);font-size:13px}
+  .fld.amt{align-items:baseline;padding:12px 11px}
+  .fld.amt .big{font-size:26px;font-weight:900;color:var(--outline);font-variant-numeric:tabular-nums}
+  .fld.amt .calc{margin-left:auto;font-size:11px;font-weight:800;color:var(--primary);background:var(--primary-soft);border-radius:999px;padding:3px 9px}
+  .fsub{font-size:10.5px;font-weight:900;color:var(--text2);margin:1px 0 -4px}
+  .leafgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  .lf{background:var(--surface);border:1px solid var(--hair);border-radius:9px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .lf .b{width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;background:var(--chip)}
+  .lf .t{font-size:9.5px;font-weight:700;color:var(--text);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lf.dup .t{color:var(--danger)}
+  .falld{background:transparent;border:1px dashed var(--outline);border-radius:9px;padding:8px;text-align:center;
+    font-size:11.5px;font-weight:800;color:var(--text2)}
+  .fsw{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--text);padding:2px 2px}
+  .fsw .tgb{margin-left:auto;width:34px;height:20px;border-radius:99px;background:var(--sunken);border:1px solid var(--hair);position:relative}
+  .fsw .tgb::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:99px;background:var(--outline)}
+  .facts{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--hair);flex:0 0 auto}
+  .fas{flex:1;height:38px;border-radius:10px;border:1px solid var(--hair);background:transparent;color:var(--text2);
+    font:inherit;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:5px}
+  .fas.primary{background:var(--primary);border-color:transparent;color:#fff}
+  html[data-theme="dark"] .fas.primary{color:#0b1020}
+  .fbody .foldhint{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--text2);
+    background:var(--surface);border:1px solid var(--hair);border-radius:11px;padding:10px 11px}
+  .fbody .foldhint .chev{margin-left:auto;color:var(--outline)}
+  .sseg{display:flex;background:var(--sunken);border-radius:999px;padding:3px;gap:2px}
+  .sseg .s{flex:1;text-align:center;font-size:12px;font-weight:800;color:var(--text2);padding:6px;border-radius:999px}
+  .sseg .s.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+
+  /* annotations */
+  .mk{position:absolute;z-index:5;width:19px;height:19px;border-radius:99px;background:var(--primary);color:#fff;
+    font-size:10.5px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  html[data-theme="dark"] .mk{color:#0b1020}
+  .mk.bad{background:var(--danger)}
+  body.no-annot .mk{display:none}
+  .rel{position:relative}
+
+  /* notes below stage */
+  .notes{align-self:stretch;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  @media (max-width:900px){.notes{grid-template-columns:1fr}}
+  .note{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:13px;box-shadow:var(--shadow)}
+  .note h4{margin:0 0 9px;font-size:12px;font-weight:900;display:flex;align-items:center;gap:7px}
+  .note h4 .dot{width:6px;height:6px;border-radius:99px;background:var(--primary)}
+  table.cmp{width:100%;border-collapse:collapse;font-size:11.8px}
+  table.cmp th,table.cmp td{text-align:left;padding:6px 7px;border-bottom:1px solid var(--hair);vertical-align:top;line-height:1.55}
+  table.cmp th{font-size:10px;font-weight:900;letter-spacing:.06em;color:var(--text2);text-transform:uppercase}
+  table.cmp td.b{color:var(--text2)}
+  table.cmp td.a{color:var(--text);font-weight:600}
+  table.cmp td.h{font-weight:800;color:var(--text);white-space:nowrap}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;background:var(--chip);padding:1px 4px;border-radius:4px}
+
+  .foot{max-width:1360px;margin:0 auto;padding:0 24px 40px;color:var(--outline);font-size:11.5px;line-height:1.8}
+  .strip{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .strip span{font-size:10.5px;font-weight:700;color:var(--text2);background:var(--chip);border-radius:6px;padding:3px 7px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ LEFT: control panel ============ -->
+  <aside class="panel">
+    <div class="brand">
+      <span class="mark">米记</span>
+      <span class="t">分类宫格 + 键盘式记账</span>
+      <span class="v">v1 待确认</span>
+    </div>
+    <p class="lead">
+      你给的参考图（<code>IMG_4595.PNG</code>）是一种<b>「一屏完成」</b>的记账范式：分类宫格在上、金额与备注居中、键盘常驻在下，全程不滚动。
+      这份稿子把米记<b>现状</b>与<b>可落地的重构后</b>并排摆出来，并指出<b>哪些能直接复用、哪些是真成本、哪几条必须你拍板</b>。
+    </p>
+
+    <div class="group">
+      <h3><span class="dot"></span>视图对比</h3>
+      <div class="seg hl" id="segView">
+        <button data-v="before">现状 · 表单滚动</button>
+        <button data-v="after" class="on">重构后 · 一屏键盘</button>
+      </div>
+      <div class="tg" id="tgAnnot" style="margin-top:8px">
+        <span class="sw"></span><span>显示问题标注 ①②③</span><small>现状视图</small>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>场景</h3>
+      <div class="chips" id="segScen">
+        <button data-s="grid" class="on">支出 · 一级宫格</button>
+        <button data-s="sub">选中后 · 子分类条</button>
+        <button data-s="income">收入 · 10 类</button>
+        <button data-s="transfer">转账 · 第三 tab</button>
+        <button data-s="more">「更多」字段面板</button>
+        <button data-s="wide">宽屏 · 左右两栏</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>设备与主题</h3>
+      <div class="seg" id="segDevice">
+        <button data-d="phone" class="on">手机 392</button>
+        <button data-d="desktop">宽屏 820</button>
+      </div>
+      <div class="tg" id="tgTheme" style="margin-top:6px">
+        <span class="sw"></span><span>深色主题</span>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>结论速览</h3>
+      <ul class="list">
+        <li class="ok"><span class="n">✓</span><b>技术上完全可行</b>，而且不是从零造：宫格、键盘、常用排序、收支分段<b>都已存在</b>，主要是「重排 + 抽公共件」。</li>
+        <li><span class="n">1</span>宫格放<b>一级分类</b>（支出 18 / 收入 10），子分类走<b>同屏横滑条</b>——这是与图片唯一必须偏离的地方（我们有 193 个子分类）。</li>
+        <li class="warn"><span class="n">2</span>最大的真成本是<b>图标资产</b>：图片是手绘插画，现有是 Material 图标名 + emoji。</li>
+        <li class="warn"><span class="n">3</span>键盘常驻与<b>系统键盘</b>会互相打架；宽屏/矮屏要降级成表单版。</li>
+        <li><span class="n">4</span>表单被 <b>6 处入口</b>调用、还要兼顾编辑态/模板/提醒/截图/分期，<b>不能直接替换</b>——建议新增「快速记账」通道而非改写老表单。</li>
+      </ul>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>待确认问题</h3>
+      <div class="confirm" id="qbox">
+        <label class="ck on"><input type="checkbox" checked /><span>用<b>一级分类宫格 + 子分类横滑条</b>，而不是像图片那样只放一层叶子<small>唯一的结构性偏离，见右侧「选中后」场景</small></span></label>
+        <label class="ck on"><input type="checkbox" checked /><span>宫格 5 列 × 图标 + 名称，<b>不做角标数字</b>，只用圆点表示「有子分类」<small>角标在小格子里噪音大于信息量</small></span></label>
+        <label class="ck on"><input type="checkbox" checked /><span>金额用<b>自绘键盘常驻</b>；名称/备注聚焦时临时切回系统键盘<small>否则文本框没法输入</small></span></label>
+        <label class="ck"><input type="checkbox" /><span>接受<b>手势/图标资产</b>这套方案：引一套插画图标（约 30 个）做成本<small>不勾就沿用 Material 图标 + 柔和底色圆，观感约还原 80%</small></span></label>
+        <label class="ck on"><input type="checkbox" checked /><span>低频字段（支付方式/他人代付/分期/日期/标签/商家/地点/分摊）收进<b>一行 chip + 「更多」面板</b><small>对应图片里的「选择账户 / 优惠 / 报销 / 标签 / 图片 / 设置」那一行</small></span></label>
+        <label class="ck on"><input type="checkbox" checked /><span>新增「快速记账」通道，<b>老表单继续保留</b>给编辑态与特殊入口<small>把回归面控制在新增路径上</small></span></label>
+        <label class="ck"><input type="checkbox" /><span>本期就做<b>转账第三 tab</b>（复用现有转账表单内容）<small>不做的话 tab 里先只留「支出 / 收入」</small></span></label>
+        <label class="ck"><input type="checkbox" checked /><span>保留「<b>保存再记</b>」按钮<small>连续记账场景很实用，图片里也有</small></span></label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ RIGHT: stage ============ -->
+  <main class="stage">
+    <div class="stagehead">
+      <span class="title" id="stageTitle">快速记账 · 支出 / 一级宫格</span>
+      <span class="badge" id="badgeView">重构后</span>
+      <span class="badge ok" id="badgeFit">一屏完成 · 无需滚动</span>
+      <span class="badge amber" id="badgeDevice" style="display:none">宽屏 · 左右两栏</span>
+    </div>
+    <div id="legend" style="align-self:stretch;display:flex;flex-wrap:wrap;gap:6px"></div>
+
+    <div class="phone rel" id="phone">
+      <div class="screen">
+        <div class="statusbar"><span>10:18</span><span class="inds">▮▮▮ ⌁ 57</span></div>
+        <div id="appBody" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note">
+        <h4><span class="dot"></span>为什么现状要滚三屏</h4>
+        <table class="cmp">
+          <tr><th>字段</th><th>现状</th><th>图片范式里的位置</th></tr>
+          <tr><td class="h">金额</td><td class="b">输入框 + 系统键盘（点击弹计算器面板）</td><td class="a">键盘上方大号显示区</td></tr>
+          <tr><td class="h">分类</td><td class="b">4 列 × 8 个「常用叶子」+ 全部分类面板</td><td class="a">5 列宫格（一级）</td></tr>
+          <tr><td class="h">支付方式</td><td class="b">独立下拉，紧跟分类</td><td class="a">收进 chip 行 / 更多</td></tr>
+          <tr><td class="h">账户</td><td class="b">独立选择器（+ 他人代付开关）</td><td class="a">chip 行首位</td></tr>
+          <tr><td class="h">日期</td><td class="b">日期组件</td><td class="a">chip 行</td></tr>
+          <tr><td class="h">名称 / 备注</td><td class="b">两个文本框，位置靠后</td><td class="a">金额下方单行内联</td></tr>
+          <tr><td class="h">状态</td><td class="b">已完成 / 待处理 分段</td><td class="a">更多面板</td></tr>
+          <tr><td class="h">商家 / 地点 / 标签</td><td class="b">折叠在「更多信息」里</td><td class="a">更多面板</td></tr>
+          <tr><td class="h">分摊 / 分期</td><td class="b">条件出现，在表单最末</td><td class="a">更多面板 / chip 徽标</td></tr>
+        </table>
+        <p style="font-size:11.5px;color:var(--text2);line-height:1.75;margin:9px 0 0">
+          新建支出时手机上约有 <b>10~14 个控件</b>纵向排布，远超一屏；而其中真正每笔都要动的只有
+          <b>分类</b>与<b>金额</b>两项 ⟶ 这正是图片把这两件事铺满整屏、把其余全部降级的原因。
+        </p>
+      </div>
+
+      <div class="note">
+        <h4><span class="dot"></span>已存在的零件（不用重造）</h4>
+        <table class="cmp">
+          <tr><th>能力</th><th>现有实现</th><th>复用方式</th></tr>
+          <tr><td class="h">分类宫格</td><td class="b"><code>category_leaf_selector.dart</code> · <code>_LeafTile</code><br>4 列 · 固定 60dp 高 · 图标+名称</td><td class="a">改 5 列、放宽到一级分类</td></tr>
+          <tr><td class="h">数字键盘</td><td class="b"><code>amount_calculator_sheet.dart</code> · <code>_KeyButton</code><br>0-9 . + − × ÷ ( ) = AC ⌫</td><td class="a">抽成公共 <code>MoneyKeypad</code></td></tr>
+          <tr><td class="h">收支分段</td><td class="b"><code>AppSlidingSegmentedControl</code>（分类页已在用）</td><td class="a">直接搬进顶栏</td></tr>
+          <tr><td class="h">常用优先</td><td class="b"><code>MoneyCategoryUsage</code><br><code>compareLeavesByUsage</code> / <code>pickFrequentLeaves</code></td><td class="a">直接驱动宫格排序</td></tr>
+          <tr><td class="h">图标渲染</td><td class="b"><code>CategoryIconWidget</code>：Material 图标名 / emoji / 回退</td><td class="a">原地扩展即可</td></tr>
+          <tr><td class="h">金额表达式</td><td class="b"><code>MoneyAmountExpression</code>（<code>12.5+38+6</code>）</td><td class="a">键盘直接吐表达式</td></tr>
+          <tr><td class="h">低频字段面板</td><td class="b"><code>_AdvancedTransactionFields</code>（商家/地点/标签）</td><td class="a">扩成「更多」</td></tr>
+          <tr><td class="h">转账</td><td class="b"><code>TransferFormDialog</code>（转出/转入/手续费）</td><td class="a">第三 tab 内嵌复用</td></tr>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="foot">
+  <div><b>说明</b>：本文件只是分析与方案确认稿，<b>未改动任何生产代码</b>。图标以 emoji 占位，用于表达「宫格 + 圆形底」的观感；实际是否引插画资产见左侧待确认项。</div>
+  <div class="strip">
+    <span>参考：docs/specs/installments-refactor-mockup.html</span>
+    <span>现有实现：money_installments_section / category_leaf_selector / amount_calculator_sheet</span>
+    <span>配色沿用 app 主题 token：支出红 #A7463C · 收入绿 #006E30</span>
+  </div>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+var EXPENSE = [
+  ['餐饮','🍜',10],['交通','🚌',10],['购物','🛍️',24],['居住缴费','🏠',16],['医疗健康','💊',10],
+  ['娱乐','🎮',10],['教育','📚',8],['旅行','✈️',8],['订阅服务','📺',6],['人情礼金','🧧',6],
+  ['保险','🛡️',5],['宠物','🐾',5],['商务支出','💼',5],['公益慈善','🎗️',4],['家庭','👨‍👩‍👧',6],
+  ['转账','💸',3],['贷款还款','🏦',4],['其他支出','📦',0]
+];
+var INCOME = [
+  ['工资','💰',3],['奖金','🎁',2],['投资收益','📈',4],['储蓄收益','🏦',3],['礼金','🧧',2],
+  ['转账','💸',3],['报销','🧾',2],['经营收入','🏪',3],['借贷款项','🤝',2],['其他收入','✨',0]
+];
+var SUBS = {
+  '餐饮':[['早餐','🥐'],['午餐','🍚'],['晚餐','🍲'],['餐厅堂食','🍽️'],['外卖','🛵'],['生鲜杂货','🥬'],['咖啡茶饮','☕'],['酒水饮料','🍺'],['零食','🍪'],['烹饪原料','🧂']],
+  '交通':[['公交地铁','🚇'],['打车网约车','🚕'],['火车高铁','🚄'],['飞机','✈️'],['加油','⛽'],['停车','🅿️'],['共享单车','🚲']]
+};
+var CROWS = {
+  grid:[['💳','现金',0],['📅','今天 10:18',0],['🏷️','标签',0],['📝','备注',1]],
+  income:[['💳','工资卡',1],['📅','今天 10:18',0],['🏷️','标签',0],['💸','报销',0]],
+  transfer:[['🏦','招商储蓄',1],['➡️','余额宝',1],['📅','今天 10:18',0],['🧾','手续费 0',1]]
+};
+var CHIPMETA = {grid:'更多',income:'更多',transfer:'更多'};
+
+var TITLES = {
+  before:'现状 · 记支出表单（需滚动）',
+  after:'快速记账 · 支出 / 一级宫格'
+};
+var BADGES = {
+  before:['现状','表单弹窗 460px · 字段纵向堆叠','需滚 2~3 屏'],
+  after:['重构后','一屏完成 · 无需滚动','']
+};
+
+/* ---------------- state ---------------- */
+var state = { view:'after', scen:'grid', device:'phone', annot:true, theme:'light' };
+
+/* ---------------- helpers ---------------- */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------------- AFTER: keypad ---------------- */
+function cells(list, kind){
+  var html = '';
+  for (var i=0;i<list.length;i++){
+    var name=list[i][0], em=list[i][1], sub=list[i][2];
+    var on = (state.scen==='sub' && name==='餐饮');
+    html += '<div class="cell'+(on?' on':'')+'" data-cat="'+esc(name)+'">'
+          +   '<div class="bub">'+em
+          +     (sub>0 ? '<span class="dot"></span>' : '')
+          +   '</div>'
+          +   '<div class="lb">'+esc(name)+'</div>'
+          + '</div>';
+  }
+  html += '<div class="cell more" data-mark="1"><div class="bub">＋</div><div class="lb">管理分类</div></div>';
+  return '<div class="cgrid">'+html+'</div>';
+}
+
+function substrip(){
+  var subs = SUBS['餐饮'] || [];
+  if(!subs.length) return '';
+  var s = '';
+  for (var i=0;i<subs.length;i++){
+    s += '<span class="sleaf'+(i===1?' on':'')+'">'+subs[i][1]+' '+esc(subs[i][0])+'</span>';
+  }
+  s += '<span class="sleaf all">全部分类（221）</span>';
+  return '<div class="substrip"><span class="pn">🍜 餐饮 ▸</span><span class="sl">'+s+'</span></div>';
+}
+
+function chiprow(kind){
+  var rows = CROWS[kind] || CROWS.grid;
+  var h = '';
+  for (var i=0;i<rows.length;i++){
+    var em=rows[i][0], lb=rows[i][1], hot=rows[i][2];
+    h += '<span class="cchip'+(hot?' hot':'')+'"><span class="em">'+em+'</span>'+esc(lb)+'</span>';
+  }
+  h += '<span class="cchip gh" data-mark="3"><span class="em">＋</span>'+esc(CHIPMETA[kind]||'更多')+'</span>';
+  return '<div class="crow">'+h+'</div>';
+}
+
+function amount(kind, big){
+  var cat = '餐饮 · 午餐';
+  var cur = '¥', num = '0.00', cls = 'expense';
+  if(kind==='income'){ cat='工资'; cur='+¥'; cls='income'; num='0.00'; }
+  if(kind==='transfer'){ cat='账户间转账'; cur='¥'; num='0.00'; }
+  return '<div class="kamount" data-mark="2">'
+       +   '<div class="am">'
+       +     '<span class="cur" style="color:var(--'+cls+')">'+cur+'</span>'
+       +     '<span class="num" style="color:var(--'+cls+')">'+num+'</span>'
+       +     '<span class="cat">'+esc(cat)+'</span>'
+       +   '</div>'
+       +   '<div class="meta">'
+       +     '<span class="t">🕙 '+(kind==='income'?'09:30':'10:18')+'</span>'
+       +     '<span class="note">'+(big?'写点备注…':'点这里填备注')+'</span>'
+       +     '<span class="up">⌃</span>'
+       +   '</div>'
+       + '</div>';
+}
+
+function keypad(kind){
+  var rows = [
+    ['1','2','3',{t:'＋×',c:'op'}],
+    ['4','5','6',{t:'－÷',c:'op'}],
+    ['7','8','9',{t:'再记',c:'sub'}],
+    ['.','0',{t:'⌫',c:'op'},{t:'完成',c:'act'}]
+  ];
+  var h = '';
+  for (var r=0;r<rows.length;r++){
+    h += '<div class="prow">';
+    for (var c=0;c<rows[r].length;c++){
+      var k = rows[r][c];
+      if(typeof k === 'string') h += '<button class="key">'+k+'</button>';
+      else h += '<button class="key '+k.c+'">'+k.t+'</button>';
+    }
+    h += '</div>';
+  }
+  return '<div class="pad">'+h+'</div>';
+}
+
+function mkTopbar(kind){
+  var tabs = [['expense','支出'],['income','收入'],['transfer','转账']];
+  var h = '';
+  for (var i=0;i<tabs.length;i++){
+    h += '<button class="s'+(tabs[i][0]===kind?' on':'')+'">'+tabs[i][1]+'</button>';
+  }
+  return '<div class="khead">'
+       +   '<span class="xbtn">✕</span>'
+       +   '<span class="kseg">'+h+'</span>'
+       +   '<span class="book">My Life</span>'
+       + '</div>';
+}
+
+function afterView(kind, wide){
+  var grid = wide
+    ? '<div class="gridwrap">'+cells(kind==='income'?INCOME:EXPENSE, kind)+'</div>'
+    : '';
+  var right = '<div class="kbody">'
+            +   '<div class="gridwrap">'+cells(kind==='income'?INCOME:EXPENSE, kind)+'</div>'
+            +   (state.scen==='sub' && kind==='expense' ? substrip() : '')
+            +   chiprow(kind)
+            +   amount(kind, state.scen!=='grid')
+            +   keypad(kind)
+            + '</div>';
+  if(wide){
+    return '<div class="ksheet">'+mkTopbar(kind)
+         + '<div style="flex:1;min-height:0;display:flex;gap:0;border-top:1px solid var(--hair)">'
+         +   '<div style="flex:1.05;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--hair)">'
+         +     grid
+         +     (state.scen==='sub' ? substrip() : '<div class="substrip"><span class="pn">选一个分类 ▸</span></div>')
+         +     chiprow(kind)
+         +   '</div>'
+         +   '<div style="flex:1;min-width:0;display:flex;flex-direction:column">'
+         +     amount(kind, true)
+         +     '<div style="flex:1;min-height:0"></div>'
+         +     keypad(kind)
+         +   '</div>'
+         + '</div>'
+         + '</div>';
+  }
+  return '<div class="ksheet">'+mkTopbar(kind)+right+'</div>';
+}
+
+/* 更多字段面板 */
+function moreView(){
+  return '<div class="ksheet">'
+       + '<div class="khead"><span class="xbtn">✕</span><span class="kseg">'
+       +   '<button class="s">支出</button><button class="s on">更多</button><button class="s">收入</button>'
+       + '</span><span class="book">My Life</span></div>'
+       + '<div class="gridwrap" style="padding:8px 14px">'
+       +   '<div class="fbody" style="padding:0">'
+       +     '<div class="fld"><span class="lbl">支付方式</span><span class="ic">💳</span><span class="val">支付宝</span><span class="chev">›</span></div>'
+       +     '<div class="fsw">🙋 他人代付<span class="tgb"></span></div>'
+       +     '<div class="fld"><span class="lbl">日期</span><span class="ic">📅</span><span class="val">2026-10-13 周一</span><span class="chev">›</span></div>'
+       +     '<div class="sseg"><span class="s on">已完成</span><span class="s">待处理</span></div>'
+       +     '<div class="fld"><span class="lbl">商家</span><span class="ic">🏪</span><span class="val ph">可选</span><span class="chev">›</span></div>'
+       +     '<div class="fld"><span class="lbl">地点</span><span class="ic">📍</span><span class="val ph">可选</span><span class="chev">›</span></div>'
+       +     '<div class="fld"><span class="lbl">标签</span><span class="ic">🏷️</span><span class="val ph">可选，多选</span><span class="chev">›</span></div>'
+       +     '<div class="fld"><span class="lbl">分期</span><span class="ic">🧮</span><span class="val ph">仅信用账户</span><span class="chev">›</span></div>'
+       +     '<div class="foldhint"><span>🧾</span>参与分摊（家庭账本）<span class="chev">›</span></div>'
+       +   '</div>'
+       + '</div>'
+       + amount('expense', true)
+       + keypad('expense')
+       + '</div>';
+}
+
+/* ---------------- BEFORE: form ---------------- */
+function beforeView(){
+  var leaves = ['早餐','午餐','晚餐','餐厅堂食','外卖','生鲜杂货','咖啡茶饮','酒水饮料'];
+  var lg = '';
+  for(var i=0;i<leaves.length;i++){
+    lg += '<div class="lf'+(i>=6?' dup':'')+'"><div class="b">'+(i%2?'🍚':'🥐')+'</div><div class="t">'+leaves[i]+'</div></div>';
+  }
+  var body = ''
+    + '<div class="fld amt"><span class="lbl">金额</span><span class="big">0.00</span><span class="calc">🧮 计算器</span></div>'
+    + '<div class="fsub" data-mark="1">分类 · 常用 8 个叶子</div>'
+    + '<div class="leafgrid">'+lg+'</div>'
+    + '<div class="falld">全部分类（221）</div>'
+    + '<div class="fld"><span class="lbl">支付方式</span><span class="ic">💳</span><span class="val">现金</span><span class="chev">›</span></div>'
+    + '<div class="fsw">🙋 他人代付<span class="tgb"></span></div>'
+    + '<div class="fld"><span class="lbl">账户</span><span class="ic">🏦</span><span class="val">微信零钱</span><span class="chev">›</span></div>'
+    + '<div class="fld"><span class="lbl">日期</span><span class="ic">📅</span><span class="val">2026-10-13 周一</span><span class="chev">›</span></div>'
+    + '<div class="fld"><span class="lbl">名称</span><span class="ic">🏷️</span><span class="val ph">可选，如：和老王吃饭</span><span class="chev">›</span></div>'
+    + '<div class="fld" data-mark="2"><span class="lbl">备注</span><span class="ic">📝</span><span class="val ph">在此输入</span><span class="chev">›</span></div>'
+    + '<div class="sseg"><span class="s on">已完成</span><span class="s">待处理</span></div>'
+    + '<div class="foldhint" data-mark="3"><span>⚙️</span>更多信息（商家 / 地点 / 标签）<span class="chev">›</span></div>';
+
+  return '<div class="fsheet">'
+       +   '<div class="fdialog" style="flex:1;min-height:0">'
+       +     '<div class="fh"><span class="xbtn">✕</span><span class="ft">记支出</span><span style="width:32px"></span></div>'
+       +     '<div class="fbody">'+body+'</div>'
+       +     '<div class="facts">'
+       +       '<button class="fas">取消</button>'
+       +       '<button class="fas">↻ 保存并继续</button>'
+       +       '<button class="fas primary">✓ 创建</button>'
+       +     '</div>'
+       +   '</div>'
+       + '</div>';
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  var kind = state.scen==='income' ? 'income'
+           : state.scen==='transfer' ? 'transfer' : 'expense';
+  var wide = state.device==='desktop' || state.scen==='wide';
+  var body = document.getElementById('appBody');
+  var phone = document.getElementById('phone');
+
+  phone.classList.toggle('desktop', state.view==='after' && wide);
+
+  if(state.view==='before'){
+    body.innerHTML = beforeView();
+  } else if(state.scen==='more'){
+    body.innerHTML = moreView();
+  } else {
+    body.innerHTML = afterView(kind, wide);
+  }
+
+  /* badges + title */
+  var t = document.getElementById('stageTitle');
+  var names = {
+    grid:'快速记账 · 支出 / 一级宫格',
+    sub:'快速记账 · 选中分类后的子分类条',
+    income:'快速记账 · 收入 / 10 类',
+    transfer:'快速记账 · 转账',
+    more:'快速记账 · 「更多」字段面板',
+    wide:'快速记账 · 宽屏左右两栏'
+  };
+  if(state.view==='before'){
+    t.textContent = '现状 · 记支出表单（需滚动）';
+  } else {
+    t.textContent = names[state.scen] || names.grid;
+  }
+
+  var bv = document.getElementById('badgeView');
+  var bf = document.getElementById('badgeFit');
+  var bd = document.getElementById('badgeDevice');
+  if(state.view==='before'){
+    bv.textContent='现状'; bv.className='badge';
+    bf.textContent='需滚 2~3 屏'; bf.className='badge amber';
+  } else {
+    bv.textContent='重构后'; bv.className='badge ok';
+    bf.textContent = wide ? '宽屏降级为左右两栏（不常驻键盘）' : '一屏完成 · 无需滚动';
+    bf.className = wide ? 'badge amber' : 'badge ok';
+  }
+  bd.style.display = (state.view==='after' && wide) ? '' : 'none';
+
+  document.body.classList.toggle('no-annot', !state.annot);
+
+  /* annotation legend */
+  var lg = document.getElementById('legend');
+  var legend = {
+    before:[
+      '① 分类只放 8 个「常用叶子」，其余 213 个在二级面板里',
+      '② 备注在表单第 8 位——滚过一屏半才看得到',
+      '③ 商家 / 地点 / 标签 折叠在「更多信息」'
+    ],
+    grid:[
+      '① 右上角「管理分类」直达分类管理页',
+      '② 金额与备注始终贴在键盘上方，不用滚',
+      '③ 低频字段全部收进这一行 chip'
+    ],
+    sub:[
+      '① 横滑条＝一级分类下的子分类，点叶子即选中',
+      '② 已选分类名同时出现在左侧与金额条右侧',
+      '③ 再往后才是「全部分类（221）」搜索面板'
+    ],
+    income:[
+      '① 同一宫格切成 10 个收入分类，布局不变',
+      '② 金额按国内习惯用绿色（收入）',
+      '③ chip 行默认落到工资卡'
+    ],
+    transfer:[
+      '① 第三 tab 复用现有转账表单内容（转出 / 转入 / 手续费）',
+      '② 转账分类是固定的，宫格位置改放「转出 / 转入账户」两个大块（此处仍示意分类宫格）',
+      '③ 手续费等低频项收进 chip 行'
+    ],
+    more:[
+      '① 「更多」= 现有的「更多信息」+ 支付方式 / 日期 / 状态 / 分期 / 分摊',
+      '② 键盘与金额条仍在，展开面板不打断输入',
+      '③ 进过一次就记住，下次默认展开'
+    ],
+    wide:[
+      '① 宽屏改成左右两栏：左分类、右金额＋键盘',
+      '② 弹窗宽度由现在的 460px 放宽到 820px',
+      '③ 键盘高度可按窗口高度自适应，矮屏可隐藏'
+    ]
+  };
+  var key = state.view==='before' ? 'before' : state.scen;
+  var list = legend[key] || legend.grid;
+  var lh = '';
+  for(var i=0;i<list.length;i++) lh += '<span class="badge">'+esc(list[i])+'</span>';
+  lg.innerHTML = state.annot ? lh : '';
+}
+
+/* ---------------- wiring ---------------- */
+document.getElementById('segView').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if(!b) return;
+  var btns = this.querySelectorAll('button');
+  for(var i=0;i<btns.length;i++) btns[i].classList.remove('on');
+  b.classList.add('on');
+  state.view = b.dataset.v;
+  render();
+});
+document.getElementById('segScen').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if(!b) return;
+  var btns = this.querySelectorAll('button');
+  for(var i=0;i<btns.length;i++) btns[i].classList.remove('on');
+  b.classList.add('on');
+  state.scen = b.dataset.s;
+  if(state.view==='before'){ state.view='after'; syncViewSeg(); }
+  render();
+});
+function syncViewSeg(){
+  var btns = document.getElementById('segView').querySelectorAll('button');
+  for(var i=0;i<btns.length;i++){
+    btns[i].classList.toggle('on', btns[i].dataset.v===state.view);
+  }
+}
+document.getElementById('segDevice').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if(!b) return;
+  var btns = this.querySelectorAll('button');
+  for(var i=0;i<btns.length;i++) btns[i].classList.remove('on');
+  b.classList.add('on');
+  state.device = b.dataset.d;
+  if(state.view==='before'){ state.view='after'; syncViewSeg(); }
+  render();
+});
+document.getElementById('tgAnnot').addEventListener('click', function(){
+  state.annot = !state.annot;
+  this.classList.toggle('on', state.annot);
+  render();
+});
+document.getElementById('tgTheme').addEventListener('click', function(){
+  state.theme = state.theme==='light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  this.classList.toggle('on', state.theme==='dark');
+  render();
+});
+document.getElementById('tgAnnot').classList.add('on');
+
+/* checklist toggling */
+(function(){
+  var cks = document.querySelectorAll('#qbox .ck');
+  for(var i=0;i<cks.length;i++){
+    (function(ck){
+      ck.addEventListener('click', function(){ ck.classList.toggle('on', ck.querySelector('input').checked); });
+    })(cks[i]);
+  }
+})();
+
+render();
+</script>
+</body>
+</html>
