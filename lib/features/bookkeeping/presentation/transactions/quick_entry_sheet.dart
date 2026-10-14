@@ -10,6 +10,7 @@ import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
@@ -21,6 +22,7 @@ import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/account_presentation_helpers.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/category_icon.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_leaf_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/components/money_keypad.dart';
@@ -28,6 +30,7 @@ import 'package:miji/features/bookkeeping/presentation/transactions/amount_calcu
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_account_rules.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_form_dialog.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
+import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 /// 一屏记一笔：分类宫格 + 常驻自绘键盘。**「支出 / 收入」两个动作的默认通道。**
@@ -432,6 +435,10 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
       return;
     }
     final current = _selectedAccount;
+    // 「隐藏金额」在这里先取好再传进弹窗：bottom sheet 挂在根 Navigator 上，
+    // 祖先链里没有 AppShellPage 的 MoneyPrivacyScope，在弹窗里就地读只会拿到
+    // `false`——开着隐藏金额也照样把每个账户的余额照出来。
+    final masked = MoneyPrivacy.of(context);
     final picked = await showModalBottomSheet<MoneyAccountEntity>(
       context: context,
       showDragHandle: true,
@@ -441,9 +448,10 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
           children: [
             for (final account in accounts)
               ListTile(
-                leading: Icon(accountIconDataForType(account.type)),
-                title: Text(account.name),
-                subtitle: Text(account.type.label),
+                // 与支出表单的账户下拉同一份内容：图标 + 「名称 · 类型」+ 余额。
+                // 只写账户名不够——挑信用卡时真正要看的是它还剩多少可用额度，
+                // 挑储蓄账户时看的是够不够扣。
+                title: AccountOptionContent(account: account, masked: masked),
                 trailing: account.id == current?.id
                     ? Icon(
                         Icons.check_circle_rounded,
@@ -466,6 +474,71 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
     });
   }
 
+  /// 选支付渠道（dock 字段行那一格）。
+  ///
+  /// 只在账户没锁定支付方式时才可能被调用——锁定时可选集合只有一项，弹出来
+  /// 也没得选。选到「其他」还要补一句名称：光落一个 other 进库，统计里就是
+  /// 一堆说不清的「其他」。
+  Future<void> _pickPaymentMethod() async {
+    final account = _selectedAccount;
+    final methods = availablePaymentMethodsForAccount(account);
+    if (methods.length < 2) {
+      return;
+    }
+    final current = effectivePaymentMethodForAccount(account, _paymentMethod);
+    final picked = await showModalBottomSheet<MoneyPaymentMethod>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final method in methods)
+              ListTile(
+                leading: const Icon(Icons.credit_card_rounded),
+                title: Text(method.label),
+                trailing: method == current
+                    ? Icon(
+                        Icons.check_circle_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () => Navigator.of(sheetContext).pop(method),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _paymentMethod = picked);
+    if (picked != MoneyPaymentMethod.other) {
+      return;
+    }
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => _DockTextDialog(
+        title: '支付方式名称',
+        hint: '如：美团月付、抖音月付',
+        initialText: _customPaymentNameController.text,
+      ),
+    );
+    if (name == null || !mounted) {
+      return;
+    }
+    setState(() => _customPaymentNameController.text = name.trim());
+  }
+
+  /// dock 的日期 / 时间：三个快捷（今天 / 昨天 / 前天）+ 一个能选到**分钟**的日历。
+  ///
+  /// 快捷项沿用**已选的时分**而不是抹成 00:00：补记昨天的饭钱时「几点吃的」
+  /// 仍是自己知道的信息，落成 00:00 之后再想改回正确时间就得整条重来。
+  /// 每一项都把自己的完整取值写在副标题里，免得用户按了「昨天」却不知道
+  /// 会写成哪个时刻。
+  ///
+  /// 「日期与时间…」直接复用全项目共用的 [showAppDatePicker]（老表单 / 转账
+  /// 表单同一套）——原来这里调的是裸的 `showDatePicker`，**选不到分钟**。
   Future<void> _pickDate() async {
     final today = DateTime.now();
     final picked = await showModalBottomSheet<DateTime>(
@@ -477,29 +550,28 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
           children: [
             for (final option in <(String, int)>[
               ('今天', 0),
-              ('昨天', 1),
-              ('前天', 2),
+              ('昨天', -1),
+              ('前天', -2),
             ])
               ListTile(
                 leading: const Icon(Icons.event_rounded),
                 title: Text(option.$1),
-                onTap: () => Navigator.of(sheetContext).pop(
-                  DateTime(
-                    today.year,
-                    today.month,
-                    today.day,
-                  ).subtract(Duration(days: option.$2)),
-                ),
+                subtitle: Text(_formatDateTime(_dateWithKeptTime(option.$2))),
+                onTap: () => Navigator.of(
+                  sheetContext,
+                ).pop(_dateWithKeptTime(option.$2)),
               ),
             ListTile(
-              leading: const Icon(Icons.edit_calendar_rounded),
-              title: const Text('选择日期…'),
+              leading: const Icon(Icons.schedule_rounded),
+              title: const Text('日期与时间…'),
+              subtitle: const Text('可精确到分钟'),
               onTap: () async {
-                final date = await showDatePicker(
+                final date = await showAppDatePicker(
                   context: sheetContext,
                   initialDate: _transactionAt,
                   firstDate: DateTime(2000),
                   lastDate: DateTime(today.year + 1, 12, 31),
+                  showTime: true,
                 );
                 if (date != null && sheetContext.mounted) {
                   Navigator.of(sheetContext).pop(date);
@@ -515,6 +587,24 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
       return;
     }
     setState(() => _transactionAt = picked);
+  }
+
+  /// 第 [dayOffset] 天（0 今天、-1 昨天…），时分秒沿用当前已选值。
+  DateTime _dateWithKeptTime(int dayOffset) {
+    final target = DateTime.now().add(Duration(days: dayOffset));
+    return DateTime(
+      target.year,
+      target.month,
+      target.day,
+      _transactionAt.hour,
+      _transactionAt.minute,
+      _transactionAt.second,
+    );
+  }
+
+  String _formatDateTime(DateTime value) {
+    return '${value.year}-${_twoDigits(value.month)}-${_twoDigits(value.day)} '
+        '${_twoDigits(value.hour)}:${_twoDigits(value.minute)}';
   }
 
   Future<void> _openMorePanel() async {
@@ -881,8 +971,6 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _dockCategoryBar(theme, colorScheme),
-          const SizedBox(height: 6),
           _dockAmountRow(theme, colorScheme),
           const SizedBox(height: 6),
           _dockFieldRow(theme, colorScheme),
@@ -1021,67 +1109,89 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
   ///
   /// 没选分类时它不是空白，而是把「下一步要点什么」写出来——dock 上没有
   /// 宫格，不写的话用户会对着键盘发愣。
-  Widget _dockCategoryBar(ThemeData theme, ColorScheme colorScheme) {
+  /// 金额行右侧的「这一笔记到哪个分类」。
+  ///
+  /// 它原来单独占一整行（分类条），但那一行多数时候只有「点上方分类开始记账」
+  /// 或一个名字，而金额本身窄——两件窄东西各占一行，等于白送 40px 给留白，
+  /// 分类列表就少看半张卡。现在并进金额行：**左侧金额、右侧分类**，
+  /// 一行说完「多少钱、记到哪」。
+  ///
+  /// 选中后显示**「父分类 · 子分类」**而不是光一个名字：分类列表里「早餐」
+  /// 可能不止一处，带上父分类才知道自己点的是哪一个。
+  Widget _dockCategorySlot(ThemeData theme, ColorScheme colorScheme) {
     final leaf = widget.selectedLeaf;
-    final color = appColorFromHex(
-      leaf?.colorHex,
-      fallback: colorScheme.primary,
-    );
+    if (leaf == null) {
+      return ConstrainedBox(
+        // 限宽，别让这句提示把金额区挤黄：它是非 flex 子项，先于 Expanded 拿
+        // 尺寸，不限宽的话字体一放大就轮到金额被 ellipsis。
+        constraints: const BoxConstraints(maxWidth: 120),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 8, right: 4),
+          child: Text(
+            '点上方分类开始记账',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final color = appColorFromHex(leaf.colorHex, fallback: colorScheme.primary);
+    final label = leaf.isChild
+        ? '${leaf.category.name} · ${leaf.name}'
+        : leaf.category.name;
+
     return Container(
-      height: 34,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      constraints: const BoxConstraints(maxWidth: 176),
+      padding: const EdgeInsets.fromLTRB(8, 0, 2, 0),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(theme.radiusTokens.pill),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (leaf == null)
-            Icon(
-              Icons.category_outlined,
-              size: 16,
-              color: colorScheme.onSurfaceVariant,
-            )
-          else
-            CategoryIconWidget(leaf.iconName, size: 16, color: color),
-          const SizedBox(width: 8),
-          Expanded(
+          CategoryIconWidget(leaf.iconName, size: 15, color: color),
+          const SizedBox(width: 6),
+          Flexible(
             child: Text(
-              leaf == null ? '点上方分类开始记账' : leaf.name,
+              label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: leaf == null
-                    ? colorScheme.onSurfaceVariant
-                    : colorScheme.onSurface,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0,
               ),
             ),
           ),
-          if (leaf != null)
-            IconButton(
-              tooltip: '取消选择',
-              onPressed: _clearSelectedLeaf,
-              icon: const Icon(Icons.close_rounded, size: 17),
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: 28, height: 28),
-            ),
+          IconButton(
+            tooltip: '取消选择',
+            onPressed: _clearSelectedLeaf,
+            icon: const Icon(Icons.close_rounded, size: 15),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 24, height: 24),
+          ),
         ],
       ),
     );
   }
 
-  /// dock 的金额行：左边金额（点一下开计算器），右边只留计算器按钮。
+  /// dock 的金额行：左边金额（点一下开计算器），右边是分类。
   ///
   /// 备注 / 账户 / 日期 / 更多**不在这里**——它们曾经是右侧四个图标，但图标
   /// 只能说明「这里有个设置」，说明不了**当前值**（今天是哪天、走的哪个账户、
   /// 备注写了什么），全都得点开才知道；改成下面一行 chip（[_dockFieldRow]），
-  /// 把值直接写出来。这里省下的横向空间留给金额本身。
+  /// 把值直接写出来。
   Widget _dockAmountRow(ThemeData theme, ColorScheme colorScheme) {
     final amountMinor = _amountMinor;
     return Container(
+      key: const ValueKey('dock-amount-row'),
       padding: const EdgeInsets.fromLTRB(12, 4, 8, 4),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -1129,6 +1239,7 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
               ),
             ),
           ),
+          _dockCategorySlot(theme, colorScheme),
         ],
       ),
     );
@@ -1165,18 +1276,34 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
             onTap: _submitting ? null : _pickAccount,
           ),
           const SizedBox(width: 6),
+          // 支付渠道只在账户**没锁死**它的时候出现：支付宝账户必然是支付宝、
+          // 现金账户必然是现金，此时这一格点开也只有一项，纯粹占地方；
+          // 真正需要选的是信用卡 / 其它信用这类一个账户能走好几条渠道的。
+          if (lockedPaymentMethodForAccount(account) == null) ...[
+            _DockFieldChip(
+              icon: Icons.credit_card_rounded,
+              label: effectivePaymentMethodForAccount(
+                account,
+                _paymentMethod,
+              ).label,
+              tooltip: '支付渠道',
+              onTap: _submitting ? null : _pickPaymentMethod,
+            ),
+            const SizedBox(width: 6),
+          ],
           _DockFieldChip(
             icon: Icons.event_rounded,
             label: _dateLabel(),
             filled: !_isToday,
-            tooltip: '日期',
+            // chip 限宽会截断长日期，完整取值放 tooltip。
+            tooltip: _formatDateTime(_transactionAt),
             onTap: _submitting ? null : _pickDate,
           ),
           const SizedBox(width: 6),
           _DockFieldChip(
-            icon: Icons.more_horiz_rounded,
+            icon: Icons.settings_rounded,
             label: '更多',
-            tooltip: '更多',
+            tooltip: '更多设置',
             onTap: _submitting ? null : _openDockMore,
           ),
         ],
@@ -1245,8 +1372,11 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
   Future<void> _openDockNotes() async {
     final result = await showDialog<String>(
       context: context,
-      builder: (dialogContext) =>
-          _DockNotesDialog(initialText: _notesController.text),
+      builder: (dialogContext) => _DockTextDialog(
+        title: '备注',
+        hint: '这一笔花在哪',
+        initialText: _notesController.text,
+      ),
     );
     if (result == null || !mounted) {
       return;
@@ -1344,6 +1474,11 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
     );
   }
 
+  /// 日期 chip 的文案，**带时分**。
+  ///
+  /// 既然时间能精确到分钟，这里就必须把时分带出来：不然用户在日历里挑了
+  /// 14:30，回到记账条上还是只看到「今天」，等于白选——用户没法确认到底
+  /// 记在哪一刻。
   String _dateLabel() {
     final now = DateTime.now();
     final date = DateTime(
@@ -1353,19 +1488,21 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
     );
     final today = DateTime(now.year, now.month, now.day);
     final diff = today.difference(date).inDays;
+    final clock =
+        '${_twoDigits(_transactionAt.hour)}:${_twoDigits(_transactionAt.minute)}';
     if (diff == 0) {
-      return '今天';
+      return '今天 $clock';
     }
     if (diff == 1) {
-      return '昨天';
+      return '昨天 $clock';
     }
     if (diff == 2) {
-      return '前天';
+      return '前天 $clock';
     }
     if (date.year == now.year) {
-      return '${date.month}月${date.day}日';
+      return '${date.month}月${date.day}日 $clock';
     }
-    return '${date.year}年${date.month}月${date.day}日';
+    return '${date.year}年${date.month}月${date.day}日 $clock';
   }
 
   Widget _categoryGrid(MoneyCategoryCatalog catalog) {
@@ -1475,20 +1612,32 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
   }
 }
 
+String _twoDigits(int value) => value.toString().padLeft(2, '0');
+
 /// dock 上「更多」的两个去向。
 enum _DockMoreChoice { fields, detailed }
 
-/// dock 上写备注的一行弹窗（controller 由它自己持有并释放）。
-class _DockNotesDialog extends StatefulWidget {
-  const _DockNotesDialog({required this.initialText});
+/// dock 上「一句话输入」的弹窗：备注用它，支付渠道选「其他」后补名称也用它。
+///
+/// controller 由它自己持有并在 dispose 里释放——**不能**在 `await showDialog`
+/// 之后 dispose：dialog 的 future 在 pop 时就 complete，而退出动画还在跑，
+/// 弹窗会拿着已释放的 controller 再 build 一帧，抛 "used after being disposed"。
+class _DockTextDialog extends StatefulWidget {
+  const _DockTextDialog({
+    required this.title,
+    required this.hint,
+    required this.initialText,
+  });
 
+  final String title;
+  final String hint;
   final String initialText;
 
   @override
-  State<_DockNotesDialog> createState() => _DockNotesDialogState();
+  State<_DockTextDialog> createState() => _DockTextDialogState();
 }
 
-class _DockNotesDialogState extends State<_DockNotesDialog> {
+class _DockTextDialogState extends State<_DockTextDialog> {
   late final TextEditingController _controller = TextEditingController(
     text: widget.initialText,
   );
@@ -1502,11 +1651,12 @@ class _DockNotesDialogState extends State<_DockNotesDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('备注'),
+      title: Text(widget.title),
       content: TextField(
         controller: _controller,
         autofocus: true,
         maxLines: 1,
+        decoration: InputDecoration(hintText: widget.hint),
         textInputAction: TextInputAction.done,
         onSubmitted: (value) => Navigator.of(context).pop(value),
       ),

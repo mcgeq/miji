@@ -104,11 +104,10 @@ class AccountSelector extends StatelessWidget {
               (account) => DropdownMenuEntry(
                 value: account.id,
                 label: account.name,
-                labelWidget: _AccountSelectorItem(
+                labelWidget: AccountOptionContent(
                   account: account,
                   // 全局「隐藏金额」优先于逐账户设置。
-                  isAmountHidden:
-                      MoneyPrivacy.of(context) || isAmountHidden(account),
+                  masked: MoneyPrivacy.of(context) || isAmountHidden(account),
                 ),
               ),
             ),
@@ -123,14 +122,24 @@ bool _defaultAmountVisibility(MoneyAccountEntity account) {
   return false;
 }
 
-class _AccountSelectorItem extends StatelessWidget {
-  const _AccountSelectorItem({
+/// 账户选择列表里的一行：图标 + 「名称 · 类型」+ 余额。
+///
+/// 老表单的账户下拉与分类记账（dock）的账户选择面板共用它——余额格式与
+/// 「隐藏金额」口径必须一致，各写一遍必然漂移。
+///
+/// [masked] **由调用方传入**，而不是在这里读 `MoneyPrivacy.of(context)`：
+/// 这个组件也会被放进 `showModalBottomSheet`，而弹窗挂在根 Navigator 上，
+/// 祖先链里没有 `AppShellPage` 的 `MoneyPrivacyScope`——就地读只会拿到
+/// `false`，把余额原样照出来。调用方（在页面树里）先读好再传进来。
+class AccountOptionContent extends StatelessWidget {
+  const AccountOptionContent({
+    super.key,
     required this.account,
-    required this.isAmountHidden,
+    this.masked = false,
   });
 
   final MoneyAccountEntity account;
-  final bool isAmountHidden;
+  final bool masked;
 
   @override
   Widget build(BuildContext context) {
@@ -156,12 +165,10 @@ class _AccountSelectorItem extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Text(
-          isAmountHidden
-              ? '***'
-              : formatMoneyMinor(
-                  account.displayBalanceMinor,
-                  account.currencyCode,
-                ),
+          maskedMoneyOr(
+            formatMoneyMinor(account.displayBalanceMinor, account.currencyCode),
+            masked,
+          ),
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: colorScheme.onSurfaceVariant,

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/auth/domain/auth_session.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/theme/app_theme.dart';
+import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/application/transaction_entry_defaults_store.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -79,8 +81,12 @@ void main() {
     // 宫格不在这里——分类列表由外层渲染，dock 只负责收钱。
     expect(find.byType(GridView), findsNothing);
     expect(find.byKey(const ValueKey('quick-entry-dock')), findsOneWidget);
-    // 外部选中的分类显示在记账条上。
-    expect(find.text('公交地铁'), findsOneWidget);
+    // 分类与金额**同一行**：分类原来单独占一行，省下的高度留给分类列表。
+    final amountRow = find.byKey(const ValueKey('dock-amount-row'));
+    expect(
+      find.descendant(of: amountRow, matching: find.text('交通 · 公交地铁')),
+      findsOneWidget,
+    );
     // 键盘与保存照旧。
     expect(find.text('保存'), findsOneWidget);
   });
@@ -95,8 +101,9 @@ void main() {
       find.descendant(of: dock, matching: find.text('现金')),
       findsOneWidget,
     );
+    // 日期带时分——时间能选到分钟，chip 上就得看得见是几点。
     expect(
-      find.descendant(of: dock, matching: find.text('今天')),
+      find.descendant(of: dock, matching: find.textContaining('今天 ')),
       findsOneWidget,
     );
     expect(
@@ -118,10 +125,71 @@ void main() {
     );
   });
 
+  testWidgets('dock 的日期能选到分钟：走共用的日期时间选择器', (tester) async {
+    await _pump(tester, dock: true, leaf: _busLeaf);
+    final dock = find.byKey(const ValueKey('quick-entry-dock'));
+
+    await tester.tap(
+      find.descendant(of: dock, matching: find.textContaining('今天 ')),
+    );
+    await tester.pumpAndSettle();
+
+    // 快捷项照旧，另外多一个能选到分钟的入口。
+    expect(find.text('今天'), findsOneWidget);
+    expect(find.text('日期与时间…'), findsOneWidget);
+    expect(find.text('可精确到分钟'), findsOneWidget);
+
+    await tester.tap(find.text('日期与时间…'));
+    await tester.pumpAndSettle();
+
+    // 回归：这里原来调的是裸的 showDatePicker，选不到分钟。
+    expect(find.text('选择日期时间'), findsOneWidget);
+  });
+
+  testWidgets('账户没锁定支付方式时，记账条才多出「支付渠道」一格', (tester) async {
+    await _pump(tester, dock: true, leaf: _busLeaf);
+    final dock = find.byKey(const ValueKey('quick-entry-dock'));
+
+    // 现金账户的支付方式锁死成「现金」：这一格点开也只有一项，不显示。
+    expect(
+      find.descendant(of: dock, matching: find.text('支付渠道')),
+      findsNothing,
+    );
+
+    await tester.tap(find.descendant(of: dock, matching: find.text('现金')));
+    await tester.pumpAndSettle();
+    // 账户面板里每一项写的是「名称 · 类型」，所以只能按包含匹配。
+    await tester.tap(find.textContaining('招行信用卡'));
+    await tester.pumpAndSettle();
+
+    // 信用账户一个账户能走好几条渠道，这一格才出现，并显示当前渠道。
+    expect(
+      find.descendant(of: dock, matching: find.text('信用卡')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.descendant(of: dock, matching: find.text('信用卡')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('云闪付'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(of: dock, matching: find.text('云闪付')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('dock 没选分类时把下一步写出来，而不是留白', (tester) async {
     await _pump(tester, dock: true);
 
-    expect(find.text('点上方分类开始记账'), findsOneWidget);
+    // 提示就在金额右边，不再单独占一行。
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('dock-amount-row')),
+        matching: find.text('点上方分类开始记账'),
+      ),
+      findsOneWidget,
+    );
 
     // 直接保存：提示选分类，不静默失败。
     await tester.tap(find.text('1'));
@@ -228,8 +296,47 @@ void main() {
     // 收入不能进信用账户：账户面板里只剩现金。
     await tester.tap(find.text('现金'));
     await tester.pumpAndSettle();
-    expect(find.text('招行信用卡'), findsNothing);
-    expect(find.text('现金'), findsWidgets);
+    expect(find.textContaining('招行信用卡'), findsNothing);
+    expect(find.textContaining('现金 · 现金'), findsOneWidget);
+  });
+
+  testWidgets('dock 选账户时列出各账户余额', (tester) async {
+    await _pump(tester, dock: true, leaf: _busLeaf);
+    final dock = find.byKey(const ValueKey('quick-entry-dock'));
+
+    await tester.tap(find.descendant(of: dock, matching: find.text('现金')));
+    await tester.pumpAndSettle();
+
+    // 与支出表单的账户下拉同一份内容：图标 + 「名称 · 类型」+ 余额。
+    // 只给个名字不够——挑信用卡时真正要看的是它还剩多少可用额度。
+    expect(find.text('现金 · 现金'), findsOneWidget);
+    expect(find.text('招行信用卡 · 信用卡'), findsOneWidget);
+    expect(
+      find.text(formatMoneyMinor(_cashAccount.displayBalanceMinor, 'CNY')),
+      findsOneWidget,
+    );
+    // 信用账户列的是**可用额度**（displayBalanceMinor），不是已用金额。
+    expect(
+      find.text(formatMoneyMinor(_creditAccount.displayBalanceMinor, 'CNY')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('「隐藏金额」开着时，账户面板里的余额也遮罩', (tester) async {
+    await _pump(tester, dock: true, leaf: _busLeaf, moneyMasked: true);
+    final dock = find.byKey(const ValueKey('quick-entry-dock'));
+
+    await tester.tap(find.descendant(of: dock, matching: find.text('现金')));
+    await tester.pumpAndSettle();
+
+    // 回归：账户面板是 bottom sheet，挂在根 Navigator 上、祖先链里没有
+    // AppShellPage 的 MoneyPrivacyScope。就地读只会拿到 false，
+    // 开着隐藏金额也会把余额照出来——所以开关必须在页面树里读好再传进去。
+    expect(
+      find.text(formatMoneyMinor(_cashAccount.displayBalanceMinor, 'CNY')),
+      findsNothing,
+    );
+    expect(find.text('••••'), findsNWidgets(2));
   });
 
   testWidgets('文本框聚焦时让位给系统键盘', (tester) async {
@@ -406,6 +513,7 @@ Future<void> _pump(
   TransactionEntryDefaults? remembered,
   bool dock = false,
   CategoryLeaf? leaf,
+  bool moneyMasked = false,
 }) async {
   // 用 view 而不是 setSurfaceSize：后者在这个 Flutter 版本里不会改变
   // MediaQuery 的尺寸，宽屏 / 窄屏分栏永远测不到。
@@ -451,17 +559,22 @@ Future<void> _pump(
       ],
       child: MaterialApp(
         theme: AppTheme.light(),
-        home: Scaffold(
-          body: dock
-              ? QuickEntrySheet(
-                  initialType: MoneyTransactionType.expense,
-                  dock: true,
-                  embedded: true,
-                  selectedLeaf: leaf,
-                )
-              : const QuickEntrySheet(
-                  initialType: MoneyTransactionType.expense,
-                ),
+        // MoneyPrivacy 放在 home 里（= app_shell_page 的位置：Navigator 之下、
+        // 页面之上）。放外层就复现不出「bottom sheet 读不到这个 scope」的坑了。
+        home: MoneyPrivacy(
+          masked: moneyMasked,
+          child: Scaffold(
+            body: dock
+                ? QuickEntrySheet(
+                    initialType: MoneyTransactionType.expense,
+                    dock: true,
+                    embedded: true,
+                    selectedLeaf: leaf,
+                  )
+                : const QuickEntrySheet(
+                    initialType: MoneyTransactionType.expense,
+                  ),
+          ),
         ),
       ),
     ),

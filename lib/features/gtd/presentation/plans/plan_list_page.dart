@@ -6,6 +6,7 @@ import 'package:miji/core/notifications/notification_providers.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
+import 'package:miji/features/todo/providers/todo_providers.dart';
 
 /// 计划列表页（管理/归档/排序）
 class PlanListPage extends ConsumerWidget {
@@ -188,7 +189,7 @@ class _PlanTile extends ConsumerWidget {
       case 'archive':
         await repo.archivePlan(plan.id, true);
         ref.read(appNotificationServiceProvider).cancelCheckinReminder(plan.id);
-        invalidateCheckinData(ref);
+        invalidateTodayActionData(ref);
         break;
       case 'unarchive':
         await repo.archivePlan(plan.id, false);
@@ -201,12 +202,12 @@ class _PlanTile extends ConsumerWidget {
                 timeString: plan.reminderTime!,
               );
         }
-        invalidateCheckinData(ref);
+        invalidateTodayActionData(ref);
         break;
       case 'delete':
         await repo.deletePlan(plan.id);
         ref.read(appNotificationServiceProvider).cancelCheckinReminder(plan.id);
-        invalidateCheckinData(ref);
+        invalidateTodayActionData(ref);
         break;
     }
   }

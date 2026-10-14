@@ -270,8 +270,9 @@ void main() {
 
     final dock = find.byKey(const ValueKey('quick-entry-dock'));
     expect(dock, findsOneWidget);
+    // 显示「父分类 · 子分类」：列表里同名子分类可能有好几个。
     expect(
-      find.descendant(of: dock, matching: find.text('早餐')),
+      find.descendant(of: dock, matching: find.text('餐饮 · 早餐')),
       findsOneWidget,
     );
   });
@@ -334,8 +335,9 @@ void main() {
       find.descendant(of: dock, matching: find.text('现金')),
       findsOneWidget,
     );
+    // 日期带时分：时间能选到分钟，chip 上就得看得见选的是几点。
     expect(
-      find.descendant(of: dock, matching: find.text('今天')),
+      find.descendant(of: dock, matching: find.textContaining('今天 ')),
       findsOneWidget,
     );
   });

@@ -321,9 +321,19 @@ class AppNotificationService {
   }
 
   /// 取消指定计划的提醒。
+  ///
+  /// **不会抛出**：它是「删除计划 / 关闭提醒」这类收尾动作的其中一步，
+  /// 调用方后面还有刷新列表、退回上一页要做。通知通道缺失（桌面端、测试
+  /// 环境里 `FlutterLocalNotificationsPlatform.instance` 根本没初始化）时
+  /// 直接返回，别把整条链路带断在半路。
   Future<void> cancelCheckinReminder(String planId) async {
+    if (!supportsNotifications) return;
     final notificationId = planId.hashCode.abs() % 100000;
-    await _plugin.cancel(id: notificationId);
+    try {
+      await _plugin.cancel(id: notificationId);
+    } catch (_) {
+      // 插件不可用：计划已经删掉了，少撤一条提醒不影响正确性。
+    }
   }
 
   /// 调度纪念日提醒（每年重复，可提前 N 天）。

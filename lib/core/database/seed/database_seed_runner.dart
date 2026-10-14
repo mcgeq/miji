@@ -148,8 +148,12 @@ class DatabaseSeedRunner {
 
     if (existingPlan != null) return;
 
-    // 默认插入 3 个最常用的计划
-    const defaultPlanNames = ['喝水', '每日学习', '每日一拍'];
+    // 默认预置的计划：只发两个「一天一次」的通用项。
+    //
+    // **不含「喝水」**：它是每天 8 杯、粒度到「详细」的项目，混在默认预置里
+    // 容易被当成系统替用户排好的打卡。需要的人可以在计划列表里自己加——
+    // 模板仍保留在 `checkin_seed_data.dart`，只是不再进默认预置。
+    const defaultPlanNames = ['每日学习', '每日一拍'];
     final templates = allCheckinPlanTemplates
         .where((t) => defaultPlanNames.contains(t.name))
         .toList();

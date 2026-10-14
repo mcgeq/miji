@@ -87,7 +87,9 @@ void main() {
     final plans = await (database.select(
       database.checkinPlans,
     )..where((row) => row.userId.equals(userId))).get();
-    expect(plans.length, 3);
+    expect(plans.length, 2);
+    // 「喝水」已从默认预置里摘掉：模板留着，但不该跟着新用户一起出现。
+    expect(plans.map((plan) => plan.name), isNot(contains('喝水')));
 
     await (database.update(
       database.checkinPlans,
@@ -103,7 +105,7 @@ void main() {
     final after = await (database.select(
       database.checkinPlans,
     )..where((row) => row.userId.equals(userId))).get();
-    expect(after.length, 3);
+    expect(after.length, 2);
     expect(after.every((plan) => plan.isDeleted), isTrue);
   });
 
@@ -117,7 +119,7 @@ void main() {
       final plans = await (database.select(
         database.checkinPlans,
       )..where((row) => row.userId.equals(userId))).get();
-      expect(plans.length, 3);
+      expect(plans.length, 2);
     },
   );
 }
