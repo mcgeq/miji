@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>米记主题重做 v2 · 评审稿（对齐 iCost / 钱迹 / 木木）</title>
+<style>
+  :root{
+    --page:#FFFFFF; --page-2:#F5F6F8; --ink:#15181C; --ink-2:#5B6169;
+    --line:#DFE3E8; --line-2:#ECEFF2; --accent:#2C6FB8;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Cascadia Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--page-2); color:var(--ink);
+    font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:1380px;margin:0 auto;padding:28px 24px 80px}
+  h1{font-size:24px;margin:0 0 6px;letter-spacing:-.2px}
+  h2{font-size:17px;margin:36px 0 12px;padding-top:20px;border-top:1px solid var(--line)}
+  h3{font-size:14px;margin:20px 0 8px}
+  p{margin:0 0 10px;color:var(--ink-2)}
+  .lede{color:var(--ink);font-size:15px}
+  code{font-family:var(--mono);font-size:12px;background:var(--page-2);padding:1px 5px;border-radius:4px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;background:var(--page)}
+  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+  th{background:var(--page-2);font-weight:600}
+  td.num{font-family:var(--mono);white-space:nowrap}
+  ul{margin:0 0 10px;padding-left:20px;color:var(--ink-2)}
+  li{margin-bottom:5px}
+
+  .stage-row{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+  .panel{
+    width:252px;flex:0 0 252px;background:var(--page);border:1px solid var(--line);
+    border-radius:12px;padding:14px;position:sticky;top:20px;
+  }
+  .panel h4{margin:0 0 8px;font-size:12px;color:var(--ink-2);letter-spacing:.4px;text-transform:uppercase}
+  .panel .grp{margin-bottom:16px}
+  .seg{display:flex;gap:4px;flex-wrap:wrap}
+  .seg button{
+    flex:1 1 auto;padding:7px 8px;border:1px solid var(--line);background:var(--page);
+    border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--ink);font-family:inherit;
+  }
+  .seg button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .swatch-row{display:flex;gap:3px;margin-top:6px}
+  .swatch-row i{flex:1;height:8px;border-radius:2px;display:block}
+  .note{font-size:11.5px;color:var(--ink-2);margin-top:6px;line-height:1.5}
+
+  .stage-wrap{flex:1 1 640px;min-width:340px}
+  .stage-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .stage-head b{font-size:14px}
+  .stage-head span{font-size:12px;color:var(--ink-2)}
+  .phone{
+    width:390px;height:812px;border-radius:36px;border:1px solid var(--line);
+    background:var(--stage-bg,#F3F6F9);overflow:hidden;position:relative;
+    box-shadow:0 18px 44px rgba(20,25,35,.16);
+  }
+  .screen{height:100%;overflow-y:auto;overflow-x:hidden}
+  .phone::-webkit-scrollbar,.screen::-webkit-scrollbar{width:0}
+
+  /* ── 手机内：灰底 + 白卡 + 轻阴影（iOS / 竞品的观感）── */
+  .s-bar{display:flex;justify-content:space-between;padding:12px 20px 2px;font-size:11px;color:var(--text-2);font-weight:600}
+  .s-title{font-size:19px;font-weight:800;color:var(--text);padding:6px 18px 10px;letter-spacing:-.3px}
+  .card{
+    background:var(--surface);border-radius:16px;margin:0 14px 12px;padding:14px;
+    box-shadow:var(--card-shadow);border:1px solid var(--hairline);
+  }
+  .card.tight{padding:12px 14px}
+  .card.flush{margin-left:0;margin-right:0;border-radius:0;box-shadow:none;border-left:0;border-right:0}
+  .card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .card-h b{font-size:13.5px;color:var(--text);letter-spacing:0}
+  .card-h span{font-size:11.5px;color:var(--text-2)}
+
+  .hero{
+    border-radius:20px;margin:0 14px 12px;padding:16px 18px;position:relative;overflow:hidden;
+    background:var(--hero-nw);color:var(--on-nw);
+    box-shadow:0 8px 22px var(--hero-shadow);
+  }
+  .hero .lbl{font-size:11.5px;opacity:.82;letter-spacing:.3px}
+  .hero .big{font-size:31px;font-weight:800;letter-spacing:-.6px;margin:3px 0 10px}
+  .hero .sub{display:flex;gap:18px;font-size:11.5px;opacity:.9}
+  .hero .sub b{display:block;font-size:14.5px;font-weight:700;opacity:1;margin-top:1px}
+  .hero .orb{position:absolute;width:150px;height:150px;border-radius:50%;right:-46px;top:-56px;background:rgba(255,255,255,.16)}
+
+  .row{display:flex;align-items:center;gap:10px}
+  .between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .dot{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-size:14px;flex:0 0 32px}
+  .tx-name{font-size:13.5px;font-weight:600;color:var(--text);letter-spacing:0}
+  .tx-meta{font-size:11.5px;color:var(--text-2);margin-top:1px}
+  .amt{font-family:var(--mono);font-size:14.5px;font-weight:700;letter-spacing:-.2px}
+  .day-head{display:flex;justify-content:space-between;padding:10px 18px 4px;font-size:11.5px;color:var(--text-2)}
+  .day-head b{color:var(--text)}
+  .li{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--hairline)}
+  .li:last-child{border-bottom:0}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;font-size:11.5px;font-weight:600}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:42px;padding:0 16px;border-radius:12px;font-size:13.5px;font-weight:600;border:1px solid transparent}
+  .btn.primary{background:var(--primary-solid);color:var(--on-primary-solid)}
+  .btn.outline{background:transparent;color:var(--primary);border-color:var(--outline)}
+  .btn.ghost{background:var(--sunken);color:var(--text)}
+  .field{height:46px;border:1px solid var(--outline);border-radius:12px;background:var(--surface);display:flex;align-items:center;padding:0 13px;color:var(--text-3);font-size:13px}
+  .seg-ctl{display:flex;background:var(--sunken);border-radius:11px;padding:3px;gap:3px}
+  .seg-ctl div{flex:1;text-align:center;padding:7px 0;border-radius:9px;font-size:12.5px;color:var(--text-2)}
+  .seg-ctl div.on{background:var(--surface);color:var(--primary);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .cat-cell{background:var(--sunken);border-radius:12px;padding:9px 2px 7px;text-align:center}
+  .cat-cell i{width:26px;height:26px;border-radius:8px;display:block;margin:0 auto 5px}
+  .cat-cell span{font-size:10.5px;color:var(--text);letter-spacing:-.2px}
+  .keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .keypad div{height:38px;border-radius:9px;background:var(--sunken);display:grid;place-items:center;font-size:16px;font-weight:600;color:var(--text)}
+  .keypad div.hi{background:var(--primary-solid);color:var(--on-primary-solid)}
+  .dock{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--hairline);padding:8px 12px 14px;box-shadow:0 -6px 18px var(--dock-shadow)}
+  .donut{display:flex;align-items:center;gap:16px}
+  .legend{flex:1;font-size:11.5px}
+  .legend .lg{display:flex;align-items:center;gap:6px;margin-bottom:6px;color:var(--text)}
+  .legend .lg i{width:9px;height:9px;border-radius:3px;flex:0 0 9px}
+  .legend .lg span.v{margin-left:auto;font-family:var(--mono);color:var(--text-2)}
+  .bars{display:flex;align-items:flex-end;gap:7px;height:78px;margin-top:12px}
+  .bars div{flex:1;border-radius:5px 5px 0 0}
+  .prog{height:9px;border-radius:999px;background:var(--sunken);overflow:hidden;margin-top:8px}
+  .prog i{display:block;height:100%;border-radius:999px}
+  .alert{display:flex;gap:8px;padding:11px 13px;border-radius:13px;font-size:12px;align-items:flex-start}
+  .mini{font-size:10.5px;color:var(--text-2);letter-spacing:0}
+  .fab{position:absolute;right:16px;bottom:18px;width:54px;height:54px;border-radius:18px;background:var(--primary-solid);color:var(--on-primary-solid);display:grid;place-items:center;font-size:26px;box-shadow:0 8px 20px var(--fab-shadow)}
+  .quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .quick div{text-align:center}
+  .quick i{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;margin:0 auto 5px;font-size:17px}
+  .quick span{font-size:10.5px;color:var(--text-2)}
+
+  /* ── token 表 ── */
+  .tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:14px;margin-top:12px}
+  .tbox{background:var(--page);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .tbox h5{margin:0 0 8px;font-size:12.5px}
+  .tline{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11.5px}
+  .tline i{width:22px;height:22px;border-radius:5px;border:1px solid var(--line-2);flex:0 0 22px}
+  .tline code{background:transparent;padding:0;font-size:11px;color:var(--ink-2)}
+  .tline .r{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-2)}
+  .pass{color:#1a7f45}.fail{color:#b3261e;font-weight:700}
+  .cols{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .cols>div{flex:1 1 300px}
+  .tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;background:var(--page-2);border:1px solid var(--line)}
+  .cmp{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .cmp div{flex:1 1 150px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--page)}
+  .cmp .bar{height:52px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;letter-spacing:.2px}
+  .cmp .cap{padding:7px 10px;font-size:11.5px;color:var(--ink-2)}
+  .cmp .cap b{display:block;color:var(--ink);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>米记主题重做 v2 · 评审稿</h1>
+  <p class="lede">v1 被否的原因是「不好看」——中性面压得太灰、主色太闷。这一版<b>从竞品反推</b>：
+     钱迹 <code>#048CFC</code> 的鲜亮蓝、木木记账的橙色羽毛、iCost 的白底极简，
+     共同点是<b>「干净底 + 白卡 + 一个敢用的品牌色」</b>，而不是高级灰。</p>
+  <p>三个方向依然是「中性面 + 主色」不同，语义色与图表色三套共用（换主题不该重新学一遍颜色含义）。
+     所有数字现场算：对比度走 WCAG 2.1，可分辨性走色觉缺陷模拟 + OKLab ΔE。</p>
+
+  <div class="cmp" id="cmpRow"></div>
+
+  <div class="stage-row">
+    <div class="panel">
+      <div class="grp">
+        <h4>方向</h4>
+        <div class="seg" id="segScheme">
+          <button data-v="A" aria-pressed="true">A 晴空</button>
+          <button data-v="B" aria-pressed="false">B 暖阳</button>
+          <button data-v="C" aria-pressed="false">C 青竹</button>
+        </div>
+        <div class="swatch-row" id="schemeSwatch"></div>
+        <div class="note" id="schemeDesc"></div>
+      </div>
+      <div class="grp">
+        <h4>模式</h4>
+        <div class="seg" id="segMode">
+          <button data-v="light" aria-pressed="true">浅色</button>
+          <button data-v="dark" aria-pressed="false">深色</button>
+        </div>
+      </div>
+      <div class="grp">
+        <h4>场景</h4>
+        <div class="seg" id="segScene">
+          <button data-v="home" aria-pressed="true">首页</button>
+          <button data-v="ledger" aria-pressed="false">流水</button>
+          <button data-v="stats" aria-pressed="false">统计</button>
+          <button data-v="entry" aria-pressed="false">分类记账</button>
+          <button data-v="controls" aria-pressed="false">控件</button>
+        </div>
+      </div>
+      <div class="grp">
+        <h4>色觉模拟</h4>
+        <div class="seg" id="segCvd">
+          <button data-v="none" aria-pressed="true">正常</button>
+          <button data-v="protan" aria-pressed="false">红色盲</button>
+          <button data-v="deutan" aria-pressed="false">绿色盲</button>
+          <button data-v="tritan" aria-pressed="false">蓝色盲</button>
+          <button data-v="gray" aria-pressed="false">去色</button>
+        </div>
+        <div class="note">去色最狠：颜色全没了，只剩明度还能分出层级。</div>
+      </div>
+    </div>
+
+    <div class="stage-wrap">
+      <div class="stage-head">
+        <b id="stageTitle">首页</b>
+        <span id="stageSub"></span>
+      </div>
+      <div class="phone" id="phone"><div class="screen" id="screen"></div></div>
+    </div>
+  </div>
+
+  <h2>一、v1 到底哪里不好看</h2>
+  <table>
+    <tr><th style="width:150px">问题</th><th style="width:230px">v1 的实际值</th><th>v2 怎么改</th></tr>
+    <tr>
+      <td>中性面是米灰</td>
+      <td><code>#F2EDE6 / #F6F1EB / #FBF6F0</code><br>四级只差 4% 明度</td>
+      <td>改成 <b>灰底 + 纯白卡</b>：背景 <code>#F3F6F9</code>、卡片 <code>#FFFFFF</code>，
+          层级靠「白浮在灰上」+ 阴影。这是 iOS 与三款竞品的共同做法。</td>
+    </tr>
+    <tr>
+      <td>主色发闷</td>
+      <td>彩度只有 <code>0.108–0.140</code></td>
+      <td>提到 <code>0.140–0.172</code>。A 的实心主色 <code>#008EE9</code> 正对钱迹的 <code>#048CFC</code>。</td>
+    </tr>
+    <tr>
+      <td>深色压成近黑</td>
+      <td>背景 <code>#0E0F13</code>，硬</td>
+      <td>背景 <code>#222426</code>、卡片 <code>#303234</code>——深灰蓝，越上层越亮。</td>
+    </tr>
+    <tr>
+      <td>语义色是暗浊色</td>
+      <td><code>#0D5900</code> 墨绿、<code>#584800</code> 橄榄</td>
+      <td>根因：把金额按正文的 4.5:1 卡。金额是<b>超大号粗体</b>，WCAG 只要求 3:1。
+          放宽后拿到 <code>#2B933E</code> / <code>#CA4B51</code> 这类正色；
+          小号文字另配一套深版（<code>*Strong</code>）仍守 4.5。</td>
+    </tr>
+  </table>
+
+  <h2>二、三个方向</h2>
+  <table>
+    <tr><th style="width:110px">方向</th><th style="width:200px">对标的竞品</th><th>性格与代价</th></tr>
+    <tr><td><b>A 晴空</b> Azure</td><td>钱迹 <code>#048CFC</code></td><td id="cmpA"></td></tr>
+    <tr><td><b>B 暖阳</b> Sunny</td><td>木木记账的橙羽</td><td id="cmpB"></td></tr>
+    <tr><td><b>C 青竹</b> Mint</td><td>iCost / 随手记的清新</td><td id="cmpC"></td></tr>
+  </table>
+  <p class="note">三个方向里，主色与语义色的最近距离分别是
+     A 0.029（蓝↔转账青）、B 0.016（橙↔警告琥珀）、C 0.021（青↔收入绿）。
+     这是<b>方案固有代价</b>——5 个语义色几乎占满色环，主色放哪都会挨着某一个，竞品的橙/绿主色同样如此。
+     解法是场景隔离：主色只出现在按钮/导航/图标，语义色只出现在金额/tag，二者从不并置需要判别。</p>
+
+  <h2>三、token 与实时校验</h2>
+  <p>下面每个色块右侧的数字是现场算的对比度：<span class="pass">绿</span> = 达标，<span class="fail">红</span> = 未达标。
+     小号文字按 4.5:1，大号粗体金额按 3:1。</p>
+  <div class="tokens" id="tokens"></div>
+
+  <h2>四、与现有体系的差异</h2>
+  <ul>
+    <li><b>主色拆成三个明确角色</b>：<code>primary</code>（文字/图标，on 表面 ≥4.5）、
+        <code>primarySolid</code>（按钮/FAB 底）、<code>primaryContainer</code>（chip 浅底）。
+        现有体系里 <code>primary #4269D3</code> 与 <code>primaryFill #5E88F6</code> 并存、
+        深色下又反过来，属于两套语义打架。</li>
+    <li><code>onPrimarySolid</code> <b>由 token 给，代码不要写死白/黑</b>：浅色是深字（亮橙按钮配深棕字），
+        深色同。写死白色在 B 方案上会得到 3.4:1。</li>
+    <li><b>新增语义容器层</b> <code>*Container</code>：现有体系没有这一层，
+        tag/chip 只能用 <code>withValues(alpha:.12)</code> 硬凑，全库 360 处，深色下叠在深面上会发灰。</li>
+    <li><b>语义色两套</b>（vivid + strong）：大号金额用 vivid，小号文字用 strong。</li>
+    <li>浅色下 <code>surface</code> 与 <code>raised</code> <b>同色</b>，层级交给阴影与描边——
+        这正是 v1「四级只差 4% 明度看不出层级」的正解。</li>
+  </ul>
+
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="cvd-protan"><feColorMatrix type="matrix"
+    values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0"/></filter>
+  <filter id="cvd-deutan"><feColorMatrix type="matrix"
+    values="0.625 0.375 0 0 0  0.700 0.300 0 0 0  0 0.300 0.700 0 0  0 0 0 1 0"/></filter>
+  <filter id="cvd-tritan"><feColorMatrix type="matrix"
+    values="0.950 0.050 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0"/></filter>
+  <filter id="cvd-gray"><feColorMatrix type="saturate" values="0"/></filter>
+</svg>
+
+<script>
+var TOKENS = {"light":{"A":{"background":"#F3F6F9","surface":"#FFFFFF","raised":"#FFFFFF","sunken":"#EBEDF0","outline":"#848C94","outlineVariant":"#D9DDE1","text":"#15171A","textSecondary":"#585B5E","textTertiary":"#797C7F","primary":"#006AB1","primarySolid":"#008EE9","onPrimarySolid":"#001830","primaryContainer":"#DFEFFF","onPrimaryContainer":"#004D83","secondary":"#5D7791","tertiary":"#438883","income":"#2B933E","incomeStrong":"#00651D","incomeContainer":"#D6F7D7","expense":"#CA4B51","expenseStrong":"#981729","expenseContainer":"#FFE6E5","transfer":"#008692","transferStrong":"#005961","transferContainer":"#C3F8FF","credit":"#9E5BBA","creditStrong":"#712F8C","creditContainer":"#F7E6FF","warning":"#956D00","warningStrong":"#634700","warningContainer":"#FFEAC4","chart":["#D15B5E","#2B8E3B","#A867C3","#008B7A","#AB7E00","#4972CF","#CD632D","#008794"],"netWorth":["#188FF0","#859DFF","#A280EF"],"brand":["#1D252D","#30363E","#282B32"],"danger":["#800E50","#A01445","#921921"],"onNetWorth":"#10152C","onBrand":"#FFFFFF","onDanger":"#FFFFFF"},"B":{"background":"#FBF5EE","surface":"#FFFFFF","raised":"#FFFFFF","sunken":"#F2ECE5","outline":"#988776","outlineVariant":"#E3DBD2","text":"#1B1611","textSecondary":"#605A53","textTertiary":"#817A74","primary":"#9F4C00","primarySolid":"#D36600","onPrimarySolid":"#2B0D00","primaryContainer":"#FFE8DA","onPrimaryContainer":"#763600","secondary":"#8D6C59","tertiary":"#9C697D","income":"#2B933E","incomeStrong":"#00651D","incomeContainer":"#D6F7D7","expense":"#CA4B51","expenseStrong":"#981729","expenseContainer":"#FFE6E5","transfer":"#008692","transferStrong":"#005961","transferContainer":"#C3F8FF","credit":"#9E5BBA","creditStrong":"#712F8C","creditContainer":"#F7E6FF","warning":"#956D00","warningStrong":"#634700","warningContainer":"#FFEAC4","chart":["#D15B5E","#2B8E3B","#A867C3","#008B7A","#AB7E00","#4972CF","#CD632D","#008794"],"netWorth":["#D46B00","#DA9500","#AD9900"],"brand":["#2B221A","#3A342C","#2F2B24"],"danger":["#800E50","#A01445","#921921"],"onNetWorth":"#231400","onBrand":"#FFFFFF","onDanger":"#FFFFFF"},"C":{"background":"#F2F7F6","surface":"#FFFFFF","raised":"#FFFFFF","sunken":"#EAEEED","outline":"#818E8B","outlineVariant":"#D8DEDC","text":"#151817","textSecondary":"#575C5B","textTertiary":"#787D7C","primary":"#00776B","primarySolid":"#009F8E","onPrimarySolid":"#001D18","primaryContainer":"#CAF8EF","onPrimaryContainer":"#00574D","secondary":"#587D76","tertiary":"#728253","income":"#2B933E","incomeStrong":"#00651D","incomeContainer":"#D6F7D7","expense":"#CA4B51","expenseStrong":"#981729","expenseContainer":"#FFE6E5","transfer":"#008692","transferStrong":"#005961","transferContainer":"#C3F8FF","credit":"#9E5BBA","creditStrong":"#712F8C","creditContainer":"#F7E6FF","warning":"#956D00","warningStrong":"#634700","warningContainer":"#FFEAC4","chart":["#D15B5E","#2B8E3B","#A867C3","#008B7A","#AB7E00","#4972CF","#CD632D","#008794"],"netWorth":["#00A294","#00BACA","#00A6DB"],"brand":["#192724","#2C3837","#232E2D"],"danger":["#800E50","#A01445","#921921"],"onNetWorth":"#001C1F","onBrand":"#FFFFFF","onDanger":"#FFFFFF"}},"dark":{"A":{"background":"#222426","sunken":"#181A1C","surface":"#303234","raised":"#3D3F42","outline":"#838A92","outlineVariant":"#494E52","text":"#EBEDEE","textSecondary":"#ACAFB2","textTertiary":"#898C90","primary":"#89C5FF","primarySolid":"#74BCFF","onPrimarySolid":"#001B33","primaryContainer":"#093050","onPrimaryContainer":"#AFD7FF","secondary":"#A6C1DC","tertiary":"#7CD3CD","income":"#75D290","incomeStrong":"#90E4A7","incomeContainer":"#163620","expense":"#FF9D9D","expenseStrong":"#FFBCBA","expenseContainer":"#462222","transfer":"#22D1E7","transferStrong":"#59E4F7","transferContainer":"#00353C","credit":"#DD9FF1","creditStrong":"#EDB6FF","creditContainer":"#392540","warning":"#DBAC45","warningStrong":"#ECC066","warningContainer":"#3B2B07","chart":["#FF9F9E","#72C278","#DEA3F8","#18C7AF","#E7B54E","#82AAFF","#FFA47A","#00C3D4"],"netWorth":["#2396F7","#8EA4FF","#A886F6"],"brand":["#212A33","#353B43","#2C3038"],"danger":["#861756","#A71E4B","#992127"],"onNetWorth":"#10152C","onBrand":"#FFFFFF","onDanger":"#FFFFFF"},"B":{"background":"#28231E","sunken":"#1D1914","surface":"#35312C","raised":"#433E39","outline":"#978674","outlineVariant":"#554B42","text":"#EFECE9","textSecondary":"#B4ADA7","textTertiary":"#928B84","primary":"#FFA771","primarySolid":"#FF9854","onPrimarySolid":"#2E0F00","primaryContainer":"#492104","onPrimaryContainer":"#FFC4A1","secondary":"#D8B6A2","tertiary":"#EDAAC5","income":"#75D290","incomeStrong":"#90E4A7","incomeContainer":"#163620","expense":"#FF9D9D","expenseStrong":"#FFBCBA","expenseContainer":"#462222","transfer":"#22D1E7","transferStrong":"#59E4F7","transferContainer":"#00353C","credit":"#DD9FF1","creditStrong":"#EDB6FF","creditContainer":"#392540","warning":"#DBAC45","warningStrong":"#ECC066","warningContainer":"#3B2B07","chart":["#FF9F9E","#72C278","#DEA3F8","#18C7AF","#E7B54E","#82AAFF","#FFA47A","#00C3D4"],"netWorth":["#DD7000","#E29B00","#B49F00"],"brand":["#30271E","#403931","#343028"],"danger":["#861756","#A71E4B","#992127"],"onNetWorth":"#231400","onBrand":"#FFFFFF","onDanger":"#FFFFFF"},"C":{"background":"#222524","sunken":"#171A19","surface":"#2F3232","raised":"#3C403F","outline":"#808C89","outlineVariant":"#484F4D","text":"#EBEDED","textSecondary":"#ABB0AF","textTertiary":"#888D8C","primary":"#58D8C5","primarySolid":"#00D2BC","onPrimarySolid":"#001F1B","primaryContainer":"#003730","onPrimaryContainer":"#8CE6D7","secondary":"#A2C7C0","tertiary":"#B5CB8E","income":"#75D290","incomeStrong":"#90E4A7","incomeContainer":"#163620","expense":"#FF9D9D","expenseStrong":"#FFBCBA","expenseContainer":"#462222","transfer":"#22D1E7","transferStrong":"#59E4F7","transferContainer":"#00353C","credit":"#DD9FF1","creditStrong":"#EDB6FF","creditContainer":"#392540","warning":"#DBAC45","warningStrong":"#ECC066","warningContainer":"#3B2B07","chart":["#FF9F9E","#72C278","#DEA3F8","#18C7AF","#E7B54E","#82AAFF","#FFA47A","#00C3D4"],"netWorth":["#00A99A","#00C1D2","#0CADE3"],"brand":["#1E2C29","#313D3C","#283332"],"danger":["#861756","#A71E4B","#992127"],"onNetWorth":"#001C1F","onBrand":"#FFFFFF","onDanger":"#FFFFFF"}}};
+
+var SCHEME_META = {
+  A: {name:"晴空 Azure", ref:"钱迹 #048CFC",
+      desc:"鲜亮宝蓝 + 冷白灰底。最像一款正经记账工具：中性面近乎无彩，画面让给分类色与金额。"},
+  B: {name:"暖阳 Sunny", ref:"木木记账的橙羽",
+      desc:"暖橙 + 暖砂底。记账是每天都做的事，暖色最不冷冰冰；代价是主色占了橙区，与警告琥珀要靠明度拉开。"},
+  C: {name:"青竹 Mint", ref:"iCost / 随手记的清新",
+      desc:"青绿 + 中性白灰。绿在理财语境 = 增长，最贴「越记越有钱」；代价是主色与收入绿同区。"}
+};
+var CMP_TEXT = {
+  A: "最稳，也最「像记账工具」。蓝是金融品类里信任度最高的色，深色模式下亮蓝压深底的效果最好。三个方向里最没有风险，也最没有惊喜。",
+  B: "最有人情味。橙色按钮的点击意愿通常最高，暖底也最适合长时间翻流水。代价写在表格里：主色与警告琥珀只差 0.016，需要靠明度分层。",
+  C: "最特别。青绿在理财语境天然带「增长」含义，也避开了满街的蓝。代价是主色与收入绿只差 0.021——但主色从不与金额并置，实际影响最小。"
+};
+
+var state = {scheme:"A", mode:"light", scene:"home", cvd:"none"};
+
+/* ── 颜色工具 ─────────────────────────────────── */
+function hex2rgb(h){
+  h = h.replace('#','');
+  if(h.length===3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function lum(h){
+  var c = hex2rgb(h).map(function(v){ v/=255; return v<=0.03928? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+  return 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2];
+}
+function contrast(a,b){
+  var l1 = lum(a), l2 = lum(b);
+  return (Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+}
+function grad(arr){ return 'linear-gradient(135deg,'+arr[0]+' 0%,'+arr[1]+' 52%,'+arr[2]+' 100%)'; }
+
+/* ── 场景 ─────────────────────────────────────── */
+function bar(){
+  return '<div class="s-bar"><span>9:41</span><span>信号 · 5G · 78%</span></div>';
+}
+
+function sceneHome(t){
+  var s = '';
+  s += bar();
+  s += '<div class="hero"><div class="orb"></div>'
+     + '<div class="lbl">净资产</div>'
+     + '<div class="big">¥ 128,460.00</div>'
+     + '<div class="sub"><div>本月支出<b>¥ 8,240.50</b></div>'
+     + '<div>本月收入<b>¥ 21,000.00</b></div>'
+     + '<div>结余<b>¥ 12,759.50</b></div></div></div>';
+
+  s += '<div style="padding:0 14px 12px">'
+     + '<div class="quick" style="margin:0 0 12px">'
+     + '<div><i style="background:var(--expense);color:#fff">支</i><span>支出</span></div>'
+     + '<div><i style="background:var(--income);color:#fff">收</i><span>收入</span></div>'
+     + '<div><i style="background:var(--transfer);color:#fff">转</i><span>转账</span></div>'
+     + '<div><i style="background:var(--primary-container);color:var(--on-primary-container)">账</i><span>账户</span></div>'
+     + '</div></div>';
+
+  s += '<div class="card"><div class="card-h"><b>本月预算</b><span>剩 12 天</span></div>'
+     + '<div class="between"><span style="font-size:12.5px;color:var(--text-2)">已用 ¥6,180 / ¥10,000</span>'
+     + '<span class="amt" style="color:var(--warning)">62%</span></div>'
+     + '<div class="prog"><i style="width:62%;background:var(--warning)"></i></div>'
+     + '<div class="mini" style="margin-top:8px">日均可用 ¥318 — 比上周省了 ¥42</div></div>';
+
+  s += '<div class="card"><div class="card-h"><b>今日待办</b><span>2 项</span></div>'
+     + '<div class="li"><div class="dot" style="background:var(--warning-container);color:var(--warning-strong)">⏱</div>'
+     + '<div style="flex:1"><div class="tx-name">交电费</div><div class="tx-meta">明天到期 · ¥186.00</div></div>'
+     + '<span class="chip" style="background:var(--warning-container);color:var(--warning-strong)">待办</span></div>'
+     + '<div class="li"><div class="dot" style="background:var(--primary-container);color:var(--on-primary-container)">📦</div>'
+     + '<div style="flex:1"><div class="tx-name">取快递</div><div class="tx-meta">18:00 前</div></div>'
+     + '<span class="chip" style="background:var(--primary-container);color:var(--on-primary-container)">提醒</span></div></div>';
+
+  s += '<div class="card"><div class="card-h"><b>最近记录</b><span>全部</span></div>'
+     + '<div class="li"><div class="dot" style="background:var(--chart-0)">🍜</div>'
+     + '<div style="flex:1"><div class="tx-name">餐饮 · 午餐</div><div class="tx-meta">今天 12:30 · 招商银行</div></div>'
+     + '<span class="amt" style="color:var(--expense)">-38.50</span></div>'
+     + '<div class="li"><div class="dot" style="background:var(--chart-3)">🚇</div>'
+     + '<div style="flex:1"><div class="tx-name">交通 · 地铁</div><div class="tx-meta">今天 08:12 · 支付宝</div></div>'
+     + '<span class="amt" style="color:var(--expense)">-6.00</span></div>'
+     + '<div class="li"><div class="dot" style="background:var(--chart-1)">💰</div>'
+     + '<div style="flex:1"><div class="tx-name">工资</div><div class="tx-meta">昨天 10:00 · 工资卡</div></div>'
+     + '<span class="amt" style="color:var(--income)">+21,000.00</span></div></div>';
+
+  s += '<div class="fab">＋</div>';
+  return s;
+}
+
+function sceneLedger(t){
+  var s = bar() + '<div class="s-title">流水</div>';
+  s += '<div class="card tight"><div style="display:flex;gap:8px;text-align:center">'
+     + '<div style="flex:1"><div class="mini">支出</div><div class="amt" style="color:var(--expense);font-size:16px">8,240.50</div></div>'
+     + '<div style="flex:1"><div class="mini">收入</div><div class="amt" style="color:var(--income);font-size:16px">21,000.00</div></div>'
+     + '<div style="flex:1"><div class="mini">结余</div><div class="amt" style="font-size:16px">12,759.50</div></div>'
+     + '</div></div>';
+
+  s += '<div class="day-head"><span>10 月 15 日 · 周三</span><b>支出 ¥44.50</b></div>';
+  s += '<div class="card flush" style="border-radius:16px;margin:0 14px 12px;border:1px solid var(--hairline)">'
+     + '<div class="li"><div class="dot" style="background:var(--chart-0)">🍜</div>'
+     + '<div style="flex:1"><div class="tx-name">餐饮 · 午餐</div><div class="tx-meta">12:30 · 招商银行</div></div>'
+     + '<span class="amt" style="color:var(--expense)">-38.50</span></div>'
+     + '<div class="li"><div class="dot" style="background:var(--chart-3)">🚇</div>'
+     + '<div style="flex:1"><div class="tx-name">交通 · 地铁</div><div class="tx-meta">08:12 · 支付宝</div></div>'
+     + '<span class="amt" style="color:var(--expense)">-6.00</span></div></div>';
+
+  s += '<div class="day-head"><span>10 月 14 日 · 周二</span><b>收入 ¥21,000</b></div>';
+  s += '<div class="card flush" style="border-radius:16px;margin:0 14px 12px;border:1px solid var(--hairline)">'
+     + '<div class="li"><div class="dot" style="background:var(--chart-1)">💰</div>'
+     + '<div style="flex:1"><div class="tx-name">工资</div><div class="tx-meta">10:00 · 工资卡</div></div>'
+     + '<span class="amt" style="color:var(--income)">+21,000.00</span></div>'
+     + '<div class="li"><div class="dot" style="background:var(--chart-4)">🛒</div>'
+     + '<div style="flex:1"><div class="tx-name">日用 · 超市</div><div class="tx-meta">19:20 · 微信</div></div>'
+     + '<span class="amt" style="color:var(--expense)">-216.80</span></div>'
+     + '<div class="li"><div class="dot" style="background:var(--credit-container);color:var(--credit-strong)">💳</div>'
+     + '<div style="flex:1"><div class="tx-name">信用卡还款</div><div class="tx-meta">09:00 · 招行信用卡</div></div>'
+     + '<span class="amt" style="color:var(--credit)">-1,240.00</span></div></div>';
+  return s;
+}
+
+function sceneStats(t){
+  var s = bar() + '<div class="s-title">统计</div>';
+  var stops = t.chart.map(function(c,i){
+    return c+' '+(i/t.chart.length*100)+'%,'+c+' '+((i+1)/t.chart.length*100)+'%';
+  }).join(',');
+  s += '<div class="seg-ctl" style="margin:0 14px 12px">'
+     + '<div class="on">支出</div><div>收入</div><div>结余</div></div>';
+  s += '<div class="card"><div class="card-h"><b>10 月支出构成</b><span>¥8,240.50</span></div>'
+     + '<div class="donut">'
+     + '<div style="width:104px;height:104px;border-radius:50%;background:conic-gradient('+stops+');'
+     + 'box-shadow:inset 0 0 0 0 transparent;position:relative">'
+     + '<div style="position:absolute;inset:22px;border-radius:50%;background:var(--surface)"></div></div>'
+     + '<div class="legend">'
+     + '<div class="lg"><i style="background:var(--chart-0)"></i>餐饮<span class="v">3,120.00</span></div>'
+     + '<div class="lg"><i style="background:var(--chart-1)"></i>交通<span class="v">1,480.00</span></div>'
+     + '<div class="lg"><i style="background:var(--chart-2)"></i>购物<span class="v">1,240.00</span></div>'
+     + '<div class="lg"><i style="background:var(--chart-3)"></i>居住<span class="v">980.00</span></div>'
+     + '<div class="lg"><i style="background:var(--chart-4)"></i>娱乐<span class="v">1,420.50</span></div>'
+     + '</div></div></div>';
+
+  var h = [52,38,66,44,72,58];
+  s += '<div class="card"><div class="card-h"><b>近 6 个月趋势</b><span>支出</span></div>'
+     + '<div class="bars">';
+  for(var i=0;i<6;i++){
+    s += '<div style="height:'+h[i]+'%;background:var(--chart-'+i+')"></div>';
+  }
+  s += '</div><div style="display:flex;gap:7px;margin-top:6px">';
+  ['5月','6月','7月','8月','9月','10月'].forEach(function(m){
+    s += '<div style="flex:1;text-align:center" class="mini">'+m+'</div>';
+  });
+  s += '</div></div>';
+
+  s += '<div class="alert" style="margin:0 14px;background:var(--warning-container);color:var(--warning-strong)">'
+     + '<span>⚠</span><div>餐饮占比 38%，比上月高了 6 个百分点。<b>本月已超分类预算 ¥320。</b></div></div>';
+  return s;
+}
+
+function sceneEntry(t){
+  var s = bar();
+  s += '<div style="display:flex;align-items:center;gap:6px;padding:4px 12px 8px">'
+     + '<span style="font-size:16px;color:var(--text)">←</span>'
+     + '<b style="font-size:14px;color:var(--text)">分类记账</b>'
+     + '<div class="seg-ctl" style="flex:1;margin-left:8px"><div class="on">支出</div><div>收入</div></div>'
+     + '<span class="chip" style="background:var(--sunken);color:var(--text-2)">管理</span></div>';
+
+  var cats = [['chart-0','餐饮','早餐/午餐/外卖'],['chart-3','交通','地铁/公交/打车'],
+              ['chart-2','购物','日用/服饰'],['chart-1','居家','房租/水电'],
+              ['chart-4','娱乐','电影/游戏']];
+  s += '<div style="padding:0 14px 100px">';
+  cats.forEach(function(c,i){
+    s += '<div class="card tight" style="margin-bottom:8px">'
+       + '<div class="row"><div class="dot" style="background:var(--'+c[0]+')">'+'◆'+'</div>'
+       + '<div style="flex:1"><div class="tx-name">'+c[1]+'</div>'
+       + '<div class="tx-meta">'+c[2]+'</div></div></div>'
+       + '<div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap">';
+    var subs = ['子项 A','子项 B','子项 C'];
+    subs.forEach(function(x,j){
+      var on = (i===0 && j===0);
+      s += '<span class="chip" style="background:'+(on?'var(--primary-container)':'var(--sunken)')+';'
+         + 'color:'+(on?'var(--on-primary-container)':'var(--text-2)')+'">'+x+'</span>';
+    });
+    s += '</div></div>';
+  });
+  s += '</div>';
+
+  s += '<div class="dock">'
+     + '<div class="between" style="padding:2px 0 8px">'
+     + '<span style="font-size:26px;font-weight:800;color:var(--text);letter-spacing:-.5px">38.50</span>'
+     + '<span class="chip" style="background:var(--primary-container);color:var(--on-primary-container)">餐饮 · 午餐 ✕</span></div>'
+     + '<div style="display:flex;gap:6px;margin-bottom:8px">'
+     + '<span class="chip" style="background:var(--sunken);color:var(--text-2)">备注</span>'
+     + '<span class="chip" style="background:var(--sunken);color:var(--text-2)">招商银行</span>'
+     + '<span class="chip" style="background:var(--sunken);color:var(--text-2)">今天 12:30</span>'
+     + '<span class="chip" style="background:var(--sunken);color:var(--text-2)">更多 ⚙</span></div>'
+     + '<div class="keypad">';
+  ['7','8','9','÷','4','5','6','×','1','2','3','⌫','0','.','+','保存'].forEach(function(k,i){
+    var hi = (i===15);
+    s += '<div class="'+(hi?'hi':'')+'">'+k+'</div>';
+  });
+  s += '</div></div>';
+  return s;
+}
+
+function sceneControls(t){
+  var s = bar() + '<div class="s-title">控件</div>';
+  s += '<div class="card"><div class="card-h"><b>按钮</b></div>'
+     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+     + '<span class="btn primary" style="flex:1">保存</span>'
+     + '<span class="btn outline" style="flex:1">取消</span>'
+     + '<span class="btn ghost" style="flex:1">更多</span></div>'
+     + '<div class="mini" style="margin-top:10px">实心按钮用 <code>primarySolid</code>'
+     + '配 <code>onPrimarySolid</code>（深字）；B 方案下写死白字只有 3.4:1。</div></div>';
+
+  s += '<div class="card"><div class="card-h"><b>输入与选择</b></div>'
+     + '<div class="field">金额</div>'
+     + '<div class="seg-ctl" style="margin-top:10px"><div class="on">支出</div><div>收入</div><div>转账</div></div>'
+     + '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">'
+     + '<span class="chip" style="background:var(--income-container);color:var(--income-strong)">收入</span>'
+     + '<span class="chip" style="background:var(--expense-container);color:var(--expense-strong)">支出</span>'
+     + '<span class="chip" style="background:var(--transfer-container);color:var(--transfer-strong)">转账</span>'
+     + '<span class="chip" style="background:var(--credit-container);color:var(--credit-strong)">信用</span>'
+     + '<span class="chip" style="background:var(--warning-container);color:var(--warning-strong)">警告</span>'
+     + '</div><div class="mini" style="margin-top:10px">语义容器层是 v2 新增的：'
+     + '现有体系没有这一层，chip 只能用带透明度的语义色硬凑（全库 360 处），深色下会发灰。</div></div>';
+
+  s += '<div class="card"><div class="card-h"><b>进度与警示</b></div>'
+     + '<div class="between"><span style="font-size:12.5px;color:var(--text-2)">预算已用 62%</span></div>'
+     + '<div class="prog"><i style="width:62%;background:var(--warning)"></i></div>'
+     + '<div class="prog" style="margin-top:10px"><i style="width:88%;background:var(--expense)"></i></div>'
+     + '<div class="alert" style="margin-top:12px;background:var(--expense-container);color:var(--expense-strong)">'
+     + '<span>✕</span><div>本月已超支 ¥320，信用卡额度剩 ¥1,760。</div></div>'
+     + '<div class="alert" style="margin-top:8px;background:var(--income-container);color:var(--income-strong)">'
+     + '<span>✓</span><div>本月结余 ¥12,759.50，比上月多 ¥2,100。</div></div></div>';
+
+  s += '<div class="card"><div class="card-h"><b>Hero 三张卡</b></div>'
+     + '<div class="hero" style="margin:0 0 10px"><div class="orb"></div>'
+     + '<div class="lbl">净资产</div><div class="big" style="font-size:24px">¥ 128,460.00</div></div>'
+     + '<div style="border-radius:16px;padding:14px 16px;margin-bottom:10px;background:'+grad(t.brand)+';color:'+t.onBrand+'">'
+     + '<div class="lbl" style="opacity:.85">品牌卡 / 石墨</div>'
+     + '<div style="font-size:20px;font-weight:800;margin-top:3px">年度账单已生成</div></div>'
+     + '<div style="border-radius:16px;padding:14px 16px;background:'+grad(t.danger)+';color:'+t.onDanger+'">'
+     + '<div class="lbl" style="opacity:.9">超支</div>'
+     + '<div style="font-size:20px;font-weight:800;margin-top:3px">已超 ¥320</div></div>'
+     + '<div class="mini" style="margin-top:10px">三张卡按用途定死：净资产 = 主色渐变配深字、'
+     + '品牌 = 石墨配白字、超支 = 深红配白字。不让求解器自由排列——v1 里它为了拉大 ΔE '
+     + '把净资产推成了紫色、品牌推成了墨绿。</div></div>';
+  return s;
+}
+
+var SCENES = {home:sceneHome, ledger:sceneLedger, stats:sceneStats,
+              entry:sceneEntry, controls:sceneControls};
+
+/* ── token 面板 ───────────────────────────────── */
+function line(label, hex, bg, min){
+  var r = contrast(hex, bg);
+  return '<div class="tline"><i style="background:'+hex+'"></i>'
+    + '<code>'+hex+'</code><span style="color:var(--ink-2)">'+label+'</span>'
+    + '<span class="r '+(r>=min?'pass':'fail')+'">'+r.toFixed(2)+'</span></div>';
+}
+
+function renderTokens(t){
+  var surf = t.surface, html = '';
+  html += '<div class="tbox"><h5>中性面</h5>'
+    + line('background', t.background, t.background, 1)
+    + line('surface 白卡', t.surface, t.background, 1)
+    + line('sunken 凹槽', t.sunken, t.surface, 1)
+    + line('outline 描边', t.outline, t.surface, 3)
+    + '</div>';
+
+  html += '<div class="tbox"><h5>文字（小号 ≥4.5）</h5>'
+    + line('text', t.text, surf, 4.5)
+    + line('textSecondary', t.textSecondary, surf, 4.5)
+    + line('textSecondary / 凹槽', t.textSecondary, t.sunken, 4.5)
+    + '</div>';
+
+  html += '<div class="tbox"><h5>主色</h5>'
+    + line('primary / 表面', t.primary, surf, 4.5)
+    + line('primarySolid 底', t.primarySolid, t.primarySolid, 1)
+    + line('onPrimarySolid 字', t.onPrimarySolid, t.primarySolid, 4.5)
+    + line('onPrimaryContainer', t.onPrimaryContainer, t.primaryContainer, 4.5)
+    + '</div>';
+
+  var sem = [['income','收入'],['expense','支出'],['transfer','转账'],
+             ['credit','信用'],['warning','警告']];
+  html += '<div class="tbox"><h5>语义色 · 大号金额（≥3）</h5>';
+  sem.forEach(function(x){
+    html += line(x[1], t[x[0]], surf, 3);
+  });
+  html += '</div>';
+
+  html += '<div class="tbox"><h5>语义色 · 小号文字（≥4.5）</h5>';
+  sem.forEach(function(x){
+    html += line(x[1]+'Strong', t[x[0]+'Strong'], surf, 4.5);
+  });
+  html += '</div>';
+
+  html += '<div class="tbox"><h5>语义容器（小字 ≥4.5）</h5>';
+  sem.forEach(function(x){
+    html += line(x[1]+' 容器', t[x[0]+'Strong'], t[x[0]+'Container'], 4.5);
+  });
+  html += '</div>';
+
+  html += '<div class="tbox"><h5>图表 8 色（≥3）</h5>';
+  t.chart.forEach(function(c,i){
+    html += line('chart '+i, c, surf, 3);
+  });
+  html += '</div>';
+
+  // Hero 三张卡的文字色是按对比度自动选的（亮卡深字 / 深卡白字），
+  // 所以这里要拿对应的 on* 来算，不能一律用白字。
+  function heroLine(label, hex, on){
+    var r = contrast(on, hex);
+    return '<div class="tline"><i style="background:'+hex+'"></i>'
+      + '<code>'+hex+'</code><span style="color:var(--ink-2)">'+label+'</span>'
+      + '<span class="r '+(r>=4.5?'pass':'fail')+'">'+r.toFixed(2)+'</span></div>';
+  }
+  html += '<div class="tbox"><h5>Hero 渐变（卡片字 ≥4.5）</h5>';
+  [['netWorth','净资产'],['brand','品牌'],['danger','超支']].forEach(function(g){
+    var on = t['on'+g[0].charAt(0).toUpperCase()+g[0].slice(1)];
+    t[g[0]].forEach(function(c,i){
+      html += heroLine(g[1]+' '+(i+1)+' · '+(on==='#FFFFFF'?'白字':'深字'), c, on);
+    });
+  });
+  html += '</div>';
+  return html;
+}
+
+/* ── 渲染 ─────────────────────────────────────── */
+function render(){
+  var t = TOKENS[state.mode][state.scheme];
+  var el = document.getElementById("screen");
+  var phone = document.getElementById("phone");
+
+  phone.style.setProperty('--stage-bg', t.background);
+  var v = {
+    '--background':t.background, '--surface':t.surface, '--sunken':t.sunken,
+    '--raised':t.raised, '--text':t.text, '--text-2':t.textSecondary,
+    '--text-3':t.textTertiary, '--outline':t.outline,
+    '--outline-variant':t.outlineVariant,
+    '--hairline':t.outlineVariant,
+    '--primary':t.primary, '--primary-solid':t.primarySolid,
+    '--on-primary-solid':t.onPrimarySolid,
+    '--primary-container':t.primaryContainer,
+    '--on-primary-container':t.onPrimaryContainer,
+    '--hero-nw':grad(t.netWorth), '--on-nw':t.onNetWorth,
+  };
+  ['income','expense','transfer','credit','warning'].forEach(function(k){
+    v['--'+k] = t[k];
+    v['--'+k+'-strong'] = t[k+'Strong'];
+    v['--'+k+'-container'] = t[k+'Container'];
+  });
+  t.chart.forEach(function(c,i){ v['--chart-'+i] = c; });
+  v['--card-shadow'] = state.mode === 'dark'
+    ? '0 1px 0 rgba(255,255,255,.04)' : '0 1px 2px rgba(16,24,40,.05),0 6px 16px rgba(16,24,40,.05)';
+  v['--dock-shadow'] = state.mode === 'dark' ? 'rgba(0,0,0,.5)' : 'rgba(16,24,40,.08)';
+  v['--fab-shadow'] = state.mode === 'dark' ? 'rgba(0,0,0,.55)' : 'rgba(16,24,40,.22)';
+  v['--hero-shadow'] = state.mode === 'dark' ? 'rgba(0,0,0,.45)' : 'rgba(16,24,40,.18)';
+  for(var k in v){ phone.style.setProperty(k, v[k]); }
+
+  el.innerHTML = SCENES[state.scene](t);
+  phone.style.filter = state.cvd === 'none' ? '' : 'url(#cvd-'+state.cvd+')';
+
+  document.getElementById("stageTitle").textContent =
+    ({home:'首页',ledger:'流水',stats:'统计',entry:'分类记账',controls:'控件'})[state.scene];
+  document.getElementById("stageSub").textContent =
+    SCHEME_META[state.scheme].name + ' · ' + (state.mode === 'light' ? '浅色' : '深色');
+
+  var sw = ['background','surface','primary','primarySolid','income','expense','warning'];
+  document.getElementById("schemeSwatch").innerHTML = sw.map(function(k){
+    return '<i style="background:'+t[k]+'"></i>';
+  }).join('');
+  document.getElementById("schemeDesc").textContent = SCHEME_META[state.scheme].desc;
+  document.getElementById("tokens").innerHTML = renderTokens(t);
+}
+
+function bindSeg(id, key){
+  var box = document.getElementById(id);
+  var btns = box.getElementsByTagName("button");
+  for(var i=0;i<btns.length;i++){
+    (function(b){
+      b.addEventListener("click", function(){
+        for(var j=0;j<btns.length;j++) btns[j].setAttribute("aria-pressed","false");
+        b.setAttribute("aria-pressed","true");
+        state[key] = b.getAttribute("data-v");
+        render();
+      });
+    })(btns[i]);
+  }
+}
+
+function renderCmp(){
+  var html = '';
+  ['A','B','C'].forEach(function(k){
+    var t = TOKENS.light[k];
+    html += '<div><div class="bar" style="background:'+grad(t.netWorth)+';color:'+t.onNetWorth+'">'
+      + SCHEME_META[k].name + '</div>'
+      + '<div class="cap"><b>' + SCHEME_META[k].ref + '</b>'
+      + '主色 ' + t.primarySolid + ' · 底色 ' + t.background + '</div></div>';
+  });
+  html += '<div><div class="bar" style="background:#048CFC">钱迹</div>'
+    + '<div class="cap"><b>参照系</b>#048CFC · 深色主题，600 万用户</div></div>';
+  html += '<div><div class="bar" style="background:#F97316">木木记账</div>'
+    + '<div class="cap"><b>参照系</b>橙色羽毛 · 小清新，无广告</div></div>';
+  html += '<div><div class="bar" style="background:linear-gradient(135deg,#FFFFFF,#E8EDF3);color:#15181C">iCost</div>'
+    + '<div class="cap"><b>参照系</b>白底极简 · 分类色才是主角</div></div>';
+  document.getElementById("cmpRow").innerHTML = html;
+  ['A','B','C'].forEach(function(k){
+    document.getElementById("cmp"+k).textContent = CMP_TEXT[k];
+  });
+}
+
+renderCmp();
+bindSeg("segScheme","scheme");
+bindSeg("segMode","mode");
+bindSeg("segScene","scene");
+bindSeg("segCvd","cvd");
+render();
+</script>
+</body>
+</html>

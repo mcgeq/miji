@@ -11,7 +11,6 @@ import 'package:miji/core/auth/domain/auth_repository.dart';
 import 'package:miji/core/auth/providers/auth_providers.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/app_toast.dart';
-import 'package:miji/core/theme/app_theme_extension.dart';
 
 enum AuthEntryMode { login, register }
 
@@ -65,7 +64,6 @@ class _AuthEntryPageState extends ConsumerState<AuthEntryPage>
     );
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final semanticColors = theme.extension<AppSemanticColors>();
 
     return Scaffold(
       body: SafeArea(
@@ -149,9 +147,7 @@ class _AuthEntryPageState extends ConsumerState<AuthEntryPage>
                             children: [
                               Expanded(
                                 child: _BrandIntro(
-                                  focusColor:
-                                      semanticColors?.focus ??
-                                      colorScheme.tertiary,
+                                  focusColor: colorScheme.tertiary,
                                 ),
                               ),
                               const SizedBox(width: 48),

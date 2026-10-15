@@ -3528,12 +3528,18 @@ class _PendingConfirmBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(theme.radiusTokens.md),
-        border: Border.all(color: moneyColors.warning.withValues(alpha: 0.35)),
-        color: moneyColors.warning.withValues(alpha: 0.1),
+        // 淡底 + 小字都走语义容器/深版：原来用 `warning.withValues(alpha:.1)`，
+        // 深色下叠在深面上会发灰，而且实得明度取决于压在什么上面。
+        border: Border.all(color: moneyColors.warningContainer),
+        color: moneyColors.warningContainer,
       ),
       child: Row(
         children: [
-          Icon(Icons.schedule_rounded, size: 18, color: moneyColors.warning),
+          Icon(
+            Icons.schedule_rounded,
+            size: 18,
+            color: moneyColors.warningStrong,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -4189,7 +4195,8 @@ class _DayGroupHeader extends StatelessWidget {
                     MoneyPrivacy.of(context),
                   ),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.moneyColors.expense,
+                    // 12px 的小字，走语义色的深版（vivid 只给大号金额）。
+                    color: theme.moneyColors.expenseStrong,
                     letterSpacing: 0,
                   ),
                 ),

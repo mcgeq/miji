@@ -204,7 +204,7 @@ class HomeNetAssetTile extends StatelessWidget {
               value: ratio,
               minHeight: 7,
               color: income,
-              backgroundColor: income.withValues(alpha: 0.14),
+              backgroundColor: theme.moneyColors.incomeContainer,
             ),
           ),
           const SizedBox(height: 7),

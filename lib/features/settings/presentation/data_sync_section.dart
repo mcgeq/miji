@@ -1623,6 +1623,12 @@ class _DataSyncHintPanel extends StatelessWidget {
                       onPressed: onAction,
                       icon: const Icon(Icons.arrow_forward_rounded),
                       label: Text(actionLabel!),
+                      // 实心按钮的组件主题会把 tonal 也染成 primarySolid，
+                      // 这里显式要回「浅底 + 深字」的 tonal 外观（A 的主色容器）。
+                      style: FilledButton.styleFrom(
+                        backgroundColor: colorScheme.primaryContainer,
+                        foregroundColor: colorScheme.onPrimaryContainer,
+                      ),
                     ),
                   ),
                 ],

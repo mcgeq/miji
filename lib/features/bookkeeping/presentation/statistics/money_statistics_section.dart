@@ -2143,7 +2143,8 @@ class _StatisticsVerdictCard extends StatelessWidget {
               StatisticsTone.neutral => Icons.insights_rounded,
             },
             size: 18,
-            color: Colors.white.withValues(alpha: 0.92),
+            // A 的净资产卡是亮蓝渐变，白字只有 2~3:1；卡上正文色必须由 token 给。
+            color: gradient.onColor.withValues(alpha: 0.92),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -2151,7 +2152,7 @@ class _StatisticsVerdictCard extends StatelessWidget {
               verdict.text,
               maxLines: 3,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.white,
+                color: gradient.onColor,
                 fontWeight: FontWeight.w700,
                 height: 1.45,
                 letterSpacing: 0,

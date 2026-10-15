@@ -13,14 +13,51 @@ class AppMoneyColors extends ThemeExtension<AppMoneyColors> {
     required this.credit,
     required this.warning,
     required this.success,
+    required this.incomeStrong,
+    required this.expenseStrong,
+    required this.transferStrong,
+    required this.creditStrong,
+    required this.warningStrong,
+    required this.incomeContainer,
+    required this.expenseContainer,
+    required this.transferContainer,
+    required this.creditContainer,
+    required this.warningContainer,
   });
 
+  /// 金额色（vivid）。金额是**超大号粗体**，WCAG 只要求 3:1，所以这里放的是正色。
   final Color income;
   final Color expense;
   final Color transfer;
   final Color credit;
   final Color warning;
+
+  /// 与 [income] 同值。留着是因为「成功」在记账语境里读起来是另一件事
+  /// （同步成功、收款成功），调用方不该为了语义去写 income。
+  ///
+  /// 它**不配**独立的 Strong / Container——需要时直接用 income 那套。
   final Color success;
+
+  /// 语义色的**小号文字版**。同一个色相压到 4.5:1 以上，
+  /// 用于 12px 及以下、或压在 [incomeContainer] 这类淡底上的文字。
+  ///
+  /// 为什么要两套：把 vivid 压到 4.5 就会变成旧体系那种 `#0D5900` 墨绿，
+  /// 而金额本来就只要求 3:1 —— 一个颜色兼顾不了「超大号金额」和「10px 角标」两端。
+  final Color incomeStrong;
+  final Color expenseStrong;
+  final Color transferStrong;
+  final Color creditStrong;
+  final Color warningStrong;
+
+  /// 语义色的**淡底版**。
+  ///
+  /// 替代 `color.withValues(alpha: .12)` 那种硬凑写法：alpha 叠在深色面上会发灰，
+  /// 而且底色的实际明度取决于它压在什么上面。容器色是实色，两个模式各自定档。
+  final Color incomeContainer;
+  final Color expenseContainer;
+  final Color transferContainer;
+  final Color creditContainer;
+  final Color warningContainer;
 
   @override
   AppMoneyColors copyWith({
@@ -30,6 +67,16 @@ class AppMoneyColors extends ThemeExtension<AppMoneyColors> {
     Color? credit,
     Color? warning,
     Color? success,
+    Color? incomeStrong,
+    Color? expenseStrong,
+    Color? transferStrong,
+    Color? creditStrong,
+    Color? warningStrong,
+    Color? incomeContainer,
+    Color? expenseContainer,
+    Color? transferContainer,
+    Color? creditContainer,
+    Color? warningContainer,
   }) {
     return AppMoneyColors(
       income: income ?? this.income,
@@ -38,6 +85,16 @@ class AppMoneyColors extends ThemeExtension<AppMoneyColors> {
       credit: credit ?? this.credit,
       warning: warning ?? this.warning,
       success: success ?? this.success,
+      incomeStrong: incomeStrong ?? this.incomeStrong,
+      expenseStrong: expenseStrong ?? this.expenseStrong,
+      transferStrong: transferStrong ?? this.transferStrong,
+      creditStrong: creditStrong ?? this.creditStrong,
+      warningStrong: warningStrong ?? this.warningStrong,
+      incomeContainer: incomeContainer ?? this.incomeContainer,
+      expenseContainer: expenseContainer ?? this.expenseContainer,
+      transferContainer: transferContainer ?? this.transferContainer,
+      creditContainer: creditContainer ?? this.creditContainer,
+      warningContainer: warningContainer ?? this.warningContainer,
     );
   }
 
@@ -51,6 +108,31 @@ class AppMoneyColors extends ThemeExtension<AppMoneyColors> {
       credit: Color.lerp(credit, other.credit, t) ?? credit,
       warning: Color.lerp(warning, other.warning, t) ?? warning,
       success: Color.lerp(success, other.success, t) ?? success,
+      incomeStrong:
+          Color.lerp(incomeStrong, other.incomeStrong, t) ?? incomeStrong,
+      expenseStrong:
+          Color.lerp(expenseStrong, other.expenseStrong, t) ?? expenseStrong,
+      transferStrong:
+          Color.lerp(transferStrong, other.transferStrong, t) ?? transferStrong,
+      creditStrong:
+          Color.lerp(creditStrong, other.creditStrong, t) ?? creditStrong,
+      warningStrong:
+          Color.lerp(warningStrong, other.warningStrong, t) ?? warningStrong,
+      incomeContainer:
+          Color.lerp(incomeContainer, other.incomeContainer, t) ??
+          incomeContainer,
+      expenseContainer:
+          Color.lerp(expenseContainer, other.expenseContainer, t) ??
+          expenseContainer,
+      transferContainer:
+          Color.lerp(transferContainer, other.transferContainer, t) ??
+          transferContainer,
+      creditContainer:
+          Color.lerp(creditContainer, other.creditContainer, t) ??
+          creditContainer,
+      warningContainer:
+          Color.lerp(warningContainer, other.warningContainer, t) ??
+          warningContainer,
     );
   }
 }
@@ -61,14 +143,28 @@ class AppMoneyColors extends ThemeExtension<AppMoneyColors> {
 /// 三档才能控制中间那一段的走向。
 @immutable
 class AppHeroGradient {
-  const AppHeroGradient({required this.colors, this.shadowColor});
+  const AppHeroGradient({
+    required this.colors,
+    this.onColor = const Color(0xFFFFFFFF),
+    this.shadowColor,
+  });
 
   final List<Color> colors;
+
+  /// 卡上正文色。**必须由 token 给，代码里不要写死 `Colors.white`**：
+  /// 亮卡（净资产）配白字只有 2.2~3.3:1，得配深字；深卡（品牌/超支）才配白字。
+  /// 三张卡各自的 [onColor] 都已在每个停靠点上验到 ≥4.5:1。
+  final Color onColor;
 
   /// 投影色；为空时用第一档颜色。
   final Color? shadowColor;
 
   Color get shadow => shadowColor ?? colors.first;
+
+  /// 卡上次级文字（标签、辅助金额）在 [onColor] 上降级用的不透明度。
+  ///
+  /// 0.78 是求解出来的上限：再淡一档，在最亮的那张贴靠点上就掉到 4.5:1 以下了。
+  static const secondaryOpacity = 0.78;
 
   LinearGradient get linear => LinearGradient(
     begin: Alignment.topLeft,
@@ -85,6 +181,7 @@ class AppHeroGradient {
         for (var i = 0; i < colors.length; i++)
           Color.lerp(colors[i], other.colors[i], t) ?? colors[i],
       ],
+      onColor: Color.lerp(onColor, other.onColor, t) ?? onColor,
       shadowColor: Color.lerp(shadow, other.shadow, t) ?? shadow,
     );
   }
@@ -142,15 +239,19 @@ class AppHeroGradients extends ThemeExtension<AppHeroGradients> {
   ///
   /// 原来是散在三个文件里的硬编码 `#FFD9A0`：它在净资产渐变右端只有 3.44:1，
   /// 不满足 4.5:1。现在提成 token，并由求解器保证在每个渐变端点上 ≥4.5:1。
+  ///
+  /// 只用在**深卡**（品牌 / 超支）上：它是暖色，而 A 的中性面是冷色，
+  /// 同框会冲突；但深卡内部没有冷底，暖色反而正是「告警」该有的语气。
+  /// 净资产卡是亮卡，那边的次级数字走 `gradient.onColor` + 降不透明度，不用它。
   final Color amber;
 
-  /// 资产 / 净资产：全局唯一的紫→青冷色渐变（色相跨度 90°+）。
+  /// 资产 / 净资产：亮蓝 → 淡紫的冷色渐变。**配深字（`onColor`）**。
   final AppHeroGradient netWorth;
 
-  /// 品牌：珊瑚 → 品红，用于首页 Hero、预算卡。
+  /// 品牌：石墨灰。用于首页 Hero、预算卡，配白字。
   final AppHeroGradient brand;
 
-  /// 告警：超支、失败。
+  /// 告警：超支、失败。深红，配白字。
   final AppHeroGradient danger;
 
   @override
@@ -362,50 +463,65 @@ extension AppThemeTokenLookup on ThemeData {
 class AppThemeFallbacks {
   const AppThemeFallbacks._();
 
-  /// 浅色语义色（D2 暖纸 · 靛蓝）。
+  /// 浅色语义色（A 晴空）。
   ///
-  /// 与旧值的区别不只是色相：这五个颜色是在**色觉缺陷模拟空间**里求解出来的 ——
-  /// 只把五色调到等明度时，绿色盲下「支出↔收入」的 OKLab ΔE 只有 0.015（几乎同色）；
-  /// 这里用明度梯度做冗余编码，红/绿/蓝三种色盲下最差 ΔE 也 ≥0.06，
-  /// 同时每个色在 surface / sunken 上都 ≥4.5:1。
+  /// 与上一版「暖纸 · 靛蓝」的区别不只是色相：旧值是把五色按正文的 **4.5:1** 卡出来的，
+  /// 结果只能退成 `#0D5900` 墨绿、`#473D00` 橄榄这类暗浊色，一屏金额看上去像蒙了灰。
+  /// 现在金额走 3:1 档（vivid），小号文字走 4.5:1 档（`*Strong`），淡底走实色的
+  /// `*Container` —— 三个角色各自达标，不再互相迁就。
   static const moneyColors = AppMoneyColors(
-    income: Color(0xFF006E30),
-    expense: Color(0xFFA7463C),
-    transfer: Color(0xFF004557),
-    credit: Color(0xFF7B428C),
-    warning: Color(0xFF473D00),
-    success: Color(0xFF006E30),
+    income: Color(0xFF2B933E),
+    expense: Color(0xFFCA4B51),
+    transfer: Color(0xFF008692),
+    credit: Color(0xFF9E5BBA),
+    warning: Color(0xFF956D00),
+    success: Color(0xFF2B933E),
+    incomeStrong: Color(0xFF00651D),
+    expenseStrong: Color(0xFF981729),
+    transferStrong: Color(0xFF005961),
+    creditStrong: Color(0xFF712F8C),
+    warningStrong: Color(0xFF634700),
+    incomeContainer: Color(0xFFD6F7D7),
+    expenseContainer: Color(0xFFFFE6E5),
+    transferContainer: Color(0xFFC3F8FF),
+    creditContainer: Color(0xFFF7E6FF),
+    warningContainer: Color(0xFFFFEAC4),
   );
 
   static const heroGradients = AppHeroGradients(
+    // 净资产：亮蓝 → 淡紫，配**深字**。旧版是「紫→青」配白字，亮起来就压不住白字，
+    // 只能把渐变停在中间明度（0.48~0.58），两头都够不着，页面上像一条脏色带；
+    // 改成亮渐变 + 深字之后，「越有钱越亮」这个语义才真的做出来。
     netWorth: AppHeroGradient(
-      colors: [Color(0xFF6A55C6), Color(0xFF006EA0), Color(0xFF007370)],
+      colors: [Color(0xFF188FF0), Color(0xFF859DFF), Color(0xFFA280EF)],
+      onColor: AppThemeTokens.lightOnNetWorth,
     ),
-    // 品牌卡（首页 Hero / 预算卡）：暖赭金。
-    // 不用冷渐变的原因：纸底是暖色（色相 35°），冷渐变与它近互补（色相差 124~165°）
-    // ＋彩度 0.17，一大块冷色压上去会「突兀」。
-    // 也不用暖玫：它与超支告警渐变 ΔE 只有 0.03（几乎同色），会把「正常」与「超支」
-    // 两个状态糊在一起 —— 旧配色的品牌卡 vs 超支卡 ΔE 也只有 0.08~0.14，同样分不清。
-    // 赭金既在暖色区（不突兀），与告警的 ΔE 又有 0.17（分得清）。
+    // 品牌卡（首页 Hero / 预算卡）：石墨。深卡配白字，对比度 12~15:1，
+    // 与净资产的亮蓝卡并排也不会被误认成同一种卡。
     brand: AppHeroGradient(
-      colors: [Color(0xFFA15500), Color(0xFF9C6400), Color(0xFF936E00)],
+      colors: [Color(0xFF1D252D), Color(0xFF30363E), Color(0xFF282B32)],
+      onColor: AppThemeTokens.lightOnBrand,
     ),
+    // 超支卡：深红。与品牌石墨卡同为深卡，但色相差 330°+，一眼分得开。
     danger: AppHeroGradient(
-      colors: [Color(0xFFB2397C), Color(0xFFBF3D6D), Color(0xFFCB4453)],
+      colors: [Color(0xFF800E50), Color(0xFFA01445), Color(0xFF921921)],
+      onColor: AppThemeTokens.lightOnDanger,
     ),
     amber: AppThemeTokens.lightHeroAmber,
   );
 
+  /// 图表 8 色。深浅两套**顺序一致**：同一个分类在两个模式下落在同一个色相上，
+  /// 用户切换主题时「哪块是谁」不会重排。
   static const chartPalette = AppChartPalette(
     colors: [
-      Color(0xFFA66C11),
-      Color(0xFF008B97),
-      Color(0xFFA95C8F),
-      Color(0xFF77821F),
-      Color(0xFF3E7EBF),
-      Color(0xFFB75B54),
-      Color(0xFF1E9063),
-      Color(0xFF816AB9),
+      Color(0xFFD15B5E),
+      Color(0xFF2B8E3B),
+      Color(0xFFA867C3),
+      Color(0xFF008B7A),
+      Color(0xFFAB7E00),
+      Color(0xFF4972CF),
+      Color(0xFFCD632D),
+      Color(0xFF008794),
     ],
   );
 

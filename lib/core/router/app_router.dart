@@ -22,6 +22,18 @@ import 'package:miji/features/shell/presentation/app_shell_page.dart';
 
 import 'package:miji/core/router/app_routes.dart';
 
+/// 一级模块之间是「切标签」，不是「推进一个新页面」。
+///
+/// 不给 `pageBuilder` 时 go_router 会造 `MaterialPage` → 每次切模块都跑一次平台
+/// 页面过渡（Android / Windows / Linux 是 Zoom，约 300ms）：点了之后整页要淡入 +
+/// 缩放，观感就是「背景色半天才跟上」。底栏 / 侧栏切标签本来就该瞬时完成，
+/// 这里统一换成 [NoTransitionPage]。
+///
+/// 只给养在 `AppShellPage` 里的这一层用；子页面（计划详情、设置子页等）仍是
+/// 真正意义上的「推进」，继续走默认过渡。
+Page<void> _modulePage(GoRouterState state, Widget child) =>
+    NoTransitionPage<void>(key: state.pageKey, child: child);
+
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = _RouterRefreshNotifier();
 
@@ -99,11 +111,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: AppRoutes.home,
-            builder: (context, state) => const HomePage(),
+            pageBuilder: (context, state) =>
+                _modulePage(state, const HomePage()),
           ),
           GoRoute(
             path: AppRoutes.gtd,
-            builder: (context, state) => const GtdPage(),
+            pageBuilder: (context, state) =>
+                _modulePage(state, const GtdPage()),
             routes: [
               GoRoute(
                 path: 'plans',
@@ -147,20 +161,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutes.bookkeeping,
-            builder: (context, state) => BookkeepingPage(
-              initialSection: state.uri.queryParameters['section'],
-              initialAccountId: state.uri.queryParameters['accountId'],
-              // 通知点击带来的动作（如「今天还没记账」→ 直接打开记一笔）。
-              initialAction: state.uri.queryParameters['action'],
+            pageBuilder: (context, state) => _modulePage(
+              state,
+              BookkeepingPage(
+                initialSection: state.uri.queryParameters['section'],
+                initialAccountId: state.uri.queryParameters['accountId'],
+                // 通知点击带来的动作（如「今天还没记账」→ 直接打开记一笔）。
+                initialAction: state.uri.queryParameters['action'],
+              ),
             ),
           ),
           GoRoute(
             path: AppRoutes.health,
-            builder: (context, state) => const HealthPage(),
+            pageBuilder: (context, state) =>
+                _modulePage(state, const HealthPage()),
           ),
           GoRoute(
             path: AppRoutes.settings,
-            builder: (context, state) => const SettingsPage(),
+            pageBuilder: (context, state) =>
+                _modulePage(state, const SettingsPage()),
           ),
           GoRoute(
             path: AppRoutes.settingsSecurity,

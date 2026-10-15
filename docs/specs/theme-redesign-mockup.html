@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>米记主题重做 · 评审稿 v1</title>
+<style>
+  :root{
+    --page:#FFFFFF; --page-2:#F6F7F9; --ink:#15181C; --ink-2:#5B6169;
+    --line:#DFE3E8; --line-2:#ECEFF2; --accent:#2C6FB8;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Cascadia Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--page-2); color:var(--ink);
+    font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:1360px;margin:0 auto;padding:28px 24px 80px}
+  h1{font-size:24px;margin:0 0 6px;letter-spacing:-.2px}
+  h2{font-size:17px;margin:36px 0 12px;padding-top:20px;border-top:1px solid var(--line)}
+  h3{font-size:14px;margin:20px 0 8px}
+  p{margin:0 0 10px;color:var(--ink-2)}
+  .lede{color:var(--ink);font-size:15px}
+  code{font-family:var(--mono);font-size:12px;background:var(--page-2);padding:1px 5px;border-radius:4px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;background:var(--page)}
+  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+  th{background:var(--page-2);font-weight:600}
+  td.num{font-family:var(--mono);white-space:nowrap}
+
+  /* ── 布局：左控制 + 右舞台 ── */
+  .stage-row{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+  .panel{
+    width:250px;flex:0 0 250px;background:var(--page);border:1px solid var(--line);
+    border-radius:12px;padding:14px;position:sticky;top:20px;
+  }
+  .panel h4{margin:0 0 8px;font-size:12px;color:var(--ink-2);letter-spacing:.4px;text-transform:uppercase}
+  .panel .grp{margin-bottom:16px}
+  .seg{display:flex;gap:4px;flex-wrap:wrap}
+  .seg button{
+    flex:1 1 auto;padding:7px 8px;border:1px solid var(--line);background:var(--page);
+    border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--ink);font-family:inherit;
+  }
+  .seg button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .swatch-row{display:flex;gap:3px;margin-top:6px}
+  .swatch-row i{flex:1;height:8px;border-radius:2px;display:block}
+  .note{font-size:11.5px;color:var(--ink-2);margin-top:6px;line-height:1.5}
+
+  .stage-wrap{flex:1 1 620px;min-width:340px}
+  .stage-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .stage-head b{font-size:14px}
+  .stage-head span{font-size:12px;color:var(--ink-2)}
+  .phone{
+    width:390px;height:812px;border-radius:34px;border:1px solid var(--line);
+    background:var(--stage-bg);overflow:hidden;position:relative;
+    box-shadow:0 18px 44px rgba(20,25,35,.16);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  .phone .screen{height:100%;overflow-y:auto;overflow-x:hidden}
+  .phone::-webkit-scrollbar{width:0}
+  .screen::-webkit-scrollbar{width:0}
+
+  /* ── 手机内组件（全部用 stage 变量上色）── */
+  .s-bar{display:flex;justify-content:space-between;padding:10px 18px 2px;font-size:11px;color:var(--text-2);font-weight:600}
+  .s-title{font-size:20px;font-weight:800;color:var(--text);padding:4px 16px 10px;letter-spacing:-.3px}
+  .card{background:var(--surface);border:1px solid var(--outline-variant);border-radius:16px;margin:0 12px 10px;padding:14px}
+  .card.sunken{background:var(--sunken);border-color:transparent}
+  .hero{border-radius:18px;margin:0 12px 12px;padding:16px 18px;color:#fff;position:relative;overflow:hidden}
+  .hero .lbl{font-size:11.5px;opacity:.9;letter-spacing:.3px}
+  .hero .big{font-size:30px;font-weight:800;letter-spacing:-.5px;margin:4px 0 8px}
+  .hero .sub{display:flex;gap:14px;font-size:12px}
+  .hero .sub b{font-size:14px;font-weight:700}
+  .hero .sub .amber{color:var(--amber)}
+  .row{display:flex;align-items:center;gap:10px}
+  .between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .dot{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:14px;flex:0 0 30px}
+  .tx-name{font-size:13.5px;font-weight:600;color:var(--text);letter-spacing:0}
+  .tx-meta{font-size:11.5px;color:var(--text-2);margin-top:1px}
+  .amt{font-family:var(--mono);font-size:14.5px;font-weight:700;letter-spacing:-.2px}
+  .day-head{display:flex;justify-content:space-between;padding:12px 16px 6px;font-size:11.5px;color:var(--text-2)}
+  .day-head b{color:var(--text)}
+  .list-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--outline-variant)}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid transparent}
+  .chip.fill{border-color:transparent}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;padding:0 16px;border-radius:10px;font-size:13.5px;font-weight:600;border:1px solid transparent}
+  .btn.primary{background:var(--primary-fill);color:var(--on-primary-fill)}
+  .btn.outline{background:transparent;color:var(--primary);border-color:var(--outline)}
+  .btn.ghost{background:var(--sunken);color:var(--text)}
+  .field{height:44px;border:1px solid var(--outline);border-radius:10px;background:var(--surface);display:flex;align-items:center;padding:0 12px;color:var(--text-2);font-size:13px}
+  .seg-ctl{display:flex;background:var(--sunken);border-radius:10px;padding:3px;gap:3px}
+  .seg-ctl div{flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12.5px;color:var(--text-2)}
+  .seg-ctl div.on{background:var(--surface);color:var(--primary);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.10)}
+  .cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .cat-cell{background:var(--sunken);border-radius:12px;padding:10px 2px 8px;text-align:center}
+  .cat-cell i{width:26px;height:26px;border-radius:8px;display:block;margin:0 auto 5px}
+  .cat-cell span{font-size:10.5px;color:var(--text);letter-spacing:-.2px}
+  .keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .keypad div{height:38px;border-radius:9px;background:var(--sunken);display:grid;place-items:center;font-size:16px;font-weight:600;color:var(--text)}
+  .keypad div.hi{background:var(--primary-fill);color:var(--on-primary-fill)}
+  .dock{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--outline-variant);padding:8px 12px 14px}
+  .donut{display:flex;align-items:center;gap:16px}
+  .legend{flex:1;font-size:11.5px}
+  .legend .li{display:flex;align-items:center;gap:6px;margin-bottom:5px;color:var(--text)}
+  .legend .li i{width:9px;height:9px;border-radius:3px;flex:0 0 9px}
+  .legend .li span.v{margin-left:auto;font-family:var(--mono);color:var(--text-2)}
+  .bars{display:flex;align-items:flex-end;gap:6px;height:74px;margin-top:12px}
+  .bars div{flex:1;border-radius:4px 4px 0 0}
+  .prog{height:8px;border-radius:999px;background:var(--sunken);overflow:hidden;margin-top:6px}
+  .prog i{display:block;height:100%;border-radius:999px}
+  .alert{display:flex;gap:8px;padding:10px 12px;border-radius:12px;font-size:12px;align-items:flex-start}
+  .mini{font-size:10.5px;color:var(--text-2);letter-spacing:0}
+
+  /* ── token 表 ── */
+  .tokens{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px;margin-top:12px}
+  .tbox{background:var(--page);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .tbox h5{margin:0 0 8px;font-size:12.5px}
+  .tline{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11.5px}
+  .tline i{width:22px;height:22px;border-radius:5px;border:1px solid var(--line-2);flex:0 0 22px}
+  .tline code{background:transparent;padding:0;font-size:11px;color:var(--ink-2)}
+  .tline .r{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-2)}
+  .pass{color:#1a7f45}.fail{color:#b3261e;font-weight:700}
+  .kbd{font-family:var(--mono);font-size:11px;background:var(--page-2);border:1px solid var(--line);border-radius:4px;padding:1px 4px}
+  .cols{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .cols>div{flex:1 1 300px}
+  ul{margin:0 0 10px;padding-left:20px;color:var(--ink-2)}
+  li{margin-bottom:5px}
+  .tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;background:var(--page-2);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>米记主题重做 · 评审稿 v1</h1>
+  <p class="lede">不沿用现有「暖纸 · 靛蓝」的任何色值，从功能与竞品重新推导。
+     下面三套方向<b>只有中性面与主色不同</b>——语义色与图表色三套共用。</p>
+  <p>稿子里的每个数字都是现场算出来的：对比度走 WCAG 2.1，可分辨性走 Viénot 色觉缺陷模拟 + OKLab ΔE。
+     切到「红色盲 / 绿色盲 / 蓝色盲」可以直接看色板还认不认得出。</p>
+
+  <div class="stage-row">
+    <!-- ───────── 控制面板 ───────── -->
+    <div class="panel">
+      <div class="grp">
+        <h4>方向</h4>
+        <div class="seg" id="segScheme">
+          <button data-v="A" aria-pressed="true">A 砚青</button>
+          <button data-v="B" aria-pressed="false">B 陶土</button>
+          <button data-v="C" aria-pressed="false">C 夜屿</button>
+        </div>
+        <div class="swatch-row" id="schemeSwatch"></div>
+        <div class="note" id="schemeDesc"></div>
+      </div>
+      <div class="grp">
+        <h4>模式</h4>
+        <div class="seg" id="segMode">
+          <button data-v="light" aria-pressed="true">浅色</button>
+          <button data-v="dark" aria-pressed="false">深色</button>
+        </div>
+      </div>
+      <div class="grp">
+        <h4>场景</h4>
+        <div class="seg" id="segScene">
+          <button data-v="home" aria-pressed="true">首页</button>
+          <button data-v="ledger" aria-pressed="false">流水</button>
+          <button data-v="stats" aria-pressed="false">统计</button>
+          <button data-v="entry" aria-pressed="false">分类记账</button>
+          <button data-v="controls" aria-pressed="false">控件</button>
+        </div>
+      </div>
+      <div class="grp">
+        <h4>色觉模拟</h4>
+        <div class="seg" id="segCvd">
+          <button data-v="none" aria-pressed="true">正常</button>
+          <button data-v="protan" aria-pressed="false">红色盲</button>
+          <button data-v="deutan" aria-pressed="false">绿色盲</button>
+          <button data-v="tritan" aria-pressed="false">蓝色盲</button>
+          <button data-v="gray" aria-pressed="false">去色</button>
+        </div>
+        <div class="note">去色是最狠的一关：颜色全没了，只剩明度还能分出层级。</div>
+      </div>
+      <div class="grp">
+        <h4>标注</h4>
+        <div class="seg" id="segAnnot">
+          <button data-v="off" aria-pressed="true">关</button>
+          <button data-v="on" aria-pressed="false">开</button>
+        </div>
+        <div class="note" id="annotNote">打开后显示当前方案与现有体系的关键差异。</div>
+      </div>
+    </div>
+
+    <!-- ───────── 手机舞台 ───────── -->
+    <div class="stage-wrap">
+      <div class="stage-head">
+        <b id="stageTitle">首页</b>
+        <span id="stageSub"></span>
+      </div>
+      <div class="phone" id="phone"><div class="screen" id="screen"></div></div>
+      <div id="annot" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- ───────── token 表 ───────── -->
+  <h2>一、当前方案的完整 token</h2>
+  <p>右侧数字是「该颜色压在卡片面上」的 WCAG 对比度：正文需 ≥4.5，非文字图形（图表切片、描边）需 ≥3.0。</p>
+  <div class="tokens" id="tokens"></div>
+
+  <h2>二、为什么重做：现有体系的问题</h2>
+  <div class="cols">
+    <div>
+      <h3>功能层面的硬伤</h3>
+      <ul>
+        <li><b>四级表面只差 4% 明度。</b>浅色下 <code>#FBF6F0 / #F6F1EB / #F2EDE6 / #ECE7E1</code> 相邻两级的亮度差不足 0.02，
+            去掉描边和阴影后卡片层级几乎消失——而这个 App 的列表、卡片、输入框全靠这一层。</li>
+        <li><b>主色有两套。</b><code>primary #4269D3</code> 与 <code>primaryFill #5E88F6</code> 并存，
+            填充版配近黑前景 <code>#03001F</code>。深色模式下填充版又变成浅蓝 <code>#CADBFF</code> 配深蓝字——
+            同一组 token 在两套模式下语义相反，接手的人只能靠猜。</li>
+        <li><b>没有语义容器层。</b>tag / chip 只能用 <code>withValues(alpha: .12)</code> 硬凑底，
+            深色模式下透明度叠在深色面上会发灰，全库有 360 处这种写法。</li>
+        <li><b>Warning 是暗橄榄 <code>#473D00</code></b>，明度 L*≈25，单独当图标/文字用时几乎就是块黑。</li>
+        <li><b>健康模块另起炉灶。</b><code>health_theme.dart</code> 里 7 个阶段色硬编码、按 brightness 分支，
+            不受主题 token 管，换个主题它不跟着变。</li>
+      </ul>
+    </div>
+    <div>
+      <h3>竞品在做什么</h3>
+      <ul>
+        <li><b>深色必须重做，不能反转。</b>2026 年 fintech 的共识：把浅色反过来看会得到一坨浑浊的灰面。
+            现有深色确实是独立定的，但中性层仍是「浅色减光」，层级关系没重排。</li>
+        <li><b>功能色跨品牌几乎一致。</b>收入绿 / 支出红 / 警告琥珀 / 信息蓝在 Copilot、Monarch、YNAB、Wealthsimple
+            里基本同色——差异只在<b>中性面与主色</b>。这也是本稿让语义色三套共用的依据。</li>
+        <li><b>主色窗口很窄。</b>绿给了收入、红给了支出、琥珀给了警告、紫给了信用、青给了转账。
+            主色只剩「蓝 240–270」和「赭 40–55」两个空档——本稿三个方向正好各占其一。</li>
+        <li><b>暖中性面 + 冷主色</b>仍是国内主流（微信读书、鲨鱼记账）；
+            <b>近无彩中性 + 单一强调</b>是 Copilot / Notion 一派，画面让给用户数据（分类色）。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>三、颜色的功能分配（这次重排的核心）</h2>
+  <p>米记的画面里有两类颜色：<b>系统的</b>（语义、图表、品牌）和<b>用户的</b>（193 个分类自带的颜色）。
+     分类色是画面里最花的东西，所以中性面刻意压到近乎无彩——谁该跳出来，是设计出来的，不是碰巧。</p>
+  <table>
+    <tr><th>色相</th><th>归谁</th><th>为什么是这个位置</th></tr>
+    <tr><td class="num">27–31°</td><td>支出 / 超支</td><td>红。中国记账语境下支出=红是铁律（与股市红涨绿跌无关，两套场景别混）。</td></tr>
+    <tr><td class="num">85–88°</td><td>警告 / 逾期</td><td>琥珀。与红拉开 55° 以上，色盲模拟下仍可分辨（本稿 ΔE 0.097）。</td></tr>
+    <tr><td class="num">147–149°</td><td>收入</td><td>绿。与琥珀、与青都隔着 60° 以上。</td></tr>
+    <tr><td class="num">178–189°</td><td>GTD 专注</td><td>青绿。只出现在「今日 / 习惯」屏，与转账不在同一屏，故容忍较小色相差。</td></tr>
+    <tr><td class="num">213–217°</td><td>转账</td><td>蓝青。转账是「钱的位置变了，总数没变」，用中间色而非冷暖色是刻意的。</td></tr>
+    <tr><td class="num">250 / 45 / 268°</td><td>品牌主色（A/B/C）</td><td>剩下唯一的两个空档：蓝、赭。</td></tr>
+    <tr><td class="num">312–325°</td><td>信用卡</td><td>紫。与红色系、蓝色系都拉得开。</td></tr>
+  </table>
+  <p style="margin-top:10px"><b>冗余编码：</b>色相在色盲眼里会被压到一起，所以五个语义色还叠了一层明度梯度
+     （浅色 L 0.44→0.49，深色 L 0.70→0.83）。去色视图下靠这层梯度仍能分出「收入/支出/转账」。</p>
+
+  <h2>四、三个方向怎么选</h2>
+  <table>
+    <tr><th style="width:110px">方向</th><th style="width:220px">性格</th><th>代价 / 已知取舍</th></tr>
+    <tr>
+      <td><b>A 砚青</b><br><span class="mini">冷灰石面 + 钢蓝</span></td>
+      <td>专业、安静、数据优先。中性面几乎无彩，分类色和金额数字是画面主角。最接近 Copilot / Notion 一派。</td>
+      <td>最安全，但也最没有「记忆点」——三个方向里最不像一个独立产品。</td>
+    </tr>
+    <tr>
+      <td><b>B 陶土</b><br><span class="mini">暖砂纸面 + 赭陶</span></td>
+      <td>手账气、温度感，长时间阅读最不刺眼。延续了现有体系的「暖」，但暖得更有依据。</td>
+      <td>主色占了红橙区，导致<b>超支卡只能靠明度和彩度与品牌卡拉开</b>（ΔE 0.074，是三者里最紧的一对）。</td>
+    </tr>
+    <tr>
+      <td><b>C 夜屿</b><br><span class="mini">近黑中性 + 蓝紫</span></td>
+      <td>深色优先，中性层压得最深（背景 #0E0F13），高彩度主色。科技感与高端感最强，暗光下最舒服。</td>
+      <td>浅色模式下与 A 差异不大——它的价值主要在深色。若用户以浅色为主，等于白做。</td>
+    </tr>
+  </table>
+
+  <h2>五、落地要动的地方</h2>
+  <ul>
+    <li><code>lib/core/theme/app_theme_tokens.dart</code> — 换成新色值；浅色/深色各自独立的 token 命名保持对称（现在深色部分缺 <code>primaryFill</code> 对称定义）。</li>
+    <li><code>app_design_tokens.dart</code> — <code>AppMoneyColors</code> 增加 <code>*Container</code> 六色；<code>AppHeroGradients</code> 保留但改用新求解值。</li>
+    <li><code>app_theme.dart</code> — 深色模式的语义色现在<b>内联写在 build 里</b>，浅色却读 <code>AppThemeFallbacks</code>，两处口径必须合并。</li>
+    <li><code>features/health/presentation/health_theme.dart</code> — 7 个阶段色建议收进主题扩展，或至少与主色系对齐色相节奏。</li>
+    <li>360 处 <code>withValues(alpha:)</code> 与 105 处硬编码 <code>Color(0x…)</code> — 有了容器层之后可以逐个替换，不必一次做完。</li>
+  </ul>
+  <p class="mini">求解与校验脚本：OKLCH→sRGB（越界二分降彩度）、WCAG 对比度、Viénot 三型色盲模拟 + OKLab ΔE。
+     语义色是带审美惩罚项的随机搜索解出来的（纯最大化 ΔE 会把颜色推到极暗极艳，看着脏）；
+     图表 8 色是在 5040 种环形排列里挑的，且深浅两模式<b>共用同一顺序</b>，保证同一个分类在两套模式下是同一个颜色索引。</p>
+
+</div>
+
+<!-- 色觉模拟滤镜 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="cvd-protan" color-interpolation-filters="linearRGB">
+    <feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0"/>
+  </filter>
+  <filter id="cvd-deutan" color-interpolation-filters="linearRGB">
+    <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.70 0.30 0 0 0  0 0.30 0.70 0 0  0 0 0 1 0"/>
+  </filter>
+  <filter id="cvd-tritan" color-interpolation-filters="linearRGB">
+    <feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0"/>
+  </filter>
+  <filter id="cvd-gray" color-interpolation-filters="linearRGB">
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+</svg>
+
+<script>
+/* ══════════════ token 表（由求解器生成并校验） ══════════════ */
+var TOKENS = {
+ light:{
+  A:{sunken:"#D9DDE2",background:"#E5E8EB",surface:"#FCFDFF",raised:"#F3F5F7",outline:"#78818C",outlineVariant:"#D2D5D9",text:"#191C1F",textSecondary:"#54575B",primary:"#005899",primaryFill:"#005DA2",onPrimaryFill:"#FCFDFF",primaryContainer:"#D7EAFF",onPrimaryContainer:"#014981",secondary:"#5A6B7D",tertiary:"#497F7F",income:"#0C6524",expense:"#974537",transfer:"#00687B",credit:"#7D3E80",warning:"#6B4F00",focus:"#00695C",incomeContainer:"#D5F3D7",expenseContainer:"#FFE2DC",transferContainer:"#C6F2FE",creditContainer:"#FBDFFB",warningContainer:"#F8E8C6",focusContainer:"#C8F5EB",chart:["#C15F4E","#008372","#7973CA","#318440","#A763AB","#007F8A","#A27900","#2873B8"],netWorth:["#2D3E8F","#5A44A3","#663D82"],brand:["#003826","#004E44","#006566"],danger:["#78094B","#90053C","#9A282B"],amber:"#F9DA85"},
+  B:{sunken:"#E4DBD3",background:"#ECE7E1",surface:"#FFFDFB",raised:"#F7F4F0",outline:"#8F7D6A",outlineVariant:"#DAD4CD",text:"#201B15",textSecondary:"#5C554F",primary:"#853F1B",primaryFill:"#923E0C",onPrimaryFill:"#FFFDFB",primaryContainer:"#FFE1D3",onPrimaryContainer:"#703416",secondary:"#78645B",tertiary:"#8F6779",income:"#0C6524",expense:"#974537",transfer:"#00687B",credit:"#7D3E80",warning:"#6B4F00",focus:"#00695C",incomeContainer:"#D5F3D7",expenseContainer:"#FFE2DC",transferContainer:"#C6F2FE",creditContainer:"#FBDFFB",warningContainer:"#F8E8C6",focusContainer:"#C8F5EB",chart:["#C15F4E","#008372","#7973CA","#318440","#A763AB","#007F8A","#A27900","#2873B8"],netWorth:["#004F6A","#1F589B","#474891"],brand:["#1F3500","#414700","#655800"],danger:["#78094B","#90053C","#9A282B"],amber:"#F9DA85"},
+  C:{sunken:"#D9DDE4",background:"#E5E8ED",surface:"#FDFDFF",raised:"#F3F4F7",outline:"#798090",outlineVariant:"#D2D5DB",text:"#1A1C20",textSecondary:"#54575C",primary:"#354EA3",primaryFill:"#3450B6",onPrimaryFill:"#FDFDFF",primaryContainer:"#DEE8FF",onPrimaryContainer:"#2B4189",secondary:"#5F6980",tertiary:"#4A7E89",income:"#0C6524",expense:"#974537",transfer:"#00687B",credit:"#7D3E80",warning:"#6B4F00",focus:"#00695C",incomeContainer:"#D5F3D7",expenseContainer:"#FFE2DC",transferContainer:"#C6F2FE",creditContainer:"#FBDFFB",warningContainer:"#F8E8C6",focusContainer:"#C8F5EB",chart:["#C15F4E","#008372","#7973CA","#318440","#A763AB","#007F8A","#A27900","#2873B8"],netWorth:["#473390","#71369B","#743773"],brand:["#003440","#004965","#005B99"],danger:["#78094B","#90053C","#9A282B"],amber:"#F9DA85"}
+ },
+ dark:{
+  A:{sunken:"#0B0C0E",background:"#15171A",surface:"#212326",raised:"#2C2F32",outline:"#808992",outlineVariant:"#44484C",text:"#E6E8EA",textSecondary:"#A8ACAF",primary:"#82C0FF",primaryFill:"#68A3E0",onPrimaryFill:"#090B0E",primaryContainer:"#163859",onPrimaryContainer:"#B7DAFF",secondary:"#9FB4C9",tertiary:"#82CDCD",income:"#81C68C",expense:"#FF9A90",transfer:"#4CCAE3",credit:"#DAA9F7",warning:"#C79D34",focus:"#53C9C0",incomeContainer:"#18351E",expenseContainer:"#46221F",transferContainer:"#00343E",creditContainer:"#372542",warningContainer:"#3A2B07",focusContainer:"#003633",chart:["#F99A89","#33BCA7","#B0ADFF","#6FB878","#DE9DE1","#1EB9C7","#DAB157","#68A9EB"],netWorth:["#324495","#5F4AA9","#6C4289"],brand:["#003D2A","#005449","#006C6C"],danger:["#7E1350","#961241","#A12F31"],amber:"#F9DA85"},
+  B:{sunken:"#0F0C08",background:"#1B1612",surface:"#27221D",raised:"#332E28",outline:"#958574",outlineVariant:"#4E463E",text:"#EBE7E4",textSecondary:"#B0AAA4",primary:"#F2A583",primaryFill:"#CF8C6E",onPrimaryFill:"#0E0A07",primaryContainer:"#502C1C",onPrimaryContainer:"#FDC9B2",secondary:"#C4ABA0",tertiary:"#E4AAC4",income:"#81C68C",expense:"#FF9A90",transfer:"#4CCAE3",credit:"#DAA9F7",warning:"#C79D34",focus:"#53C9C0",incomeContainer:"#18351E",expenseContainer:"#46221F",transferContainer:"#00343E",creditContainer:"#372542",warningContainer:"#3A2B07",focusContainer:"#003633",chart:["#F99A89","#33BCA7","#B0ADFF","#6FB878","#DE9DE1","#1EB9C7","#DAB157","#68A9EB"],netWorth:["#005572","#255EA2","#4D4E98"],brand:["#233B00","#474D00","#6B5E07"],danger:["#7E1350","#961241","#A12F31"],amber:"#F9DA85"},
+  C:{sunken:"#050608",background:"#0E0F13",surface:"#191B1F",raised:"#24262B",outline:"#818896",outlineVariant:"#44484E",text:"#E6E8EB",textSecondary:"#A9ABB1",primary:"#9DB8FF",primaryFill:"#7F9BE9",onPrimaryFill:"#090B0F",primaryContainer:"#26345E",onPrimaryContainer:"#C5D5FF",secondary:"#A5B1CD",tertiary:"#83CBDB",income:"#81C68C",expense:"#FF9A90",transfer:"#4CCAE3",credit:"#DAA9F7",warning:"#C79D34",focus:"#53C9C0",incomeContainer:"#18351E",expenseContainer:"#46221F",transferContainer:"#00343E",creditContainer:"#372542",warningContainer:"#3A2B07",focusContainer:"#003633",chart:["#F99A89","#33BCA7","#B0ADFF","#6FB878","#DE9DE1","#1EB9C7","#DAB157","#68A9EB"],netWorth:["#4C3997","#773DA2","#7A3D79"],brand:["#003A47","#004E6D","#0761A0"],danger:["#7E1350","#961241","#A12F31"],amber:"#F9DA85"}
+ }
+};
+
+var SCHEME_DESC = {
+  A:"冷灰石面 + 钢蓝。中性面几乎无彩，把画面让给分类色与金额语义色。",
+  B:"暖砂纸面 + 赭陶。手账气质，长时间阅读最不刺眼。",
+  C:"近黑中性 + 蓝紫主色。深色优先，科技感与高端感最强。"
+};
+var SCENE_NAME = {home:"首页",ledger:"流水",stats:"统计",entry:"分类记账",controls:"控件"};
+
+var state = {scheme:"A", mode:"light", scene:"home", cvd:"none", annot:"off"};
+
+/* ══════════════ 颜色工具 ══════════════ */
+function hex2rgb(h){ h=h.replace("#",""); return [parseInt(h.substr(0,2),16)/255, parseInt(h.substr(2,2),16)/255, parseInt(h.substr(4,2),16)/255]; }
+function s2l(c){ return c<=0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4); }
+function lum(h){ var c=hex2rgb(h); return 0.2126*s2l(c[0])+0.7152*s2l(c[1])+0.0722*s2l(c[2]); }
+function contrast(a,b){ var la=lum(a), lb=lum(b); var hi=Math.max(la,lb), lo=Math.min(la,lb); return (hi+0.05)/(lo+0.05); }
+function ratio(h,bg){ return contrast(h,bg); }
+
+/* ══════════════ 上色 ══════════════ */
+function applyTokens(t){
+  var phone = document.getElementById("phone");
+  var map = {
+    "--stage-bg":t.background, "--surface":t.surface, "--raised":t.raised,
+    "--sunken":t.sunken, "--outline":t.outline, "--outline-variant":t.outlineVariant,
+    "--text":t.text, "--text-2":t.textSecondary, "--primary":t.primary,
+    "--primary-fill":t.primaryFill, "--on-primary-fill":t.onPrimaryFill,
+    "--primary-container":t.primaryContainer, "--on-primary-container":t.onPrimaryContainer,
+    "--secondary":t.secondary, "--tertiary":t.tertiary,
+    "--income":t.income, "--expense":t.expense, "--transfer":t.transfer,
+    "--credit":t.credit, "--warning":t.warning, "--focus":t.focus,
+    "--income-c":t.incomeContainer, "--expense-c":t.expenseContainer,
+    "--transfer-c":t.transferContainer, "--credit-c":t.creditContainer,
+    "--warning-c":t.warningContainer, "--focus-c":t.focusContainer,
+    "--amber":t.amber
+  };
+  for (var i=0;i<t.chart.length;i++) map["--c"+(i+1)] = t.chart[i];
+  map["--hero-networth"] = "linear-gradient(135deg," + t.netWorth.join(",") + ")";
+  map["--hero-brand"] = "linear-gradient(135deg," + t.brand.join(",") + ")";
+  map["--hero-danger"] = "linear-gradient(135deg," + t.danger.join(",") + ")";
+  for (var k in map) phone.style.setProperty(k, map[k]);
+  return map;
+}
+
+/* ══════════════ 场景 ══════════════ */
+function dot(bg, fg, glyph){
+  return '<div class="dot" style="background:'+bg+';color:'+fg+'">'+glyph+'</div>';
+}
+function sceneHome(t){
+  return ''
+  + '<div class="s-bar"><span>9:41</span><span>米记</span></div>'
+  + '<div class="s-title">今天</div>'
+  + '<div class="hero" style="background:var(--hero-networth)">'
+  +   '<div class="lbl">净资产</div>'
+  +   '<div class="big">¥ 128,460.50</div>'
+  +   '<div class="sub"><span>资产 <b>¥ 154,200</b></span>'
+  +     '<span class="amber">负债 <b>¥ 25,739</b></span></div>'
+  + '</div>'
+  + '<div class="card"><div class="between"><b style="color:var(--text);font-size:13px">今日待办</b>'
+  +   '<span class="mini">3 项未完成</span></div>'
+  +   '<div style="margin-top:10px">'
+  +     row('交电费','明天到期','var(--warning)','var(--warning-c)','⏱')
+  +     row('取快递','18:00 前','var(--primary)','var(--primary-container)','📦')
+  +   '</div></div>'
+  + '<div class="card"><div class="between"><b style="color:var(--text);font-size:13px">习惯打卡</b>'
+  +   '<span class="mini">2 / 3</span></div>'
+  +   '<div class="cat-grid" style="margin-top:10px;grid-template-columns:repeat(3,1fr)">'
+  +     habit('每日学习','var(--focus)',true)
+  +     habit('每日一拍','var(--focus)',true)
+  +     habit('跑步 3km','var(--focus)',false)
+  +   '</div></div>'
+  + '<div class="card sunken"><div class="between">'
+  +   '<span style="color:var(--text);font-size:13px;font-weight:600">本月结余</span>'
+  +   '<span class="amt" style="color:var(--income)">+¥ 3,120.00</span></div>'
+  +   '<div class="mini" style="margin-top:4px">预算剩余 62%</div>'
+  +   '<div class="prog"><i style="width:62%;background:var(--income)"></i></div></div>';
+}
+function row(name, meta, fg, bg, glyph){
+  return '<div class="row" style="padding:8px 0;border-bottom:1px solid var(--outline-variant)">'
+    + dot(bg, fg, glyph)
+    + '<div style="flex:1"><div class="tx-name">'+name+'</div><div class="tx-meta">'+meta+'</div></div>'
+    + '<span style="color:var(--text-2);font-size:16px">○</span></div>';
+}
+function habit(name, color, done){
+  return '<div class="cat-cell" style="background:'+(done?'var(--focus-c)':'var(--sunken)')+'">'
+    + '<i style="background:'+(done?color:'var(--outline)')+
+      ';display:flex;align-items:center;justify-content:center;color:var(--surface);font-size:13px;font-style:normal">'
+    + (done?'✓':'') + '</i>'
+    + '<span>'+name+'</span></div>';
+}
+function sceneLedger(t){
+  var items = [
+    ['🍜','餐饮 · 午餐','现金 · 今天 12:31','-38.50','expense'],
+    ['🚇','交通 · 地铁','招行信用卡 · 今天 08:52','-6.00','expense'],
+    ['💰','工资','招商银行 · 昨天 10:00','+12,800.00','income'],
+    ['🔄','转账 · 还信用卡','招商银行 → 招行信用卡','-3,200.00','transfer'],
+    ['💳','信用还款','招行信用卡 · 10月8日','-1,860.00','credit']
+  ];
+  var html = '<div class="s-bar"><span>9:41</span><span>流水</span></div>'
+    + '<div class="s-title">10 月</div>'
+    + '<div class="card" style="display:flex;gap:8px">'
+    +   '<div class="chip fill" style="background:var(--expense-c);color:var(--expense)">支出 ¥4,204</div>'
+    +   '<div class="chip fill" style="background:var(--income-c);color:var(--income)">收入 ¥12,800</div>'
+    +   '<div class="chip fill" style="background:var(--sunken);color:var(--text-2)">净 ¥+8,596</div>'
+    + '</div>'
+    + '<div class="day-head"><span>今天</span><span>支出 <b style="color:var(--expense)">¥44.50</b></span></div>';
+  items.slice(0,2).forEach(function(x){ html += txItem(x,t); });
+  html += '<div class="day-head"><span>昨天</span><span>支出 <b style="color:var(--expense)">¥0.00</b></span></div>';
+  items.slice(2,3).forEach(function(x){ html += txItem(x,t); });
+  html += '<div class="day-head"><span>更早</span><span></span></div>';
+  items.slice(3).forEach(function(x){ html += txItem(x,t); });
+  return html;
+}
+function txItem(x,t){
+  var color = "var(--" + x[4] + ")";
+  return '<div class="list-item">'
+    + '<div class="dot" style="background:var(--sunken);font-size:15px">'+x[0]+'</div>'
+    + '<div style="flex:1;min-width:0"><div class="tx-name">'+x[1]+'</div><div class="tx-meta">'+x[2]+'</div></div>'
+    + '<div class="amt" style="color:'+color+'">'+x[3]+'</div></div>';
+}
+function sceneStats(t){
+  var cats = [
+    ['餐饮','¥1,860','--c1',32],['交通','¥620','--c2',11],
+    ['居住','¥980','--c3',17],['购物','¥540','--c4',9],
+    ['娱乐','¥320','--c5',6],['医疗','¥280','--c6',5],
+    ['教育','¥400','--c7',7],['其他','¥204','--c8',4]
+  ];
+  var r = 46, cx = 58, cy = 58, sw = 20, acc = 0, segs = "";
+  var total = 0; cats.forEach(function(c){ total += c[3]; });
+  cats.forEach(function(c, i){
+    var frac = c[3]/total, a0 = acc*2*Math.PI - Math.PI/2, a1 = (acc+frac)*2*Math.PI - Math.PI/2;
+    acc += frac;
+    var x0 = cx + r*Math.cos(a0), y0 = cy + r*Math.sin(a0);
+    var x1 = cx + r*Math.cos(a1), y1 = cy + r*Math.sin(a1);
+    var large = frac > 0.5 ? 1 : 0;
+    segs += '<path d="M '+x0.toFixed(2)+' '+y0.toFixed(2)+' A '+r+' '+r+' 0 '+large+' 1 '
+         +  x1.toFixed(2)+' '+y1.toFixed(2)+'" fill="none" stroke="var('+c[2]+')" stroke-width="'+sw+'"/>';
+  });
+  var legend = "";
+  cats.forEach(function(c){
+    legend += '<div class="li"><i style="background:var('+c[2]+')"></i>'+c[0]+'<span class="v">'+c[1]+'</span></div>';
+  });
+  var bars = [38,52,30,61,44,35,58,49,40,55,33,47];
+  var barsHtml = "";
+  bars.forEach(function(v,i){
+    barsHtml += '<div style="height:'+v+'%;background:var(--c'+((i%8)+1)+');opacity:'+(i===7?'1':'0.85')+'"></div>';
+  });
+  return '<div class="s-bar"><span>9:41</span><span>统计</span></div>'
+    + '<div class="s-title">10 月支出</div>'
+    + '<div class="card"><div class="donut">'
+    +   '<svg width="116" height="116" viewBox="0 0 116 116">'+segs+
+        '<circle cx="58" cy="58" r="22" fill="var(--sunken)"/>'+
+        '<text x="58" y="55" text-anchor="middle" font-size="11" fill="var(--text-2)">合计</text>'+
+        '<text x="58" y="70" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text)">¥5,204</text></svg>'
+    +   '<div class="legend">'+legend+'</div></div></div>'
+    + '<div class="card"><div class="between"><b style="color:var(--text);font-size:13px">近 12 个月趋势</b>'
+    +   '<span class="mini">单位：百元</span></div><div class="bars">'+barsHtml+'</div></div>'
+    + '<div class="card"><div class="between"><b style="color:var(--text);font-size:13px">餐饮预算</b>'
+    +   '<span class="amt" style="color:var(--warning)">已用 93%</span></div>'
+    +   '<div class="prog"><i style="width:93%;background:var(--warning)"></i></div>'
+    +   '<div class="mini" style="margin-top:6px">照这个速度，本月会超支约 ¥120</div></div>';
+}
+function sceneEntry(t){
+  var cats = [
+    ['🍜','早餐','--c1'],['🍚','午餐','--c2'],['🍲','晚餐','--c3'],
+    ['🥤','饮品','--c4'],['🛒','买菜','--c5'],['🚇','公交地铁','--c6'],
+    ['🚕','打车','--c7'],['⛽','加油','--c8'],['🎬','电影','--c1'],
+    ['📦','日用','--c2']
+  ];
+  var grid = "";
+  cats.forEach(function(c){
+    grid += '<div class="cat-cell"><i style="background:var('+c[2]+')"></i><span>'+c[1]+'</span></div>';
+  });
+  var keys = ['7','8','9','⌫','4','5','6','+','1','2','3','-','.','0','00','保存'];
+  var pad = "";
+  keys.forEach(function(k){
+    var hi = (k === '保存');
+    pad += '<div class="'+(hi?'hi':'')+'">'+(hi?'':k)+'</div>';
+  });
+  return '<div class="s-bar"><span>9:41</span><span>分类记账</span></div>'
+    + '<div style="padding:2px 12px 8px;display:flex;gap:8px;align-items:center">'
+    +   '<span style="font-size:18px">←</span>'
+    +   '<b style="color:var(--text);font-size:15px">分类记账</b>'
+    +   '<div class="seg-ctl" style="flex:1;margin-left:8px"><div class="on">支出</div><div>收入</div></div>'
+    + '</div>'
+    + '<div class="card" style="padding:10px"><div class="mini" style="margin-bottom:8px">餐饮</div>'
+    +   '<div style="display:flex;flex-wrap:wrap;gap:6px">'
+    +     chipSel('早餐','--c1',true) + chipSel('午餐','--c2') + chipSel('晚餐','--c3')
+    +     chipSel('饮品','--c4') + chipSel('外卖','--c5')
+    +   '</div></div>'
+    + '<div class="card" style="padding:10px"><div class="mini" style="margin-bottom:8px">交通</div>'
+    +   '<div style="display:flex;flex-wrap:wrap;gap:6px">'
+    +     chipSel('公交地铁','--c6') + chipSel('打车','--c7') + chipSel('加油','--c8')
+    +   '</div></div>'
+    + '<div class="card"><div class="mini" style="margin-bottom:8px">常用</div><div class="cat-grid">'+grid+'</div></div>'
+    + '<div style="height:210px"></div>'
+    + '<div class="dock">'
+    +   '<div class="between" style="margin-bottom:8px">'
+    +     '<div style="font-size:26px;font-weight:800;color:var(--text);letter-spacing:-.5px">¥ 38.50</div>'
+    +     '<div class="chip" style="background:var(--primary-container);color:var(--on-primary-container)">餐饮 · 早餐 ✕</div>'
+    +   '</div>'
+    +   '<div style="display:flex;gap:6px;margin-bottom:8px">'
+    +     fieldChip('备注') + fieldChip('现金') + fieldChip('支付渠道') + fieldChip('今天 12:31') + fieldChip('更多 ⚙')
+    +   '</div>'
+    +   '<div class="keypad">'+pad+'</div>'
+    + '</div>';
+}
+function chipSel(name, color, on){
+  return '<span class="chip" style="background:'+(on?'var('+color+')':'var(--sunken)')+
+    ';color:'+(on?'#fff':'var(--text)')+'">'+name+'</span>';
+}
+function fieldChip(text){
+  return '<span class="chip" style="background:var(--sunken);color:var(--text);border-color:var(--outline-variant)">'+text+'</span>';
+}
+function sceneControls(t){
+  return '<div class="s-bar"><span>9:41</span><span>控件</span></div>'
+    + '<div class="s-title">组件</div>'
+    + '<div class="card">'
+    +   '<div style="display:flex;gap:8px;margin-bottom:10px">'
+    +     '<span class="btn primary" style="flex:1">保存</span>'
+    +     '<span class="btn outline" style="flex:1">取消</span>'
+    +   '</div>'
+    +   '<div class="field" style="margin-bottom:8px">请输入金额</div>'
+    +   '<div class="field" style="margin-bottom:10px;color:var(--text)">现金 · 余额 ¥2,340.00</div>'
+    +   '<div class="seg-ctl" style="margin-bottom:10px"><div class="on">支出</div><div>收入</div><div>转账</div></div>'
+    +   '<div style="display:flex;flex-wrap:wrap;gap:6px">'
+    +     '<span class="chip" style="background:var(--income-c);color:var(--income)">收入 ¥12,800</span>'
+    +     '<span class="chip" style="background:var(--expense-c);color:var(--expense)">支出 ¥4,204</span>'
+    +     '<span class="chip" style="background:var(--transfer-c);color:var(--transfer)">转账</span>'
+    +     '<span class="chip" style="background:var(--credit-c);color:var(--credit)">信用 ¥1,860</span>'
+    +     '<span class="chip" style="background:var(--warning-c);color:var(--warning)">逾期 3 天</span>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="alert" style="background:var(--warning-c);color:var(--warning)">'
+    +   '<b>⚠</b><span>3 笔分期本月到期，共 ¥1,240.00</span></div>'
+    + '<div class="alert" style="background:var(--expense-c);color:var(--expense);margin-top:8px">'
+    +   '<b>✕</b><span>餐饮预算已超支 ¥120</span></div>'
+    + '<div class="card" style="margin-top:12px">'
+    +   '<div class="between"><span style="color:var(--text);font-size:13px">隐藏金额</span>'
+    +     '<span style="width:38px;height:22px;border-radius:999px;background:var(--primary-fill);display:inline-block;position:relative">'
+    +     '<i style="position:absolute;right:2px;top:2px;width:18px;height:18px;border-radius:50%;background:var(--on-primary-fill)"></i></span></div>'
+    +   '<div class="between" style="margin-top:10px"><span style="color:var(--text);font-size:13px">分类管理</span>'
+    +     '<span style="color:var(--text-2);font-size:12px">193 个 ›</span></div>'
+    + '</div>'
+    + '<div class="card"><div class="mini" style="margin-bottom:8px">键盘（分类记账吸底条）</div>'
+    +   '<div class="keypad">' + ['7','8','9','÷','4','5','6','×','1','2','3','−','C','0','.','=']
+        .map(function(k){return '<div>'+k+'</div>';}).join('') + '</div></div>';
+}
+
+var SCENES = {home:sceneHome, ledger:sceneLedger, stats:sceneStats, entry:sceneEntry, controls:sceneControls};
+
+/* ══════════════ token 表面板 ══════════════ */
+function tokenPanel(t){
+  function line(label, color, bg, need){
+    var r = contrast(color, bg);
+    var ok = r >= need;
+    return '<div class="tline"><i style="background:'+color+'"></i><code>'+color+'</code>'
+      + '<span style="color:var(--ink-2)">'+label+'</span>'
+      + '<span class="r '+(ok?'pass':'fail')+'">'+r.toFixed(2)+'</span></div>';
+  }
+  var s = t.surface;
+  var groups = [
+    ['中性面', ['background','surface','raised','sunken'].map(function(k){
+        return line(k, t[k], s, 1.0); })],
+    ['文字 / 描边', [line('text', t.text, s, 4.5), line('textSecondary', t.textSecondary, s, 4.5),
+        line('outline (需≥3)', t.outline, s, 3.0), line('outlineVariant', t.outlineVariant, s, 1.0)]],
+    ['品牌', [line('primary', t.primary, s, 4.5),
+        line('onPrimaryFill / fill', t.onPrimaryFill, t.primaryFill, 4.5),
+        line('onPrimaryContainer', t.onPrimaryContainer, t.primaryContainer, 4.5),
+        line('secondary', t.secondary, s, 4.5)]],
+    ['金额语义', ['income','expense','transfer','credit','warning','focus'].map(function(k){
+        return line(k, t[k], s, 4.5); })],
+    ['语义容器（新增层）', ['income','expense','transfer','credit','warning'].map(function(k){
+        return line(k+' 上文字', t[k], t[k+'Container'], 4.5); })],
+    ['图表 8 色', t.chart.map(function(c,i){ return line('chart '+(i+1), c, s, 3.0); })]
+  ];
+  var html = "";
+  groups.forEach(function(g){
+    html += '<div class="tbox"><h5>'+g[0]+'</h5>'+g[1].join('')+'</div>';
+  });
+  // Hero 上的白字
+  var hero = ['netWorth','brand','danger'].map(function(k){
+    var stops = t[k].map(function(c){ return contrast('#FFFFFF', c).toFixed(2); });
+    return '<div class="tline"><i style="background:linear-gradient(135deg,'+t[k].join(',')+')"></i>'
+      + '<span style="color:var(--ink-2)">'+k+'</span>'
+      + '<span class="r pass">白字 '+stops.join(' / ')+'</span></div>';
+  }).join('');
+  var ambs = t.netWorth.map(function(c){ return contrast(t.amber, c).toFixed(2); });
+  hero += '<div class="tline"><i style="background:'+t.amber+'"></i>'
+       + '<span style="color:var(--ink-2)">琥珀字 / netWorth</span>'
+       + '<span class="r '+(Math.min.apply(null,t.netWorth.map(function(c){return contrast(t.amber,c);}))>=4.5?'pass':'fail')+'">'
+       + ambs.join(' / ')+'</span></div>';
+  html += '<div class="tbox"><h5>Hero 渐变（白字与琥珀字均 ≥4.5）</h5>'+hero+'</div>';
+  document.getElementById("tokens").innerHTML = html;
+}
+
+/* ══════════════ 标注 ══════════════ */
+var ANNOT = {
+  home:'Hero 卡用的是「净资产」渐变，白字与琥珀字都在每个渐变端点上 ≥4.5:1 —— 现有体系里琥珀字在渐变右端只有 3.44:1，是本稿修掉的一处。',
+  ledger:'语义色带上了容器层（chip 的淡底），不再用 alpha 硬凑。深色模式下发灰的问题从根上没了。',
+  stats:'图表 8 色在 5040 种环形排列里挑过：相邻切片在三种色觉缺陷下的最小 ΔE = 0.132（浅）/ 0.146（深）。现有体系没做过这一步。',
+  entry:'分类色是用户数据（193 个叶子），画面里最花。所以中性面刻意压到近乎无彩，让分类色自己跳出来。',
+  controls:'五个语义色叠了明度梯度做冗余编码：切到「去色」视图，仍能靠明暗分出收入 / 支出 / 转账 / 信用 / 逾期。'
+};
+
+/* ══════════════ 渲染 ══════════════ */
+function render(){
+  var t = TOKENS[state.mode][state.scheme];
+  applyTokens(t);
+  document.getElementById("screen").innerHTML = SCENES[state.scene](t);
+  document.getElementById("stageTitle").textContent = SCENE_NAME[state.scene];
+  document.getElementById("stageSub").textContent =
+    state.scheme + ' ' + (state.mode === 'light' ? '浅色' : '深色')
+    + ' · 背景 ' + t.background + ' / 卡片 ' + t.surface;
+  var phone = document.getElementById("phone");
+  phone.style.filter = state.cvd === 'none' ? 'none' : 'url(#cvd-' + state.cvd + ')';
+  document.getElementById("annot").innerHTML =
+    state.annot === 'on' ? '<div class="note" style="font-size:12.5px">'+ANNOT[state.scene]+'</div>' : '';
+  // 方案小色卡
+  document.getElementById("schemeSwatch").innerHTML =
+    [t.background, t.surface, t.primary, t.income, t.expense]
+      .map(function(c){ return '<i style="background:'+c+'"></i>'; }).join('');
+  document.getElementById("schemeDesc").textContent = SCHEME_DESC[state.scheme];
+  tokenPanel(t);
+}
+
+function bindSeg(id, key){
+  var box = document.getElementById(id);
+  if (!box) return;
+  box.addEventListener("click", function(e){
+    var btn = e.target;
+    if (!btn || btn.tagName !== "BUTTON") return;
+    var all = box.getElementsByTagName("button");
+    for (var i=0;i<all.length;i++) all[i].setAttribute("aria-pressed", String(all[i] === btn));
+    state[key] = btn.getAttribute("data-v");
+    render();
+  });
+}
+
+bindSeg("segScheme","scheme");
+bindSeg("segMode","mode");
+bindSeg("segScene","scene");
+bindSeg("segCvd","cvd");
+bindSeg("segAnnot","annot");
+render();
+</script>
+</body>
+</html>

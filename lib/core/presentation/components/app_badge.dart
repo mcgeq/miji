@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:miji/core/theme/app_design_tokens.dart';
+import 'package:miji/core/theme/app_theme_tokens.dart';
+
 enum AppBadgeTone { neutral, primary, secondary, tertiary, error }
 
 class AppBadge extends StatelessWidget {
@@ -27,8 +30,7 @@ class AppBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final defaultColors = _colors(colorScheme);
+    final defaultColors = _colors(theme);
     final colors = (
       background: backgroundColor ?? defaultColors.background,
       border: borderColor ?? defaultColors.border,
@@ -81,41 +83,53 @@ class AppBadge extends StatelessWidget {
   }
 
   ({Color background, Color border, Color foreground}) _colors(
-    ColorScheme colorScheme,
+    ThemeData theme,
   ) {
+    final colorScheme = theme.colorScheme;
+    final moneyColors = theme.moneyColors;
+    // 中性淡底用 sunken（凹槽灰），不是「本色叠 alpha」——
+    // alpha 的实得明度取决于它压在什么上面，深色叠深面就发灰了。
+    final neutralFill = colorScheme.surfaceContainerHighest;
+
     if (selected) {
-      final foreground = colorScheme.onPrimaryContainer;
       return (
-        background: foreground.withValues(alpha: 0.10),
-        border: foreground.withValues(alpha: 0.16),
-        foreground: foreground,
+        background: colorScheme.primaryContainer,
+        border: colorScheme.primaryContainer,
+        foreground: colorScheme.onPrimaryContainer,
       );
     }
 
     return switch (tone) {
       AppBadgeTone.primary => (
-        background: colorScheme.primaryContainer.withValues(alpha: 0.46),
-        border: colorScheme.primary.withValues(alpha: 0.20),
-        foreground: colorScheme.primary,
+        background: colorScheme.primaryContainer,
+        border: colorScheme.primaryContainer,
+        foreground: colorScheme.onPrimaryContainer,
       ),
+      // secondary / tertiary 在 A 里没有专属的浅底（颜色表只给了本色 + 深版），
+      // 所以底色统一走中性凹槽、靠文字色区分；这样深色下也不会得到一块发灰的彩底。
       AppBadgeTone.secondary => (
-        background: colorScheme.secondaryContainer.withValues(alpha: 0.52),
-        border: colorScheme.secondary.withValues(alpha: 0.22),
-        foreground: colorScheme.onSecondaryContainer,
+        background: neutralFill,
+        border: neutralFill,
+        foreground: theme.brightness == Brightness.dark
+            ? AppThemeTokens.darkSecondaryStrong
+            : AppThemeTokens.lightSecondaryStrong,
       ),
       AppBadgeTone.tertiary => (
-        background: colorScheme.tertiaryContainer.withValues(alpha: 0.58),
-        border: colorScheme.tertiary.withValues(alpha: 0.24),
-        foreground: colorScheme.onTertiaryContainer,
+        background: neutralFill,
+        border: neutralFill,
+        foreground: theme.brightness == Brightness.dark
+            ? AppThemeTokens.darkTertiaryStrong
+            : AppThemeTokens.lightTertiaryStrong,
       ),
+      // 语义红直接用记账那套「语义容器 + 语义深字」，与金额/tag 是同一族红。
       AppBadgeTone.error => (
-        background: colorScheme.errorContainer.withValues(alpha: 0.60),
-        border: colorScheme.error.withValues(alpha: 0.22),
-        foreground: colorScheme.onErrorContainer,
+        background: moneyColors.expenseContainer,
+        border: moneyColors.expenseContainer,
+        foreground: moneyColors.expenseStrong,
       ),
       AppBadgeTone.neutral => (
-        background: colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
-        border: colorScheme.outlineVariant.withValues(alpha: 0.28),
+        background: neutralFill,
+        border: neutralFill,
         foreground: colorScheme.onSurfaceVariant,
       ),
     };

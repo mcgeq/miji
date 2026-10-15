@@ -35,7 +35,9 @@ class HomeBalanceHeroCard extends StatelessWidget {
     final hasBudget = summary?.hasBudget ?? false;
     final exceeded = hasBudget && (summary!.progress >= 1);
     final gradient = _heroGradient(theme, exceeded: exceeded);
-    final onHero = Colors.white;
+    // 这张卡只用品牌（石墨）与超支（深红）两套渐变，都是深卡，所以 A 下正文是白字。
+    // 仍从 token 取而不是写死 `Colors.white`：换方向/换渐变时不用再回来逐个改。
+    final onHero = gradient.onColor;
 
     return Semantics(
       label: hasBudget ? '本月预算概览' : '本月概览',

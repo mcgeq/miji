@@ -54,6 +54,26 @@ class HealthPalette {
     return phase(value).withValues(alpha: _dark ? 0.18 : 0.13);
   }
 
+  /// 阶段色的**文字档**：同色相，但压到在同色淡底（[phaseSurface]）上仍 ≥4.5:1。
+  ///
+  /// [phase] 本色是给色块 / 图标用的 3:1 档 —— 浅色主题下直接当小号文字只有
+  /// 3.2~4.2:1（月历格子里那些 12.5px 的阶段数字就是这么掉下去的，属既有问题）。
+  /// 首页「未来 7 天」把状态写在日期格里，数字是 13.5px 小字，必须走这一档。
+  ///
+  /// 实测（淡底 / 卡面）：经期 `#AD3756` 5.12 / 6.07、易孕期 `#11725D` 5.02 / 5.85、
+  /// 经前期 `#744CA3` 5.39 / 6.35。深色主题的本色本身就是亮色（淡底上 5.1~6.2:1），
+  /// 直接用本色即可，不要再去调亮。
+  Color phaseInk(HealthCyclePhase value) {
+    if (_dark) return phase(value);
+    return switch (value) {
+      HealthCyclePhase.period ||
+      HealthCyclePhase.pregnancy => const Color(0xFFAD3756),
+      HealthCyclePhase.fertile => const Color(0xFF11725D),
+      HealthCyclePhase.pms => const Color(0xFF744CA3),
+      _ => phase(value),
+    };
+  }
+
   /// 实心块（经期 / 孕期）上的前景色。
   Color onPhase(HealthCyclePhase value) {
     return switch (value) {

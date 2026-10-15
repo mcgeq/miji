@@ -863,7 +863,7 @@ class _NetWorthHero extends ConsumerWidget {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.10),
+                  color: gradient.onColor.withValues(alpha: 0.10),
                 ),
               ),
             ),
@@ -879,7 +879,9 @@ class _NetWorthHero extends ConsumerWidget {
                         Text(
                           '净资产',
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.86),
+                            color: gradient.onColor.withValues(
+                              alpha: AppHeroGradient.secondaryOpacity,
+                            ),
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0,
                           ),
@@ -890,6 +892,7 @@ class _NetWorthHero extends ConsumerWidget {
                           currencyCode: worth.currencyCode,
                           hidden: hidden,
                           compact: true,
+                          onColor: gradient.onColor,
                         ),
                       ],
                     ),
@@ -907,7 +910,7 @@ class _NetWorthHero extends ConsumerWidget {
                                 worth.assetMinor,
                                 worth.currencyCode,
                               ),
-                        color: Colors.white,
+                        color: gradient.onColor,
                       ),
                       const SizedBox(height: 4),
                       _CompactHeroTotal(
@@ -918,7 +921,11 @@ class _NetWorthHero extends ConsumerWidget {
                                 worth.liabilityMinor,
                                 worth.currencyCode,
                               ),
-                        color: theme.heroGradients.amber,
+                        // 净资产卡是亮卡，次级数字不能再用暖琥珀（那是深卡上的告警色），
+                        // 改成同一套深字降不透明度——0.78 是在最亮那一档上仍过 4.5:1 的上限。
+                        color: gradient.onColor.withValues(
+                          alpha: AppHeroGradient.secondaryOpacity,
+                        ),
                       ),
                     ],
                   ),
@@ -926,7 +933,7 @@ class _NetWorthHero extends ConsumerWidget {
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 18,
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: gradient.onColor.withValues(alpha: 0.7),
                   ),
                 ],
               ),
@@ -991,12 +998,16 @@ class _HeroAmount extends StatelessWidget {
     required this.amountMinor,
     required this.currencyCode,
     required this.hidden,
+    required this.onColor,
     this.compact = false,
   });
 
   final int amountMinor;
   final String currencyCode;
   final bool hidden;
+
+  /// 卡上正文色。亮卡（净资产）是深字、深卡才配白字，由 `AppHeroGradient.onColor` 决定。
+  final Color onColor;
 
   /// 紧凑布局下用更小一号的字，避免与右侧的「总资产 / 负债」并排时被压窄。
   final bool compact;
@@ -1007,7 +1018,7 @@ class _HeroAmount extends StatelessWidget {
     final style =
         (compact ? theme.textTheme.headlineSmall : theme.textTheme.displaySmall)
             ?.copyWith(
-              color: Colors.white,
+              color: onColor,
               fontWeight: FontWeight.w900,
               letterSpacing: 0,
               height: 1.05,
@@ -1033,7 +1044,7 @@ class _HeroAmount extends StatelessWidget {
             style: style?.copyWith(
               fontSize: (style.fontSize ?? 36) * 0.56,
               fontWeight: FontWeight.w700,
-              color: Colors.white.withValues(alpha: 0.82),
+              color: onColor.withValues(alpha: 0.82),
             ),
           ),
         ],

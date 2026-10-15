@@ -429,7 +429,8 @@ class _RefundSummaryRow extends StatelessWidget {
             MoneyPrivacy.of(context),
           ),
           style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.moneyColors.warning,
+            // 12px 的退款金额：vivid 那档是按「大号粗体金额 3:1」定的，这个字号要用深版。
+            color: theme.moneyColors.warningStrong,
             fontWeight: FontWeight.w800,
             letterSpacing: 0,
           ),

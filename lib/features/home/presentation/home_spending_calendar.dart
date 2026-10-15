@@ -398,7 +398,7 @@ class _DayCell extends StatelessWidget {
     if (isEmpty) {
       background = colorScheme.surfaceContainerHighest.withValues(alpha: 0.40);
     } else if (isIncome) {
-      background = moneyColors.income.withValues(alpha: 0.14);
+      background = moneyColors.incomeContainer;
     } else {
       background = moneyColors.expense.withValues(
         alpha: switch (_intensityStep(point.expenseMinor)) {
@@ -420,11 +420,13 @@ class _DayCell extends StatelessWidget {
                 : Colors.transparent,
           );
 
+    // 格子里的金额只有 9~10px，走语义色的**深版**：
+    // vivid 那档是按「大号粗体金额 3:1」定的，压在这种字号（且底色本身带色）上不够。
     final amountColor = isEmpty
         ? colorScheme.onSurfaceVariant
         : isIncome
-        ? moneyColors.income
-        : moneyColors.expense;
+        ? moneyColors.incomeStrong
+        : moneyColors.expenseStrong;
 
     final amountLabel = masked
         ? '••'

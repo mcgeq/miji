@@ -610,7 +610,16 @@ class _PregnancyCard extends StatelessWidget {
               ],
             ),
           ),
-          FilledButton.tonal(onPressed: onStart, child: const Text('开启')),
+          FilledButton.tonal(
+            onPressed: onStart,
+            // 实心按钮组件主题会连 tonal 一起染成 primarySolid，
+            // 这里显式要回 tonal 的「浅底 + 深字」。
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.primaryContainer,
+              foregroundColor: colorScheme.onPrimaryContainer,
+            ),
+            child: const Text('开启'),
+          ),
         ],
       ),
     );
@@ -651,7 +660,14 @@ class _ActivePregnancyCard extends StatelessWidget {
                   ),
                 ),
               ),
-              FilledButton.tonal(onPressed: onEnd, child: const Text('结束')),
+              FilledButton.tonal(
+                onPressed: onEnd,
+                style: FilledButton.styleFrom(
+                  backgroundColor: colorScheme.primaryContainer,
+                  foregroundColor: colorScheme.onPrimaryContainer,
+                ),
+                child: const Text('结束'),
+              ),
             ],
           ),
           const SizedBox(height: 10),

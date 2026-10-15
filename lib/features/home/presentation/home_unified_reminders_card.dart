@@ -31,23 +31,26 @@ class HomeUnifiedRemindersCard extends StatelessWidget {
     }
 
     final theme = Theme.of(context);
-    final warning = theme.moneyColors.warning;
+    final moneyColors = theme.moneyColors;
+    // 卡片是「需要关注」，所以整块的前景都用深版（12px 小字守 4.5:1），
+    // 淡底用实色容器；只有描边还留着半透明——那条线是用来划边界的，不是承载信息的。
+    final accent = moneyColors.warningStrong;
     final visible = items.take(maxItems).toList(growable: false);
 
     return AppSurface(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-      borderColor: warning.withValues(alpha: 0.30),
+      borderColor: moneyColors.warning.withValues(alpha: 0.30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded, size: 16, color: warning),
+              Icon(Icons.warning_amber_rounded, size: 16, color: accent),
               const SizedBox(width: 7),
               Text(
                 '需要关注',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: warning,
+                  color: accent,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0,
                 ),
@@ -60,13 +63,13 @@ class HomeUnifiedRemindersCard extends StatelessWidget {
                     vertical: 1,
                   ),
                   decoration: BoxDecoration(
-                    color: warning.withValues(alpha: 0.16),
+                    color: moneyColors.warningContainer,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     '${items.length}',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: warning,
+                      color: accent,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0,
                     ),
@@ -79,7 +82,7 @@ class HomeUnifiedRemindersCard extends StatelessWidget {
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  foregroundColor: warning,
+                  foregroundColor: accent,
                 ),
                 child: const Text('全部'),
               ),
