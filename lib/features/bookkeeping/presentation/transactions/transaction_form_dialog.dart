@@ -411,13 +411,19 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               setState(() {});
             },
           ),
-          // 字段顺序按使用频次重排：
-          // 金额 → 分类 → 支付方式 → 账户 → 日期 → 名称 → 备注。
-          // 原来「名称」排在第 3 位，早于账户 / 分类 / 日期，而它恰恰是这些字段里
-          // 最少用的一个——多数流水靠分类与账户就能说清楚。
-          // 支付方式原本压在表单末尾，现在提到账户之前：账户一选定就会**反过来
-          // 锁定**支付方式（支付宝账户→支付宝、微信账户→微信支付），排在账户
-          // 后面等于让用户对着一个已经由账户决定的下拉，还要往下滚很久才看得到。
+          // 名称紧跟金额：这两格合起来回答「这笔钱花在什么上」，是每次记账都
+          // 要走的一步，贴在一起手就不用在键盘格与下拉框之间来回跳。
+          AppTextField(
+            controller: _descriptionController,
+            labelText: '名称',
+            hintText: '可选，如：和老王吃饭、618 囤货',
+            prefixIcon: const Icon(Icons.title_rounded),
+            textInputAction: TextInputAction.next,
+          ),
+          // 名称之后的顺序仍按使用频次往下排：分类 → 支付方式 → 账户 → 日期 → 备注。
+          // 支付方式之所以排在账户之前：账户一选定就会**反过来锁定**支付方式
+          // （支付宝账户→支付宝、微信账户→微信支付），排在账户后面等于让用户
+          // 对着一个已经由账户决定的下拉，还要往下滚很久才看得到。
           catalog.when(
             data: (value) => widget.showCategorySelector
                 ? CategoryLeafSelector(
@@ -556,14 +562,7 @@ class _TransactionFormDialogState extends ConsumerState<TransactionFormDialog> {
               setState(() => _transactionAt = value);
             },
           ),
-          AppTextField(
-            controller: _descriptionController,
-            labelText: '名称',
-            hintText: '可选，如：和老王吃饭、618 囤货',
-            prefixIcon: const Icon(Icons.title_rounded),
-            textInputAction: TextInputAction.next,
-          ),
-          // 备注从「更多信息」提到顶层：它是流水里第二常用的自由文本，
+          // 备注从「更多信息」提到顶层：它是流水里第二常用的自由文本（第一是名称），
           // 原来要展开「更多信息」再找到它，两步起。行数随内容增长，
           // 空着时只占一行。
           AppTextField(

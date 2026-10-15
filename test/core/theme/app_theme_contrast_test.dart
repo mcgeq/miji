@@ -54,6 +54,44 @@ double hueDistance(Color a, Color b) {
   return math.min(diff, 360 - diff);
 }
 
+/// OKLab 距离（感知均匀空间）。
+///
+/// 亮度差相同的两对颜色，感知上的差别可以差很远 —— 「白 vs 奶油」的
+/// 对比度差看着有 1.21:1，其实 ΔE 只有 0.089，肉眼基本读不出来。
+/// 判「两个颜色是不是真的分得开」必须用它，不能用 WCAG 对比度。
+double oklabDistance(Color a, Color b) {
+  double srgbToLinear(double v) {
+    return v <= 0.04045
+        ? v / 12.92
+        : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
+  }
+
+  List<double> lab(Color c) {
+    final r = srgbToLinear(c.r);
+    final g = srgbToLinear(c.g);
+    final bb = srgbToLinear(c.b);
+    final l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * bb;
+    final m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * bb;
+    final s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * bb;
+    final lc = math.pow(l, 1 / 3).toDouble();
+    final mc = math.pow(m, 1 / 3).toDouble();
+    final sc = math.pow(s, 1 / 3).toDouble();
+    return [
+      0.2104542553 * lc + 0.7936177850 * mc - 0.0040720468 * sc,
+      1.9779984951 * lc - 2.4285922050 * mc + 0.4505937099 * sc,
+      0.0259040371 * lc + 0.7827717662 * mc - 0.8086757660 * sc,
+    ];
+  }
+
+  final ca = lab(a);
+  final cb = lab(b);
+  return math.sqrt(
+    math.pow(ca[0] - cb[0], 2) +
+        math.pow(ca[1] - cb[1], 2) +
+        math.pow(ca[2] - cb[2], 2),
+  );
+}
+
 /// A 晴空这套配色的可访问性契约。
 ///
 /// 阈值分两档，不要混用：
@@ -194,6 +232,68 @@ void main() {
         AppThemeFallbacks.heroGradients.danger.onColor,
         AppThemeTokens.lightOnDanger,
       );
+    });
+
+    test('石墨卡在自己的页面底上分得出来（不是隐形卡）', () {
+      // 深色下的病是「卡片 = 页面底」：旧深色品牌卡是 #212A33/#353B43/#2C3038，
+      // 而深色页面底就是 #222426，三档只有 1.07 / 1.38 / 1.18:1。
+      // 深色卡片做不到高对比（页面底本身就暗），所以门槛按「抬升面」定，
+      // 而不是拿 WCAG 的 3:1 硬套 —— 常规卡 #303234 也才 1.21:1。
+      for (final stops in [
+        (AppThemeTokens.lightBackground, AppThemeFallbacks.heroGradients.brand),
+        (AppThemeTokens.darkBackground, AppTheme.dark().heroGradients.brand),
+      ]) {
+        final bg = stops.$1;
+        final light = bg == AppThemeTokens.lightBackground;
+        final floor = light ? 8.0 : 1.30;
+        for (final color in stops.$2.colors) {
+          expect(
+            contrastRatio(color, bg),
+            greaterThanOrEqualTo(floor),
+            reason:
+                '石墨卡 $color 在页面底 $bg 上只有 '
+                '${contrastRatio(color, bg).toStringAsFixed(2)}:1，卡片边界会消失',
+          );
+        }
+      }
+    });
+
+    test('深色石墨卡的投影是暗色，不是卡片自身色', () {
+      // 卡片现在是「比页面底亮的抬升面」，再拿卡片自己的颜色当投影就是往上打光。
+      final brand = AppTheme.dark().heroGradients.brand;
+      expect(
+        brand.shadow,
+        isNot(brand.colors.first),
+        reason: '投影色不能是卡片自身颜色，否则深色下等于没有投影',
+      );
+      expect(
+        _luminance(brand.shadow),
+        lessThan(_luminance(AppThemeTokens.darkBackground)),
+        reason: '深色卡片的投影必须比页面底更暗，抬升面才立得住',
+      );
+      // 卡片本身必须比页面底亮，否则抬升方向和常规卡相反。
+      expect(
+        _luminance(brand.colors.first),
+        greaterThan(_luminance(AppThemeTokens.darkBackground)),
+      );
+    });
+
+    test('告警琥珀必须真的与白条分得开，不能是「白里掺一点黄」', () {
+      // 旧值 #FFE6BC 与白色的 ΔE 只有 0.089，在石墨卡上看着就是
+      // 「正常的白条，稍微脏一点」—— 告警态比正常态还弱。
+      for (final entry in themes.entries) {
+        final distance = oklabDistance(
+          entry.value.heroGradients.amber,
+          Colors.white,
+        );
+        expect(
+          distance,
+          greaterThanOrEqualTo(0.15),
+          reason:
+              '${entry.key} 琥珀与白色 ΔE 只有 '
+              '${distance.toStringAsFixed(3)}，告警态会被读成正常态',
+        );
+      }
     });
 
     test('fallback 与浅色主题一致', () {

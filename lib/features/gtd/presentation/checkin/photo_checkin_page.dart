@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
+import 'package:miji/features/todo/providers/todo_providers.dart';
 
 /// 拍照打卡页 — 从相册选图后确认打卡
 class PhotoCheckinPage extends ConsumerStatefulWidget {
@@ -73,8 +74,9 @@ class _PhotoCheckinPageState extends ConsumerState<PhotoCheckinPage> {
         takenAt: now,
       );
 
-      ref.invalidate(todayProgressProvider);
-      ref.invalidate(recordsByDateProvider);
+      // 拍照打卡写完也要带上「今日」混排（todo + 习惯）与首页今日看板，
+      // 否则这两个界面要等下次冷启动才认这条记录。
+      invalidateTodayActionData(ref);
 
       if (mounted) {
         context.pop();

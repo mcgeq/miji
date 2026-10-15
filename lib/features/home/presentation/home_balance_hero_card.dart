@@ -367,6 +367,7 @@ class _MainRow extends StatelessWidget {
           _BudgetRing(
             usedProgress: usedProgress,
             occupiedProgress: occupiedProgress,
+            exceeded: exceeded,
           ),
         ],
       ],
@@ -509,12 +510,17 @@ class _HeroAmount extends StatelessWidget {
 /// 画的是**占用**（已用 + 已预留），不是只画已用：只按已用画的话，
 /// 「未来义务把额度占满」时环还是空着一半，和旁边「本月还可花 ¥0」直接打架。
 ///
-/// 两段弧形区分来源：纯白是已用，浅白是被预留占住的部分。合并成一个数
+/// 两段弧形区分来源：实色是已用，半透明是被预留占住的部分。合并成一个数
 /// 会让预留看起来像已经花掉，用户也就没法对账了。
+///
+/// 环还会按状态换色（见 [_arcColor]）：整环恒为白色的话，占用 30% 与
+/// 占用 95% 长一样，只有卡片底色会变 —— 而底色只在**已经超支**的那一刻才切，
+/// 也就是说「快超了」这个真正需要提醒的状态，界面上完全没有信号。
 class _BudgetRing extends StatelessWidget {
   const _BudgetRing({
     required this.usedProgress,
     required this.occupiedProgress,
+    required this.exceeded,
   });
 
   final double usedProgress;
@@ -522,8 +528,14 @@ class _BudgetRing extends StatelessWidget {
   /// 已用 + 已预留，恒 ≥ [usedProgress]。
   final double occupiedProgress;
 
+  /// 已用 ≥ 预算。此时整卡切到 danger 深红，卡片本身已经在喊了。
+  final bool exceeded;
+
   static const _size = 84.0;
   static const _stroke = 8.0;
+
+  /// 与分类预算条的 [HomeCategoryBudgetProgress.isNearLimit] 同口径。
+  static const _nearLimitAt = 0.8;
 
   @override
   Widget build(BuildContext context) {
@@ -531,6 +543,10 @@ class _BudgetRing extends StatelessWidget {
     final used = usedProgress.clamp(0.0, 1.0).toDouble();
     final occupied = occupiedProgress.clamp(0.0, 1.0).toDouble();
     final hasCommitted = occupied - used > 0.0001;
+    // 超支时卡片已经是深红，环再上琥珀会「红底压橙」，两个告警互相打架，
+    // 所以只在**还没超支但快到顶**时上琥珀。
+    final nearLimit = !exceeded && occupied >= _nearLimitAt;
+    final arc = nearLimit ? theme.heroGradients.amber : Colors.white;
 
     return SizedBox.square(
       dimension: _size,
@@ -544,6 +560,8 @@ class _BudgetRing extends StatelessWidget {
             children: [
               // 底环：整圈预算。用 border 画固定底环，避免每个
               // CircularProgressIndicator 都自带一条底环、叠加后颜色变深。
+              // 底环**恒为中性白**，不跟弧一起变色：底色也跟着变的话，
+              // 琥珀弧在琥珀底环上就分不出「用掉多少 / 还剩多少」了。
               SizedBox.square(
                 dimension: _size,
                 child: DecoratedBox(
@@ -565,7 +583,7 @@ class _BudgetRing extends StatelessWidget {
                     strokeWidth: _stroke,
                     backgroundColor: Colors.transparent,
                     valueColor: AlwaysStoppedAnimation(
-                      Colors.white.withValues(alpha: 0.52),
+                      arc.withValues(alpha: 0.52),
                     ),
                   ),
                 ),
@@ -577,7 +595,7 @@ class _BudgetRing extends StatelessWidget {
                   strokeWidth: _stroke,
                   strokeCap: StrokeCap.round,
                   backgroundColor: Colors.transparent,
-                  valueColor: const AlwaysStoppedAnimation(Colors.white),
+                  valueColor: AlwaysStoppedAnimation(arc),
                 ),
               ),
               Column(

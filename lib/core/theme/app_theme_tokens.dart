@@ -82,11 +82,17 @@ class AppThemeTokens {
   static const lightOnBrand = Color(0xFFFFFFFF);
   static const lightOnDanger = Color(0xFFFFFFFF);
 
-  /// Hero 卡上的琥珀小字（品牌卡的告警数字、超支进度）。
+  /// Hero 卡上的琥珀：告警数字、超支进度条、接近上限的环与条。
   ///
   /// 它是暖色，而 A 的中性面是冷色——但只出现在**深卡内部**（石墨 / 深红），
   /// 与冷色底不同框，所以不冲突；换成冷色反而丢掉「告警」的语义。
-  static const lightHeroAmber = Color(0xFFFFE6BC);
+  ///
+  /// ⚠️ 必须是**饱和**琥珀，不能是奶油色：旧值 `#FFE6BC` 与白色的亮度只差
+  /// 0.185，同在石墨卡上只有 10.04:1 vs 白条的 12.19:1 —— 告警态看着比正常态
+  /// **更弱**，等于把「接近上限」画成了「正常的、稍微脏一点的白」。
+  /// `#FFC94F` 与白差 0.364 且色相明确，告警一眼能认出来，
+  /// 六档渐变端点上最差仍有 4.68:1（深色超支卡 `#A71E4B`），文字档也够。
+  static const lightHeroAmber = Color(0xFFFFC94F);
 
   // ───────────── 深色：晴空 · 宝蓝（暗色重定档，不是浅色调暗） ─────────────
 
@@ -123,5 +129,12 @@ class AppThemeTokens {
   static const darkOnBrand = Color(0xFFFFFFFF);
   static const darkOnDanger = Color(0xFFFFFFFF);
 
-  static const darkHeroAmber = Color(0xFFFFE6BC);
+  static const darkHeroAmber = Color(0xFFFFC94F);
+
+  /// 深色品牌卡（石墨）的投影色。
+  ///
+  /// 不能用卡片自身的第一档当投影——深色下卡片是「比页面亮的抬升面」，
+  /// 拿它自己的颜色做投影等于往上打光，实测压在页面底上只有 1.02:1，
+  /// 卡片边界直接消失。抬升面要靠**暗**投影才读得出来。
+  static const darkHeroBrandShadow = Color(0xFF0A0C0F);
 }

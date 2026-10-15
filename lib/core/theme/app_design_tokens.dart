@@ -232,7 +232,7 @@ class AppHeroGradients extends ThemeExtension<AppHeroGradients> {
     required this.netWorth,
     required this.brand,
     required this.danger,
-    this.amber = const Color(0xFFFFE6BC),
+    this.amber = const Color(0xFFFFC94F),
   });
 
   /// Hero 上的次级数字色（净资产卡里的「负债」、分类预算的超支进度条）。

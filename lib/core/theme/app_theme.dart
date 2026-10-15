@@ -255,9 +255,16 @@ class AppTheme {
       colors: [Color(0xFF2396F7), Color(0xFF8EA4FF), Color(0xFFA886F6)],
       onColor: AppThemeTokens.darkOnNetWorth,
     ),
+    // 深色品牌卡：石墨，但必须**抬到页面底之上**。
+    // 旧值 `#212A33/#353B43/#2C3038` 是直接照搬浅色那张卡的色值，
+    // 而深色页面底就是 `#222426` —— 实测三个停靠点只有 1.07 / 1.38 / 1.18:1，
+    // 叠上「用卡片自身颜色做的投影」（1.02:1）后，卡片在页面上等于隐形。
+    // 现在按 A 深色自己的层级（surface #303234 / raised #3D3F42）抬一档，
+    // 抬到 1.36 / 1.75 / 1.52:1，并改用暗投影。
     brand: AppHeroGradient(
-      colors: [Color(0xFF212A33), Color(0xFF353B43), Color(0xFF2C3038)],
+      colors: [Color(0xFF353A42), Color(0xFF454A53), Color(0xFF3C414A)],
       onColor: AppThemeTokens.darkOnBrand,
+      shadowColor: AppThemeTokens.darkHeroBrandShadow,
     ),
     danger: AppHeroGradient(
       colors: [Color(0xFF861756), Color(0xFFA71E4B), Color(0xFF992127)],

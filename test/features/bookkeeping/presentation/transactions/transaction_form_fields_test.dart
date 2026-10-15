@@ -104,18 +104,21 @@ void main() {
     );
   });
 
-  testWidgets('high-frequency fields are ordered before the optional name', (
-    tester,
-  ) async {
+  testWidgets('the name field sits right after the amount', (tester) async {
     await _pumpForm(tester);
 
     double top(Finder finder) => tester.getTopLeft(finder).dy;
 
-    // 金额 → 分类 → 支付方式 → 账户 → 日期 → 名称。
+    // 金额 → 名称 → 分类 → 支付方式 → 账户 → 日期 → 备注。
     expect(
       top(find.byType(AppAmountField)),
+      lessThan(top(_nameFinder())),
+      reason: '名称应紧跟金额，两格合起来回答「这笔钱花在什么上」',
+    );
+    expect(
+      top(_nameFinder()),
       lessThan(top(find.byType(CategoryLeafSelector))),
-      reason: '分类应排在金额之后、账户之前',
+      reason: '分类让位于名称，排在金额 / 名称这两格键盘输入之后',
     );
     expect(
       top(find.byType(CategoryLeafSelector)),
@@ -134,8 +137,8 @@ void main() {
     );
     expect(
       top(find.byType(DateTimePicker)),
-      lessThan(top(_nameFinder())),
-      reason: '名称是可选字段，应排在日期之后',
+      lessThan(top(_notesFinder())),
+      reason: '备注是所有字段里最后填写的',
     );
   });
 

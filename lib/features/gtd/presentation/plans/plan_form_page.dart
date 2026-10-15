@@ -7,6 +7,7 @@ import 'package:miji/core/notifications/notification_providers.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
+import 'package:miji/features/todo/providers/todo_providers.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
@@ -325,7 +326,11 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
         }
       }
 
-      invalidateCheckinData(ref);
+      // 计划的新建/修改要连带刷新「今日」混排（todo + 习惯）与首页今日看板：
+      // `invalidateCheckinData` 只管打卡自己的 provider，而这两个界面的数据源
+      // 是 `todayActionItemsProvider` —— 它自己直接查 repository，不 watch
+      // `activePlansProvider`，所以漏了它就只剩「杀掉应用重开才看得到」。
+      invalidateTodayActionData(ref);
 
       // 编辑模式：更新提醒
       if (_isEdit && widget.editPlanId != null) {

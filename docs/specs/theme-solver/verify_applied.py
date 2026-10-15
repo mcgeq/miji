@@ -48,21 +48,28 @@ def parse_money(text, header):
     return {k: hexs(v) for k, v in re.findall(r"(\w+): Color\(0x([0-9A-Fa-f]{8})\)", body)}
 
 
+# ⚠️ 不能把 onColor 当成最后一个字段：品牌卡还要带 shadowColor，
+# 写死 `onColor: ...,\s*\)` 会在多出字段后静默漏掉整个渐变。
 GRADIENT_RE = re.compile(
     r"(netWorth|brand|danger): AppHeroGradient\(\s*"
     r"colors: \[([^\]]*)\],\s*"
-    r"onColor: ([^,\n]+),\s*\)",
+    r"onColor: ([^,\n]+),"
+    r"([^)]*?)"
+    r"\)",
     re.S,
 )
+SHADOW_RE = re.compile(r"shadowColor: ([^,\n]+),")
 
 
 def parse_gradients(text, header):
     body = block(text, header)
     out = {}
-    for name, colors, on in GRADIENT_RE.findall(body):
+    for name, colors, on, extra in GRADIENT_RE.findall(body):
+        shadow = SHADOW_RE.search(extra)
         out[name] = {
             "colors": [hexs(c) for c in re.findall(r"0x([0-9A-Fa-f]{8})", colors)],
             "on": resolve(on),
+            "shadow": resolve(shadow.group(1)) if shadow else None,
         }
     amber = re.search(r"amber: ([^,\n]+),", body)
     out["amber"] = resolve(amber.group(1))
@@ -156,6 +163,19 @@ for mode, s in SETS.items():
         for c in hero[key]["colors"]:
             add(mode, "Hero 渐变", "琥珀告警字", hero["amber"], c, 4.5)
 
+    # 卡片能不能从页面底上「看出一张卡」。深色做不到高对比（页面底本身就暗），
+    # 门槛按「抬升面」定 —— 常规卡 #303234 也才 1.21:1。
+    # 旧深色品牌卡是照搬浅色的 #212A33/#353B43/#2C3038，实测 1.07/1.38/1.18:1，
+    # 加上「用卡片自身颜色做的投影」，卡片在页面上等于隐形。
+    brand_floor = 8.0 if mode == "light" else 1.30
+    for i, c in enumerate(hero["brand"]["colors"]):
+        add(mode, "Hero 卡 / 页面底", f"品牌卡第 {i + 1} 档", c, s["background"],
+            brand_floor, "抬升面")
+    shadow = hero["brand"]["shadow"]
+    if shadow:
+        add(mode, "Hero 卡 / 页面底", "品牌卡投影", shadow, s["background"], 1.10,
+            "抬升面的投影必须比页面底暗")
+
 print(f"从 Dart 源码读到 {len(consts)} 个 token")
 for mode in ("light", "dark"):
     print(f"\n{mode}: {len(rows[mode])} 项")
@@ -211,7 +231,7 @@ def mode_panel(mode, title):
         for k, n in SEM
     )
     groups = ["中性面", "主色", "语义色 · 金额", "语义色 · 小字",
-              "语义色 · 容器", "图表 8 色", "Hero 渐变"]
+              "语义色 · 容器", "图表 8 色", "Hero 渐变", "Hero 卡 / 页面底"]
     return f'''
     <section class="panel {mode}" style="--bg:{t[f"{mode}Background"]};
         --srf:{t[f"{mode}Surface"]};--ink:{t[f"{mode}Text"]}">
@@ -287,9 +307,19 @@ html = f'''<!doctype html>
 金额是超大号粗体，WCAG 只要 3:1，所以拿到 <code>{SETS["light"]["money"]["income"]}</code>
 这种正绿；小号文字另配 <code>*Strong</code> 深版守 4.5。旧体系按 4.5 卡全套，
 只能退成 <code>#0D5900</code> 墨绿，一屏金额看着像蒙了灰。</p>
-<p style="margin:0"><b>4 · Hero 三张卡按用途定死，正文色由 token 给。</b>
+<p style="margin:0 0 8px"><b>4 · Hero 三张卡按用途定死，正文色由 token 给。</b>
 净资产卡是亮蓝渐变，白字只有 2~3:1 → 配深字 <code>{consts["lightOnNetWorth"]}</code>；
 品牌石墨卡、超支深红卡才配白字。代码里不再写死 <code>Colors.white</code>。</p>
+<p style="margin:0 0 8px"><b>5 · 深色下的石墨卡必须抬到页面底之上，投影必须用暗色。</b>
+旧深色品牌卡直接照搬浅色的 <code>#212A33</code> 三档，而深色页面底就是
+<code>{consts["darkBackground"]}</code> —— 实测只有 1.07:1；再叠上「用卡片自身颜色做的
+投影」，卡片在页面上等于隐形。现在按 A 深色自己的层级抬一档到
+<code>{SETS["dark"]["hero"]["brand"]["colors"][0]}</code> 起（1.36:1 起），
+投影换成 <code>{SETS["dark"]["hero"]["brand"]["shadow"]}</code> 这种近黑。</p>
+<p style="margin:0"><b>6 · 告警琥珀必须饱和。</b>旧值 <code>#FFE6BC</code> 与白色在 OKLab 里
+只差 0.089，压在石墨卡上读起来是「正常的白条，稍微脏一点」—— 告警态比正常态还弱。
+换成 <code>{SETS["light"]["hero"]["amber"]}</code> 后差 0.202，与白条的区分度翻了一倍多，
+六档渐变端点上最差仍有 4.68:1。</p>
 </div>
 </body></html>
 '''

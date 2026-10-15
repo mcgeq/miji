@@ -509,7 +509,8 @@ class _QuickAddButton extends ConsumerWidget {
       numericValue: 1,
     );
     await repo.upsertRecord(draft, plan.userId);
-    invalidateCheckinData(ref);
+    // 「习惯」tab 的 +1 也要让「今日」tab 的混排条一起走进度。
+    invalidateTodayActionData(ref);
   }
 }
 
@@ -606,7 +607,8 @@ class _TimerButton extends ConsumerWidget {
       durationSeconds: seconds,
     );
     await repo.upsertRecord(draft, plan.userId);
-    invalidateCheckinData(ref);
+    // 「习惯」tab 的 +1 也要让「今日」tab 的混排条一起走进度。
+    invalidateTodayActionData(ref);
   }
 }
 

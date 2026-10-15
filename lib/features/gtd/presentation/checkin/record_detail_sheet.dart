@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
+import 'package:miji/features/todo/providers/todo_providers.dart';
 
 /// 展示一条打卡记录的详情，支持删除。
 Future<void> showCheckinRecordDetailSheet(
@@ -50,7 +51,8 @@ class _RecordDetailSheetState extends ConsumerState<_RecordDetailSheet> {
     try {
       await ref.read(checkinRepositoryProvider).deleteRecord(widget.record.id);
       if (!mounted) return;
-      invalidateCheckinData(ref);
+      // 删记录同样影响「今日」混排里的习惯条与首页今日看板。
+      invalidateTodayActionData(ref);
       Navigator.of(context).pop();
     } catch (_) {
       if (!mounted) return;

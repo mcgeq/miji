@@ -33,7 +33,14 @@ final checkinTimerProvider =
 // 计划列表
 // ---------------------------------------------------------------------------
 
-/// 计划变更（增删改/归档/取消归档）后统一刷新所有打卡数据。
+/// 刷新打卡自己的全部数据（计划列表 / 今日进度 / 日历 / 统计）。
+///
+/// ⚠️ 它**不含** `todayActionItemsProvider`：那是「今日」tab 与首页今日看板用的
+/// todo + 习惯混排视图，自己直接查 repository、不 watch 这里的任何 provider，
+/// 所以本函数 invalidate 谁都不会传播到它。凡是会改变这两处内容的操作
+/// （新增/编辑/删除/归档计划、写或删打卡记录）都应该调用
+/// `features/todo/providers/todo_providers.dart` 的 `invalidateTodayActionData`，
+/// 它内部会再调本函数。
 void invalidateCheckinData(WidgetRef ref) {
   ref.invalidate(activePlansProvider);
   ref.invalidate(allPlansProvider);

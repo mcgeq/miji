@@ -34,7 +34,8 @@ void main() {
       expect(AppThemeTokens.lightOnNetWorth, const Color(0xFF10152C));
       expect(AppThemeTokens.lightOnBrand, const Color(0xFFFFFFFF));
       expect(AppThemeTokens.lightOnDanger, const Color(0xFFFFFFFF));
-      expect(AppThemeTokens.lightHeroAmber, const Color(0xFFFFE6BC));
+      // 告警琥珀必须是饱和的：奶油色 #FFE6BC 比白条还弱，告警看着像正常态。
+      expect(AppThemeTokens.lightHeroAmber, const Color(0xFFFFC94F));
     });
 
     test('深色：A 晴空（深灰蓝，不是浅色调暗）', () {
@@ -50,7 +51,9 @@ void main() {
       expect(AppThemeTokens.darkSurfaceRaised, const Color(0xFF3D3F42));
       expect(AppThemeTokens.darkOutline, const Color(0xFF838A92));
       expect(AppThemeTokens.darkOutlineVariant, const Color(0xFF494E52));
-      expect(AppThemeTokens.darkHeroAmber, const Color(0xFFFFE6BC));
+      expect(AppThemeTokens.darkHeroAmber, const Color(0xFFFFC94F));
+      // 深色石墨卡的投影不能用卡片自身颜色：那等于往上打光，卡片会消失。
+      expect(AppThemeTokens.darkHeroBrandShadow, const Color(0xFF0A0C0F));
     });
 
     test('主题提供表面阶梯与图表色板', () {
