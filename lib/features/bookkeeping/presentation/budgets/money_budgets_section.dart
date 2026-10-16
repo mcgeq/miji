@@ -100,55 +100,59 @@ class _MoneyBudgetsSectionState extends ConsumerState<MoneyBudgetsSection> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               BookkeepingPanelHeader(
-                                searchRow: BookkeepingPanelSearchField(
+                                // 搜索 / 筛选 / 新增同一行：搜索默认折叠成图标，
+                                // 三枚按钮水平居中；点搜索图标在本行内展开。
+                                // （原来搜索独占一行、筛选与新增另占一行。）
+                                searchRow: BookkeepingPanelExpandableSearchRow(
                                   controller: _searchController,
                                   hintText: '搜索预算名称 / 备注',
+                                  searchTooltip: '搜索预算',
                                   onChanged: (value) => setState(
                                     () => _keyword = value.trim().toLowerCase(),
                                   ),
+                                  actions: [
+                                    AppFilterSheetTrigger(
+                                      title: '筛选预算',
+                                      hasActiveFilters: _hasActiveFilters,
+                                      children: [
+                                        _BudgetFilterFields(
+                                          trackingType: _trackingTypeFilter,
+                                          periodType: _periodTypeFilter,
+                                          scopeFilter: _scopeFilter,
+                                          statusFilter: _statusFilter,
+                                          onTrackingTypeChanged: (value) =>
+                                              _updateFilters(() {
+                                                _trackingTypeFilter = value;
+                                              }),
+                                          onPeriodTypeChanged: (value) =>
+                                              _updateFilters(() {
+                                                _periodTypeFilter = value;
+                                              }),
+                                          onScopeChanged: (value) =>
+                                              _updateFilters(() {
+                                                _scopeFilter = value;
+                                              }),
+                                          onStatusChanged: (value) =>
+                                              _updateFilters(() {
+                                                _statusFilter = value;
+                                              }),
+                                          onReset: () =>
+                                              _updateFilters(_resetFilters),
+                                        ),
+                                      ],
+                                    ),
+                                    // 常驻新增入口。
+                                    //
+                                    // 原来只有 budgets 为空时才有「＋」按钮，
+                                    // 有预算后只能去全局 FAB 的九宫格找「预算」。
+                                    AppIconActionButton(
+                                      tooltip: '新增预算',
+                                      onPressed: () => _openBudgetDialog(),
+                                      icon: Icons.add_rounded,
+                                      variant: AppIconActionVariant.filled,
+                                    ),
+                                  ],
                                 ),
-                                actions: [
-                                  AppFilterSheetTrigger(
-                                    title: '筛选预算',
-                                    hasActiveFilters: _hasActiveFilters,
-                                    children: [
-                                      _BudgetFilterFields(
-                                        trackingType: _trackingTypeFilter,
-                                        periodType: _periodTypeFilter,
-                                        scopeFilter: _scopeFilter,
-                                        statusFilter: _statusFilter,
-                                        onTrackingTypeChanged: (value) =>
-                                            _updateFilters(() {
-                                              _trackingTypeFilter = value;
-                                            }),
-                                        onPeriodTypeChanged: (value) =>
-                                            _updateFilters(() {
-                                              _periodTypeFilter = value;
-                                            }),
-                                        onScopeChanged: (value) =>
-                                            _updateFilters(() {
-                                              _scopeFilter = value;
-                                            }),
-                                        onStatusChanged: (value) =>
-                                            _updateFilters(() {
-                                              _statusFilter = value;
-                                            }),
-                                        onReset: () =>
-                                            _updateFilters(_resetFilters),
-                                      ),
-                                    ],
-                                  ),
-                                  // 常驻新增入口。
-                                  //
-                                  // 原来只有 budgets 为空时才有「＋」按钮，
-                                  // 有预算后只能去全局 FAB 的九宫格找「预算」。
-                                  AppIconActionButton(
-                                    tooltip: '新增预算',
-                                    onPressed: () => _openBudgetDialog(),
-                                    icon: Icons.add_rounded,
-                                    variant: AppIconActionVariant.filled,
-                                  ),
-                                ],
                               ),
                               const SizedBox(height: 10),
                               _BudgetSummaryBar(budgets: filteredBudgets),

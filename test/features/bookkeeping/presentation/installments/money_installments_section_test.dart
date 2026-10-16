@@ -195,6 +195,41 @@ void main() {
     expect(find.text('已完成的分期'), findsOneWidget);
   });
 
+  testWidgets('搜索默认折叠成图标，与新增同排居中，点开才展开', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _wrap(
+        accounts: [_creditAccount],
+        plans: [_plan(name: 'iPhone 15 Pro')],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 默认只有一枚搜索图标：输入框不再独占一行。
+    expect(find.byType(TextField), findsNothing);
+    final searchButton = find.byTooltip('搜索分期');
+    expect(searchButton, findsOneWidget);
+
+    // 两枚按钮同排（同一水平中轴），顺序是 搜索 / 新增。
+    final searchRect = tester.getRect(searchButton);
+    final addRect = tester.getRect(find.byTooltip('新增分期'));
+    expect(searchRect.center.dy, closeTo(addRect.center.dy, 0.5));
+    expect(searchRect.right, lessThan(addRect.left));
+
+    await tester.tap(searchButton);
+    await tester.pumpAndSettle();
+
+    // 点开：输入框在同一行展开，新增被推到右侧。
+    expect(find.byType(TextField), findsOneWidget);
+    expect(
+      tester.getRect(find.byTooltip('新增分期')).left,
+      greaterThan(addRect.left),
+      reason: '展开后新增按钮要让位到右边',
+    );
+  });
+
   testWidgets('filters plans by keyword', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -210,6 +245,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // 搜索默认是折叠的图标，得先点开才有输入框。
+    await tester.tap(find.byTooltip('搜索分期'));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'macbook');
     await tester.pumpAndSettle();
 

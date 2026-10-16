@@ -7,8 +7,9 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
-import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
+import 'package:miji/core/presentation/components/app_module_section_picker.dart';
+import 'package:miji/core/router/app_module_nav.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/presentation/checkin/record_detail_sheet.dart';
@@ -24,18 +25,58 @@ import 'package:miji/features/todo/presentation/todo_stats_view.dart';
 // 主壳页
 // ---------------------------------------------------------------------------
 
+/// 打卡的面板。名字与 `gtdModuleNav` 的 section id 一一对应（`panel.name` 就是
+/// 写进 `?section=` 的值），顺序与 `_buildPageView()` 的 children 一一对应
+/// （`panel.index` 就是 `PageView` 页码）。
 enum _GtdPanel { today, tasks, habits, calendar, statistics }
 
+/// 解析 `?section=`（含非法值）。名字对得上就用名字，不靠下标——
+/// 只保证顺序与 `_buildPageView()` 的 children 一致。
+_GtdPanel _panelFromSection(String? section) {
+  final id = gtdModuleNav.resolveSectionId(section);
+  return _GtdPanel.values.firstWhere(
+    (panel) => panel.name == id,
+    orElse: () => _GtdPanel.today,
+  );
+}
+
 class GtdPage extends ConsumerStatefulWidget {
-  const GtdPage({super.key});
+  const GtdPage({super.key, this.initialSection});
+
+  /// 二级路由的入口：`/app/gtd?section=tasks`。
+  ///
+  /// 打卡以前把当前面板只存在 State 里，地址上没有痕迹：切走再切回一定回到
+  /// 「今日」，通知 / 首页下钻也点不进具体面板。
+  final String? initialSection;
 
   @override
   ConsumerState<GtdPage> createState() => _GtdPageState();
 }
 
 class _GtdPageState extends ConsumerState<GtdPage> {
-  var _selectedPanel = _GtdPanel.today;
-  late final PageController _pageController = PageController();
+  late _GtdPanel _selectedPanel = _panelFromSection(widget.initialSection);
+  late final PageController _pageController = PageController(
+    initialPage: _selectedPanel.index,
+  );
+
+  @override
+  void didUpdateWidget(covariant GtdPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialSection == widget.initialSection) {
+      return;
+    }
+    // 面板自己写回 URL 时会再走到这里，此时 section 已经等于当前面板。
+    final nextPanel = _panelFromSection(widget.initialSection);
+    if (nextPanel == _selectedPanel) {
+      return;
+    }
+    setState(() => _selectedPanel = nextPanel);
+    // 宽屏用的是 `_buildSelectedTab()`，没有 PageView：控制器没挂上时
+    // `jumpToPage` 会在 debug 下断言失败（这也是原先宽屏点分段会崩的原因）。
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(nextPanel.index);
+    }
+  }
 
   @override
   void dispose() {
@@ -45,45 +86,6 @@ class _GtdPageState extends ConsumerState<GtdPage> {
 
   @override
   Widget build(BuildContext context) {
-    final panelSelector = AppSlidingSegmentedControl<_GtdPanel>(
-      minSegmentWidth: 52,
-      showLabels: false,
-      value: _selectedPanel,
-      segments: const [
-        AppSlidingSegment(
-          value: _GtdPanel.today,
-          icon: Icons.today_rounded,
-          label: '今日',
-        ),
-        AppSlidingSegment(
-          value: _GtdPanel.tasks,
-          icon: Icons.task_alt_rounded,
-          label: '任务',
-        ),
-        AppSlidingSegment(
-          value: _GtdPanel.habits,
-          icon: Icons.checklist_rounded,
-          label: '习惯',
-        ),
-        AppSlidingSegment(
-          value: _GtdPanel.calendar,
-          icon: Icons.calendar_month_rounded,
-          label: '日历',
-        ),
-        AppSlidingSegment(
-          value: _GtdPanel.statistics,
-          icon: Icons.insights_rounded,
-          label: '统计',
-        ),
-      ],
-      onChanged: (panel) {
-        setState(() {
-          _selectedPanel = panel;
-          _pageController.jumpToPage(panel.index);
-        });
-      },
-    );
-
     return AppPageFrame(
       maxWidth: 760,
       child: LayoutBuilder(
@@ -93,55 +95,64 @@ class _GtdPageState extends ConsumerState<GtdPage> {
             width: constraints.maxWidth,
           );
           if (responsive.isCompact) {
-            return _buildCompactLayout(panelSelector);
+            return _buildCompactLayout();
           }
-          return _buildExpandedLayout(panelSelector);
+          return _buildExpandedLayout();
         },
       ),
     );
   }
 
-  /// Mobile: centered icon-only tabs + PageView.
+  /// 工具行：左端「面板 chip」（显示当前面板名，点开就是选择器），右端是
+  /// 当前面板自己的页级动作。
+  ///
+  /// 这里原本是一枚 5 段的分段控件（今日 / 任务 / 习惯 / 日历 / 统计）：它横跨
+  /// 整行，手机上和第二行的内容抢视线，而记账页早在同一轮改版里就换成了
+  /// 「chip + 底栏两态唤出」的形态——同一个应用里两套面板切换形态本身就是负担。
+  ///
+  /// chip 只占一个按钮宽，却把分段控件最要紧的两件事原样留下：**当前面板名
+  /// 常驻**（面板自身没有标题栏，这是唯一的「我在哪」标识）和**一拍点开选择器**
+  /// （底栏「打卡」再点一次唤起的是同一张选择器）。
+  Widget _buildToolbarRow() {
+    return Row(
+      children: [
+        AppModuleSectionChip(
+          spec: gtdModuleNav,
+          sectionId: _selectedPanel.name,
+          onTap: _openSectionPicker,
+        ),
+        const Spacer(),
+        ..._buildToolbarActions(),
+      ],
+    );
+  }
+
+  /// Mobile: 工具行 + PageView。
   ///
   /// 页面级动作（新建任务 / 新建计划 / 管理计划）也要出现在手机上：
   /// 它们在宽屏版一直在，手机版以前整排不渲染，于是「任务」面板的新建入口
   /// 在手机上根本不存在（只能借全局 FAB）。
-  Widget _buildCompactLayout(Widget panelSelector) {
+  Widget _buildCompactLayout() {
     return Column(
       children: [
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(child: Center(child: panelSelector)),
-            const SizedBox(width: 8),
-            ..._buildToolbarActions(),
-          ],
-        ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 6),
+        _buildToolbarRow(),
+        const SizedBox(height: 12),
         Expanded(child: _buildPageView()),
       ],
     );
   }
 
-  /// Tablet/desktop: icon-only tabs + action buttons in a Row.
-  Widget _buildExpandedLayout(Widget panelSelector) {
+  /// Tablet/desktop: 工具行 + 只渲染当前面板。
+  ///
+  /// 宽屏不用 `PageView`：这一档没有横向手势的诉求，而且原先按面板切
+  /// `jumpToPage` 时控制器还没挂上会直接断言失败（宽屏点分段的崩溃点）。
+  Widget _buildExpandedLayout() {
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-          child: Row(
-            children: [
-              Expanded(flex: 3, child: panelSelector),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 1,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: _buildToolbarActions(),
-                ),
-              ),
-            ],
-          ),
+          child: _buildToolbarRow(),
         ),
         const SizedBox(height: 14),
         Expanded(child: _buildSelectedTab()),
@@ -153,7 +164,9 @@ class _GtdPageState extends ConsumerState<GtdPage> {
     return PageView(
       controller: _pageController,
       onPageChanged: (index) {
-        setState(() => _selectedPanel = _GtdPanel.values[index]);
+        final panel = _GtdPanel.values[index];
+        setState(() => _selectedPanel = panel);
+        _syncSectionToUrl(panel);
       },
       children: const [
         TodayActionListView(),
@@ -163,6 +176,49 @@ class _GtdPageState extends ConsumerState<GtdPage> {
         V2StatisticsTab(),
       ],
     );
+  }
+
+  /// 换面板（工具行 chip）。
+  void _selectPanel(_GtdPanel panel) {
+    if (panel == _selectedPanel) {
+      return;
+    }
+    setState(() => _selectedPanel = panel);
+    // 宽屏走的是 `_buildSelectedTab()`，没有 PageView —— 控制器没挂上时
+    // `jumpToPage` 会在 debug 下断言失败。
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(panel.index);
+    }
+    _syncSectionToUrl(panel);
+  }
+
+  /// 工具行 chip：弹出面板选择器并落到选中的面板。
+  ///
+  /// 与底栏「打卡」的两态唤出走的是同一张选择器，差别只是这里一次点击到位
+  /// （已经知道自己在这个模块里，不必先判断「在不在模块内」）。
+  Future<void> _openSectionPicker() async {
+    final current = _selectedPanel.name;
+    final picked = await showAppModuleSectionPicker(
+      context,
+      spec: gtdModuleNav,
+      currentSectionId: current,
+    );
+    if (!mounted || picked == null || picked == current) {
+      return;
+    }
+    _selectPanel(_panelFromSection(picked));
+  }
+
+  /// 把当前面板写回 `?section=`。
+  ///
+  /// 以前打卡的面板只活在 State 里，地址永远是 `/app/gtd`：从首页 / 通知进来
+  /// 只能落在「今日」，底栏切走再切回也回不到原面板，系统返回键更不认面板。
+  void _syncSectionToUrl(_GtdPanel panel) {
+    final route = GoRouterState.of(context);
+    if (route.uri.queryParameters['section'] == panel.name) {
+      return;
+    }
+    context.go(gtdModuleNav.uriFor(panel.name).toString());
   }
 
   Widget _buildSelectedTab() {

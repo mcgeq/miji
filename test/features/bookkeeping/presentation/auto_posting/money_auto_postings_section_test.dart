@@ -65,6 +65,46 @@ void main() {
     expect(find.textContaining('个分期计划到期自动入账'), findsNothing);
   });
 
+  testWidgets('搜索默认折叠成图标，与新增同排居中，点开才展开', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _wrap(
+        templates: [_template(id: 't-1', name: '房租')],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 默认只有一枚搜索图标：输入框不再独占一行。
+    expect(find.byType(TextField), findsNothing);
+    final searchButton = find.byTooltip('搜索自动记账');
+    expect(searchButton, findsOneWidget);
+
+    // 两枚按钮同排（同一水平中轴），顺序是 搜索 / 新增。
+    final searchRect = tester.getRect(searchButton);
+    final addRect = tester.getRect(find.byTooltip('新增自动记账'));
+    expect(searchRect.center.dy, closeTo(addRect.center.dy, 0.5));
+    expect(searchRect.right, lessThan(addRect.left));
+
+    await tester.tap(searchButton);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextField), findsOneWidget);
+    expect(
+      tester.getRect(find.byTooltip('新增自动记账')).left,
+      greaterThan(addRect.left),
+      reason: '展开后新增按钮要让位到右边',
+    );
+
+    // 展开的输入框仍然是模板过滤器。
+    await tester.enterText(find.byType(TextField), '车贷');
+    await tester.pumpAndSettle();
+    expect(find.text('没有匹配的模板'), findsOneWidget);
+    // 搜空了也要留着搜索行，否则连搜索词都清不掉。
+    expect(find.byType(TextField), findsOneWidget);
+  });
+
   testWidgets('sinks the installment preview into a one-line related link', (
     tester,
   ) async {

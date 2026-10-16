@@ -7,10 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
-import 'package:miji/core/presentation/components/app_list_item.dart';
-import 'package:miji/core/presentation/components/app_page_toolbar.dart';
+import 'package:miji/core/presentation/components/app_module_section_picker.dart';
+import 'package:miji/core/router/app_module_nav.dart';
 import 'package:miji/core/router/app_routes.dart';
-import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -59,9 +58,9 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
 
   /// 进分类页之前的那个面板。
   ///
-  /// 分类页会把一级导航整排收起，退路由它自己的顶栏提供；收起的那排导航
-  /// 回不去，所以得记住用户是从哪儿进来的（直接带 `?section=categories`
-  /// 进来时没有「上一个」，退回流水）。
+  /// 分类页是整屏的分类列表 + 吸底记账条，自带返回顶栏；退出来要回到用户
+  /// 进来时看的那个面板（直接带 `?section=categories` 进来时没有「上一个」，
+  /// 退回流水）。
   _BookkeepingPanel? _panelBeforeCategories;
 
   @override
@@ -116,53 +115,73 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
   @override
   Widget build(BuildContext context) {
     _consumeInitialAction();
-    final showPageLedgerSelector = !AppResponsive.of(context).isCompact;
-    // 分类页自己带顶栏（返回 + 收支分段 + 分类管理），而且要把整整一排
-    // 一级导航的高度让给分类列表与键盘——再压一层导航就什么都看不见了。
-    final hidePrimaryTabs = _selectedPanel == _BookkeepingPanel.categories;
+    final responsive = AppResponsive.of(context);
+    // 页内不再有任何浮层：面板入口要么在底栏（窄屏「记账」两态唤出选择器），
+    // 要么在下面这条工具行的左端（宽屏 / 窄窗桌面，`prefersRailNavigation`
+    // 为真时没有底栏）。
+    //
+    // 上一版把入口做成了浮在内容右上角的胶囊：它是 `Stack` 的兄弟节点，不占
+    // 页面流、绘制并命中在内容之上，正好压在 8 个面板里 7 个的首行右侧动作上
+    // （流水「筛选」、账户「新建账户」、统计动作组……）——不是「看不全」，是
+    // 「点不到」。那 77px 现在全数还给内容。
+    final showToolbarRow = !responsive.isCompact;
 
-    return Stack(
-      children: [
-        AppPageFrame(
-          maxWidth: 1280,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (showPageLedgerSelector) ...[
-                AppPageToolbar(
-                  showSurface: false,
-                  primary: const CurrentLedgerSelector(),
-                ),
-                const SizedBox(height: 6),
-              ],
-              if (!hidePrimaryTabs) ...[
-                _BookkeepingTabBar(
-                  selected: _selectedPanel,
-                  onSelect: _selectPanel,
-                ),
-                const SizedBox(height: 16),
-              ],
-              Expanded(
-                child: _LazyBookkeepingPanelStack(
-                  selectedPanel: _selectedPanel,
-                  loadedPanels: _loadedPanels,
-                  panelBuilder: _buildPanelChild,
-                ),
-              ),
-              const _BookkeepingDataPreloader(),
-            ],
+    return AppPageFrame(
+      maxWidth: 1280,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showToolbarRow) ...[
+            _buildToolbarRow(),
+            const SizedBox(height: 6),
+          ],
+          Expanded(
+            child: _LazyBookkeepingPanelStack(
+              selectedPanel: _selectedPanel,
+              loadedPanels: _loadedPanels,
+              panelBuilder: _buildPanelChild,
+            ),
           ),
+          const _BookkeepingDataPreloader(),
+        ],
+      ),
+    );
+  }
+
+  /// 宽屏工具行：左端是「面板 chip」（显示当前面板名，点开即选择器），
+  /// 后面跟着原来的账本选择器。
+  ///
+  /// 两者都是本来就存在的行内内容，chip 不新增行高、不覆盖任何东西；
+  /// 面板名常驻显示，顺手兼任「我现在在哪」的标识（原来是浮层胶囊在扛这件事）。
+  Widget _buildToolbarRow() {
+    return Row(
+      children: [
+        AppModuleSectionChip(
+          spec: bookkeepingModuleNav,
+          sectionId: _sectionOfPanel(_selectedPanel),
+          onTap: _openSectionPicker,
         ),
+        const SizedBox(width: 12),
+        const Expanded(child: CurrentLedgerSelector()),
       ],
     );
   }
 
+  Future<void> _openSectionPicker() async {
+    final current = _sectionOfPanel(_selectedPanel);
+    final picked = await showAppModuleSectionPicker(
+      context,
+      spec: bookkeepingModuleNav,
+      currentSectionId: current,
+    );
+    if (picked == null || picked == current) {
+      return;
+    }
+    _selectPanel(_panelFromSection(picked));
+  }
+
   Widget _buildPanelChild(_BookkeepingPanel panel) {
     return switch (panel) {
-      _BookkeepingPanel.more => _BookkeepingMorePanel(onSelect: _selectPanel),
-      _BookkeepingPanel.accounts => MoneyAccountsSection(
-        onViewTransactions: _showAccountTransactions,
-      ),
       _BookkeepingPanel.transactions => Consumer(
         builder: (context, ref, child) {
           return MoneyTransactionsSection(
@@ -170,6 +189,9 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
             filterContext: _effectiveTransactionFilterContext(ref),
           );
         },
+      ),
+      _BookkeepingPanel.accounts => MoneyAccountsSection(
+        onViewTransactions: _showAccountTransactions,
       ),
       _BookkeepingPanel.statistics => MoneyStatisticsSection(
         onOpenTransactions: _showTransactionsFromStatistics,
@@ -194,7 +216,7 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
     if (panel == _selectedPanel) {
       return;
     }
-    // 切换一级导航给一次轻微触感，移动端「操作被接住」的感觉主要来自这里。
+    // 切换一级面板给一次轻微触感，移动端「操作被接住」的感觉主要来自这里。
     unawaited(HapticFeedback.selectionClick());
     setState(() {
       if (panel == _BookkeepingPanel.categories) {
@@ -218,13 +240,14 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
   /// 从首页/通知带 section 跳进来后返回栈也不对。
   void _syncPanelToUrl(_BookkeepingPanel panel) {
     final route = GoRouterState.of(context);
-    if (route.uri.queryParameters['section'] == panel.name) {
+    final section = _sectionOfPanel(panel);
+    if (route.uri.queryParameters['section'] == section) {
       return;
     }
     context.go(
       Uri(
         path: AppRoutes.bookkeeping,
-        queryParameters: {'section': panel.name},
+        queryParameters: {'section': section},
       ).toString(),
     );
   }
@@ -352,261 +375,6 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
   }
 }
 
-/// 一级导航：流水 / 账户 / 预算 / 统计 + 更多。
-///
-/// 原来是 8 个只有图标的横条：44px × 8 = 352px，而 360dp 手机上可用宽度只有
-/// 336px，末尾两个面板被裁掉，而且没有文字（标签只做 tooltip，手机上要长按）。
-class _BookkeepingTabBar extends StatelessWidget {
-  const _BookkeepingTabBar({required this.selected, required this.onSelect});
-
-  final _BookkeepingPanel selected;
-  final ValueChanged<_BookkeepingPanel> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final moreActive =
-        _morePanels.contains(selected) || selected == _BookkeepingPanel.more;
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560),
-        child: Container(
-          // 分类页会把这排整排收起，测试用它断言「一级导航确实不在了」——
-          // 光断言文字会撞上页面上其它同名文本（比如记账条的「更多」）。
-          key: const ValueKey('bookkeeping-primary-tabs'),
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(
-              alpha: 0.42,
-            ),
-            borderRadius: BorderRadius.circular(theme.radiusTokens.lg),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-            ),
-          ),
-          child: Row(
-            children: [
-              for (final panel in _primaryPanels)
-                _BookkeepingTab(
-                  icon: _panelIcon(panel),
-                  label: _panelLabel(panel),
-                  selected: selected == panel,
-                  onTap: () => onSelect(panel),
-                ),
-              _BookkeepingTab(
-                icon: _panelIcon(_BookkeepingPanel.more),
-                // 二级面板激活时直接把面板名显示在「更多」上，用户才知道自己在哪。
-                label: moreActive && selected != _BookkeepingPanel.more
-                    ? _panelLabel(selected)
-                    : _panelLabel(_BookkeepingPanel.more),
-                selected: moreActive,
-                onTap: () => onSelect(_BookkeepingPanel.more),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BookkeepingTab extends StatelessWidget {
-  const _BookkeepingTab({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final foreground = selected
-        ? colorScheme.primary
-        : colorScheme.onSurfaceVariant;
-
-    return Expanded(
-      child: Tooltip(
-        message: label,
-        child: Material(
-          color: selected ? colorScheme.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(theme.radiusTokens.md),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(theme.radiusTokens.md),
-            onTap: onTap,
-            child: Semantics(
-              button: true,
-              selected: selected,
-              label: label,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 7),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(icon, size: 18, color: foreground),
-                    const SizedBox(height: 3),
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: foreground,
-                        fontWeight: selected
-                            ? FontWeight.w800
-                            : FontWeight.w600,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 「更多」页：分类 / 分期 / 自动记账 / 提醒。
-class _BookkeepingMorePanel extends ConsumerWidget {
-  const _BookkeepingMorePanel({required this.onSelect});
-
-  final ValueChanged<_BookkeepingPanel> onSelect;
-
-  static const _descriptions = <_BookkeepingPanel, String>{
-    _BookkeepingPanel.categories: '分类、子分类与颜色',
-    _BookkeepingPanel.installments: '分期计划与每期入账',
-    _BookkeepingPanel.autoPosting: '定时自动生成流水',
-    _BookkeepingPanel.reminders: '账单、还款与预算提醒',
-  };
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // 待处理提醒数量作为「需要关注」的角标。
-    final pendingReminders = ref
-        .watch(currentUserPendingReminderCenterItemsProvider)
-        .maybeWhen(data: (items) => items.length, orElse: () => 0);
-
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 18),
-      children: [
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 1.65,
-          children: [
-            for (final panel in _morePanels)
-              _MoreTile(
-                icon: _panelIcon(panel),
-                label: _panelLabel(panel),
-                description: _descriptions[panel] ?? '',
-                badge:
-                    panel == _BookkeepingPanel.reminders && pendingReminders > 0
-                    ? '$pendingReminders'
-                    : null,
-                onTap: () => onSelect(panel),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _MoreTile extends StatelessWidget {
-  const _MoreTile({
-    required this.icon,
-    required this.label,
-    required this.description,
-    required this.onTap,
-    this.badge,
-  });
-
-  final IconData icon;
-  final String label;
-  final String description;
-  final VoidCallback onTap;
-  final String? badge;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return AppListItemPanel(
-      onTap: onTap,
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              AppListItemIcon(icon: icon, color: colorScheme.primary, size: 34),
-              const Spacer(),
-              if (badge != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.error,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    badge!,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onError,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            description,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              letterSpacing: 0,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _LazyBookkeepingPanelStack extends StatelessWidget {
   const _LazyBookkeepingPanelStack({
     required this.selectedPanel,
@@ -729,6 +497,14 @@ class _BookkeepingDataPreloaderState
   }
 }
 
+/// 记账的面板。
+///
+/// 与 `bookkeepingModuleNav.sections` **一一对应且顺序一致**（`values[index]`
+/// 就是 `sections[index]`）；`_panelFromSection` / `_sectionOfPanel` 是这对
+/// 映射的唯一出入口，新增面板时三处一起改。
+///
+/// 用枚举而不是裸字符串：`_buildPanelChild` 的 `switch` 能被编译器穷尽检查，
+/// 少写一个分支编不过，而字符串写错会静默落到流水。
 enum _BookkeepingPanel {
   transactions,
   accounts,
@@ -738,56 +514,10 @@ enum _BookkeepingPanel {
   installments,
   autoPosting,
   reminders,
-  more,
-}
-
-/// 一级导航。「看数据」的四个面板常驻，其余收进「更多」。
-const _primaryPanels = <_BookkeepingPanel>[
-  _BookkeepingPanel.transactions,
-  _BookkeepingPanel.accounts,
-  _BookkeepingPanel.budgets,
-  _BookkeepingPanel.statistics,
-];
-
-/// 「更多」里的二级面板。
-const _morePanels = <_BookkeepingPanel>[
-  _BookkeepingPanel.categories,
-  _BookkeepingPanel.installments,
-  _BookkeepingPanel.autoPosting,
-  _BookkeepingPanel.reminders,
-];
-
-String _panelLabel(_BookkeepingPanel panel) {
-  return switch (panel) {
-    _BookkeepingPanel.transactions => '流水',
-    _BookkeepingPanel.accounts => '账户',
-    _BookkeepingPanel.budgets => '预算',
-    _BookkeepingPanel.statistics => '统计',
-    _BookkeepingPanel.categories => '分类',
-    _BookkeepingPanel.installments => '分期',
-    _BookkeepingPanel.autoPosting => '自动记账',
-    _BookkeepingPanel.reminders => '提醒',
-    _BookkeepingPanel.more => '更多',
-  };
-}
-
-IconData _panelIcon(_BookkeepingPanel panel) {
-  return switch (panel) {
-    _BookkeepingPanel.transactions => Icons.receipt_long_rounded,
-    _BookkeepingPanel.accounts => Icons.account_balance_wallet_rounded,
-    _BookkeepingPanel.budgets => Icons.flag_rounded,
-    _BookkeepingPanel.statistics => Icons.query_stats_rounded,
-    _BookkeepingPanel.categories => Icons.category_rounded,
-    _BookkeepingPanel.installments => Icons.calendar_month_rounded,
-    _BookkeepingPanel.autoPosting => Icons.event_repeat_rounded,
-    _BookkeepingPanel.reminders => Icons.notifications_active_rounded,
-    _BookkeepingPanel.more => Icons.grid_view_rounded,
-  };
 }
 
 _BookkeepingPanel _panelFromSection(String? section) {
-  return switch (section) {
-    'transactions' => _BookkeepingPanel.transactions,
+  return switch (bookkeepingModuleNav.resolveSectionId(section)) {
     'accounts' => _BookkeepingPanel.accounts,
     'budgets' => _BookkeepingPanel.budgets,
     'statistics' => _BookkeepingPanel.statistics,
@@ -795,7 +525,19 @@ _BookkeepingPanel _panelFromSection(String? section) {
     'installments' => _BookkeepingPanel.installments,
     'autoPosting' => _BookkeepingPanel.autoPosting,
     'reminders' => _BookkeepingPanel.reminders,
-    'more' => _BookkeepingPanel.more,
     _ => _BookkeepingPanel.transactions,
+  };
+}
+
+String _sectionOfPanel(_BookkeepingPanel panel) {
+  return switch (panel) {
+    _BookkeepingPanel.transactions => 'transactions',
+    _BookkeepingPanel.accounts => 'accounts',
+    _BookkeepingPanel.budgets => 'budgets',
+    _BookkeepingPanel.statistics => 'statistics',
+    _BookkeepingPanel.categories => 'categories',
+    _BookkeepingPanel.installments => 'installments',
+    _BookkeepingPanel.autoPosting => 'autoPosting',
+    _BookkeepingPanel.reminders => 'reminders',
   };
 }

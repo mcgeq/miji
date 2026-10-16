@@ -294,7 +294,17 @@ class _MoneyInstallmentsContentState extends State<_MoneyInstallmentsContent> {
         creditAccounts.isNotEmpty &&
         widget.categoryCatalog.categories.isNotEmpty;
     // 只有真正会渲染出列表时才给搜索框 —— 空态上挂一个搜索框没有意义。
+    // 判定用的是**未过滤**的计划（下面 `_keyword` 只会过滤列表内容）：
+    // 搜出「没有匹配」时搜索行必须还在，否则连搜索词都清不掉。
     final showList = canCreate && widget.plans.isNotEmpty;
+    final createButton = AppIconActionButton(
+      tooltip: canCreate ? '新增分期' : '需要先有信用账户和支出分类',
+      onPressed: canCreate
+          ? () => widget.onCreate(widget.accounts, widget.categoryCatalog)
+          : null,
+      icon: Icons.add_rounded,
+      variant: AppIconActionVariant.filled,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -308,26 +318,24 @@ class _MoneyInstallmentsContentState extends State<_MoneyInstallmentsContent> {
         // 搜索框从列表内部上提到页头：分期原来是唯一把搜索放在面板**内容**
         // 里的面板，与流水 / 预算 / 分类 / 自动记账不一致（见
         // BookkeepingPanelHeader 的注释：搜索在最上、工具行其次）。
+        //
+        // 有列表时搜索与新增合成**一行**：搜索默认折叠成一枚图标，两枚按钮
+        // 水平居中；点搜索图标在**本行内**原地展开、新增被推到最右
+        // （与预算同款，见 BookkeepingPanelExpandableSearchRow）。
+        // 没有列表时不挂搜索图标 —— 空态自身就有主行动按钮，搜索空列表没有
+        // 意义；此时新增按钮单独靠右，与改造前一致。
         BookkeepingPanelHeader(
           searchRow: showList
-              ? BookkeepingPanelSearchField(
+              ? BookkeepingPanelExpandableSearchRow(
                   controller: _searchController,
                   hintText: '搜索分期名称 / 分类 / 账户',
+                  searchTooltip: '搜索分期',
                   onChanged: (value) =>
                       setState(() => _keyword = value.trim().toLowerCase()),
+                  actions: [createButton],
                 )
               : null,
-          actions: [
-            AppIconActionButton(
-              tooltip: canCreate ? '新增分期' : '需要先有信用账户和支出分类',
-              onPressed: canCreate
-                  ? () =>
-                        widget.onCreate(widget.accounts, widget.categoryCatalog)
-                  : null,
-              icon: Icons.add_rounded,
-              variant: AppIconActionVariant.filled,
-            ),
-          ],
+          actions: showList ? const <Widget>[] : [createButton],
         ),
         const SizedBox(height: 10),
         // 分期自己会到期自动入账；用户若又为同一笔还款建了自动记账模板，

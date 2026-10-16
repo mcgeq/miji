@@ -5,12 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
+import 'package:miji/core/presentation/components/app_module_section_picker.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/app_initial_avatar.dart';
+import 'package:miji/core/router/app_module_nav.dart';
 import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/core/user/providers/user_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/ledgers/ledger_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/quick_actions/money_quick_action_fab.dart';
+import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/home/application/home_money_dashboard_providers.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 
@@ -23,8 +26,9 @@ class AppShellPage extends ConsumerWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef _) {
-    final path = GoRouterState.of(context).uri.path;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final location = GoRouterState.of(context).uri;
+    final path = location.path;
     final selectedIndex = _selectedNavigationIndex(path);
     final mobileSelectedIndex = _selectedMobileNavigationIndex(path);
 
@@ -43,7 +47,14 @@ class AppShellPage extends ConsumerWidget {
               child: useRail
                   ? Row(
                       children: [
-                        _AppNavigationRail(selectedIndex: selectedIndex),
+                        _AppNavigationRail(
+                          selectedIndex: selectedIndex,
+                          onDestinationSelected: (index) => _openModule(
+                            context,
+                            ref,
+                            _navigationItems[index].path,
+                          ),
+                        ),
                         Expanded(child: child),
                       ],
                     )
@@ -64,9 +75,11 @@ class AppShellPage extends ConsumerWidget {
                 ? null
                 : _MobileShellBottomBar(
                     selectedIndex: mobileSelectedIndex,
-                    onDestinationSelected: (index) {
-                      context.go(_mobileNavigationItems[index].path);
-                    },
+                    onDestinationSelected: (index) => _openModule(
+                      context,
+                      ref,
+                      _mobileNavigationItems[index].path,
+                    ),
                   ),
             floatingActionButton: MoneyQuickActionFab(
               placement: useRail
@@ -80,6 +93,61 @@ class AppShellPage extends ConsumerWidget {
         );
       },
     );
+  }
+
+  /// 点一级模块：不在模块内 → 直接进（回到上次的面板）；已在模块根上 → 弹出
+  /// 面板选择器。
+  ///
+  /// 「两态」是刻意的：从首页 / 打卡切回记账是最高频的动作，若每次都弹层，
+  /// 切模块就会从 1 拍变成「1 拍 + 一次打断 + 1 拍」。只在「已经在这个模块里
+  /// 再点它」时弹层，正是 iOS「点当前 tab」的惯例。
+  void _openModule(BuildContext context, WidgetRef ref, String modulePath) {
+    final location = GoRouterState.of(context).uri;
+    final lastSections = ref.read(appModuleLastSectionProvider.notifier);
+    // 离开之前拍一张快照：模块内每次换面板都会写回 `?section=`，所以地址就是
+    // 「我刚才在哪个面板」的真身，切回来才回得到原处。
+    lastSections.rememberUri(location);
+
+    final spec = appModuleNavSpecForPath(modulePath);
+    if (spec == null) {
+      context.go(modulePath);
+      return;
+    }
+
+    final destination = resolveModuleEntry(
+      spec: spec,
+      currentLocation: location.path,
+      rememberedSectionId: lastSections.sectionOf(spec.id),
+    );
+    if (destination == null) {
+      unawaited(
+        openAppModuleSection(
+          context,
+          spec: spec,
+          currentSectionId: location.queryParameters['section'],
+          badges: _sectionBadges(ref, spec),
+        ),
+      );
+      return;
+    }
+
+    context.go(destination);
+  }
+
+  /// 面板选择器上的角标，目前只有记账的「提醒」用得到（待处理提醒数）。
+  ///
+  /// 面板清单归 core，角标数却来自记账的 provider：由外壳在这里按模块补，
+  /// 而不是让 core 反过来 import 业务 provider。
+  Map<String, String> _sectionBadges(WidgetRef ref, AppModuleNavSpec spec) {
+    if (spec.id != bookkeepingModuleNav.id) {
+      return const <String, String>{};
+    }
+    final pending = ref
+        .read(currentUserPendingReminderCenterItemsProvider)
+        .maybeWhen(data: (items) => items.length, orElse: () => 0);
+    return pending > 0
+        ? <String, String>{'reminders': '$pending'}
+        : const <String, String>{};
   }
 }
 
@@ -284,9 +352,13 @@ class _CurrentUserAvatarButton extends ConsumerWidget {
 }
 
 class _AppNavigationRail extends ConsumerWidget {
-  const _AppNavigationRail({required this.selectedIndex});
+  const _AppNavigationRail({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+  });
 
   final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -316,7 +388,7 @@ class _AppNavigationRail extends ConsumerWidget {
                 _DesktopNavigationButton(
                   item: _navigationItems[index],
                   selected: selectedIndex == index,
-                  onTap: () => context.go(_navigationItems[index].path),
+                  onTap: () => onDestinationSelected(index),
                 ),
                 if (index != _navigationItems.length - 1)
                   const SizedBox(height: 6),

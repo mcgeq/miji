@@ -84,29 +84,38 @@ class _MoneyAutoPostingsSectionState
           data: (items) => items.where((plan) => plan.isActive).length,
           orElse: () => 0,
         );
+    // 只有真正会渲染出模板列表时才挂搜索图标（空态自身就是主行动）。
+    // 判定用的是**未过滤**的模板：搜出「没有匹配的模板」时搜索行必须还在，
+    // 否则连搜索词都清不掉。
+    final showList =
+        currentLedger != null && (templates.asData?.value.isNotEmpty ?? false);
+    final createButton = AppIconActionButton(
+      tooltip: '新增自动记账',
+      onPressed: currentLedger == null ? null : () => _openTemplateDialog(),
+      icon: Icons.add_rounded,
+      variant: AppIconActionVariant.filled,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 6),
+        // 有列表时搜索与新增合成**一行**：搜索默认折叠成一枚图标，两枚按钮
+        // 水平居中；点搜索图标在**本行内**原地展开、新增被推到最右
+        // （与预算 / 分期同款，见 BookkeepingPanelExpandableSearchRow）。
         BookkeepingPanelHeader(
-          searchRow: BookkeepingPanelSearchField(
-            controller: _searchController,
-            hintText: '搜索模板名称 / 描述',
-            onChanged: (value) =>
-                setState(() => _keyword = value.trim().toLowerCase()),
-          ),
-          actions: [
-            // 页面级新增入口与搜索同处工具行，不再单独占一行。
-            AppIconActionButton(
-              tooltip: '新增自动记账',
-              onPressed: currentLedger == null
-                  ? null
-                  : () => _openTemplateDialog(),
-              icon: Icons.add_rounded,
-              variant: AppIconActionVariant.filled,
-            ),
-          ],
+          searchRow: showList
+              ? BookkeepingPanelExpandableSearchRow(
+                  controller: _searchController,
+                  hintText: '搜索模板名称 / 描述',
+                  searchTooltip: '搜索自动记账',
+                  onChanged: (value) =>
+                      setState(() => _keyword = value.trim().toLowerCase()),
+                  actions: [createButton],
+                )
+              : null,
+          // 没有列表（未选账本 / 暂无模板）时新增按钮单独靠右，与改造前一致。
+          actions: showList ? const <Widget>[] : [createButton],
         ),
         const SizedBox(height: 10),
         // 冲突与接管失效合并成一行，默认折叠。两者都是「提醒」，不是页面主体；

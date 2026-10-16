@@ -116,8 +116,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutes.gtd,
-            pageBuilder: (context, state) =>
-                _modulePage(state, const GtdPage()),
+            pageBuilder: (context, state) => _modulePage(
+              state,
+              GtdPage(initialSection: state.uri.queryParameters['section']),
+            ),
             routes: [
               GoRoute(
                 path: 'plans',
@@ -173,8 +175,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutes.health,
-            pageBuilder: (context, state) =>
-                _modulePage(state, const HealthPage()),
+            pageBuilder: (context, state) => _modulePage(
+              state,
+              HealthPage(initialSection: state.uri.queryParameters['section']),
+            ),
           ),
           GoRoute(
             path: AppRoutes.settings,

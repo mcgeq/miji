@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>米记 · 记账模块导航改版方案（人工确认稿）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800;900&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  /* 全部色值取自 lib/core/theme/{app_theme_tokens,app_theme}.dart（A 晴空 Azure）。
+     标注用的红/绿不参与产品配色，只在本稿里表示「被遮挡 / 已恢复」。 */
+  :root{
+    --bg:#F3F6F9; --surface:#FFFFFF; --raised:#FFFFFF; --sunken:#EBEDF0;
+    --text:#15171A; --text2:#585B5E; --text3:#797C7F;
+    --outline:#848C94; --hair:#D9DDE1;
+    --primary:#006AB1; --primary-solid:#008EE9; --on-primary-solid:#001830;
+    --primary-soft:#DFEFFF; --on-primary-soft:#004D83;
+    --secondary:#5D7791; --secondary-soft:#E5E9ED;
+    --income:#2B933E; --expense:#CA4B51; --transfer:#008692; --credit:#9E5BBA; --warning:#956D00;
+    --scrim:rgba(21,23,26,.34);
+    --shadow:0 1px 2px rgba(16,24,32,.06),0 10px 24px -14px rgba(16,24,32,.24);
+    --shadow-lg:0 24px 60px -26px rgba(16,24,32,.42);
+    --chip:rgba(21,23,26,.045);
+    --mark-danger:#D64545; --mark-danger-soft:#FBE4E5;
+    --mark-ok:#1F8A54; --mark-ok-soft:#DFF5E6;
+    --networth:linear-gradient(135deg,#188FF0,#859DFF 55%,#A280EF);
+    --on-net-worth:#10152C;
+  }
+  html[data-theme="dark"]{
+    --bg:#222426; --surface:#303234; --raised:#3D3F42; --sunken:#181A1C;
+    --text:#EBEDEE; --text2:#ACAFB2; --text3:#898C90;
+    --outline:#838A92; --hair:#494E52;
+    --primary:#89C5FF; --primary-solid:#74BCFF; --on-primary-solid:#001B33;
+    --primary-soft:#093050; --on-primary-soft:#AFD7FF;
+    --secondary:#A6C1DC; --secondary-soft:#3C434A;
+    --income:#75D290; --expense:#FF9D9D; --transfer:#22D1E7; --credit:#DD9FF1; --warning:#DBAC45;
+    --scrim:rgba(0,0,0,.62);
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 28px -14px rgba(0,0,0,.7);
+    --shadow-lg:0 30px 70px -30px rgba(0,0,0,.9);
+    --chip:rgba(255,255,255,.06);
+    --mark-danger:#FF7B7B; --mark-danger-soft:#3A2320;
+    --mark-ok:#6FE0A0; --mark-ok-soft:#13301F;
+    --networth:linear-gradient(135deg,#2396F7,#8EA4FF 55%,#A886F6);
+    --on-net-worth:#10152C;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:"Noto Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);background:var(--bg);min-height:100vh;
+    -webkit-font-smoothing:antialiased;letter-spacing:0;
+    transition:background .3s ease,color .3s ease;
+  }
+  .app{display:flex;gap:30px;max-width:1340px;margin:0 auto;padding:26px 24px 60px;align-items:flex-start}
+  @media (max-width:1080px){.app{flex-direction:column;align-items:center}}
+
+  /* ---------- 左侧控制面板 ---------- */
+  .panel{position:sticky;top:22px;width:356px;flex:0 0 356px;max-height:calc(100vh - 44px);overflow:auto;scrollbar-width:thin}
+  @media (max-width:1080px){.panel{position:static;width:min(720px,100%);flex:auto;max-height:none}}
+  .panel::-webkit-scrollbar{width:5px}
+  .panel::-webkit-scrollbar-thumb{background:var(--hair);border-radius:9px}
+  .brand{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+  .brand .mark{font-family:"Noto Serif SC",serif;font-weight:900;font-size:27px;line-height:1;
+    background:linear-gradient(120deg,var(--primary),var(--credit));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .t{font-size:14px;font-weight:700;color:var(--text2)}
+  .brand .v{font-size:11px;font-weight:800;color:var(--on-primary-soft);background:var(--primary-soft);padding:2px 8px;border-radius:999px}
+  .lead{font-size:12.5px;color:var(--text2);line-height:1.8;margin:8px 0 16px}
+  .lead b{color:var(--text)}
+
+  .group{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:13px;margin-bottom:11px;box-shadow:var(--shadow)}
+  .group h3{margin:0 0 10px;font-size:10.5px;font-weight:900;letter-spacing:.09em;color:var(--text2);
+    text-transform:uppercase;display:flex;align-items:center;gap:7px}
+  .group h3 .dot{width:6px;height:6px;border-radius:99px;background:var(--primary);flex:0 0 auto}
+  .seg{display:flex;background:var(--sunken);border-radius:11px;padding:3px;gap:3px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--text2);font:inherit;font-size:12.5px;font-weight:700;
+    padding:8px 6px;border-radius:8px;cursor:pointer;transition:.18s}
+  .seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .seg.hl button.on{background:var(--primary-solid);color:var(--on-primary-solid)}
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .chips button{border:1px solid var(--hair);background:var(--raised);color:var(--text2);font:inherit;font-size:12px;
+    font-weight:700;padding:8px 6px;border-radius:10px;cursor:pointer;transition:.18s}
+  .chips button:hover{border-color:var(--outline)}
+  .chips button.on{background:var(--primary-solid);border-color:var(--primary-solid);color:var(--on-primary-solid)}
+  .tg{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:9px;cursor:pointer;font-size:12.5px;
+    color:var(--text2);user-select:none;transition:.15s}
+  .tg:hover{background:var(--chip)}
+  .tg.on{color:var(--text)}
+  .tg .sw{width:34px;height:20px;border-radius:99px;background:var(--sunken);border:1px solid var(--hair);
+    position:relative;flex:0 0 34px;transition:.2s}
+  .tg .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:99px;background:var(--outline);transition:.2s}
+  .tg.on .sw{background:var(--primary-solid);border-color:var(--primary-solid)}
+  .tg.on .sw::after{left:16px;background:var(--on-primary-solid)}
+  .tg small{margin-left:auto;font-size:10.5px;color:var(--text3);font-weight:700}
+  .hint{margin:9px 0 0;font-size:11px;color:var(--text3);line-height:1.7}
+
+  ul.list{margin:0;padding-left:0;list-style:none}
+  ul.list li{position:relative;padding:5px 0 5px 22px;font-size:12.3px;line-height:1.65;color:var(--text2)}
+  ul.list li b{color:var(--text)}
+  ul.list li .n{position:absolute;left:0;top:5px;width:15px;height:15px;border-radius:99px;font-size:9.5px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;background:var(--primary-soft);color:var(--on-primary-soft)}
+  ul.list li.bad .n{background:var(--mark-danger-soft);color:var(--mark-danger)}
+  ul.list li.good .n{background:var(--mark-ok-soft);color:var(--mark-ok)}
+  ul.list li code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;background:var(--chip);
+    padding:1px 4px;border-radius:4px;color:var(--text)}
+  .tag{display:inline-block;font-size:9.5px;font-weight:900;letter-spacing:.04em;border-radius:5px;padding:1.5px 5px;margin-right:5px;vertical-align:1px}
+  .tag.p0{background:var(--mark-danger-soft);color:var(--mark-danger)}
+  .tag.p1{background:var(--primary-soft);color:var(--on-primary-soft)}
+  .tag.p2{background:var(--chip);color:var(--text2)}
+
+  /* ---------- 舞台 ---------- */
+  .stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0}
+  .stagehead{align-self:stretch;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .stagehead .title{font-family:"Noto Serif SC",serif;font-weight:700;font-size:19px;margin-right:2px}
+  .badge{font-size:11px;font-weight:800;color:var(--text2);background:var(--surface);border:1px solid var(--hair);
+    border-radius:999px;padding:4px 11px}
+  .badge.bad{color:var(--mark-danger);background:var(--mark-danger-soft);border-color:transparent}
+  .badge.ok{color:var(--mark-ok);background:var(--mark-ok-soft);border-color:transparent}
+
+  /* 手机外框 */
+  .phone{width:400px;flex:0 0 auto;background:linear-gradient(160deg,#2f3338,#12161a);
+    border-radius:46px;padding:11px;box-shadow:var(--shadow-lg);transition:width .25s ease}
+  html[data-theme="dark"] .phone{background:linear-gradient(160deg,#3b3f44,#0d1013)}
+  .screen{position:relative;height:748px;border-radius:36px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+  .phone.wide{width:100%;max-width:1180px;border-radius:26px;padding:10px}
+  .phone.wide .screen{height:640px;border-radius:18px;flex-direction:row}
+  /* 宽屏没有底栏：选择器按「居中 dialog」呈现，而不是底部弹层 */
+  .phone.wide .sheetwrap{justify-content:center;align-items:center}
+  .phone.wide .sheet{max-width:560px;border-radius:20px;padding-bottom:16px}
+
+  /* 手机状态栏 + 外壳顶栏 */
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:9px 20px 3px;font-size:11px;
+    font-weight:800;color:var(--text2)}
+  .shellbar{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px 0 14px;flex:0 0 auto}
+  .shellbar .grow{flex:1}
+  .ledger{display:inline-flex;align-items:center;gap:3px;max-width:220px;background:var(--sunken);border-radius:999px;
+    padding:6px 10px;font-size:12px;font-weight:800;color:var(--text)}
+  .ledger i{font-style:normal;color:var(--text2);font-size:11px}
+  .avatar{width:32px;height:32px;border-radius:99px;background:var(--primary-soft);color:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex:0 0 32px}
+  .hairline{height:1px;background:var(--hair);flex:0 0 auto}
+  /* 顶栏里的面板 chip（可选增强，本稿默认关闭） */
+  .panelchip{display:inline-flex;align-items:center;gap:5px;background:var(--primary-soft);color:var(--on-primary-soft);
+    border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* AppPageFrame 在 compact 下是 EdgeInsets.all(12)：左右和上边各 12，
+     所以浮层胶囊（同样 top/right 12）的右边缘与内容右边缘对齐，纵向压住首行的上半 24px。 */
+  .page{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 12px 0}
+  .page .scroll{flex:1;min-height:0;overflow:hidden;padding-bottom:12px}
+  .row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .row:first-child{margin-top:6px}
+  .field{flex:1;height:44px;border-radius:14px;background:var(--surface);border:1px solid var(--hair);
+    display:flex;align-items:center;gap:8px;padding:0 12px;color:var(--text3);font-size:13px}
+  .field .mag{width:14px;height:14px;border-radius:99px;border:2px solid var(--text3);opacity:.7}
+  .ctl{height:40px;border-radius:999px;background:var(--surface);border:1px solid var(--hair);display:flex;
+    align-items:center;gap:5px;padding:0 12px;font-size:12.5px;font-weight:800;color:var(--text);flex:0 0 auto}
+  .ctl.on{background:var(--primary-soft);border-color:transparent;color:var(--on-primary-soft)}
+  .icons{display:flex;gap:8px;flex:0 0 auto}
+  .icons i{width:36px;height:36px;border-radius:12px;background:var(--surface);border:1px solid var(--hair);
+    display:flex;align-items:center;justify-content:center;font-style:normal;font-size:14px;color:var(--text2);font-weight:800}
+  .segmented{display:flex;background:var(--sunken);border-radius:11px;padding:3px;gap:3px;flex:0 0 auto}
+  .segmented b{font-size:12px;font-weight:800;color:var(--text2);padding:6px 9px;border-radius:8px;white-space:nowrap}
+  .segmented b.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .titlerow{display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:6px}
+  .titlerow .t{font-size:15px;font-weight:900;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:13px;margin-bottom:10px;box-shadow:var(--shadow)}
+  .card.hero{background:var(--networth);border:0;color:var(--on-net-worth)}
+  .card.hero .k{font-size:11px;font-weight:800;opacity:.78}
+  .card.hero .v{font-size:26px;font-weight:900;margin-top:3px;letter-spacing:-.5px}
+  .card.hero .sub{display:flex;gap:14px;margin-top:9px;font-size:11.5px;font-weight:800;opacity:.78}
+  .itemrow{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border-radius:14px;
+    margin-bottom:7px;border:1px solid var(--hair)}
+  .ico{width:30px;height:30px;border-radius:10px;background:var(--secondary-soft);display:flex;align-items:center;
+    justify-content:center;font-size:12px;font-weight:900;color:var(--text2);flex:0 0 30px}
+  .itemrow .lb{flex:1;min-width:0}
+  .itemrow .lb b{display:block;font-size:13px;font-weight:700}
+  .itemrow .lb span{font-size:11px;color:var(--text3)}
+  .amt{font-size:14px;font-weight:900}
+  .amt.e{color:var(--expense)} .amt.i{color:var(--income)}
+  .strip{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .strip span{font-size:11px;font-weight:700;color:var(--text2);background:var(--chip);border-radius:999px;padding:4px 9px}
+  .sumbox{display:flex;background:var(--sunken);border-radius:12px;padding:9px 0;margin-bottom:10px}
+  .sumbox div{flex:1;text-align:center;font-size:11px;color:var(--text3);font-weight:700}
+  .sumbox div b{display:block;font-size:13px;margin-top:2px}
+
+  /* 底栏 + FAB */
+  .bottombar{flex:0 0 auto;position:relative;height:74px;padding:0 12px 10px}
+  .bar{position:relative;height:64px;border-radius:24px;background:var(--surface);border:1px solid var(--hair);
+    box-shadow:var(--shadow);display:flex;align-items:center;padding:8px}
+  .bar .tab{flex:1;height:44px;border-radius:999px;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:2px;font-size:9.5px;font-weight:800;color:var(--text2);cursor:pointer}
+  .bar .tab .g{width:21px;height:21px;border-radius:7px;border:2px solid currentColor;opacity:.85}
+  .bar .tab.on{background:var(--secondary-soft);color:var(--text)}
+  .bar .tab.hot{box-shadow:0 0 0 2px var(--primary-soft) inset}
+  .bar .gap{width:74px;flex:0 0 74px}
+  .fab{position:absolute;left:50%;top:50%;transform:translate(-50%,-58%);width:54px;height:54px;border-radius:99px;
+    background:var(--primary-solid);color:var(--on-primary-solid);display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:700;box-shadow:0 8px 20px -8px rgba(0,42,74,.55);border:4px solid var(--surface);z-index:3}
+
+  /* 现状：右上浮动胶囊 */
+  .capsule{position:absolute;top:12px;right:12px;z-index:5;display:flex;align-items:center;gap:6px;
+    background:var(--surface);border:1px solid var(--hair);border-radius:999px;padding:6px 12px;font-size:12px;
+    font-weight:800;box-shadow:var(--shadow);cursor:pointer;white-space:nowrap}
+  .capsule.open{background:var(--primary-soft);color:var(--on-primary-soft);border-color:transparent}
+  .capsule .grid{width:14px;height:14px;display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  .capsule .grid i{background:var(--primary);border-radius:2px}
+  .capsule .bdg{background:var(--expense);color:#fff;border-radius:999px;font-size:9.5px;font-weight:900;padding:1px 5px}
+  .navpop{position:absolute;top:52px;right:12px;z-index:5;width:236px;background:var(--surface);border:1px solid var(--hair);
+    border-radius:16px;box-shadow:var(--shadow-lg);padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .navpop .it{display:flex;align-items:center;gap:7px;padding:9px 8px;border-radius:10px;font-size:12px;font-weight:700;color:var(--text)}
+  .navpop .it.sel{background:var(--primary-soft);color:var(--on-primary-soft);font-weight:900}
+  .navpop .it .ic{width:17px;height:17px;border-radius:5px;background:currentColor;opacity:.35;flex:0 0 17px}
+  .navpop .hr{grid-column:1/-1;height:1px;background:var(--hair);margin:4px 0}
+  .scrim{position:absolute;inset:0;background:var(--scrim);z-index:4}
+  .scrim.soft{background:rgba(0,0,0,.18)}
+
+  /* 方案 A：面板选择器（底部弹层） */
+  .sheetwrap{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;justify-content:flex-end}
+  .sheetwrap .veil{position:absolute;inset:0;background:var(--scrim)}
+  .sheet{position:relative;background:var(--surface);border-radius:24px 24px 0 0;padding:14px 14px 20px;
+    box-shadow:var(--shadow-lg);animation:rise .22s ease-out}
+  @keyframes rise{from{transform:translateY(26px);opacity:.4}to{transform:none;opacity:1}}
+  .sheet .grip{width:38px;height:4px;border-radius:99px;background:var(--hair);margin:0 auto 12px}
+  .sheet .sh{display:flex;align-items:baseline;gap:8px;margin:0 2px 11px}
+  .sheet .sh b{font-size:14.5px;font-weight:900}
+  .sheet .sh span{font-size:11.5px;color:var(--text3);font-weight:700}
+  .grid8{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .grid8 .it{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:11px 4px 9px;
+    border-radius:16px;background:var(--sunken);cursor:pointer}
+  .grid8 .it.sel{background:var(--primary-soft);box-shadow:0 0 0 1px var(--primary) inset}
+  .grid8 .it .ic{width:32px;height:32px;border-radius:99px;background:var(--surface);display:flex;align-items:center;
+    justify-content:center;font-size:14px;font-weight:900;color:var(--primary)}
+  .grid8 .it.sel .ic{background:var(--primary-solid);color:var(--on-primary-solid)}
+  .grid8 .it em{font-style:normal;font-size:10.5px;font-weight:800;color:var(--text2)}
+  .grid8 .it.sel em{color:var(--on-primary-soft)}
+  .grid8 .bdg{position:absolute;top:7px;right:9px;background:var(--expense);color:#fff;border-radius:999px;
+    font-size:9.5px;font-weight:900;padding:1px 5px}
+
+  /* 方案 B：紧凑导航行（回到页面流） */
+  .chiprow{display:flex;gap:6px;overflow:hidden;padding:6px 0 8px;flex:0 0 auto}
+  .chiprow b{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--text2);background:var(--surface);
+    border:1px solid var(--hair);border-radius:999px;padding:6px 11px;white-space:nowrap}
+  .chiprow b.on{background:var(--primary-soft);border-color:transparent;color:var(--on-primary-soft)}
+
+  /* 宽屏：rail + 工具行 */
+  .rail{width:76px;flex:0 0 76px;background:var(--sunken);display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0}
+  .rail .mark{width:36px;height:36px;border-radius:10px;background:var(--primary-solid);color:var(--on-primary-solid);
+    display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px}
+  .rail .ni{width:44px;height:44px;border-radius:16px;background:var(--surface);display:flex;align-items:center;
+    justify-content:center;font-size:16px;color:var(--text2);font-weight:800}
+  .rail .ni.on{background:var(--primary-soft);color:var(--on-primary-soft)}
+  .wmain{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 22px}
+  .toolbar{display:flex;align-items:center;gap:12px;padding:14px 0 10px;flex:0 0 auto}
+  .toolbar .grow{flex:1}
+  .switchchip{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--hair);
+    border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:var(--shadow)}
+  .switchchip .grid{width:14px;height:14px;display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  .switchchip .grid i{background:var(--primary);border-radius:2px}
+  .switchchip .cv{color:var(--text2);font-size:11px}
+  .wmain .pop{right:22px;top:60px}
+
+  /* 标注 */
+  .covered{position:relative}
+  .annot-on .covered::after{content:"";position:absolute;inset:-4px;border-radius:14px;pointer-events:none}
+  .annot-on[data-mode="before"] .covered::after{border:2px dashed var(--mark-danger);background:var(--mark-danger-soft);opacity:.9}
+  .annot-on[data-mode="after"] .covered::after,.annot-on[data-mode="inline"] .covered::after{border:2px solid var(--mark-ok);opacity:.75}
+  .callout{position:absolute;z-index:7;max-width:250px;font-size:11.5px;line-height:1.6;font-weight:700;
+    border-radius:12px;padding:8px 11px;box-shadow:var(--shadow-lg)}
+  .callout.bad{background:var(--mark-danger);color:#fff}
+  .callout.ok{background:var(--mark-ok);color:#fff}
+  .callout code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;background:rgba(255,255,255,.22);
+    border-radius:4px;padding:1px 4px}
+  .measure{position:absolute;z-index:7;font-size:10.5px;font-weight:900;background:var(--mark-danger);color:#fff;
+    border-radius:999px;padding:2px 7px}
+
+  .notes{align-self:stretch;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(268px,1fr))}
+  .note{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:12px 13px;box-shadow:var(--shadow)}
+  .note h4{margin:0 0 7px;font-size:11.5px;font-weight:900;letter-spacing:.03em;display:flex;align-items:center;gap:7px}
+  .note h4 .dot{width:7px;height:7px;border-radius:99px;background:var(--primary);flex:0 0 auto}
+  .note.bad h4 .dot{background:var(--mark-danger)} .note.ok h4 .dot{background:var(--mark-ok)}
+  .note p{margin:0;font-size:12px;line-height:1.75;color:var(--text2)}
+  .note p b{color:var(--text)}
+  .note p code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;background:var(--chip);padding:1px 4px;border-radius:4px;color:var(--text)}
+  .foot{max-width:1340px;margin:0 auto;padding:0 24px 46px;font-size:11.5px;line-height:1.9;color:var(--text3)}
+  .foot b{color:var(--text2)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="panel">
+    <div class="brand">
+      <span class="mark">米记</span>
+      <span class="t">记账模块 · 导航改版</span>
+      <span class="v">v1 确认稿</span>
+    </div>
+    <p class="lead">
+      顶部一排 tab 收成「右上角浮动胶囊」后，<b>首行右侧的控件被压住且点不到</b>。
+      本稿对比三种入口形态，按 <b>「内容区零遮挡 / 切换仍是一拍 / 我在哪看得见」</b> 三条标准取舍。
+    </p>
+
+    <div class="group">
+      <h3><span class="dot"></span>视图对比</h3>
+      <div class="seg hl" id="segMode">
+        <button data-val="before" class="on">现状</button>
+        <button data-val="after">方案 A</button>
+        <button data-val="inline">方案 B</button>
+      </div>
+      <p class="hint" id="modeHint"></p>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>面板场景</h3>
+      <div class="chips" id="segScene">
+        <button data-val="transactions" class="on">流水</button>
+        <button data-val="accounts">账户</button>
+        <button data-val="statistics">统计</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>屏幕与显示</h3>
+      <div class="seg" id="segDevice">
+        <button data-val="phone" class="on">手机 390</button>
+        <button data-val="wide">宽屏 1200</button>
+      </div>
+      <div class="tg on" id="tgAnnot" style="margin-top:6px">
+        <span class="sw"></span><span>显示标注</span><small>遮挡范围 / 命中</small>
+      </div>
+      <div class="tg" id="tgTheme">
+        <span class="sw"></span><span>深色主题</span><small>Azure dark</small>
+      </div>
+      <div class="tg" id="tgSheet">
+        <span class="sw"></span><span>选择器弹层</span><small>点底栏「记账」开关</small>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot" style="background:var(--mark-danger)"></span>问题定位（P0）</h3>
+      <ul class="list">
+        <li class="bad"><span class="n">1</span>浮层是 <code>Stack</code> 子节点，<b>不占页面流</b>，必然盖住内容。</li>
+        <li class="bad"><span class="n">2</span>被盖的正好是首行<b>最右那 1~3 个控件</b>（流水「筛选」、账户「新建」、统计动作组…）。</li>
+        <li class="bad"><span class="n">3</span>浮层在 <code>Stack</code> 里排在内容之后 → 命中测试先给它，<b>不是看不全，是点不到</b>。</li>
+        <li class="bad"><span class="n">4</span>8 个面板里 7 个中招；仅「分类」因整排收起（<code>hidePrimaryNav</code>）幸免。</li>
+      </ul>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot" style="background:var(--mark-ok)"></span>方案要点</h3>
+      <ul class="list">
+        <li class="good"><span class="n">A</span>入口搬到<b>底部导航「记账」</b>（已在模块内再点才弹选择器）＋ 宽屏放<b>工具行 chip</b>；内容区零导航 UI。</li>
+        <li class="good"><span class="n">B</span>只做「去浮层」：导航回到页面流，压成 <b>32px chip 行</b>（+36px，不遮挡、一拍切换）。</li>
+        <li><span class="n">C</span>路由<b>不必</b>拆成 path 二级路由：<code>?section=</code> 已经是可寻址的二级视图，拆 path 会丢面板保活。</li>
+      </ul>
+    </div>
+
+    <div class="group">
+      <h3><span class="dot"></span>待确认</h3>
+      <ul class="list">
+        <li><span class="n">1</span>底栏「记账」是否接受<b>两态</b>（不在模块内直接进 / 已在模块内弹选择器）。</li>
+        <li><span class="n">2</span>宽屏入口用工具行 chip，还是宽屏继续留浮层（右上角多为空白，伤害小）。</li>
+        <li><span class="n">3</span>选 A（省满 77px）还是 B（常驻 36px、一拍切换）。</li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <div class="stagehead">
+      <span class="title" id="stageTitle">现状 · 右上浮层</span>
+      <span class="badge bad" id="badge1">首行右侧控件被压住</span>
+      <span class="badge" id="badge2">流水 · 手机 390</span>
+    </div>
+    <div id="stageHost"></div>
+    <div class="notes" id="notes"></div>
+  </main>
+</div>
+<div class="foot">
+  <b>说明：</b>本稿只用真实主题 token（<code>AppThemeTokens</code> / <code>AppTheme.darkMoneyColors</code>）上色，像素级尺寸取自
+  <code>bookkeeping_page.dart</code>（胶囊 <code>top/right = 12|20|24</code>）、<code>AppMoneyColors</code>、
+  <code>BookkeepingPanelHeader</code>（搜索 44 / 工具行 36）与 <code>app_shell_page.dart</code>（底栏 64 + 迷你 FAB 40）。
+  设备宽度按 Flutter 逻辑像素 1:1 呈现（手机 390 / 宽屏 1200 含 76px rail），不是等比缩放。
+</div>
+
+<script>
+// ───────── 状态 ─────────
+// sheet = 当前模式的「展开态」：现状下指浮层展开，方案 A 下指选择器弹层。
+// 默认收起（现状要能看到胶囊压住控件的样子）；切到方案 A 时自动展开，让人先看到选择器长什么样。
+const state = { mode:'before', scene:'transactions', device:'phone', annot:true, theme:'light', sheet:false };
+
+const MODE = {
+  before:{ label:'现状 · 右上浮层', h1:'首行右侧控件被压住', cls1:'bad',
+           hint:'胶囊浮在内容之上、不占页面流。点它展开完整面板列表（8 项）。' },
+  after:{ label:'方案 A · 底栏唤出选择器', h1:'内容区不再有任何导航', cls1:'ok',
+          hint:'点底栏「记账」→ 底部升出面板选择器；宽屏没有底栏，入口在工具行 chip。' },
+  inline:{ label:'方案 B · 紧凑导航行', h1:'导航回到页面流', cls1:'ok',
+           hint:'保留一排 32px chip，恒可见、一拍切换；不再遮挡，但吃 36px 内容高度。' }
+};
+const SCENE = { transactions:'流水', accounts:'账户', statistics:'统计' };
+const PANELS = [
+  { id:'transactions', label:'流水', ic:'≡' },
+  { id:'accounts', label:'账户', ic:'▤' },
+  { id:'budgets', label:'预算', ic:'⚑' },
+  { id:'statistics', label:'统计', ic:'▦' },
+  { id:'categories', label:'分类', ic:'⊞' },
+  { id:'installments', label:'分期', ic:'▧' },
+  { id:'autoposting', label:'自动记账', ic:'⟳' },
+  { id:'reminders', label:'提醒', ic:'!' }
+];
+
+// ───────── 面板内容（结构与真实页头一致：搜索行 / 工具行 / 筛选条 / 列表） ─────────
+function sceneHtml(id){
+  if (id === 'transactions') return `
+    <div class="row">
+      <div class="field"><span class="mag"></span><span>搜索名称、备注、商家</span></div>
+      <div class="ctl covered">⚙ 筛选</div>
+    </div>
+    <div class="row">
+      <div class="segmented"><b class="on">全部</b><b>支出</b><b>收入</b><b>转账</b></div>
+      <div class="grow" style="flex:1"></div>
+      <div class="icons covered"><i>↕</i><i>⚑</i><i>⋯</i></div>
+    </div>
+    <div class="sumbox">
+      <div>支出<b style="color:var(--expense)">¥128.50</b></div>
+      <div>收入<b style="color:var(--income)">****</b></div>
+      <div>净<b>−¥128.50</b></div>
+    </div>
+    <div class="itemrow"><div class="ico">餐</div><div class="lb"><b>公司楼下午餐</b><span>餐饮 · 招商银行</span></div><div class="amt e">−¥32.00</div></div>
+    <div class="itemrow"><div class="ico">交</div><div class="lb"><b>地铁通勤</b><span>交通 · 微信零钱</span></div><div class="amt e">−¥6.50</div></div>
+    <div class="itemrow"><div class="ico">购</div><div class="lb"><b>日用补货</b><span>日用 · 支付宝</span></div><div class="amt e">−¥90.00</div></div>`;
+
+  if (id === 'accounts') return `
+    <div class="card hero" style="margin-top:6px">
+      <div class="k">净资产 · 本月</div>
+      <div class="v">¥62,480.20</div>
+      <div class="sub"><span>资产 ¥71,200</span><span>负债 ¥8,719</span></div>
+    </div>
+    <div class="row">
+      <div class="segmented"><b class="on">全部 6</b><b>储蓄</b><b>信用</b></div>
+      <div class="grow" style="flex:1"></div>
+      <div class="icons covered"><i>↕</i><i>⚑</i><i>+</i></div>
+    </div>
+    <div class="itemrow"><div class="ico">招</div><div class="lb"><b>招商银行</b><span>储蓄 · 尾号 6621</span></div><div class="amt">¥41,200.00</div></div>
+    <div class="itemrow"><div class="ico">微</div><div class="lb"><b>微信零钱</b><span>电子钱包</span></div><div class="amt">¥1,860.00</div></div>
+    <div class="itemrow"><div class="ico">信</div><div class="lb"><b>中信信用卡</b><span>信用 · 可用额度 ¥12,400</span></div><div class="amt e">−¥8,719.80</div></div>`;
+
+  return `
+    <div class="titlerow">
+      <span class="t">统计</span>
+      <div class="icons covered"><i>▦</i><i>⋯</i></div>
+    </div>
+    <div class="row">
+      <div class="strip" style="margin:0">
+        <span style="background:var(--primary-soft);color:var(--on-primary-soft)">本月</span>
+        <span>上月</span><span>近 3 月</span><span>今年</span><span>自定义</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="k" style="font-size:11px;font-weight:800;color:var(--text3)">本月支出</div>
+      <div style="font-size:24px;font-weight:900;color:var(--expense);letter-spacing:-.5px">¥3,214.80</div>
+      <div style="font-size:11.5px;color:var(--text2);margin-top:4px">比上月少 12%，日均 ¥107.16</div>
+    </div>
+    <div class="itemrow"><div class="ico">餐</div><div class="lb"><b>餐饮</b><span>占 38% · 42 笔</span></div><div class="amt e">¥1,220.00</div></div>
+    <div class="itemrow"><div class="ico">交</div><div class="lb"><b>交通</b><span>占 17% · 26 笔</span></div><div class="amt e">¥546.00</div></div>`;
+}
+
+// ───────── 底栏 / 顶栏 / rail ─────────
+function bottomBar(active, hot){
+  const tab = (label, on, isHot) =>
+    `<div class="tab${on ? ' on' : ''}${isHot ? ' hot' : ''}"><span class="g"></span>${label}</div>`;
+  return `
+  <div class="bottombar">
+    <div class="fab">+</div>
+    <div class="bar">
+      ${tab('打卡', false, false)}
+      ${tab('记账', active, hot)}
+      <div class="gap"></div>
+      ${tab('首页', false, false)}
+      ${tab('健康', false, false)}
+    </div>
+  </div>`;
+}
+function shellBar(){
+  return `
+  <div class="shellbar">
+    <div class="grow"></div>
+    <span class="ledger">日常账本 <i>▾</i></span>
+    <span class="avatar">米</span>
+  </div>`;
+}
+function rail(){
+  return `<div class="rail">
+    <div class="mark">米</div>
+    <div class="ni">☑</div><div class="ni on">¥</div><div class="ni">⌂</div><div class="ni">♥</div>
+  </div>`;
+}
+
+// ───────── 三种模式的「导航入口」层 ─────────
+function capsuleLayer(){
+  const open = state.sheet && state.mode === 'before';
+  return `
+  ${open ? '<div class="scrim soft"></div>' : ''}
+  <div class="capsule${open ? ' open' : ''}" id="capsule">
+    <span class="grid"><i></i><i></i><i></i><i></i></span>${SCENE[state.scene]}
+    <span class="bdg">3</span>
+  </div>
+  ${open ? `<div class="navpop">
+      ${PANELS.map(p => `<div class="it${p.id === state.scene ? ' sel' : ''}"><span class="ic"></span>${p.label}</div>`).slice(0,4).join('')}
+      <div class="hr"></div>
+      ${PANELS.map(p => `<div class="it${p.id === state.scene ? ' sel' : ''}"><span class="ic"></span>${p.label}</div>`).slice(4).join('')}
+    </div>` : ''}`;
+}
+function sheetLayer(){
+  if (state.mode !== 'after' || !state.sheet) return '';
+  return `
+  <div class="sheetwrap">
+    <div class="veil" id="sheetVeil"></div>
+    <div class="sheet">
+      <div class="grip"></div>
+      <div class="sh"><b>切换记账面板</b><span>当前：${SCENE[state.scene]} · 点底栏「记账」关闭</span></div>
+      <div class="grid8">
+        ${PANELS.map(p => `<div class="it${p.id === state.scene ? ' sel' : ''}">
+          <span class="ic">${p.ic}</span><em>${p.label}</em>
+          ${p.id === 'reminders' ? '<span class="bdg">3</span>' : ''}
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+function toolChip(){
+  return `<span class="switchchip" id="wchip"><span class="grid"><i></i><i></i><i></i><i></i></span>
+    切换面板<span class="cv">当前：${SCENE[state.scene]} ▾</span></span>`;
+}
+
+// ───────── 标注 ─────────
+function callouts(){
+  if (!state.annot) return '';
+  if (state.mode === 'before'){
+    return `
+      <span class="measure" style="top:14px;right:96px">胶囊 70×30 @ top/right 12</span>
+      <div class="callout bad" style="top:52px;left:12px">
+        虚线框 = 面板页头里最右那 1~3 个控件（流水「筛选」/ 账户「新建」/ 统计动作组），
+        正好落在胶囊底下：<br>① 视觉被压住 ② <code>Stack</code> 顺序让命中测试先给胶囊 → <b>点不到</b>
+      </div>`;
+  }
+  if (state.mode === 'after'){
+    return state.device === 'phone'
+      ? `<div class="callout ok" style="left:12px;right:12px;bottom:96px">
+           首行右侧控件全部恢复可点；上一屏的导航行（61px + 16px）全数还给内容。<br>
+           点底栏「记账」→ 选择器（再点一次 / 点空白关闭）。
+         </div>`
+      : `<div class="callout ok" style="left:22px;top:112px;max-width:300px">
+           宽屏没有底栏：入口放在页面工具行左端（与账本选择器同排），不新增任何行高。<br>
+           同一个选择器，桌面用居中 dialog。
+         </div>`;
+  }
+  return `<div class="callout ok" style="left:12px;top:74px;max-width:238px">
+      导航回到页面流：一条 32px chip 行（+10px 间距 ≈ 42px）。不遮挡、一拍切换、恒可见；
+      代价是内容高度只省回一半。
+    </div>`;
+}
+
+// ───────── 组装 ─────────
+function buildStage(){
+  const wide = state.device === 'wide';
+  const body = `
+    <div class="page">
+      ${state.mode === 'inline' ? `<div class="chiprow">
+        ${PANELS.map(p => `<b class="${p.id === state.scene ? 'on' : ''}">${p.label}</b>`).join('')}
+      </div>` : ''}
+      <div class="scroll">${sceneHtml(state.scene)}</div>
+      ${state.mode === 'before' ? capsuleLayer() : ''}
+      ${callouts()}
+    </div>`;
+
+  if (!wide){
+    return `<div class="phone${state.annot ? ' annot-on' : ''}" data-mode="${state.mode}">
+      <div class="screen">
+        <div class="statusbar"><span>19:54</span><span>▮▮▮ ⌁ 82%</span></div>
+        ${shellBar()}
+        <div class="hairline"></div>
+        ${body}
+        ${bottomBar(true, state.mode === 'after' && !state.sheet)}
+        ${sheetLayer()}
+      </div>
+    </div>`;
+  }
+
+  return `<div class="phone wide" data-mode="${state.mode}">
+    <div class="screen">
+      ${rail()}
+      <div class="wmain">
+        <div class="toolbar">
+          ${state.mode === 'after' ? toolChip() : `<span style="font-size:15px;font-weight:900">${SCENE[state.scene]}</span>`}
+          <div class="grow"></div>
+          <span class="ledger">日常账本 <i>▾</i></span>
+          <span class="avatar">米</span>
+        </div>
+        ${body}
+      </div>
+      ${sheetLayer()}
+    </div>
+  </div>`;
+}
+
+function notesHtml(){
+  if (state.mode === 'before') return `
+    <div class="note bad"><h4><span class="dot"></span>为什么必须改</h4>
+      <p>胶囊 <code>top/right = 12</code>（compact）、高约 30，占屏幕 <code>x∈[308,378] y∈[12,42]</code>；
+      流水首行是 <code>SizedBox(6)</code> + 44px 搜索行，「筛选」开关贴右端 —— 两者几乎完全重合。
+      而且它排在 <code>AppPageFrame</code> 之后，<b>命中测试优先给它</b>，所以那个开关是真的点不动。</p></div>
+    <div class="note"><h4><span class="dot"></span>它换来了什么</h4>
+      <p>原来的横贯导航行 61px + 16px 间距，收起来后 77px 全还给内容（约 9% 屏幕高）。
+      方向没错，<b>错在把入口放进了内容区</b>。</p></div>
+    <div class="note"><h4><span class="dot"></span>附带成本</h4>
+      <p>为了浮层还得自带一套 <code>_navOpen</code> 展开态 + 阻尼层 + 分类页 <code>hidePrimaryNav</code> 特例。</p></div>`;
+
+  if (state.mode === 'after') return `
+    <div class="note ok"><h4><span class="dot"></span>窄屏：底栏两态</h4>
+      <p><b>不在记账模块</b> → 直接进（上次访问的面板，首次流水），切模块保持一拍；
+      <b>已在模块内</b> → 底部升出选择器（8 项 4×2，当前项高亮 + 提醒角标）。
+      这条规则是抄 iOS 的「点当前 tab」惯例，避免每次切模块都被弹层打断。</p></div>
+    <div class="note ok"><h4><span class="dot"></span>宽屏：工具行 chip</h4>
+      <p><code>prefersRailNavigation</code> 在桌面平台恒为 true，<b>宽屏没有底栏</b>，所以必须有页面内入口。
+      放 <code>AppPageToolbar.primary</code>（与账本选择器同排），不新增行高、不遮挡任何内容。</p></div>
+    <div class="note"><h4><span class="dot"></span>实测收益</h4>
+      <p>8 个面板中 7 个首行右侧控件恢复可点；删除约 180 行浮层代码 + <code>_navOpen</code> / 阻尼层 / <code>hidePrimaryNav</code>。</p></div>`;
+
+  return `
+    <div class="note ok"><h4><span class="dot"></span>为什么留 B 案</h4>
+      <p>选择器多一次弹层动画、面板切换视线要下移到屏幕底部。若更看重「拍一下就换页」，
+      B 案用 36px 换回常驻与一拍切换，且不遮挡 —— 相比收起来的 77px 仍省 41px。</p></div>
+    <div class="note"><h4><span class="dot"></span>路由不必拆</h4>
+      <p><code>/app/bookkeeping?section=xxx</code> 已经是可寻址的二级视图；拆成同级 path 路由后每个面板各自
+      <code>pageKey</code>，<code>_loadedPanels</code> + <code>Offstage</code> 的<b>面板保活会失效</b>（滚动、筛选、搜索词全丢），
+      要保住得先把面板状态整体上提到 provider。</p></div>
+    <div class="note"><h4><span class="dot"></span>两案共同的回归线</h4>
+      <p>断言「首行右侧控件不被任何浮层覆盖且可点」——最直接的一条是页面里不再存在
+      <code>bookkeeping-nav-handle</code>，再用 <code>getRect</code> 校一次控件位置。</p></div>`;
+}
+
+function render(){
+  document.documentElement.setAttribute('data-theme', state.theme);
+  const m = MODE[state.mode];
+  const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  setTxt('stageTitle', m.label);
+  setTxt('modeHint', m.hint);
+  const b1 = document.getElementById('badge1'); if (b1){ b1.textContent = m.h1; b1.className = 'badge ' + m.cls1; }
+  setTxt('badge2', SCENE[state.scene] + ' · ' + (state.device === 'phone' ? '手机 390' : '宽屏 1200'));
+  const host = document.getElementById('stageHost'); if (host) host.innerHTML = buildStage();
+  const notes = document.getElementById('notes'); if (notes) notes.innerHTML = notesHtml();
+
+  // 控件高亮
+  const mark = (id, val) => {
+    const box = document.getElementById(id); if (!box || !box.querySelectorAll) return;
+    const kids = box.querySelectorAll('button');
+    for (let i = 0; i < kids.length; i++){
+      const k = kids[i];
+      if (!k.classList) continue;
+      if (k.getAttribute('data-val') === val) k.classList.add('on'); else k.classList.remove('on');
+    }
+  };
+  mark('segMode', state.mode); mark('segScene', state.scene); mark('segDevice', state.device);
+  const tg = (id, on) => { const el = document.getElementById(id); if (el && el.classList){ if (on) el.classList.add('on'); else el.classList.remove('on'); } };
+  tg('tgAnnot', state.annot); tg('tgTheme', state.theme === 'dark'); tg('tgSheet', state.sheet);
+}
+
+// ───────── 交互 ─────────
+const toggleGroup = (id, key) => {
+  const box = document.getElementById(id);
+  if (!box || !box.addEventListener) return;
+  box.addEventListener('click', (e) => {
+    const t = e.target && e.target.closest ? e.target.closest('[data-val]') : null;
+    if (!t) return;
+    state[key] = t.getAttribute('data-val');
+    if (key === 'mode') state.sheet = state.mode !== 'before';
+    render();
+  });
+};
+function boot(){
+  toggleGroup('segMode', 'mode');
+  toggleGroup('segScene', 'scene');
+  toggleGroup('segDevice', 'device');
+  const bind = (id, key, invert) => {
+    const el = document.getElementById(id);
+    if (!el || !el.addEventListener) return;
+    el.addEventListener('click', () => { state[key] = invert ? !(state[key] === 'dark' ? true : false) : !state[key]; render(); });
+  };
+  bind('tgAnnot', 'annot'); bind('tgSheet', 'sheet');
+  const th = document.getElementById('tgTheme');
+  if (th && th.addEventListener) th.addEventListener('click', () => { state.theme = state.theme === 'dark' ? 'light' : 'dark'; render(); });
+  // 舞台内交互：胶囊开关（现状）/ 底栏「记账」（方案 A）
+  const host = document.getElementById('stageHost');
+  if (host && host.addEventListener){
+    host.addEventListener('click', (e) => {
+      const el = e.target;
+      if (!el) return;
+      if (el.closest && el.closest('.capsule')) { state.sheet = !state.sheet; render(); return; }
+      if (el.closest && el.closest('#sheetVeil')) { state.sheet = false; render(); return; }
+      if (el.closest && el.closest('.switchchip')) { state.sheet = !state.sheet; render(); return; }
+      // 方案 A 里点底栏「记账」= 开关选择器（两态规则：已在本模块才弹）
+      if (el.closest && el.closest('.bar .tab') && state.mode !== 'before'){
+        state.sheet = !state.sheet; render();
+      }
+    });
+  }
+  render();
+}
+boot();
+
+// 供 Node 校验脚本调用（浏览器里无副作用）
+if (typeof globalThis !== 'undefined') globalThis.__navMock = { state, render, buildStage, notesHtml, MODE, SCENE, PANELS };
+</script>
+</body>
+</html>

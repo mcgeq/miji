@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/app_toast.dart';
+import 'package:miji/core/presentation/components/app_module_section_picker.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
-import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
+import 'package:miji/core/router/app_module_nav.dart';
 import 'package:miji/features/health/domain/health_models.dart';
 import 'package:miji/features/health/domain/health_repository.dart';
 import 'package:miji/features/health/health_text.dart';
@@ -30,7 +32,13 @@ String _pregnancyErrorMessage(Object error) {
 }
 
 class HealthPage extends ConsumerStatefulWidget {
-  const HealthPage({super.key});
+  const HealthPage({super.key, this.initialSection});
+
+  /// 二级路由的入口：`/app/health?section=trends`。
+  ///
+  /// 健康页以前把当前面板只存在 State 里，地址永远是 `/app/health`：首页的
+  /// 「预测」卡只能落到「今日」，底栏切走再切回也回不到趋势页。
+  final String? initialSection;
 
   @override
   ConsumerState<HealthPage> createState() => _HealthPageState();
@@ -38,8 +46,18 @@ class HealthPage extends ConsumerStatefulWidget {
 
 enum _HealthPanel { today, calendar, trends, settings }
 
+/// 解析 `?section=`。面板名与 `healthModuleNav` 的 section id 同名
+/// （`panel.name` 就是写进地址的值）。
+_HealthPanel _panelFromSection(String? section) {
+  final id = healthModuleNav.resolveSectionId(section);
+  return _HealthPanel.values.firstWhere(
+    (panel) => panel.name == id,
+    orElse: () => _HealthPanel.today,
+  );
+}
+
 class _HealthPageState extends ConsumerState<HealthPage> {
-  var _selectedPanel = _HealthPanel.today;
+  late _HealthPanel _selectedPanel = _panelFromSection(widget.initialSection);
   late DateTime _calendarFocusedDay;
 
   @override
@@ -50,50 +68,80 @@ class _HealthPageState extends ConsumerState<HealthPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final panelSelector = AppSlidingSegmentedControl<_HealthPanel>(
-      minSegmentWidth: 68,
-      value: _selectedPanel,
-      segments: const [
-        AppSlidingSegment(
-          value: _HealthPanel.today,
-          icon: Icons.today_rounded,
-          label: '今日',
-        ),
-        AppSlidingSegment(
-          value: _HealthPanel.calendar,
-          icon: Icons.calendar_month_rounded,
-          label: '日历',
-        ),
-        AppSlidingSegment(
-          value: _HealthPanel.trends,
-          icon: Icons.insights_rounded,
-          label: '趋势',
-        ),
-        AppSlidingSegment(
-          value: _HealthPanel.settings,
-          icon: Icons.tune_rounded,
-          label: '设置',
-        ),
-      ],
-      onChanged: (panel) {
-        setState(() => _selectedPanel = panel);
-      },
-    );
+  void didUpdateWidget(covariant HealthPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialSection == widget.initialSection) {
+      return;
+    }
+    // 面板自己写回 URL 时会再走到这里，此时 section 已经等于当前面板。
+    final nextPanel = _panelFromSection(widget.initialSection);
+    if (nextPanel != _selectedPanel) {
+      setState(() => _selectedPanel = nextPanel);
+    }
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    // 工具行只有左端一枚面板 chip。这里原本是一枚 4 段的分段控件
+    // （今日 / 日历 / 趋势 / 设置）：与记账、打卡统一成「chip + 底栏两态唤出」
+    // 之后，窄屏靠底栏「健康」两态唤出，宽屏 / 桌面窄窗（`prefersRailNavigation`
+    // 为真时没有底栏）靠这枚 chip——它显示当前面板名，同时兼任「我在哪」的标识。
     return AppPageFrame(
       maxWidth: 760,
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: panelSelector,
+            child: Row(
+              children: [
+                AppModuleSectionChip(
+                  spec: healthModuleNav,
+                  sectionId: _selectedPanel.name,
+                  onTap: _openSectionPicker,
+                ),
+                const Spacer(),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Expanded(child: _buildSelectedTab()),
         ],
       ),
     );
+  }
+
+  /// 换面板（工具行 chip）。
+  void _selectPanel(_HealthPanel panel) {
+    if (panel == _selectedPanel) {
+      return;
+    }
+    setState(() => _selectedPanel = panel);
+    _syncSectionToUrl(panel);
+  }
+
+  /// 工具行 chip：弹出面板选择器并落到选中的面板。
+  ///
+  /// 与底栏「健康」的两态唤出走的是同一张选择器，差别只是这里一次点击到位。
+  Future<void> _openSectionPicker() async {
+    final current = _selectedPanel.name;
+    final picked = await showAppModuleSectionPicker(
+      context,
+      spec: healthModuleNav,
+      currentSectionId: current,
+    );
+    if (!mounted || picked == null || picked == current) {
+      return;
+    }
+    _selectPanel(_panelFromSection(picked));
+  }
+
+  /// 把当前面板写回 `?section=`：深链、底栏切回、系统返回键都要靠它。
+  void _syncSectionToUrl(_HealthPanel panel) {
+    final route = GoRouterState.of(context);
+    if (route.uri.queryParameters['section'] == panel.name) {
+      return;
+    }
+    context.go(healthModuleNav.uriFor(panel.name).toString());
   }
 
   Widget _buildSelectedTab() {
