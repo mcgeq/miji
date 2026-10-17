@@ -5,6 +5,13 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 
+/// 占用（已用 + 已预留）到多少算「快满了」。
+///
+/// 环、双轨进度条、胶囊圆点**共用这一个判据**：以前环按 80% 变琥珀，进度条
+/// 却只在**超支**时才变，于是「占用 96%」的卡上环是黄的、条还是白的，两个
+/// 信号互相拆台；胶囊圆点更是恒为薄荷绿。三处各自算一次，就必然走散。
+const _nearLimitProgress = 0.8;
+
 /// 首页主角卡片：回答「这个月我还能花多少」。
 ///
 /// - 有预算：展示剩余可花 + 预算环形进度 + 时间/花费双轨进度条
@@ -34,6 +41,9 @@ class HomeBalanceHeroCard extends StatelessWidget {
     final spending = today ?? const HomeTodaySpendingSummary.empty();
     final hasBudget = summary?.hasBudget ?? false;
     final exceeded = hasBudget && (summary!.progress >= 1);
+    // 判一次、传下去：环 / 进度条 / 圆点必须同时变色。
+    final nearLimit =
+        hasBudget && (summary?.occupiedProgress ?? 0) >= _nearLimitProgress;
     final gradient = _heroGradient(theme, exceeded: exceeded);
     // 这张卡只用品牌（石墨）与超支（深红）两套渐变，都是深卡，所以 A 下正文是白字。
     // 仍从 token 取而不是写死 `Colors.white`：换方向/换渐变时不用再回来逐个改。
@@ -79,6 +89,8 @@ class HomeBalanceHeroCard extends StatelessWidget {
                       paceLabel: summary?.paceLabel,
                       exceeded: exceeded,
                       isLoading: isLoading,
+                      onHero: onHero,
+                      nearLimit: nearLimit,
                     ),
                     const SizedBox(height: 14),
                     _MainRow(
@@ -89,6 +101,7 @@ class HomeBalanceHeroCard extends StatelessWidget {
                       masked: masked,
                       usedProgress: summary?.progress ?? 0,
                       occupiedProgress: summary?.occupiedProgress ?? 0,
+                      nearLimit: nearLimit,
                     ),
                     const SizedBox(height: 16),
                     _Pills(
@@ -112,6 +125,7 @@ class HomeBalanceHeroCard extends StatelessWidget {
                         occupiedProgress: summary.occupiedProgress,
                         periodProgress: summary.periodProgress,
                         exceeded: exceeded,
+                        nearLimit: nearLimit,
                       ),
                     ] else ...[
                       const SizedBox(height: 12),
@@ -181,6 +195,8 @@ class _Header extends StatelessWidget {
     required this.paceLabel,
     required this.exceeded,
     required this.isLoading,
+    required this.onHero,
+    required this.nearLimit,
   });
 
   final bool hasBudget;
@@ -188,8 +204,35 @@ class _Header extends StatelessWidget {
   final bool exceeded;
   final bool isLoading;
 
+  /// 卡片的正文色（`AppHeroGradient.onColor`）。
+  final Color onHero;
+
+  /// 占用已过 [_nearLimitProgress]。与环、进度条共用同一个判据。
+  final bool nearLimit;
+
+  /// 圆点跟着状态一起变。
+  ///
+  /// 原来恒为薄荷绿：卡片已经「花费偏快」甚至「额度被预留占满」了，旁边
+  /// 仍是一颗表示平安的绿点，等于把告警抵掉一半。占用过线时哪怕文案还是
+  /// 「节奏正常」（过去确实花得不快），也该转告警色 —— 环已经黄了。
+  Color _dotColor(ThemeData theme) {
+    if (nearLimit) {
+      return theme.heroGradients.amber;
+    }
+    final label = paceLabel ?? '';
+    if (label.contains('超支') || label.contains('预留') || label.contains('偏快')) {
+      return theme.heroGradients.amber;
+    }
+    if (label.contains('偏慢')) {
+      // 偏慢不是告警，但也不该沿用「一切正常」的薄荷绿。
+      return onHero.withValues(alpha: 0.62);
+    }
+    return const Color(0xFF9BF5D4);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     // 「本月预算」这个胶囊已经去掉了：它现在就是卡上方 tab 的名字，
     // 卡内再写一遍是同一句话说两次（设计稿里两个胶囊本来是并排靠左的）。
     // 左槽留给节奏状态，右侧只在加载时出现进度条。
@@ -197,7 +240,8 @@ class _Header extends StatelessWidget {
 
     return Row(
       children: [
-        if (pace.isNotEmpty) _HeroChip(text: pace, dot: true),
+        if (pace.isNotEmpty)
+          _HeroChip(text: pace, dotColor: _dotColor(theme), onHero: onHero),
         const Spacer(),
         if (isLoading)
           const SizedBox(
@@ -216,10 +260,17 @@ class _Header extends StatelessWidget {
 }
 
 class _HeroChip extends StatelessWidget {
-  const _HeroChip({required this.text, this.dot = false});
+  const _HeroChip({
+    required this.text,
+    required this.dotColor,
+    required this.onHero,
+  });
 
   final String text;
-  final bool? dot;
+
+  /// 圆点颜色；为 null 时不画圆点。
+  final Color? dotColor;
+  final Color onHero;
 
   @override
   Widget build(BuildContext context) {
@@ -233,13 +284,13 @@ class _HeroChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (dot == true) ...[
+          if (dotColor != null) ...[
             Container(
               width: 6,
               height: 6,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF9BF5D4),
+                color: dotColor,
               ),
             ),
             const SizedBox(width: 6),
@@ -247,7 +298,7 @@ class _HeroChip extends StatelessWidget {
           Text(
             text,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.white,
+              color: onHero,
               fontWeight: FontWeight.w800,
               letterSpacing: 0,
             ),
@@ -267,6 +318,7 @@ class _MainRow extends StatelessWidget {
     required this.masked,
     required this.usedProgress,
     required this.occupiedProgress,
+    required this.nearLimit,
   });
 
   final bool hasBudget;
@@ -280,6 +332,9 @@ class _MainRow extends StatelessWidget {
 
   /// (已用 + 已预留) / 预算；环与进度条按这个口径画。
   final double occupiedProgress;
+
+  /// 占用已过 [_nearLimitProgress]，环与进度条一起转告警色。
+  final bool nearLimit;
 
   @override
   Widget build(BuildContext context) {
@@ -368,6 +423,7 @@ class _MainRow extends StatelessWidget {
             usedProgress: usedProgress,
             occupiedProgress: occupiedProgress,
             exceeded: exceeded,
+            nearLimit: nearLimit,
           ),
         ],
       ],
@@ -521,6 +577,7 @@ class _BudgetRing extends StatelessWidget {
     required this.usedProgress,
     required this.occupiedProgress,
     required this.exceeded,
+    required this.nearLimit,
   });
 
   final double usedProgress;
@@ -531,11 +588,11 @@ class _BudgetRing extends StatelessWidget {
   /// 已用 ≥ 预算。此时整卡切到 danger 深红，卡片本身已经在喊了。
   final bool exceeded;
 
+  /// 占用已过 [_nearLimitProgress]（与进度条、胶囊圆点同一判据）。
+  final bool nearLimit;
+
   static const _size = 84.0;
   static const _stroke = 8.0;
-
-  /// 与分类预算条的 [HomeCategoryBudgetProgress.isNearLimit] 同口径。
-  static const _nearLimitAt = 0.8;
 
   @override
   Widget build(BuildContext context) {
@@ -545,8 +602,9 @@ class _BudgetRing extends StatelessWidget {
     final hasCommitted = occupied - used > 0.0001;
     // 超支时卡片已经是深红，环再上琥珀会「红底压橙」，两个告警互相打架，
     // 所以只在**还没超支但快到顶**时上琥珀。
-    final nearLimit = !exceeded && occupied >= _nearLimitAt;
-    final arc = nearLimit ? theme.heroGradients.amber : Colors.white;
+    final arc = nearLimit && !exceeded
+        ? theme.heroGradients.amber
+        : Colors.white;
 
     return SizedBox.square(
       dimension: _size,
@@ -891,6 +949,7 @@ class _DualProgress extends StatelessWidget {
     required this.occupiedProgress,
     required this.periodProgress,
     required this.exceeded,
+    required this.nearLimit,
   });
 
   /// 已用 / 预算。
@@ -901,6 +960,11 @@ class _DualProgress extends StatelessWidget {
   final double periodProgress;
   final bool exceeded;
 
+  /// 占用已过 [_nearLimitProgress]。与环、胶囊圆点共用同一判据 ——
+  /// 以前这里只在 `exceeded` 时变黄，而环是 80% 就变，于是同一张卡上
+  /// 「环已黄、条还白」。超支时卡片整体已经是深红，条也保持琥珀。
+  final bool nearLimit;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -909,6 +973,7 @@ class _DualProgress extends StatelessWidget {
     final period = periodProgress.clamp(0.0, 1.0).toDouble();
     final committed = (occupied - used).clamp(0.0, 1.0).toDouble();
     final hasCommitted = committed > 0.0001;
+    final alert = nearLimit || exceeded;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -944,16 +1009,23 @@ class _DualProgress extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // 预留段：紧接在已用之后。
+                  // 预留段：紧接在已用之后。告警时跟环一样用 52% 琥珀 ——
+                  // 只把已用段染黄的话，「已用 40% + 预留 56%」的条读起来
+                  // 仍是「灰掉大半」，而环那边整圈都已经是琥珀。
                   if (hasCommitted)
                     Positioned(
                       left: width * used,
                       top: 4,
                       child: Container(
+                        key: const ValueKey('home-budget-committed-bar'),
                         width: width * committed,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.62),
+                          color: alert
+                              ? theme.heroGradients.amber.withValues(
+                                  alpha: 0.52,
+                                )
+                              : Colors.white.withValues(alpha: 0.62),
                           borderRadius: BorderRadius.circular(999),
                         ),
                       ),
@@ -962,12 +1034,11 @@ class _DualProgress extends StatelessWidget {
                     left: 0,
                     top: 4,
                     child: Container(
+                      key: const ValueKey('home-budget-used-bar'),
                       width: width * used,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: exceeded
-                            ? theme.heroGradients.amber
-                            : Colors.white,
+                        color: alert ? theme.heroGradients.amber : Colors.white,
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),

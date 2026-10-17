@@ -239,12 +239,22 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
   final occupiedProgress = budget.amountMinor <= 0
       ? 0.0
       : (usedMinor + committedMinor) / budget.amountMinor;
-  // 顶部胶囊讲的是「花钱速度」，只按已用判定（把预留算进去会把
-  // 「还没花」说成「已超支」）。但额度被未来义务占满时要单独说清楚，
-  // 否则环已经走满、胶囊还写着「节奏正常」。
-  final paceLabel = progress < 1 && occupiedProgress >= 1
-      ? '额度已被预留占满'
-      : homeBudgetPaceLabelFor(progress, pace.periodProgress);
+  // 节奏的分母是「可支配额度」= 预算 − 已预留，与卡上「日均可花」同源。
+  // 用全额预算做分母会把被未来义务锁死的钱也算成「还能花」，于是
+  // 40% 已用、55% 时间过去被判成「偏慢」，而日均可花只剩 ¥12.54。
+  final spendableProgress = homeBudgetSpendableProgress(
+    totalMinor: budget.amountMinor,
+    usedMinor: usedMinor,
+    committedMinor: committedMinor,
+  );
+  // 顶部胶囊：已超支 > 额度被预留占满 > 节奏 > 大半被预留。预留只作
+  // 「占用」参与判定、不混进「已用」（否则「还没花」会被说成已超支）。
+  final paceLabel = homeBudgetHeroPaceLabel(
+    usedProgress: progress,
+    spendableProgress: spendableProgress,
+    periodProgress: pace.periodProgress,
+    occupiedProgress: occupiedProgress,
+  );
 
   return HomeMonthBudgetSummary(
     hasBudget: true,
@@ -257,7 +267,7 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
     committedMinor: committedMinor,
     progress: progress,
     periodProgress: pace.periodProgress,
-    paceRatio: pace.paceRatioFor(progress),
+    paceRatio: pace.paceRatioFor(spendableProgress),
     paceLabel: paceLabel,
     remainingDays: pace.remainingDays,
   );
@@ -876,14 +886,102 @@ HomeBudgetPeriodPace homeBudgetPeriodPaceFor(
   );
 }
 
-String homeBudgetPaceLabelFor(double budgetProgress, double periodProgress) {
-  if (budgetProgress >= 1) {
+/// 花费倍率达到多少算「偏快」。
+const homeBudgetPaceFastRatio = 1.15;
+
+/// 花费倍率低于多少算「偏慢」。
+const homeBudgetPaceSlowRatio = 0.8;
+
+/// 已用低于这个占比时不判「偏慢」。
+const homeBudgetPaceSlowFloor = 0.05;
+
+/// 占用（已用 + 已预留）超过这个占比就提示「大半额度被预留吃掉」。
+const homeBudgetPaceOccupiedWarnRatio = 0.9;
+
+/// 「花费偏快」的文案。单独抽常量是因为洞察条要拿它和 `paceLabel` 比对。
+const homeBudgetPaceFastLabel = '花费偏快';
+
+/// 「节奏偏慢」的文案。
+const homeBudgetPaceSlowLabel = '节奏偏慢';
+
+/// 「节奏正常」的文案。
+const homeBudgetPaceNormalLabel = '节奏正常';
+
+/// 预算节奏判定：看「已用 ÷ **可支配额度** ÷ 时间进度」这个倍率。
+///
+/// 分母刻意不是全额预算，而是 `预算 − 已预留`。自动记账模板、分期还款这类
+/// 未来义务已经把那部分额度锁死了，用户只能在剩下的钱里安排 —— 卡片上的
+/// 「日均可花」正是按 `(预算 − 已用 − 已预留) / 剩余天数` 算的。两个数必须
+/// 共用一个分母，否则会出现「日均可花只剩 ¥12.54、标签还写节奏正常」。
+///
+/// 用 `usedProgress`（已用 / 全额预算）而不是可支配比例来做「偏慢」的
+/// 下限判断：周期第 1 天花 20 块，可支配比例就已经可能不小，但那不叫
+/// 「花得慢」，叫「还没开始花」。
+///
+/// 两个历史教训还留着：
+///
+/// 1. 不能拿绝对百分点去比（旧实现 `progress > periodProgress + 0.12`）：
+///    折算成倍率会一路漂，月初要 4.7 倍才算快；而到第 22 天
+///    `periodProgress + 0.12` 越过 0.8 之后相对规则彻底失效，只剩
+///    「已用 ≥ 80%」这条绝对线 —— 后半月方向是反的。
+/// 2. 必须有「偏慢」这一档，否则从 0 到快线之间是一段完全不变的死区，
+///    用户怎么花这个标签都不动。
+///
+/// 上下限刻意不对称：预算场景里「花快了」要更早提醒，所以偏快到 1.15 倍
+/// 就说，偏慢要低于 0.8 倍才说。
+String homeBudgetPaceLabelFor({
+  required double spendableProgress,
+  required double usedProgress,
+  required double periodProgress,
+}) {
+  if (periodProgress <= 0) {
+    return homeBudgetPaceNormalLabel;
+  }
+  final ratio = spendableProgress / periodProgress;
+  if (ratio >= homeBudgetPaceFastRatio) {
+    return homeBudgetPaceFastLabel;
+  }
+  // 已用不足全额预算的 5% 时倍率完全由分母决定（第 1 天花 20 块就是
+  // 0.07 倍），这时说「偏慢」只会让人以为出了事。
+  if (ratio < homeBudgetPaceSlowRatio &&
+      usedProgress >= homeBudgetPaceSlowFloor) {
+    return homeBudgetPaceSlowLabel;
+  }
+  return homeBudgetPaceNormalLabel;
+}
+
+/// 顶部胶囊文案，优先级：已超支 > 额度被预留占满 > 节奏 > 大半被预留。
+///
+/// 前三档压过「大半被预留」是刻意的：节奏已经报警时，行动项是「别再花」，
+/// 这时候再报占用只会把行动项藏起来；而节奏没报警、占用却又很高时（已用
+/// 不足 5% 被 0.05 的下限挡掉了「偏慢」），才轮到它来解释「钱为什么这么紧」。
+///
+/// 预留不能混进「已用」去判超支（那会把「还没花」说成已超支），所以它
+/// 单独成档、单独措辞。
+String homeBudgetHeroPaceLabel({
+  required double usedProgress,
+  required double spendableProgress,
+  required double periodProgress,
+  required double occupiedProgress,
+}) {
+  if (usedProgress >= 1) {
     return '已超支';
   }
-  if (budgetProgress >= 0.8 || budgetProgress > periodProgress + 0.12) {
-    return '花费偏快';
+  if (occupiedProgress >= 1) {
+    return '额度已被预留占满';
   }
-  return '节奏正常';
+  final pace = homeBudgetPaceLabelFor(
+    spendableProgress: spendableProgress,
+    usedProgress: usedProgress,
+    periodProgress: periodProgress,
+  );
+  if (pace != homeBudgetPaceNormalLabel && pace != homeBudgetPaceSlowLabel) {
+    return pace;
+  }
+  if (occupiedProgress >= homeBudgetPaceOccupiedWarnRatio) {
+    return '额度大半已被预留';
+  }
+  return pace;
 }
 
 int _budgetScopeRank(MoneyBudgetScopeType type) {
@@ -1186,8 +1284,11 @@ HomeInsight? buildHomeInsight({
         ],
       ),
     );
-  } else if (budget.hasBudget && budget.paceLabel == homeInsightFastPaceLabel) {
-    // 2. 花得比时间进度快 —— 还没超，但需要提醒。
+  } else if (budget.hasBudget &&
+      budget.paceLabel == homeInsightCommittedFullLabel) {
+    // 2. 额度被未来义务吃光 —— 还没超支，但今天已经花不动了。
+    //    这条以前不存在：那种状态下胶囊会走到「花费偏快」，于是洞察条说
+    //    「花得比时间进度快，日均可花 ¥0.00」，方向完全不对。
     items.add(
       HomeInsightItem(
         kind: HomeInsightKind.budgetPace,
@@ -1195,7 +1296,28 @@ HomeInsight? buildHomeInsight({
         target: HomeInsightTarget.budgets,
         actionLabel: '看预算',
         segments: [
-          const HomeInsightSegment('花得比时间进度快，还剩 '),
+          const HomeInsightSegment('本月额度已被未来账目预留占满，'),
+          HomeInsightSegment('日均可花归零', emphasis: true),
+        ],
+      ),
+    );
+  } else if (budget.hasBudget && budget.paceLabel == homeInsightFastPaceLabel) {
+    // 3. 可支配额度花得太快 —— 还没超，但需要提醒。
+    //    这里必须报「可支配额度用了多少」而不是「比时间进度快」：后者
+    //    看不出分母是扣过预留的，用户会拿「已用 40%」来质疑这句话。
+    items.add(
+      HomeInsightItem(
+        kind: HomeInsightKind.budgetPace,
+        tone: HomeInsightTone.warning,
+        target: HomeInsightTarget.budgets,
+        actionLabel: '看预算',
+        segments: [
+          const HomeInsightSegment('可支配额度已用 '),
+          HomeInsightSegment(
+            '${(budget.spendableProgress * 100).clamp(0, 999).round()}%',
+            emphasis: true,
+          ),
+          const HomeInsightSegment('，还剩 '),
           HomeInsightSegment('${budget.remainingDays} 天', emphasis: true),
           const HomeInsightSegment('，日均可花 '),
           HomeInsightSegment(
@@ -1207,7 +1329,7 @@ HomeInsight? buildHomeInsight({
     );
   }
 
-  // 3. 今天 vs 日均；没有记录时给一个轻量提醒。
+  // 4. 今天 vs 日均；没有记录时给一个轻量提醒。
   if (today.todayExpenseMinor > 0) {
     final diff = today.todayExpenseMinor - today.dailyAverageExpenseMinor;
     if (today.dailyAverageExpenseMinor > 0 && diff != 0) {
@@ -1292,7 +1414,12 @@ HomeInsight? buildHomeInsight({
 }
 
 /// `homeBudgetPaceLabelFor` 里表示「花得偏快」的文案。
-const homeInsightFastPaceLabel = '花费偏快';
+const homeInsightFastPaceLabel = homeBudgetPaceFastLabel;
+
+/// `homeBudgetHeroPaceLabel` 里表示「额度被未来义务占满」的文案。
+///
+/// 这一档比「花费偏快」更需要提醒：卡片说的是「还可花 ¥0」，而日均已经归零。
+const homeInsightCommittedFullLabel = '额度已被预留占满';
 
 /// 首页最多展示几条洞察。
 const homeInsightMaxItems = 3;

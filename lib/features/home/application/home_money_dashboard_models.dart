@@ -73,6 +73,26 @@ class HomeTodaySpendingSummary {
   int get todayVsAverageMinor => todayExpenseMinor - dailyAverageExpenseMinor;
 }
 
+/// 可支配额度（预算 − 已预留）已被用掉的比例。
+///
+/// 这就是「消费快慢」该用的分母。已预留的那部分已经被自动记账、分期这类
+/// 未来义务锁死，不属于用户能安排的钱；拿全额预算当分母，会得出
+/// 「日均可花只剩 ¥12.54、标签却写节奏正常」这种同一张卡上互相打架的结论
+/// —— 因为 12.54 恰恰是按扣掉预留算出来的。两个数必须共用一个分母。
+///
+/// 可支配额度 ≤ 0（被预留吃光）时返回 1：没有余量了，任何已用都算用满。
+double homeBudgetSpendableProgress({
+  required int totalMinor,
+  required int usedMinor,
+  required int committedMinor,
+}) {
+  final spendableMinor = totalMinor - committedMinor;
+  if (spendableMinor <= 0) {
+    return 1;
+  }
+  return usedMinor / spendableMinor;
+}
+
 class HomeMonthBudgetSummary {
   const HomeMonthBudgetSummary({
     required this.hasBudget,
@@ -136,6 +156,13 @@ class HomeMonthBudgetSummary {
   /// 占用进度：(已用 + 已预留) / 预算。预算金额为 0 时按 0 处理。
   double get occupiedProgress =>
       totalMinor <= 0 ? 0.0 : occupiedMinor / totalMinor;
+
+  /// 可支配额度已被用掉的比例，与 [dailyAllowanceMinor] 是同一个分母。
+  double get spendableProgress => homeBudgetSpendableProgress(
+    totalMinor: totalMinor,
+    usedMinor: usedMinor,
+    committedMinor: committedMinor,
+  );
 
   int get dailyAllowanceMinor {
     if (!hasBudget || remainingDays <= 0 || availableMinor <= 0) {

@@ -7,7 +7,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:miji/core/presentation/app_page_layout.dart';
-import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/components/app_skeleton.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
@@ -145,8 +144,9 @@ class _MoneyTransactionsSectionState
       _paymentMethodFilter != null ||
       _customPaymentMethodNameFilter != null ||
       _merchantFilter != null ||
+      _keywordFilter != null ||
       _dateStartFilter != null ||
-      _keywordFilter != null;
+      _dateEndFilter != null;
 
   /// 只统计「高级筛选」抽屉里的条件。
   ///
@@ -161,11 +161,9 @@ class _MoneyTransactionsSectionState
       _customPaymentMethodNameFilter != null ||
       _merchantFilter != null;
 
-  /// 常用筛选条上的生效项数量（状态 / 日期区间 / 标签）。
+  /// 筛选入口角标只统计筛选条件；日期范围已独立显示在周期选择器中。
   int get _activeStripFilterCount =>
-      (_statusFilter == null ? 0 : 1) +
-      (_dateStartFilter == null && _dateEndFilter == null ? 0 : 1) +
-      _tagFilter.length;
+      (_statusFilter == null ? 0 : 1) + _tagFilter.length;
 
   /// 顶部「筛选」开关上的角标：类型 + 常用筛选条 + 抽屉，都算。
   int get _activeFilterCount =>
@@ -195,9 +193,8 @@ class _MoneyTransactionsSectionState
 
   bool get _isDateLocked => widget.filterContext?.lockDateRange ?? false;
 
-  MoneyTransactionQuery get _effectiveInitialQuery {
-    return widget.initialQuery ?? const MoneyTransactionQuery();
-  }
+  MoneyTransactionQuery get _effectiveInitialQuery =>
+      widget.initialQuery ?? const MoneyTransactionQuery();
 
   @override
   void initState() {
@@ -296,8 +293,21 @@ class _MoneyTransactionsSectionState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 6),
-        // 搜索 + 筛选开关作为页头第一行；类型分段与排序 / 高级筛选 / 更多
-        // 作为工具行，均走 BookkeepingPanelHeader。
+        _TransactionPeriodBar(
+          label: _periodLabel,
+          dateLocked: _isDateLocked,
+          onPreviousMonth: () => _navigatePeriodMonth(-1),
+          onNextMonth: () => _navigatePeriodMonth(1),
+          onSelectPreset: _selectPeriodPreset,
+        ),
+        const SizedBox(height: 8),
+        _TransactionSummaryBar(
+          query: _summaryQuery,
+          periodLabel: _periodLabel,
+          onClear: _clearAllFilters,
+        ),
+        const SizedBox(height: 10),
+        // 搜索与类型筛选是高频入口；排序、筛选和导出等动作按需展开。
         BookkeepingPanelHeader(
           searchRow: Row(
             children: [
@@ -425,8 +435,6 @@ class _MoneyTransactionsSectionState
             pendingCount: ref
                 .watch(currentUserPendingTransactionCountProvider)
                 .maybeWhen(data: (value) => value, orElse: () => 0),
-            dateStart: _dateStartFilter,
-            dateEnd: _dateEndFilter,
             tagCandidates: tagCandidates,
             selectedTags: _tagFilter,
             activeChips: _activeFilterChips(
@@ -436,8 +444,6 @@ class _MoneyTransactionsSectionState
               budgets: budgetRows,
             ),
             onStatusChanged: _setStatusFilter,
-            onPickDateRange: _pickDateRange,
-            onSelectDatePreset: _applyDatePreset,
             onToggleTag: _toggleTagFilter,
           ),
         ),
@@ -501,11 +507,7 @@ class _MoneyTransactionsSectionState
             ],
           ),
         ),
-        // 底部槽位：多选时是批量操作条，其余时候是筛选结果汇总。
-        //
-        // 两者共用同一格，既不再跟列表抢上方空间，也不会叠在列表上遮住内容。
-        // 导航条由 Scaffold 的 bottomNavigationBar 承担，body 在它上方结束，
-        // 所以这个槽位天然停在导航胶囊之上。
+        // 多选时在底部固定批量操作；常态汇总已提升到列表上方。
         if (_isBulkMode) ...[
           const SizedBox(height: 10),
           _TransactionBulkActionBar(
@@ -525,19 +527,7 @@ class _MoneyTransactionsSectionState
             onDelete: _bulkDelete,
             onClear: _clearBulkSelection,
           ),
-        ] else
-          Padding(
-            // 宽屏 / 桌面端没有底部导航，FAB 会挪到右下角，这里给它留出位置；
-            // 移动端 FAB 整颗嵌在导航胶囊里，不需要额外避让。
-            padding: EdgeInsets.only(
-              top: 10,
-              right: AppResponsive.of(context).prefersRailNavigation ? 64 : 0,
-            ),
-            child: _TransactionSummaryBar(
-              query: _summaryQuery,
-              onClear: _clearAllFilters,
-            ),
-          ),
+        ],
       ],
     );
   }
@@ -595,12 +585,7 @@ class _MoneyTransactionsSectionState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (showDayHeader)
-                _DayGroupHeader(
-                  date: transaction.transactionAt,
-                  expenseMinor: _dayExpenseMinorFor(transaction.transactionAt),
-                  incomeMinor: _dayIncomeMinorFor(transaction.transactionAt),
-                  currencyCode: _dayCurrencyFor(transaction.transactionAt),
-                ),
+                _DayGroupHeader(date: transaction.transactionAt),
               TransactionCard(
                 key: ValueKey(transaction.id),
                 transaction: transaction,
@@ -854,48 +839,6 @@ class _MoneyTransactionsSectionState
     }
   }
 
-  int _dayExpenseMinorFor(DateTime date) {
-    var total = 0;
-    for (final t in _transactions) {
-      if (!sameDayKey(t.transactionAt, date)) continue;
-      if (t.type == MoneyTransactionType.expense &&
-          t.status == MoneyTransactionStatus.completed) {
-        total += t.amountMinor - t.refundAmountMinor;
-      }
-    }
-    return total;
-  }
-
-  /// 当天已完成流水的币种。
-  ///
-  /// 原来日期头把币种硬编码成 CNY，多币种用户的日元流水会被标上「¥ 人民币」。
-  /// 跨币种求和本身没有意义，这里返回 null，让日期头只显示日期。
-  String? _dayCurrencyFor(DateTime date) {
-    String? currency;
-    for (final t in _transactions) {
-      if (!sameDayKey(t.transactionAt, date)) continue;
-      if (t.status != MoneyTransactionStatus.completed) continue;
-      if (currency == null) {
-        currency = t.currencyCode;
-      } else if (currency != t.currencyCode) {
-        return null;
-      }
-    }
-    return currency;
-  }
-
-  int _dayIncomeMinorFor(DateTime date) {
-    var total = 0;
-    for (final t in _transactions) {
-      if (!sameDayKey(t.transactionAt, date)) continue;
-      if (t.type == MoneyTransactionType.income &&
-          t.status == MoneyTransactionStatus.completed) {
-        total += t.amountMinor - t.refundAmountMinor;
-      }
-    }
-    return total;
-  }
-
   Future<void> _refreshTransactions() async {
     if (mounted) {
       setState(() {
@@ -1061,6 +1004,79 @@ class _MoneyTransactionsSectionState
   /// 汇总用的 query：与列表同一套筛选条件，但去掉分页。
   MoneyTransactionQuery get _summaryQuery =>
       _currentQuery(page: 1).copyWith(page: 1);
+
+  String get _periodLabel {
+    final start = _dateStartFilter;
+    final end = _dateEndFilter;
+    if (start == null && end == null) {
+      return '全部时间';
+    }
+
+    final rangeStart = start ?? end!;
+    final rangeEnd = end ?? start!;
+    final currentMonth = _monthRange(0);
+    final previousMonth = _monthRange(-1);
+    if (_sameDateRange(rangeStart, rangeEnd, currentMonth)) {
+      return '本月';
+    }
+    if (_sameDateRange(rangeStart, rangeEnd, previousMonth)) {
+      return '上月';
+    }
+    if (rangeStart.year == rangeEnd.year &&
+        rangeStart.month == rangeEnd.month) {
+      return '${rangeStart.year}年${rangeStart.month}月';
+    }
+    return '${_shortDayLabel(start)} - ${_shortDayLabel(end)}';
+  }
+
+  void _selectPeriodPreset(_TransactionPeriodPreset preset) {
+    if (_isDateLocked) {
+      return;
+    }
+    switch (preset) {
+      case _TransactionPeriodPreset.thisWeek:
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final monday = today.subtract(Duration(days: today.weekday - 1));
+        _applyDatePreset(monday, monday.add(const Duration(days: 6)));
+      case _TransactionPeriodPreset.thisMonth:
+        final range = _monthRange(0);
+        _applyDatePreset(range.$1, range.$2);
+      case _TransactionPeriodPreset.previousMonth:
+        final range = _monthRange(-1);
+        _applyDatePreset(range.$1, range.$2);
+      case _TransactionPeriodPreset.last90Days:
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        _applyDatePreset(today.subtract(const Duration(days: 89)), today);
+      case _TransactionPeriodPreset.custom:
+        unawaited(_pickDateRange());
+      case _TransactionPeriodPreset.allTime:
+        _applyDatePreset(null, null);
+    }
+  }
+
+  void _navigatePeriodMonth(int offset) {
+    if (_isDateLocked) {
+      return;
+    }
+    final anchor = _dateStartFilter ?? DateTime.now();
+    final first = DateTime(anchor.year, anchor.month + offset, 1);
+    final last = DateTime(first.year, first.month + 1, 0);
+    _applyDatePreset(first, last);
+  }
+
+  bool _sameDateRange(
+    DateTime start,
+    DateTime end,
+    (DateTime, DateTime) range,
+  ) {
+    return _sameCalendarDay(start, range.$1) && _sameCalendarDay(end, range.$2);
+  }
+
+  bool _sameCalendarDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
 
   /// 日期快捷区间。
   void _applyDatePreset(DateTime? start, DateTime? end) {
@@ -1689,17 +1705,6 @@ class _MoneyTransactionsSectionState
           pending ? '待确认' : '已作废',
           accent: pending ? moneyColors.warning : theme.colorScheme.error,
           onRemove: () => _setStatusFilter(null),
-        ),
-      );
-    }
-
-    final hasDateRange = _dateStartFilter != null || _dateEndFilter != null;
-    if (!_isDateLocked && hasDateRange) {
-      chips.add(
-        removable(
-          '${_shortDayLabel(_dateStartFilter)} - '
-          '${_shortDayLabel(_dateEndFilter)}',
-          onRemove: _clearDateRange,
         ),
       );
     }
@@ -3364,38 +3369,162 @@ class _TransactionFilterToggle extends StatelessWidget {
   }
 }
 
+(DateTime, DateTime) _monthRange(int monthOffset) {
+  final now = DateTime.now();
+  final first = DateTime(now.year, now.month + monthOffset, 1);
+  final last = DateTime(first.year, first.month + 1, 0);
+  return (first, last);
+}
+
+enum _TransactionPeriodPreset {
+  thisWeek,
+  thisMonth,
+  previousMonth,
+  last90Days,
+  custom,
+  allTime,
+}
+
+class _TransactionPeriodBar extends StatelessWidget {
+  const _TransactionPeriodBar({
+    required this.label,
+    required this.dateLocked,
+    required this.onPreviousMonth,
+    required this.onNextMonth,
+    required this.onSelectPreset,
+  });
+
+  final String label;
+  final bool dateLocked;
+  final VoidCallback onPreviousMonth;
+  final VoidCallback onNextMonth;
+  final ValueChanged<_TransactionPeriodPreset> onSelectPreset;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.calendar_month_rounded,
+            size: 19,
+            color: colorScheme.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '统计周期',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: '上一个月',
+            visualDensity: VisualDensity.compact,
+            onPressed: dateLocked ? null : onPreviousMonth,
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          IconButton(
+            tooltip: '下一个月',
+            visualDensity: VisualDensity.compact,
+            onPressed: dateLocked ? null : onNextMonth,
+            icon: const Icon(Icons.chevron_right_rounded),
+          ),
+          PopupMenuButton<_TransactionPeriodPreset>(
+            tooltip: '选择统计周期',
+            enabled: !dateLocked,
+            onSelected: onSelectPreset,
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _TransactionPeriodPreset.thisWeek,
+                child: Text('本周'),
+              ),
+              PopupMenuItem(
+                value: _TransactionPeriodPreset.thisMonth,
+                child: Text('本月'),
+              ),
+              PopupMenuItem(
+                value: _TransactionPeriodPreset.previousMonth,
+                child: Text('上月'),
+              ),
+              PopupMenuItem(
+                value: _TransactionPeriodPreset.last90Days,
+                child: Text('近 90 天'),
+              ),
+              PopupMenuItem(
+                value: _TransactionPeriodPreset.custom,
+                child: Text('自定义日期…'),
+              ),
+              PopupMenuItem(
+                value: _TransactionPeriodPreset.allTime,
+                child: Text('全部时间'),
+              ),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.expand_more_rounded,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// 常用筛选条。
 ///
-/// 状态与日期原来各占一条常驻 chips（合计 82dp），不管用不用都摆在那儿。
-/// 折叠态只渲染「已生效的条件」——一条都没有就整块不占高度；展开后才铺出
-/// 两组预设，展开是显式操作，多占两行是能接受的代价。
+/// 状态与标签保留在展开态；日期范围由顶部周期选择器统一承载。
 class _TransactionFilterStrip extends StatelessWidget {
   const _TransactionFilterStrip({
     required this.expanded,
     required this.status,
     required this.pendingCount,
-    required this.dateStart,
-    required this.dateEnd,
     required this.tagCandidates,
     required this.selectedTags,
     required this.activeChips,
     required this.onStatusChanged,
-    required this.onPickDateRange,
-    required this.onSelectDatePreset,
     required this.onToggleTag,
   });
 
   final bool expanded;
   final MoneyTransactionStatus? status;
   final int pendingCount;
-  final DateTime? dateStart;
-  final DateTime? dateEnd;
   final List<String> tagCandidates;
   final List<String> selectedTags;
   final List<Widget> activeChips;
   final ValueChanged<MoneyTransactionStatus?> onStatusChanged;
-  final VoidCallback onPickDateRange;
-  final void Function(DateTime? start, DateTime? end) onSelectDatePreset;
   final ValueChanged<String> onToggleTag;
 
   @override
@@ -3414,13 +3543,6 @@ class _TransactionFilterStrip extends StatelessWidget {
             status: status,
             pendingCount: pendingCount,
             onChanged: onStatusChanged,
-          ),
-          const SizedBox(height: 8),
-          _TransactionDateChips(
-            dateStart: dateStart,
-            dateEnd: dateEnd,
-            onPickRange: onPickDateRange,
-            onSelectPreset: onSelectDatePreset,
           ),
           if (tagCandidates.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -3818,139 +3940,20 @@ Widget _buildFilterChip(
   );
 }
 
-/// 日期快捷区间。覆盖绝大多数看账场景，不用每次开日期选择器。
-class _TransactionDateChips extends StatelessWidget {
-  const _TransactionDateChips({
-    required this.dateStart,
-    required this.dateEnd,
-    required this.onPickRange,
-    required this.onSelectPreset,
-  });
-
-  final DateTime? dateStart;
-  final DateTime? dateEnd;
-  final VoidCallback onPickRange;
-  final void Function(DateTime? start, DateTime? end) onSelectPreset;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return SizedBox(
-      height: 32,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children:
-            [
-                  _buildFilterChip(
-                    context,
-                    label: '本周',
-                    selected: _isSameRange(_weekRange()),
-                    onTap: () {
-                      final range = _weekRange();
-                      onSelectPreset(range.$1, range.$2);
-                    },
-                  ),
-                  _buildFilterChip(
-                    context,
-                    label: '本月',
-                    selected: _isSameRange(_monthRange(0)),
-                    onTap: () {
-                      final range = _monthRange(0);
-                      onSelectPreset(range.$1, range.$2);
-                    },
-                  ),
-                  _buildFilterChip(
-                    context,
-                    label: '上月',
-                    selected: _isSameRange(_monthRange(-1)),
-                    onTap: () {
-                      final range = _monthRange(-1);
-                      onSelectPreset(range.$1, range.$2);
-                    },
-                  ),
-                  _buildFilterChip(
-                    context,
-                    label: '近 90 天',
-                    selected: false,
-                    onTap: () {
-                      final now = DateTime.now();
-                      onSelectPreset(
-                        DateTime(now.year, now.month, now.day - 89),
-                        DateTime(now.year, now.month, now.day),
-                      );
-                    },
-                  ),
-                  _buildFilterChip(
-                    context,
-                    label: dateStart == null && dateEnd == null
-                        ? '自定义…'
-                        : '${_short(dateStart)} - ${_short(dateEnd)}',
-                    selected: dateStart != null || dateEnd != null,
-                    onTap: onPickRange,
-                    trailing: dateStart == null && dateEnd == null ? null : '✕',
-                    onTrailingTap: dateStart == null && dateEnd == null
-                        ? null
-                        : () => onSelectPreset(null, null),
-                    accent: colorScheme.primary,
-                  ),
-                ]
-                .map(
-                  (widget) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: widget,
-                  ),
-                )
-                .toList(),
-      ),
-    );
-  }
-
-  static String _short(DateTime? value) {
-    if (value == null) {
-      return '—';
-    }
-    return '${value.month}/${value.day}';
-  }
-
-  bool _isSameRange((DateTime, DateTime) range) {
-    if (dateStart == null || dateEnd == null) {
-      return false;
-    }
-    return _sameDay(dateStart!, range.$1) && _sameDay(dateEnd!, range.$2);
-  }
-
-  bool _sameDay(DateTime a, DateTime b) {
-    final la = a.toLocal();
-    final lb = b.toLocal();
-    return la.year == lb.year && la.month == lb.month && la.day == lb.day;
-  }
-
-  (DateTime, DateTime) _weekRange() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final monday = today.subtract(Duration(days: today.weekday - 1));
-    return (monday, monday.add(const Duration(days: 6)));
-  }
-
-  (DateTime, DateTime) _monthRange(int monthOffset) {
-    final now = DateTime.now();
-    final first = DateTime(now.year, now.month + monthOffset);
-    final last = DateTime(first.year, first.month + 1, 0);
-    return (first, last);
-  }
-}
-
 /// 筛选结果汇总条。
 ///
 /// 原实现只在「从账户点进来」时才显示汇总面板；按分类或日期筛选后，
 /// 「这段时间一共花了多少」这个最核心的问题没有答案。这里走一次全量聚合，
 /// 不受列表分页影响。
 class _TransactionSummaryBar extends ConsumerWidget {
-  const _TransactionSummaryBar({required this.query, this.onClear});
+  const _TransactionSummaryBar({
+    required this.query,
+    required this.periodLabel,
+    this.onClear,
+  });
 
   final MoneyTransactionQuery query;
+  final String periodLabel;
   final VoidCallback? onClear;
 
   @override
@@ -3973,6 +3976,7 @@ class _TransactionSummaryBar extends ConsumerWidget {
         'CNY';
 
     final hasFilter = _hasAnyFilter(query);
+    final hasOtherFilters = _hasNonDateFilter(query);
     final masked = MoneyPrivacy.of(context);
     final moneyColors = theme.moneyColors;
 
@@ -4011,15 +4015,29 @@ class _TransactionSummaryBar extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  '共 ${summary.count} 笔',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0,
-                  ),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        periodLabel == '全部时间' ? '全部收支' : '$periodLabel收支',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${summary.count} 笔',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (hasFilter && onClear != null)
@@ -4029,7 +4047,7 @@ class _TransactionSummaryBar extends ConsumerWidget {
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(horizontal: 6),
                   ),
-                  child: const Text('清除筛选'),
+                  child: Text(hasOtherFilters ? '清除筛选' : '全部时间'),
                 ),
             ],
           ),
@@ -4052,13 +4070,8 @@ class _TransactionSummaryBar extends ConsumerWidget {
     );
   }
 
-  /// 金额格。
-  ///
-  /// 视觉上只留金额、靠颜色区分方向，但「支出 / 收入 / 净」没有真正丢掉：
-  /// 它作为语义标签与长按提示保留，否则读屏用户与色觉缺陷用户拿不到方向信息。
-  ///
-  /// 三格都可点按切换显隐：收入走自己的 [IncomePrivacy]（默认 `****`），
-  /// 支出与净走全局「隐藏金额」（默认明文）—— 两套开关互不影响。
+  /// 金额卡片保留明确标签，不再让用户只靠颜色猜测金额方向。
+  /// 各金额仍能独立切换隐私显示状态。
   Widget _amount(
     ThemeData theme,
     String label,
@@ -4073,18 +4086,31 @@ class _TransactionSummaryBar extends ConsumerWidget {
         message: label,
         child: Padding(
           padding: const EdgeInsets.only(right: 6),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              maxLines: 1,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  letterSpacing: 0,
+                ),
               ),
-            ),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -4108,7 +4134,22 @@ class _TransactionSummaryBar extends ConsumerWidget {
         query.dateEnd != null ||
         (query.keyword?.trim().isNotEmpty ?? false) ||
         (query.merchant?.trim().isNotEmpty ?? false) ||
-        query.budgetId != null;
+        query.budgetId != null ||
+        query.tags.isNotEmpty;
+  }
+
+  static bool _hasNonDateFilter(MoneyTransactionQuery query) {
+    return query.type != null ||
+        query.status != null ||
+        query.accountId != null ||
+        query.categoryId != null ||
+        query.subCategoryId != null ||
+        query.paymentMethod != null ||
+        (query.customPaymentMethodName?.trim().isNotEmpty ?? false) ||
+        (query.keyword?.trim().isNotEmpty ?? false) ||
+        (query.merchant?.trim().isNotEmpty ?? false) ||
+        query.budgetId != null ||
+        query.tags.isNotEmpty;
   }
 }
 
@@ -4153,19 +4194,9 @@ class _FilterContextBanner extends StatelessWidget {
 }
 
 class _DayGroupHeader extends StatelessWidget {
-  const _DayGroupHeader({
-    required this.date,
-    required this.expenseMinor,
-    required this.incomeMinor,
-    this.currencyCode,
-  });
+  const _DayGroupHeader({required this.date});
 
   final DateTime date;
-  final int expenseMinor;
-  final int incomeMinor;
-
-  /// 当天单一币种；多币种为 null，此时不显示合计。
-  final String? currencyCode;
 
   @override
   Widget build(BuildContext context) {
@@ -4185,37 +4216,6 @@ class _DayGroupHeader extends StatelessWidget {
               letterSpacing: 0,
             ),
           ),
-          if (currencyCode != null) ...[
-            const SizedBox(width: 8),
-            if (expenseMinor > 0)
-              MoneyPrivacyTap(
-                child: Text(
-                  maskedMoneyOr(
-                    '支出 ${formatMoneyMinor(expenseMinor, currencyCode!)}',
-                    MoneyPrivacy.of(context),
-                  ),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    // 12px 的小字，走语义色的深版（vivid 只给大号金额）。
-                    color: theme.moneyColors.expenseStrong,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ),
-            if (expenseMinor > 0 && incomeMinor > 0) const SizedBox(width: 10),
-            if (incomeMinor > 0)
-              IncomeAmountTap(
-                child: Text(
-                  maskedIncomeOr(
-                    '收入 ${formatMoneyMinor(incomeMinor, currencyCode!)}',
-                    context,
-                  ),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.moneyColors.income,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ),
-          ],
           const Spacer(),
           Text(
             _weekdayLabel(local),

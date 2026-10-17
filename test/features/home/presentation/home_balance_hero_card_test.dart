@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/core/theme/app_theme.dart';
 import 'package:miji/features/home/application/home_money_dashboard_models.dart';
 import 'package:miji/features/home/presentation/home_balance_hero_card.dart';
@@ -10,6 +11,7 @@ HomeMonthBudgetSummary _budget({
   double progress = (800000 - 342050) / 800000,
   int remainingMinor = 342050,
   int committedMinor = 0,
+  String paceLabel = '节奏正常',
 }) {
   return HomeMonthBudgetSummary(
     hasBudget: true,
@@ -23,7 +25,7 @@ HomeMonthBudgetSummary _budget({
     progress: progress,
     periodProgress: 0.52,
     paceRatio: 1.1,
-    paceLabel: '节奏正常',
+    paceLabel: paceLabel,
     remainingDays: 15,
   );
 }
@@ -47,6 +49,19 @@ Widget _host(Widget child) {
       body: Center(child: SizedBox(width: 360, child: child)),
     ),
   );
+}
+
+/// 胶囊左侧那颗 6×6 圆点的颜色。整张卡里只有它是这个尺寸。
+Color _chipDotColor(WidgetTester tester) {
+  final dot = tester.widget<Container>(
+    find.byWidgetPredicate(
+      (widget) =>
+          widget is Container &&
+          widget.constraints ==
+              const BoxConstraints.tightFor(width: 6, height: 6),
+    ),
+  );
+  return (dot.decoration! as BoxDecoration).color!;
 }
 
 void main() {
@@ -393,6 +408,135 @@ void main() {
     // 空态信息由正文承担：本月结余 + 设置预算入口。
     expect(find.text('本月结余'), findsOneWidget);
     expect(find.text('设置本月预算'), findsOneWidget);
+  });
+
+  testWidgets('额度大半被预留时，胶囊说占用、圆点转告警色', (tester) async {
+    // 环已经 96%、日均可花只剩 12.54 的时候，胶囊还说「节奏正常」会自相矛盾。
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(committedMinor: 400000, paceLabel: '额度大半已被预留'),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('额度大半已被预留'), findsOneWidget);
+    // 圆点不能仍是那颗「一切正常」的薄荷绿。
+    final theme = Theme.of(tester.element(find.byType(HomeBalanceHeroCard)));
+    expect(_chipDotColor(tester), theme.heroGradients.amber);
+  });
+
+  testWidgets('节奏偏慢的圆点不再是正常的薄荷绿', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(paceLabel: '节奏偏慢'),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('节奏偏慢'), findsOneWidget);
+    expect(_chipDotColor(tester), isNot(const Color(0xFF9BF5D4)));
+  });
+
+  testWidgets('占用过线时，环 / 进度条 / 圆点同时转告警色', (tester) async {
+    // 已用 50% + 已预留 35% → 占用 85%，还没超支。
+    // 旧实现：环按 80% 变琥珀，进度条只在**超支**时才变，圆点恒为薄荷绿，
+    // 于是同一张卡上三个信号各说各的。
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(
+            progress: 0.5,
+            remainingMinor: 400000,
+            committedMinor: 280000,
+          ),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final theme = Theme.of(tester.element(find.byType(HomeBalanceHeroCard)));
+    final amber = theme.heroGradients.amber;
+
+    // 环：有预留时两个 CircularProgressIndicator，已用段后画、在最上层。
+    final rings = tester
+        .widgetList<CircularProgressIndicator>(
+          find.byType(CircularProgressIndicator),
+        )
+        .toList();
+    expect(rings, hasLength(2));
+    expect(rings.last.valueColor!.value, amber, reason: '环的已用段要变琥珀');
+
+    // 进度条：已用段同样变琥珀。
+    final bar = tester.widget<Container>(
+      find.byKey(const ValueKey('home-budget-used-bar')),
+    );
+    expect(
+      (bar.decoration! as BoxDecoration).color,
+      amber,
+      reason: '进度条的已用段必须与环同步',
+    );
+    // 预留段也要跟着换色：环那边整圈（含 52% 淡琥珀的预留段）都黄了，
+    // 条这边若还是灰白，「已用+预留 96%」这条仍读成「大半是灰的」。
+    final committedBar = tester.widget<Container>(
+      find.byKey(const ValueKey('home-budget-committed-bar')),
+    );
+    expect(
+      (committedBar.decoration! as BoxDecoration).color,
+      amber.withValues(alpha: 0.52),
+      reason: '预留段与环的预留弧同色',
+    );
+
+    // 圆点：文案还是「节奏正常」（过去确实花得不快），但占用过线也要转告警。
+    expect(find.text('节奏正常'), findsOneWidget);
+    expect(_chipDotColor(tester), amber);
+  });
+
+  testWidgets('占用不高时环、进度条、圆点都不告警', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(progress: 0.5, remainingMinor: 400000),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final theme = Theme.of(tester.element(find.byType(HomeBalanceHeroCard)));
+
+    final rings = tester
+        .widgetList<CircularProgressIndicator>(
+          find.byType(CircularProgressIndicator),
+        )
+        .toList();
+    final usedRing = rings.last.valueColor!.value;
+    expect(usedRing, Colors.white);
+    expect(usedRing, isNot(theme.heroGradients.amber));
+
+    final bar = tester.widget<Container>(
+      find.byKey(const ValueKey('home-budget-used-bar')),
+    );
+    expect((bar.decoration! as BoxDecoration).color, Colors.white);
+    expect(_chipDotColor(tester), isNot(theme.heroGradients.amber));
   });
 }
 

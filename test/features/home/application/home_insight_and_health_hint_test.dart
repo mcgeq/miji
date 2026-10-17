@@ -139,7 +139,28 @@ void main() {
         (item) => item.kind == HomeInsightKind.budgetPace,
       );
       expect(pace.tone, HomeInsightTone.warning);
-      expect(pace.segments.map((s) => s.text).join(), contains('花得比时间进度快'));
+      expect(pace.segments.map((s) => s.text).join(), contains('可支配额度已用 90%'));
+    });
+
+    test('says the allowance is reserved out before talking about pace', () {
+      final insight = buildHomeInsight(
+        today: _today(
+          todayExpenseMinor: 5800,
+          monthExpenseMinor: 657900,
+          dailyAverageExpenseMinor: 21200,
+        ),
+        budget: _budget(
+          progress: 0.4,
+          paceLabel: homeInsightCommittedFullLabel,
+        ),
+        categories: const [],
+      );
+
+      final pace = insight!.items.firstWhere(
+        (item) => item.kind == HomeInsightKind.budgetPace,
+      );
+      expect(pace.tone, HomeInsightTone.warning);
+      expect(pace.segments.map((s) => s.text).join(), contains('预留占满'));
     });
 
     test('does not warn about pace when the budget is on track', () {

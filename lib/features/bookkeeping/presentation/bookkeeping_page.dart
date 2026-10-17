@@ -67,6 +67,11 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
   void initState() {
     super.initState();
     _selectedPanel = _panelFromSection(widget.initialSection);
+    final now = DateTime.now();
+    _transactionQuery = MoneyTransactionQuery(
+      dateStart: DateTime(now.year, now.month),
+      dateEnd: DateTime(now.year, now.month + 1, 0),
+    );
     _applyInitialTransactionQuery();
     _loadedPanels.add(_selectedPanel);
   }
@@ -333,7 +338,11 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
 
     final accountId = widget.initialAccountId;
     if (accountId == null) {
-      _transactionQuery = const MoneyTransactionQuery();
+      final now = DateTime.now();
+      _transactionQuery = MoneyTransactionQuery(
+        dateStart: DateTime(now.year, now.month),
+        dateEnd: DateTime(now.year, now.month + 1, 0),
+      );
       _transactionFilterContext = null;
       return;
     }

@@ -259,24 +259,6 @@ class TransactionCard extends StatelessWidget {
 
   List<_TransactionBadgeData> get _badges {
     return [
-      if (_installmentBadgeText != null)
-        _TransactionBadgeData(
-          text: _installmentBadgeText!,
-          icon: Icons.event_repeat_rounded,
-          tone: AppBadgeTone.tertiary,
-        ),
-      if (_ledgerBadgeText != null)
-        _TransactionBadgeData(
-          text: _ledgerBadgeText!,
-          icon: Icons.diversity_3_rounded,
-          tone: AppBadgeTone.primary,
-        ),
-      if (transaction.refundAmountMinor > 0)
-        const _TransactionBadgeData(
-          text: '退款',
-          icon: Icons.reply_rounded,
-          tone: AppBadgeTone.secondary,
-        ),
       if (transaction.status == MoneyTransactionStatus.pending)
         const _TransactionBadgeData(
           text: '待确认',
@@ -288,6 +270,24 @@ class TransactionCard extends StatelessWidget {
           text: '已作废',
           icon: Icons.block_rounded,
           tone: AppBadgeTone.error,
+        ),
+      if (transaction.refundAmountMinor > 0)
+        const _TransactionBadgeData(
+          text: '退款',
+          icon: Icons.reply_rounded,
+          tone: AppBadgeTone.secondary,
+        ),
+      if (_installmentBadgeText != null)
+        _TransactionBadgeData(
+          text: _installmentBadgeText!,
+          icon: Icons.event_repeat_rounded,
+          tone: AppBadgeTone.tertiary,
+        ),
+      if (_ledgerBadgeText != null)
+        _TransactionBadgeData(
+          text: _ledgerBadgeText!,
+          icon: Icons.diversity_3_rounded,
+          tone: AppBadgeTone.primary,
         ),
     ];
   }
@@ -472,6 +472,11 @@ class _TransactionCardContent extends StatelessWidget {
     final secondaryColor = selected
         ? colorScheme.onPrimaryContainer.withValues(alpha: 0.72)
         : colorScheme.onSurfaceVariant;
+    final metadata = [
+      if (descLine.isNotEmpty) descLine,
+      if (accountPaymentLine.isNotEmpty) accountPaymentLine,
+      dateLine,
+    ].join(' · ');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -494,35 +499,13 @@ class _TransactionCardContent extends StatelessWidget {
             amount,
           ],
         ),
-        if (descLine.isNotEmpty) ...[const SizedBox(height: 4)],
-        if (descLine.isNotEmpty)
-          Text(
-            descLine,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: titleColor,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0,
-            ),
-          ),
         const SizedBox(height: 4),
         Text(
-          accountPaymentLine,
+          metadata,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: secondaryColor,
-            letterSpacing: 0,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          dateLine,
-          maxLines: 1,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: secondaryColor.withValues(alpha: 0.8),
-            fontSize: 11,
             letterSpacing: 0,
           ),
         ),

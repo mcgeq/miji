@@ -10,6 +10,7 @@ import 'package:miji/core/theme/app_theme.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/bookkeeping_page.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/transaction_card.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 
 /// 面板入口（二级路由）在方案 A 之后落在哪里：
@@ -184,7 +185,7 @@ void main() {
     },
   );
 
-  testWidgets('常用筛选条默认折叠，展开后才铺出状态与日期预设', (tester) async {
+  testWidgets('默认周期单独呈现，筛选展开只显示状态与标签', (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
@@ -193,8 +194,8 @@ void main() {
 
     await _pump(tester, database, router);
 
-    // 折叠态：状态与日期两组预设都不在，控制区只占两行。
-    // 它们只是「藏起来」不是「删掉」，展开后必须原样回来。
+    // 日期范围常驻在周期选择器；状态与标签按需展开。
+    expect(find.text('本月'), findsOneWidget);
     expect(find.text('全部状态'), findsNothing);
     expect(find.text('本周'), findsNothing);
 
@@ -202,7 +203,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('全部状态'), findsOneWidget);
+    expect(find.text('本周'), findsNothing);
+
+    await tester.tap(find.byTooltip('选择统计周期'));
+    await tester.pumpAndSettle();
     expect(find.text('本周'), findsOneWidget);
+    await tester.tap(find.text('全部时间').last);
+    await tester.pumpAndSettle();
+    expect(find.text('全部时间'), findsWidgets);
   });
 
   testWidgets('标签筛选有独立入口，选中后变成可移除的生效条件', (tester) async {
@@ -239,10 +247,11 @@ void main() {
 
     await _pump(tester, database, router);
 
-    // 一笔都没记过 —— 该引导去记账。
-    expect(find.text('还没有流水'), findsOneWidget);
+    // 默认先看本月；空结果不误报成「从未记过」，并提供清除周期条件。
+    expect(find.text('没有符合条件的流水'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '清除筛选'), findsOneWidget);
 
-    await tester.tap(find.text('支出'));
+    await tester.tap(find.text('支出').last);
     await tester.pumpAndSettle();
 
     // 筛过之后查不到 —— 该给的是改条件。继续劝「快速新增」会让用户在已经
@@ -252,7 +261,7 @@ void main() {
     expect(find.widgetWithText(FilledButton, '清除筛选'), findsOneWidget);
   });
 
-  testWidgets('summary bar shows only amounts, labels live in semantics', (
+  testWidgets('populated流水 renders compact category and metadata row', (
     tester,
   ) async {
     final database = AppDatabase(NativeDatabase.memory());
@@ -261,49 +270,45 @@ void main() {
     final router = _router();
     addTearDown(router.dispose);
 
-    await _pump(tester, database, router);
+    await _pump(tester, database, router, transactions: [_sampleTransaction()]);
 
-    expect(find.text('共 0 笔'), findsOneWidget);
-
-    // 三格金额只靠颜色区分方向，所以「支出 / 收入 / 净」必须留在语义标签与
-    // 长按提示里，否则读屏用户与色觉缺陷用户拿不到方向信息。
-    //
-    // 三格现在都可点按切换显隐：各自外层包了一个「显示金额 / 隐藏金额」的
-    // 按钮语义，与金额语义合并成同一个节点（如 `显示金额\n支出 ¥0.00`），
-    // 所以用正则匹配其中的金额段。
-    final semantics = tester.ensureSemantics();
-    expect(find.bySemanticsLabel(RegExp(r'支出 ¥0\.00')), findsOneWidget);
-    // 收入默认遮罩：语义标签里的金额是 `****` 而不是真实数字。
-    expect(find.bySemanticsLabel(RegExp(r'收入 \*{4}')), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp(r'净 \+¥0\.00')), findsOneWidget);
-    semantics.dispose();
-
-    expect(find.byTooltip('支出'), findsOneWidget);
-    expect(find.byTooltip('收入'), findsOneWidget);
-    expect(find.byTooltip('净'), findsOneWidget);
-
-    // 汇总条本身上不再有「支出 / 收入 / 净」文案（筛选条里的类型标签不算）。
-    // .first 取距「共 N 笔」最近的 Column，即汇总条自己的 Column；用搜索框
-    // 反证它不是更外层的页面 Column，否则这个断言会变成假阳性。
-    final bar = find
-        .ancestor(of: find.text('共 0 笔'), matching: find.byType(Column))
-        .first;
-    expect(
-      find.descendant(of: bar, matching: find.byType(TextField)),
-      findsNothing,
-    );
-    expect(
-      find.descendant(of: bar, matching: find.byTooltip('支出')),
-      findsOneWidget,
-    );
-    for (final label in ['支出', '收入', '净']) {
-      expect(
-        find.descendant(of: bar, matching: find.text(label)),
-        findsNothing,
-        reason: '汇总条里不应再有「$label」文案',
-      );
-    }
+    expect(find.byType(TransactionCard), findsOneWidget);
+    expect(find.textContaining('午餐 · 便利店'), findsOneWidget);
+    expect(find.textContaining('现金'), findsOneWidget);
   });
+
+  testWidgets(
+    'summary card visibly labels amounts and preserves privacy semantics',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+
+      final router = _router();
+      addTearDown(router.dispose);
+
+      await _pump(tester, database, router);
+
+      expect(find.text('本月收支'), findsOneWidget);
+      expect(find.text('0 笔'), findsOneWidget);
+
+      // 三格金额同时有可见标签和读屏语义；隐私开关仍可独立控制金额显示。
+      final semantics = tester.ensureSemantics();
+      expect(find.bySemanticsLabel(RegExp(r'支出 ¥0\.00')), findsOneWidget);
+      // 收入默认遮罩：语义标签里的金额是 `****` 而不是真实数字。
+      expect(find.bySemanticsLabel(RegExp(r'收入 \*{4}')), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r'净 \+¥0\.00')), findsOneWidget);
+      semantics.dispose();
+
+      expect(find.byTooltip('支出'), findsOneWidget);
+      expect(find.byTooltip('收入'), findsOneWidget);
+      expect(find.byTooltip('净'), findsOneWidget);
+
+      // 三类金额方向必须可见，不能只依靠红绿颜色提示。
+      for (final label in ['支出', '收入', '净']) {
+        expect(find.text(label), findsWidgets);
+      }
+    },
+  );
 }
 
 /// 宽屏工具行上的账本选择器要落到静态形态用的假账本。
@@ -318,20 +323,56 @@ final _ledger = MoneyLedgerEntity(
   updatedAt: DateTime(2026, 1, 1),
 );
 
-/// 把流水的列表查询替换成空页。
+MoneyTransactionEntity _sampleTransaction() {
+  final now = DateTime.now();
+  return MoneyTransactionEntity(
+    id: 'transaction-sample',
+    userId: 'user-1',
+    type: MoneyTransactionType.expense,
+    status: MoneyTransactionStatus.completed,
+    transactionAt: now,
+    amountMinor: 1234,
+    refundAmountMinor: 0,
+    currencyCode: 'CNY',
+    description: '午餐',
+    notes: null,
+    merchant: '便利店',
+    location: null,
+    accountId: 'account-1',
+    toAccountId: null,
+    categoryId: 'category-1',
+    subCategoryId: null,
+    paymentMethod: MoneyPaymentMethod.cash,
+    customPaymentMethodName: null,
+    actualPayerAccount: 'default',
+    relatedTransactionId: null,
+    installmentPlanId: null,
+    sourceTemplateRunId: null,
+    interestRateBasisPoints: null,
+    totalInterestMinor: 0,
+    calcMethod: null,
+    tags: const [],
+    isDeleted: false,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+/// 把流水的列表查询替换成内存里的模拟结果。
 ///
 /// 流水页的 `listTransactions` 是动作调用，要经过「已解锁用户 → 当前账本」
-/// 才能查到，测试里既没用户也没账本，直接查会抛 `读取流水失败` 而不是展示
-/// 空态。这里只顶掉列表查询；汇总条走的是另一个 provider，锁态下优雅返回空。
+/// 才能查到；测试里既没用户也没账本。这里顶掉列表查询，验证空态与真实卡片布局。
 class _FakeTransactionActions extends CurrentUserMoneyTransactionActions {
-  _FakeTransactionActions(super.ref);
+  _FakeTransactionActions(super.ref, {this.transactions = const []});
+
+  final List<MoneyTransactionEntity> transactions;
 
   @override
   Future<MoneyTransactionPage> listTransactions(
     MoneyTransactionQuery query,
   ) async {
     return MoneyTransactionPage(
-      items: const <MoneyTransactionEntity>[],
+      items: transactions,
       page: query.page,
       pageSize: query.pageSize,
       hasMore: false,
@@ -376,6 +417,7 @@ Future<void> _pump(
   GoRouter router, {
   double width = 390,
   List<String>? tagCandidates,
+  List<MoneyTransactionEntity> transactions = const [],
 }) async {
   tester.view.physicalSize = Size(width * 3, 844 * 3);
   tester.view.devicePixelRatio = 3;
@@ -386,7 +428,7 @@ Future<void> _pump(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
         currentUserMoneyTransactionActionsProvider.overrideWith(
-          (ref) => _FakeTransactionActions(ref),
+          (ref) => _FakeTransactionActions(ref, transactions: transactions),
         ),
         // 宽屏工具行会渲染账本选择器：它加载中 / 空列表时画的是**不确定进度条**，
         // 会一直动，`pumpAndSettle` 永远等不到静止。给一个假账本让选择器落到
