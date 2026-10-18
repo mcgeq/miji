@@ -65,6 +65,16 @@ abstract class TodoRepository {
     String userId,
   );
 
+  /// 把一条**已有**任务变成重复模板，并按规则预生成实例。
+  ///
+  /// 与 [createRecurrenceRule] 的区别：后者是「新建一条重复任务」（先有模板再有
+  /// 规则）；这里是把用户已经写好的那条任务升级成模板 —— 标题、备注、分类、
+  /// 标签全部保留，只是它从此不再出现在任务列表里（模板本来就不进列表）。
+  Future<TodoRecurrenceRule> attachRecurrenceRule(
+    TodoTask task,
+    TodoRecurrenceRule rule,
+  );
+
   /// 更新重复规则（同时更新模板任务）
   Future<TodoRecurrenceRule> updateRecurrenceRule(
     TodoRecurrenceRule rule,

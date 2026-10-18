@@ -128,4 +128,60 @@ void main() {
     expect(find.text('保存规则'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('新建模式：标题是「设为重复」，并给出一个可用的默认（本周几）', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () => showModalBottomSheet<RecurrenceRuleSpec>(
+                  context: context,
+                  builder: (_) => const TodoRecurrenceEditor(),
+                ),
+                child: const Text('打开'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开'));
+    await tester.pumpAndSettle();
+    expect(find.text('设为重复'), findsOneWidget);
+    // 默认就是「每周 + 今天星期几」：比让用户从零挑一天更接近意图。
+    final today = DateTime.now().weekday;
+    const labels = ['一', '二', '三', '四', '五', '六', '日'];
+    final chip = tester.widget<FilterChip>(
+      find.widgetWithText(FilterChip, labels[today - 1]),
+    );
+    expect(chip.selected, isTrue);
+    expect(find.text('保存规则'), findsOneWidget);
+  });
+
+  testWidgets('Spec 能落到已有规则上，也能变成一条新规则', (tester) async {
+    const spec = RecurrenceRuleSpec(
+      frequency: RecurrenceFrequencyType.monthly,
+      interval: 3,
+      dayOfMonth: 5,
+    );
+
+    final applied = spec.applyTo(rule(frequency: RecurrenceFrequencyType.daily));
+    expect(applied.id, 'rule-1', reason: '改整条规则：id 不变');
+    expect(applied.frequencyType, RecurrenceFrequencyType.monthly);
+    expect(applied.interval_, 3);
+
+    final created = spec.toNewRule(userId: 'user-1');
+    expect(created.id, isEmpty, reason: 'id / 模板由仓库填');
+    expect(created.userId, 'user-1');
+    expect(created.frequencyType, RecurrenceFrequencyType.monthly);
+  });
 }

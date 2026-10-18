@@ -215,7 +215,7 @@ class _TodoTaskDetailPageState extends ConsumerState<TodoTaskDetailPage> {
                         const SizedBox(height: 16),
                         _buildTagSelector(theme, colorScheme),
                         const SizedBox(height: 16),
-                        if (!_isNew && _recurrenceRule != null) ...[
+                        if (!_isNew) ...[
                           _buildRecurrenceTile(theme, colorScheme),
                           const SizedBox(height: 16),
                         ],
@@ -343,22 +343,22 @@ class _TodoTaskDetailPageState extends ConsumerState<TodoTaskDetailPage> {
   /// 「重复」那一行：写明这是**整条规则**，而不是这一次。
   Widget _buildRecurrenceTile(ThemeData theme, ColorScheme colorScheme) {
     final rule = _recurrenceRule;
-    if (rule == null) {
-      return const SizedBox.shrink();
-    }
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: _editRecurrenceRule,
       child: InputDecorator(
         decoration: appInputDecoration(
           context,
-          labelText: '重复（点击改整条规则）',
+          labelText: rule == null ? '重复' : '重复（点击改整条规则）',
           enabled: true,
           suffixIcon: const Icon(Icons.chevron_right_rounded, size: 18),
         ),
         child: Text(
-          describeRecurrenceRule(rule),
-          style: theme.textTheme.bodyMedium?.copyWith(letterSpacing: 0),
+          rule == null ? '不重复 · 点这里设为重复' : describeRecurrenceRule(rule),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            letterSpacing: 0,
+            color: rule == null ? colorScheme.onSurfaceVariant : null,
+          ),
         ),
       ),
     );
@@ -657,21 +657,46 @@ class _TodoTaskDetailPageState extends ConsumerState<TodoTaskDetailPage> {
     }
   }
 
-  /// 改「整条规则」。影响以后所有实例，所以入口文案写明这一点。
+  /// 改「整条规则」，或给一条本来不重复的任务**新建**规则。
+  ///
+  /// 新建的后果要说清：这条任务会变成模板、从列表里消失，改成按规则生成
+  /// 实例 —— 所以保存后直接退回列表，而不是让用户停在一条「已经不在列表里」
+  /// 的任务上。
   Future<void> _editRecurrenceRule() async {
     final rule = _recurrenceRule;
-    if (rule == null) {
-      return;
-    }
-    final updated = await showModalBottomSheet<TodoRecurrenceRule>(
+    final spec = await showModalBottomSheet<RecurrenceRuleSpec>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => TodoRecurrenceEditor(rule: rule),
     );
-    if (updated == null || !mounted) {
+    if (spec == null || !mounted) {
       return;
     }
+
+    if (rule == null) {
+      final task = await ref
+          .read(todoRepositoryProvider)
+          .getTask(widget.taskId);
+      final userId = _userId;
+      if (task == null || userId == null) {
+        return;
+      }
+      await ref
+          .read(todoRepositoryProvider)
+          .attachRecurrenceRule(task, spec.toNewRule(userId: userId));
+      invalidateTodayActionData(ref);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('已设为重复：这条变成模板，实例会按规则生成')));
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final updated = spec.applyTo(rule);
     final repository = ref.read(todoRepositoryProvider);
     // 仓库的签名要求同时给出模板任务：规则与模板是一体的（模板不入列表，
     // 只用来生成实例）。拿不到模板就什么都不做 —— 硬写一条规则会让它失效。

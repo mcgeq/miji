@@ -11,12 +11,58 @@ import 'package:miji/features/todo/domain/todo_models.dart';
 /// 只负责编辑**已有规则**：给一个没有规则的任务凭空加规则，要同时处理
 /// 「把这条任务从实例变成模板」，那是另一件事（见文档里的未做项）。
 class TodoRecurrenceEditor extends StatefulWidget {
-  const TodoRecurrenceEditor({super.key, required this.rule});
+  const TodoRecurrenceEditor({super.key, this.rule});
 
-  final TodoRecurrenceRule rule;
+  /// null = 给一条本来不重复的任务**新建**规则。
+  final TodoRecurrenceRule? rule;
 
   @override
   State<TodoRecurrenceEditor> createState() => _TodoRecurrenceEditorState();
+}
+
+/// 编辑器交出去的东西：**只是参数**，不是一条已落库的规则。
+///
+/// 为什么不让编辑器直接造 `TodoRecurrenceRule`：新建规则时的 id、模板任务、
+/// userId 都由仓库决定，编辑器不该知道这些。它只回答「重复成什么样」。
+@immutable
+class RecurrenceRuleSpec {
+  const RecurrenceRuleSpec({
+    required this.frequency,
+    required this.interval,
+    this.daysOfWeek,
+    this.dayOfMonth,
+    this.endsAt,
+  });
+
+  final RecurrenceFrequencyType frequency;
+  final int interval;
+  final List<int>? daysOfWeek;
+  final int? dayOfMonth;
+  final DateTime? endsAt;
+
+  /// 落到一条**已有**规则上（改整条规则）。
+  TodoRecurrenceRule applyTo(TodoRecurrenceRule rule) => rule.copyWith(
+    frequencyType: frequency,
+    interval_: interval,
+    daysOfWeek: daysOfWeek,
+    dayOfMonth: dayOfMonth,
+    endsAt: endsAt,
+    updatedAt: DateTime.now(),
+  );
+
+  /// 变成一条**新**规则（id / 模板 / 用户由仓库填）。
+  TodoRecurrenceRule toNewRule({required String userId}) => TodoRecurrenceRule(
+    id: '',
+    userId: userId,
+    templateTaskId: '',
+    frequencyType: frequency,
+    interval_: interval,
+    daysOfWeek: daysOfWeek,
+    dayOfMonth: dayOfMonth,
+    endsAt: endsAt,
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+  );
 }
 
 class _TodoRecurrenceEditorState extends State<TodoRecurrenceEditor> {
@@ -32,11 +78,15 @@ class _TodoRecurrenceEditorState extends State<TodoRecurrenceEditor> {
   void initState() {
     super.initState();
     final rule = widget.rule;
-    _frequency = rule.frequencyType;
-    _interval = rule.interval_ <= 0 ? 1 : rule.interval_;
-    _weekdays = {...?rule.daysOfWeek};
-    _dayOfMonth = rule.dayOfMonth ?? 1;
-    _endsAt = rule.endsAt;
+    _frequency = rule?.frequencyType ?? RecurrenceFrequencyType.weekly;
+    final interval = rule?.interval_ ?? 1;
+    _interval = interval <= 0 ? 1 : interval;
+    // 新建时默认选「今天星期几」：比让用户从零挑一天更接近他的意图。
+    _weekdays = rule?.daysOfWeek == null
+        ? {DateTime.now().weekday}
+        : {...rule!.daysOfWeek!};
+    _dayOfMonth = rule?.dayOfMonth ?? DateTime.now().day;
+    _endsAt = rule?.endsAt;
   }
 
   @override
@@ -51,7 +101,7 @@ class _TodoRecurrenceEditorState extends State<TodoRecurrenceEditor> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '重复规则',
+              widget.rule == null ? '设为重复' : '重复规则',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0,
@@ -59,7 +109,7 @@ class _TodoRecurrenceEditorState extends State<TodoRecurrenceEditor> {
             ),
             const SizedBox(height: 4),
             Text(
-              '改这里影响**以后所有**重复出来的任务；只想改这一次，回到任务本身。',
+              '改这里影响以后所有重复出来的任务；只想改这一次，回到任务本身。',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 height: 1.4,
@@ -239,21 +289,17 @@ class _TodoRecurrenceEditorState extends State<TodoRecurrenceEditor> {
     Navigator.of(context).pop(_draft);
   }
 
-  /// 「不重复」用 null 表示 —— 与「取消」区分开。
-  TodoRecurrenceRule get _draft {
-    return widget.rule.copyWith(
-      frequencyType: _frequency,
-      interval_: _interval,
-      daysOfWeek: _frequency == RecurrenceFrequencyType.weekly
-          ? (_weekdays.toList()..sort())
-          : null,
-      dayOfMonth: _frequency == RecurrenceFrequencyType.monthly
-          ? _dayOfMonth
-          : null,
-      endsAt: _endsAt,
-      updatedAt: DateTime.now(),
-    );
-  }
+  RecurrenceRuleSpec get _draft => RecurrenceRuleSpec(
+    frequency: _frequency,
+    interval: _interval,
+    daysOfWeek: _frequency == RecurrenceFrequencyType.weekly
+        ? (_weekdays.toList()..sort())
+        : null,
+    dayOfMonth: _frequency == RecurrenceFrequencyType.monthly
+        ? _dayOfMonth
+        : null,
+    endsAt: _endsAt,
+  );
 }
 
 /// 规则的一句话摘要：「每周一、三 · 到 2026-12-31」。

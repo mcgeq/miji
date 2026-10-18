@@ -888,6 +888,52 @@ class DriftTodoRepository implements TodoRepository {
   }
 
   @override
+  Future<TodoRecurrenceRule> attachRecurrenceRule(
+    TodoTask task,
+    TodoRecurrenceRule rule,
+  ) async {
+    final now = _now();
+    final ruleId = _uuid.v4();
+    // 1. 这条任务自己当模板：保留它的标题/备注/分类/标签，只是打上模板标记。
+    final template = await updateTask(
+      task.copyWith(isRecurrenceTemplate: true, recurrenceRuleId: ruleId),
+    );
+    // 2. 规则挂到它身上。
+    await database
+        .into(database.todoRecurrenceRules)
+        .insert(
+          db.TodoRecurrenceRulesCompanion.insert(
+            id: ruleId,
+            userId: task.userId,
+            templateTaskId: template.id,
+            frequencyType: rule.frequencyType.value,
+            interval_: Value(rule.interval_),
+            daysOfWeekJson: Value(
+              rule.daysOfWeek != null ? jsonEncode(rule.daysOfWeek) : null,
+            ),
+            dayOfMonth: Value(rule.dayOfMonth),
+            monthOfYear: Value(rule.monthOfYear),
+            dayOfYear: Value(rule.dayOfYear),
+            endsAt: Value(rule.endsAt),
+            reminderMode: Value(rule.reminderMode),
+            reminderConfigJson: Value(rule.reminderConfigJson),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    final created = rule.copyWith(
+      id: ruleId,
+      userId: task.userId,
+      templateTaskId: template.id,
+      createdAt: now,
+      updatedAt: now,
+    );
+    // 3. 补出接下来 30 天的实例。
+    await generateRecurrenceInstances(task.userId, created, template);
+    return created;
+  }
+
+  @override
   Future<TodoRecurrenceRule> updateRecurrenceRule(
     TodoRecurrenceRule rule,
     TodoTask updatedTemplate,
