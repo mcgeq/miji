@@ -353,10 +353,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('记账面板 installments'), findsOneWidget);
 
-    // 返回时间线，待办 → 待办详情。
+    // 返回时间线。待办来自重复规则：先问「改这一次 / 改整条规则」。
     router.pop();
     await tester.pumpAndSettle();
     await tester.tap(find.text('体检预约'));
+    await tester.pumpAndSettle();
+    expect(find.text('只能改这一次'), findsOneWidget);
+    expect(find.text('改整条规则'), findsOneWidget);
+
+    await tester.tap(find.text('只能改这一次'));
     await tester.pumpAndSettle();
     expect(find.text('待办详情 task-9'), findsOneWidget);
 

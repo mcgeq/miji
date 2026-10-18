@@ -176,8 +176,13 @@ final deltaSyncServiceProvider = Provider<DeltaSyncService>((ref) {
     conflictStore: ref.watch(deltaConflictStoreProvider),
     readConfig: () => ref.read(webDavConfigProvider.future),
     // 按表分发：记账的表走记账仓库（要重算余额 / 用量统计），时薪的五张表
-    // 是纯输入，直接写行。不认识的表返回 false —— 服务端仍会按「已应用」计数，
-    // 见 delta-sync-life-energy-plan.md 的已知问题。
+    // 是纯输入，直接写行。
+    //
+    // **已知问题**：不认识的表返回 false 之后仍会被服务端计入 `appliedCount`
+    // —— `DeltaRemoteChangeApplier` 的签名是 `Future<void>`，服务层无从知道
+    // 「这条其实没人处理」。要修得把它改成 `Future<bool>`，牵动记账那份 3000
+    // 多行的 apply 与全部相关测试。影响只在设置页的「已应用 N 条」偏大，
+    // 数据本身没有错。
     applyRemoteChange: (change, local) async {
       final applied = await ref
           .watch(appDatabaseProvider)

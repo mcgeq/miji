@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:miji/features/todo/domain/todo_models.dart';
+import 'package:miji/features/todo/presentation/todo_recurrence_editor.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
@@ -10,9 +11,19 @@ import 'package:miji/shared/widgets/form_dropdown.dart';
 
 /// 任务详情/编辑页
 class TodoTaskDetailPage extends ConsumerStatefulWidget {
-  const TodoTaskDetailPage({super.key, required this.taskId});
+  const TodoTaskDetailPage({
+    super.key,
+    required this.taskId,
+    this.focusRecurrence = false,
+  });
 
   final String taskId;
+
+  /// 从「改整条规则」进来：载入后直接打开规则编辑器。
+  ///
+  /// 用参数而不是直接调用编辑器：任务详情是唯一能改规则的地方，跨模块入口
+  /// 只需要说「我要改规则」，不必自己拼一遍加载流程。
+  final bool focusRecurrence;
 
   @override
   ConsumerState<TodoTaskDetailPage> createState() => _TodoTaskDetailPageState();
@@ -32,6 +43,8 @@ class _TodoTaskDetailPageState extends ConsumerState<TodoTaskDetailPage> {
   // V1.1
   List<String> _selectedTagIds = [];
   DateTime? _reminderAt;
+  // 重复规则（null = 不重复）
+  TodoRecurrenceRule? _recurrenceRule;
   // Tab + Markdown
   var _selectedTab = 0;
   late TextEditingController _markdownBodyController;
@@ -79,6 +92,10 @@ class _TodoTaskDetailPageState extends ConsumerState<TodoTaskDetailPage> {
         _markdownBodyController.text = task.markdownBody ?? '';
         _isLoading = false;
       });
+      await _loadRecurrenceRule(task.recurrenceRuleId);
+      if (widget.focusRecurrence && _recurrenceRule != null && mounted) {
+        await _editRecurrenceRule();
+      }
     } else {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -198,6 +215,10 @@ class _TodoTaskDetailPageState extends ConsumerState<TodoTaskDetailPage> {
                         const SizedBox(height: 16),
                         _buildTagSelector(theme, colorScheme),
                         const SizedBox(height: 16),
+                        if (!_isNew && _recurrenceRule != null) ...[
+                          _buildRecurrenceTile(theme, colorScheme),
+                          const SizedBox(height: 16),
+                        ],
                         DateTimePicker(
                           selectedDate:
                               _reminderAt ??
@@ -316,6 +337,30 @@ class _TodoTaskDetailPageState extends ConsumerState<TodoTaskDetailPage> {
       },
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  /// 「重复」那一行：写明这是**整条规则**，而不是这一次。
+  Widget _buildRecurrenceTile(ThemeData theme, ColorScheme colorScheme) {
+    final rule = _recurrenceRule;
+    if (rule == null) {
+      return const SizedBox.shrink();
+    }
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: _editRecurrenceRule,
+      child: InputDecorator(
+        decoration: appInputDecoration(
+          context,
+          labelText: '重复（点击改整条规则）',
+          enabled: true,
+          suffixIcon: const Icon(Icons.chevron_right_rounded, size: 18),
+        ),
+        child: Text(
+          describeRecurrenceRule(rule),
+          style: theme.textTheme.bodyMedium?.copyWith(letterSpacing: 0),
+        ),
+      ),
     );
   }
 
@@ -597,6 +642,51 @@ class _TodoTaskDetailPageState extends ConsumerState<TodoTaskDetailPage> {
     if (mounted) {
       invalidateTodayActionData(ref);
       Navigator.of(context).pop(true);
+    }
+  }
+
+  Future<void> _loadRecurrenceRule(String? ruleId) async {
+    if (ruleId == null) {
+      return;
+    }
+    final rule = await ref
+        .read(todoRepositoryProvider)
+        .getRecurrenceRule(ruleId);
+    if (rule != null && mounted) {
+      setState(() => _recurrenceRule = rule);
+    }
+  }
+
+  /// 改「整条规则」。影响以后所有实例，所以入口文案写明这一点。
+  Future<void> _editRecurrenceRule() async {
+    final rule = _recurrenceRule;
+    if (rule == null) {
+      return;
+    }
+    final updated = await showModalBottomSheet<TodoRecurrenceRule>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => TodoRecurrenceEditor(rule: rule),
+    );
+    if (updated == null || !mounted) {
+      return;
+    }
+    final repository = ref.read(todoRepositoryProvider);
+    // 仓库的签名要求同时给出模板任务：规则与模板是一体的（模板不入列表，
+    // 只用来生成实例）。拿不到模板就什么都不做 —— 硬写一条规则会让它失效。
+    final template = await repository.getTask(updated.templateTaskId);
+    if (template == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('找不到这条规则的模板任务')));
+      }
+      return;
+    }
+    final saved = await repository.updateRecurrenceRule(updated, template);
+    if (mounted) {
+      setState(() => _recurrenceRule = saved);
     }
   }
 

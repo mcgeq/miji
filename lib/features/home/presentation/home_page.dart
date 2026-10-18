@@ -485,10 +485,7 @@ class _HomeDashboard extends ConsumerWidget {
                 _section(0, header),
                 _gap,
                 _section(1, board),
-                if (showTimeline) ...[
-                  _gap,
-                  _section(1, timelineCard),
-                ],
+                if (showTimeline) ...[_gap, _section(1, timelineCard)],
                 _gap,
                 _section(1, overviewCard),
                 _gap,

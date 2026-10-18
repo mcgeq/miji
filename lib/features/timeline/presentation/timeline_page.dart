@@ -555,10 +555,51 @@ class _EventTile extends StatelessWidget {
           // 行可点：跳到来源（待办详情 / 模块面板）。时间线本身仍然只读。
           : InkWell(
               borderRadius: BorderRadius.circular(10),
-              onTap: () => context.push(target.route),
+              onTap: () => _openTarget(context, target),
               child: row,
             ),
     );
+  }
+
+  /// 来自重复规则的事件先问一句：改这一次，还是改整条规则。
+  ///
+  /// 「改整条」跳到任务详情的规则编辑器（`?focus=recurrence`）—— 在那里改的
+  /// 东西影响以后所有实例，这个区别值得一次点击。
+  Future<void> _openTarget(BuildContext context, TimelineTarget target) async {
+    if (target.askRuleScope) {
+      final whole = await showModalBottomSheet<bool>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.event_repeat_rounded),
+                title: const Text('只能改这一次'),
+                subtitle: const Text('打开任务本身，只动这一条'),
+                onTap: () => Navigator.of(sheetContext).pop(false),
+              ),
+              ListTile(
+                leading: const Icon(Icons.repeat_rounded),
+                title: const Text('改整条规则'),
+                subtitle: const Text('以后重复出来的都变'),
+                onTap: () => Navigator.of(sheetContext).pop(true),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (whole == null || !context.mounted) {
+        return;
+      }
+      if (whole) {
+        context.push('${target.route}?focus=recurrence');
+        return;
+      }
+    }
+    context.push(target.route);
   }
 
   String _subtitleFor(

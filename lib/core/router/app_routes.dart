@@ -27,6 +27,7 @@ class AppRoutes {
       '/app/bookkeeping/life-energy/raises';
   static const bookkeepingLifeEnergyPayroll =
       '/app/bookkeeping/life-energy/payroll';
+
   /// 跨模块时间线。**必须登记进敏感路由**：它同时展示经期与金额。
   static const timeline = '/app/timeline';
 

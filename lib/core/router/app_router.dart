@@ -161,7 +161,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: 'tasks/:taskId',
                 builder: (context, state) {
                   final taskId = state.pathParameters['taskId']!;
-                  return TodoTaskDetailPage(taskId: taskId);
+                  return TodoTaskDetailPage(
+                    taskId: taskId,
+                    focusRecurrence:
+                        state.uri.queryParameters['focus'] == 'recurrence',
+                  );
                 },
               ),
             ],

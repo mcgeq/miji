@@ -51,11 +51,12 @@ class _TransactionDetailBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts =
-        ref.watch(currentUserVisibleAccountsProvider).asData?.value ??
-        const [];
+        ref.watch(currentUserVisibleAccountsProvider).asData?.value ?? const [];
     final expenseCatalog =
         ref
-            .watch(currentUserCategoryCatalogProvider(MoneyCategoryKind.expense))
+            .watch(
+              currentUserCategoryCatalogProvider(MoneyCategoryKind.expense),
+            )
             .asData
             ?.value ??
         const MoneyCategoryCatalog.empty();
@@ -91,11 +92,8 @@ class _TransactionDetailBody extends ConsumerWidget {
 }
 
 /// 按 id 取一笔流水。null = 不存在（已删、或不属于当前用户）。
-final transactionByIdProvider =
-    FutureProvider.autoDispose.family<MoneyTransactionEntity?, String>((
-      ref,
-      id,
-    ) async {
+final transactionByIdProvider = FutureProvider.autoDispose
+    .family<MoneyTransactionEntity?, String>((ref, id) async {
       final session = ref.watch(authSessionControllerProvider);
       if (!session.isUnlocked || session.userId == null) {
         return null;
