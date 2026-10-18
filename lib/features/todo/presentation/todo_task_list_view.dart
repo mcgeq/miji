@@ -140,16 +140,125 @@ class _TodoTaskListViewState extends ConsumerState<TodoTaskListView> {
     WidgetRef ref,
     List<TodoTask> tasks,
   ) {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        final task = tasks[index];
-        return Padding(
-          padding: EdgeInsets.only(bottom: index < tasks.length - 1 ? 8 : 0),
+    final groups = _groupTasks(tasks);
+    final rows = <Widget>[];
+    for (final group in groups) {
+      rows.add(_TaskGroupHeader(label: group.label, count: group.tasks.length));
+      for (final task in group.tasks) {
+        rows.add(Padding(
+          padding: const EdgeInsets.only(bottom: 8),
           child: _TodoTaskTile(task: task),
-        );
-      },
+        ));
+      }
+      rows.add(const SizedBox(height: 6));
+    }
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      children: rows,
+    );
+  }
+
+  /// 按「什么时候该做」分组。
+  ///
+  /// 先前是一张平铺的长列表：逾期和下周的事混在一起，用户看不出「今天欠了什么」。
+  /// 分组只依赖 `dueAt`/`scheduledDate`，不改任何数据。
+  List<_TaskGroup> _groupTasks(List<TodoTask> tasks) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+
+    final overdue = <TodoTask>[];
+    final todayTasks = <TodoTask>[];
+    final tomorrowTasks = <TodoTask>[];
+    final later = <TodoTask>[];
+    final noDate = <TodoTask>[];
+    final done = <TodoTask>[];
+
+    for (final task in tasks) {
+      if (task.status != TodoTaskStatus.todo) {
+        done.add(task);
+        continue;
+      }
+      final due = task.dueAt ?? task.scheduledDate;
+      if (due == null) {
+        noDate.add(task);
+        continue;
+      }
+      final day = DateTime(due.year, due.month, due.day);
+      if (day.isBefore(today)) {
+        overdue.add(task);
+      } else if (day == today) {
+        todayTasks.add(task);
+      } else if (day == tomorrow) {
+        tomorrowTasks.add(task);
+      } else {
+        later.add(task);
+      }
+    }
+
+    // 组内排序：逾期最久的在前，其余按日期近的在前，无日期的按创建时间倒序。
+    overdue.sort(
+      (a, b) => (a.dueAt ?? a.scheduledDate!).compareTo(
+        b.dueAt ?? b.scheduledDate!,
+      ),
+    );
+    int byDue(TodoTask a, TodoTask b) =>
+        (a.dueAt ?? a.scheduledDate!).compareTo(b.dueAt ?? b.scheduledDate!);
+    todayTasks.sort(byDue);
+    tomorrowTasks.sort(byDue);
+    later.sort(byDue);
+
+    return [
+      if (overdue.isNotEmpty) _TaskGroup('逾期', overdue),
+      if (todayTasks.isNotEmpty) _TaskGroup('今天', todayTasks),
+      if (tomorrowTasks.isNotEmpty) _TaskGroup('明天', tomorrowTasks),
+      if (later.isNotEmpty) _TaskGroup('之后', later),
+      if (noDate.isNotEmpty) _TaskGroup('没有日期', noDate),
+      if (done.isNotEmpty) _TaskGroup('已结束', done),
+    ];
+  }
+}
+
+class _TaskGroup {
+  const _TaskGroup(this.label, this.tasks);
+
+  final String label;
+  final List<TodoTask> tasks;
+}
+
+class _TaskGroupHeader extends StatelessWidget {
+  const _TaskGroupHeader({required this.label, required this.count});
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final danger = label == '逾期';
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: danger ? scheme.error : scheme.onSurface,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$count',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -162,51 +271,60 @@ class _TodoTaskTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final scheme = theme.colorScheme;
     final isCompleted = task.status == TodoTaskStatus.completed;
     final isCancelled = task.status == TodoTaskStatus.cancelled;
-    final isRecurring = task.recurrenceRuleId != null;
+    final settled = isCompleted || isCancelled;
 
     return Material(
-      color: colorScheme.surfaceContainerLow,
+      color: scheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          context.push('/app/gtd/tasks/${task.id}');
-        },
+        onTap: () => context.push('/app/gtd/tasks/${task.id}'),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!isCompleted && !isCancelled)
-                GestureDetector(
-                  onTap: () async {
-                    final repo = ref.read(todoRepositoryProvider);
-                    await repo.completeTask(task.id);
-                    invalidateTodoData(ref);
-                    invalidateTodayActionData(ref);
-                  },
-                  child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: colorScheme.outline, width: 2),
-                    ),
-                  ),
-                )
-              else
-                Icon(
-                  isCompleted
-                      ? Icons.check_circle_rounded
-                      : Icons.cancel_rounded,
-                  size: 22,
-                  color: isCompleted
-                      ? colorScheme.primary
-                      : colorScheme.outline,
-                ),
-              const SizedBox(width: 10),
+              // 勾选：22px 圆环 + 44px 可点区域（视觉小、手感大）。
+              SizedBox(
+                width: 34,
+                height: 34,
+                child: settled
+                    ? Icon(
+                        isCompleted
+                            ? Icons.check_circle_rounded
+                            : Icons.cancel_rounded,
+                        size: 22,
+                        color: isCompleted
+                            ? scheme.primary
+                            : scheme.outline,
+                      )
+                    : InkResponse(
+                        radius: 20,
+                        onTap: () async {
+                          final repo = ref.read(todoRepositoryProvider);
+                          await repo.completeTask(task.id);
+                          invalidateTodoData(ref);
+                          invalidateTodayActionData(ref);
+                        },
+                        child: Center(
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: scheme.outline,
+                                width: 1.6,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,132 +332,36 @@ class _TodoTaskTile extends ConsumerWidget {
                     Text(
                       task.title,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        decoration: (isCompleted || isCancelled)
-                            ? TextDecoration.lineThrough
-                            : null,
-                        color: (isCompleted || isCancelled)
-                            ? colorScheme.outline
-                            : colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                        height: 1.35,
+                        decoration: settled ? TextDecoration.lineThrough : null,
+                        color: settled ? scheme.outline : scheme.onSurface,
+                        letterSpacing: 0,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (isRecurring) ...[
-                          Icon(
-                            Icons.repeat_rounded,
-                            size: 12,
-                            color: colorScheme.tertiary,
-                          ),
-                          const SizedBox(width: 2),
-                        ],
-                        if (task.priority == TodoTaskPriority.high)
-                          Icon(
-                            Icons.flag_rounded,
-                            size: 14,
-                            color: colorScheme.error,
-                          ),
-                        if (task.priority == TodoTaskPriority.medium)
-                          Icon(
-                            Icons.flag_rounded,
-                            size: 14,
-                            color: colorScheme.tertiary,
-                          ),
-                        if (task.priority != TodoTaskPriority.none &&
-                            task.priority != TodoTaskPriority.low)
-                          const SizedBox(width: 4),
-                        if (task.dueAt != null) ...[
-                          Icon(
-                            Icons.schedule_rounded,
-                            size: 12,
-                            color: task.isOverdue && !isCompleted
-                                ? colorScheme.error
-                                : colorScheme.outline,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            _formatDate(task.dueAt!),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: task.isOverdue && !isCompleted
-                                  ? colorScheme.error
-                                  : colorScheme.outline,
-                              fontWeight: task.isOverdue && !isCompleted
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ],
-                        if (task.subTasks.isNotEmpty) ...[
-                          if (task.dueAt != null) const SizedBox(width: 8),
-                          Icon(
-                            Icons.checklist_rounded,
-                            size: 12,
-                            color: colorScheme.outline,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${task.subTasks.where((s) => s.status == TodoTaskStatus.completed).length}/${task.subTasks.length}',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: colorScheme.outline,
-                            ),
-                          ),
-                        ],
-                        // V1.1: 标签
-                        if (task.tags.isNotEmpty) ...[
-                          const SizedBox(width: 6),
-                          ...task.tags
-                              .take(2)
-                              .map(
-                                (tag) => Container(
-                                  margin: const EdgeInsets.only(right: 4),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Color(
-                                      int.parse(
-                                        tag.color.replaceFirst('#', '0xff'),
-                                      ),
-                                    ).withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                  child: Text(
-                                    tag.name,
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(
-                                        int.parse(
-                                          tag.color.replaceFirst('#', '0xff'),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          if (task.tags.length > 2)
-                            Text(
-                              '+${task.tags.length - 2}',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: colorScheme.outline,
-                              ),
-                            ),
-                        ],
-                      ],
-                    ),
+                    if (_hasMeta) ...[
+                      const SizedBox(height: 4),
+                      // 元信息一律进 Wrap：日期、标签、子任务、重复、优先级
+                      // 挤在一个 Row 里在 390 宽上会溢出（标签多时尤其明显）。
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 3,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: _metaChips(context, theme, scheme),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              if (!isCompleted && !isCancelled)
+              if (!settled)
                 PopupMenuButton<String>(
+                  tooltip: '更多',
                   icon: Icon(
                     Icons.more_horiz_rounded,
                     size: 18,
-                    color: colorScheme.outline,
+                    color: scheme.outline,
                   ),
                   padding: EdgeInsets.zero,
                   onSelected: (action) async {
@@ -350,66 +372,17 @@ class _TodoTaskTile extends ConsumerWidget {
                       case 'delete':
                         await repo.softDeleteTask(task.id);
                       case 'schedule_today':
-                        final updated = task.copyWith(
-                          scheduledDate: DateTime.now(),
+                        await repo.updateTask(
+                          task.copyWith(scheduledDate: DateTime.now()),
                         );
-                        await repo.updateTask(updated);
                     }
                     invalidateTodoData(ref);
                     invalidateTodayActionData(ref);
                   },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'schedule_today',
-                      child: Center(
-                        child: Tooltip(
-                          message: '安排到今天',
-                          child: Container(
-                            width: 26,
-                            height: 26,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: colorScheme.outline,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Text(
-                              '今',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: colorScheme.onSurface,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'cancel',
-                      child: Center(
-                        child: Tooltip(
-                          message: '取消任务',
-                          child: Icon(
-                            Icons.cancel_rounded,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Center(
-                        child: Tooltip(
-                          message: '删除',
-                          child: Icon(
-                            Icons.delete_outline_rounded,
-                            color: colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    ),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(value: 'schedule_today', child: Text('安排到今天')),
+                    PopupMenuItem(value: 'cancel', child: Text('取消任务')),
+                    PopupMenuItem(value: 'delete', child: Text('删除')),
                   ],
                 ),
             ],
@@ -417,6 +390,93 @@ class _TodoTaskTile extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  bool get _hasMeta =>
+      task.dueAt != null ||
+      task.scheduledDate != null && task.dueAt == null ||
+      task.category != null ||
+      task.tags.isNotEmpty ||
+      task.subTasks.isNotEmpty ||
+      task.recurrenceRuleId != null ||
+      task.priority != TodoTaskPriority.none;
+
+  /// 元信息：日期 / 分类 / 子任务 / 重复 / 优先级 / 标签。
+  ///
+  /// 顺序按「决定要不要现在做」排列：日期最前，其次分类与进度，标签放最后。
+  List<Widget> _metaChips(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme scheme,
+  ) {
+    final overdue = task.isOverdue && task.status == TodoTaskStatus.todo;
+    final due = task.dueAt ?? task.scheduledDate;
+    final style = theme.textTheme.labelSmall?.copyWith(
+      color: overdue ? scheme.error : scheme.onSurfaceVariant,
+      fontWeight: overdue ? FontWeight.w700 : FontWeight.w500,
+      letterSpacing: 0,
+    );
+
+    return [
+      if (due != null)
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              task.dueAt != null
+                  ? Icons.schedule_rounded
+                  : Icons.event_rounded,
+              size: 12,
+              color: overdue ? scheme.error : scheme.outline,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              task.dueAt != null ? _formatDate(task.dueAt!) : _formatDay(due),
+              style: style,
+            ),
+          ],
+        ),
+      if (task.category != null)
+        _MetaChip(
+          label: task.category!.name,
+          color: scheme.onSurfaceVariant,
+        ),
+      if (task.subTasks.isNotEmpty)
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.checklist_rounded, size: 12, color: scheme.outline),
+            const SizedBox(width: 3),
+            Text(
+              '${task.subTasks.where((s) => s.status == TodoTaskStatus.completed).length}/${task.subTasks.length}',
+              style: style,
+            ),
+          ],
+        ),
+      if (task.recurrenceRuleId != null)
+        Icon(Icons.repeat_rounded, size: 12, color: scheme.tertiary),
+      if (task.priority == TodoTaskPriority.high)
+        _MetaChip(label: '高', color: scheme.error),
+      if (task.priority == TodoTaskPriority.medium)
+        _MetaChip(label: '中', color: scheme.tertiary),
+      for (final tag in task.tags.take(2))
+        _MetaChip(label: tag.name, color: _parseColor(tag.color, scheme)),
+      if (task.tags.length > 2)
+        Text('+${task.tags.length - 2}', style: style),
+    ];
+  }
+
+  Color _parseColor(String raw, ColorScheme scheme) {
+    final value = int.tryParse(raw.replaceFirst('#', '0xff'));
+    return value == null ? scheme.onSurfaceVariant : Color(value);
+  }
+
+  String _formatDay(DateTime dt) {
+    final now = DateTime.now();
+    if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+      return '今天';
+    }
+    return '${dt.month}.${dt.day}';
   }
 
   String _formatDate(DateTime dt) {
@@ -431,5 +491,33 @@ class _TodoTaskTile extends ConsumerWidget {
       return '明天';
     }
     return '${dt.month}.${dt.day}';
+  }
+}
+
+/// 一枚 11px 的小标签：分类、优先级、标签共用。
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0,
+        ),
+      ),
+    );
   }
 }

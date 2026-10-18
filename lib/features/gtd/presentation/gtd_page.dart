@@ -966,11 +966,17 @@ class _RecordCard extends ConsumerWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              Text(switch (record.plan?.triggerMode) {
-                CheckinTriggerMode.photo => '📸',
-                CheckinTriggerMode.timer => '⏱️',
-                _ => record.plan?.icon ?? '📌',
-              }, style: const TextStyle(fontSize: 20)),
+              // 触发方式用图标表达，比把 emoji 放大到 20px 干净；计划本身
+              // 有没有自定义图标由 CheckinPlanIcon 决定（旧默认图钉会被换掉）。
+              Icon(
+                switch (record.plan?.triggerMode) {
+                  CheckinTriggerMode.photo => Icons.photo_camera_outlined,
+                  CheckinTriggerMode.timer => Icons.timer_outlined,
+                  _ => Icons.check_circle_outline_rounded,
+                },
+                size: 16,
+                color: colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(

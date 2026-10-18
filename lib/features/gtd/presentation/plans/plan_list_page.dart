@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:miji/core/notifications/notification_providers.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
+import 'package:miji/features/gtd/presentation/plans/checkin_plan_icon.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
 
@@ -101,7 +102,7 @@ class _PlanTile extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       child: ListTile(
-        leading: Text(plan.icon, style: const TextStyle(fontSize: 24)),
+        leading: CheckinPlanIcon(plan: plan),
         title: Text(
           plan.name,
           style: theme.textTheme.titleSmall?.copyWith(

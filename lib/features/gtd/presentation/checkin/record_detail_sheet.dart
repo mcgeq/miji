@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
+import 'package:miji/features/gtd/presentation/plans/checkin_plan_icon.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
 
@@ -86,7 +87,7 @@ class _RecordDetailSheetState extends ConsumerState<_RecordDetailSheet> {
           children: [
             Row(
               children: [
-                Text(plan?.icon ?? '📌', style: const TextStyle(fontSize: 28)),
+                CheckinPlanIcon(plan: plan, size: 30),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
