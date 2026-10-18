@@ -79,20 +79,23 @@ class PlanStylePicker extends StatelessWidget {
               _EmojiChip(
                 key: const ValueKey('plan-emoji-current'),
                 emoji: emoji,
+                label: planEmojiLabel(emoji) ?? '自选',
                 selected: true,
                 tooltip: '当前使用的 emoji',
                 onTap: () {},
               ),
             for (final option in options)
               _EmojiChip(
-                key: ValueKey('plan-emoji-$option'),
-                emoji: option,
-                selected: !customized && option == emoji,
-                onTap: () => onEmojiChanged(option),
+                key: ValueKey('plan-emoji-${option.emoji}'),
+                emoji: option.emoji,
+                label: option.label,
+                selected: !customized && option.emoji == emoji,
+                onTap: () => onEmojiChanged(option.emoji),
               ),
             _EmojiChip(
               key: const ValueKey('plan-emoji-custom'),
               emoji: '✏️',
+              label: '自定义',
               selected: customized,
               tooltip: '自定义 emoji',
               onTap: onCustomToggled,
@@ -182,12 +185,17 @@ class _EmojiChip extends StatelessWidget {
   const _EmojiChip({
     super.key,
     required this.emoji,
+    required this.label,
     required this.selected,
     required this.onTap,
     this.tooltip,
   });
 
   final String emoji;
+
+  /// 中文标签：光看表情不知道它代表什么，尤其是星星、书签这类。
+  final String label;
+
   final bool selected;
   final VoidCallback onTap;
   final String? tooltip;
@@ -200,9 +208,8 @@ class _EmojiChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
       onTap: onTap,
       child: Container(
-        width: 40,
-        height: 40,
-        alignment: Alignment.center,
+        width: 56,
+        padding: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: selected
               ? scheme.primaryContainer
@@ -213,7 +220,27 @@ class _EmojiChip extends StatelessWidget {
             width: 1.6,
           ),
         ),
-        child: Text(emoji, style: const TextStyle(fontSize: 20, height: 1)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 20, height: 1.1)),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontSize: 9.5,
+                height: 1.1,
+                letterSpacing: 0,
+                color: selected
+                    ? scheme.onPrimaryContainer
+                    : scheme.onSurfaceVariant,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
     return tooltip == null ? chip : Tooltip(message: tooltip!, child: chip);

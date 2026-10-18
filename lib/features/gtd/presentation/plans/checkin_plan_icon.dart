@@ -55,7 +55,9 @@ class CheckinPlanIcon extends StatelessWidget {
       color: color,
     ).color.color;
 
-    return Container(
+    // 标签同时也当 tooltip：列表里那枚小图不解释的话，没人知道「🔖」代表备忘。
+    final label = planEmojiLabel(emoji);
+    final badge = Container(
       width: size,
       height: size,
       alignment: Alignment.center,
@@ -65,5 +67,6 @@ class CheckinPlanIcon extends StatelessWidget {
       ),
       child: Text(emoji, style: TextStyle(fontSize: size * 0.55, height: 1)),
     );
+    return label == null ? badge : Tooltip(message: label, child: badge);
   }
 }

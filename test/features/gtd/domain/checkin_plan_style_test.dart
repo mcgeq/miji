@@ -42,7 +42,8 @@ void main() {
         icon: '📌',
         category: CheckinPlanCategory.fromStorageValue('不存在的分类'),
       ),
-      '⭐',
+      // 「其他」的默认现在是 ✅（这一组换过一轮：⭐🔔📎🧩 既不好看也说不清）。
+      '✅',
     );
     // 每个分类都要有可用的默认色（枚举之后不再有「未知分类」）。
     for (final category in CheckinPlanCategory.values) {
@@ -55,9 +56,26 @@ void main() {
       final list = checkinPlanEmojis[category];
       expect(list, isNotNull, reason: category.label);
       expect(list!, isNotEmpty, reason: category.label);
-      expect(defaultPlanEmojiFor(category), list.first, reason: category.label);
-      // 同一个分类里不该有重复 emoji。
-      expect(list.toSet().length, list.length, reason: category.label);
+      expect(
+        defaultPlanEmojiFor(category),
+        list.first.emoji,
+        reason: category.label,
+      );
+      // 同一个分类里不该有重复 emoji，也不该有两个同一个标签。
+      expect(
+        list.map((o) => o.emoji).toSet().length,
+        list.length,
+        reason: category.label,
+      );
+      expect(
+        list.map((o) => o.label).toSet().length,
+        list.length,
+        reason: category.label,
+      );
+      // 每个选项都要有非空标签 —— 光有表情没人知道它代表什么。
+      for (final option in list) {
+        expect(option.label.trim(), isNotEmpty, reason: option.emoji);
+      }
     }
   });
 
@@ -81,7 +99,7 @@ void main() {
       '💼', // 纪念日
     ]) {
       final categories = checkinPlanEmojis.entries
-          .where((entry) => entry.value.contains(emoji))
+          .where((entry) => entry.value.any((o) => o.emoji == emoji))
           .map((entry) => entry.key.label);
       expect(categories, isNotEmpty, reason: '$emoji 不在任何分类里');
     }
@@ -209,5 +227,31 @@ void main() {
       CheckinPlanCategory.fromStorageValue(null),
       CheckinPlanCategory.other,
     );
+  });
+
+  test('每个内置 emoji 都有中文标签，且全表内标签不重复', () {
+    final seen = <String>{};
+    for (final entry in checkinPlanEmojis.entries) {
+      for (final option in entry.value) {
+        expect(option.label.trim(), isNotEmpty, reason: option.emoji);
+        expect(
+          seen.add(option.label),
+          isTrue,
+          reason: '标签重复：${option.label}',
+        );
+      }
+    }
+    // 认得出的 emoji 能查回标签。
+    expect(planEmojiLabel('💧'), '喝水');
+    // 用户自定义的 emoji 没有标签，返回 null 而不是瞎猜。
+    expect(planEmojiLabel('🐳'), isNull);
+  });
+
+  test('emoji 的变体写法也能认出来（ZWJ / 变体选择符）', () {
+    // 种子里用的是 🏃‍♂️（带 ZWJ），表里只有 🏃 —— 归一后应当算同一个图标。
+    expect(isBuiltInPlanEmoji('🏃‍♂️', CheckinPlanCategory.exercise), isTrue);
+    expect(planEmojiLabel('🏃‍♂️'), '跑步');
+    // 带变体选择符的写法同理。
+    expect(planEmojiLabel('🗺'), '出行');
   });
 }

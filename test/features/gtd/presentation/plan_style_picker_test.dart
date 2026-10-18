@@ -49,8 +49,10 @@ void main() {
     String? picked;
     await pump(tester, onEmoji: (value) => picked = value);
 
-    for (final emoji in checkinPlanEmojis[CheckinPlanCategory.exercise]!) {
-      expect(find.text(emoji), findsWidgets, reason: emoji);
+    for (final option in planEmojiOptionsFor(CheckinPlanCategory.exercise)) {
+      expect(find.text(option.emoji), findsWidgets, reason: option.emoji);
+      // 光有表情不知道代表什么，格子里必须带中文标签。
+      expect(find.text(option.label), findsWidgets, reason: option.label);
     }
 
     await tester.tap(find.text('🚴'));

@@ -19,73 +19,130 @@ const List<CheckinPlanCategory> checkinPlanCategories =
 /// 历史默认值：等于「没选过图标」。渲染时会被替换成分类的默认 emoji。
 const String legacyDefaultPlanIcon = '📌';
 
+/// 一个内置 emoji 选项：表情 + 中文标签。
+///
+/// 为什么要标签：光看图钉 / 星星 / 碎片，没人知道它代表「收藏」还是「其他」；
+/// 挑图标时得先读得懂。标签同时充当图标的 tooltip —— 列表里那枚小图也能解释。
+@immutable
+class PlanEmojiOption {
+  const PlanEmojiOption(this.emoji, this.label);
+
+  final String emoji;
+
+  /// 中文标签（「喝水」「散步」这种，两三个字）。
+  final String label;
+}
+
 /// 每个分类内置的 emoji。
 ///
 /// 每个分类的第一个是**默认值**（新建时自动选中）。种子模板里用过的 emoji
 /// 都在表里，这样「新建 → 选中 → 之后又改回默认」不会变成两套风格。
-const Map<CheckinPlanCategory, List<String>> checkinPlanEmojis =
-    <CheckinPlanCategory, List<String>>{
-      CheckinPlanCategory.healthHabit: <String>[
-        '💧',
-        '🌙',
-        '🍚',
-        '🚽',
-        '🚿',
-        '💊',
-        '🧘',
-        '🏥',
+///
+/// 「其他」这一组换过一轮：原来是 ⭐ ✅ 🎯 🔔 🌟 📎 🧩 🕒 —— 星、铃铛、碎片
+/// 既不好看也说不清是什么。现在换成能看到具体事物的：打卡、兴趣、备忘、
+/// 家务、联系、娱乐、采购、心情。它是新建计划的默认分类，第一眼看到的就是它。
+const Map<CheckinPlanCategory, List<PlanEmojiOption>> checkinPlanEmojis =
+    <CheckinPlanCategory, List<PlanEmojiOption>>{
+      CheckinPlanCategory.healthHabit: <PlanEmojiOption>[
+        PlanEmojiOption('💧', '喝水'),
+        PlanEmojiOption('🌙', '早睡'),
+        PlanEmojiOption('🍚', '吃饭'),
+        PlanEmojiOption('🚽', '如厕'),
+        PlanEmojiOption('🚿', '洗澡'),
+        PlanEmojiOption('💊', '吃药'),
+        PlanEmojiOption('🧘', '冥想'),
+        PlanEmojiOption('🏥', '体检'),
       ],
-      CheckinPlanCategory.study: <String>[
-        '📖',
-        '📚',
-        '📝',
-        '🎧',
-        '🧠',
-        '✍️',
-        '🎓',
-        '💡',
+      CheckinPlanCategory.study: <PlanEmojiOption>[
+        PlanEmojiOption('📖', '阅读'),
+        PlanEmojiOption('📚', '读书'),
+        PlanEmojiOption('📝', '笔记'),
+        PlanEmojiOption('✍️', '写作'),
+        PlanEmojiOption('🎧', '听课'),
+        PlanEmojiOption('🎓', '课程'),
+        PlanEmojiOption('💡', '灵感'),
+        PlanEmojiOption('🧮', '练习'),
       ],
-      CheckinPlanCategory.exercise: <String>[
-        '🚶',
-        '🏃',
-        '🚴',
-        '🏊',
-        '🏋️',
-        '🤸',
-        '⚽',
-        '🧗',
+      CheckinPlanCategory.exercise: <PlanEmojiOption>[
+        PlanEmojiOption('🚶', '散步'),
+        PlanEmojiOption('🏃', '跑步'),
+        PlanEmojiOption('🚴', '骑行'),
+        PlanEmojiOption('🏊', '游泳'),
+        PlanEmojiOption('🏋️', '健身'),
+        PlanEmojiOption('🤸', '拉伸'),
+        PlanEmojiOption('⚽', '球类'),
+        PlanEmojiOption('🏸', '羽毛球'),
       ],
-      CheckinPlanCategory.lifeLog: <String>[
-        '📸',
-        '🍜',
-        '🗺️',
-        '🎬',
-        '🐾',
-        '🧹',
-        '☕',
-        '🌱',
+      CheckinPlanCategory.lifeLog: <PlanEmojiOption>[
+        PlanEmojiOption('📸', '拍照'),
+        PlanEmojiOption('🍜', '美食'),
+        PlanEmojiOption('🗺️', '出行'),
+        PlanEmojiOption('🎬', '影音'),
+        PlanEmojiOption('🐾', '宠物'),
+        PlanEmojiOption('🧹', '打扫'),
+        PlanEmojiOption('☕', '咖啡'),
+        PlanEmojiOption('🌱', '植物'),
       ],
-      CheckinPlanCategory.anniversary: <String>[
-        '🎂',
-        '💕',
-        '💼',
-        '🎁',
-        '✨',
-        '🥂',
-        '📅',
-        '🏆',
+      CheckinPlanCategory.anniversary: <PlanEmojiOption>[
+        PlanEmojiOption('🎂', '生日'),
+        PlanEmojiOption('💕', '恋爱'),
+        PlanEmojiOption('💼', '入职'),
+        PlanEmojiOption('🎁', '礼物'),
+        PlanEmojiOption('🥂', '庆祝'),
+        PlanEmojiOption('🏆', '里程碑'),
+        PlanEmojiOption('✨', '纪念'),
+        PlanEmojiOption('📅', '周年'),
       ],
-      CheckinPlanCategory.other: <String>[
-        '⭐',
-        '✅',
-        '🎯',
-        '🔔',
-        '🌟',
-        '📎',
-        '🧩',
-        '🕒',
+      CheckinPlanCategory.other: <PlanEmojiOption>[
+        PlanEmojiOption('✅', '打卡'),
+        PlanEmojiOption('🎈', '兴趣'),
+        PlanEmojiOption('🔖', '备忘'),
+        PlanEmojiOption('🧺', '家务'),
+        PlanEmojiOption('📞', '联系'),
+        PlanEmojiOption('🎵', '娱乐'),
+        PlanEmojiOption('🛒', '采购'),
+        PlanEmojiOption('🌈', '心情'),
       ],
     };
+
+/// 某个分类的可选 emoji 列表。
+List<PlanEmojiOption> planEmojiOptionsFor(CheckinPlanCategory category) {
+  return checkinPlanEmojis[category]!;
+}
+
+/// 把 emoji 归一到「基字符」再比较。
+///
+/// 同一个意思有多个写法：`🏃‍♂️` 是「🏃 + ZWJ + ♂」、`🗺️` 带变体选择符。用户从
+/// 种子里拿到的、从系统输入法打出来的可能是任一种，直接字符串比较会把它们
+/// 当成两个不同的图标。
+String _baseEmoji(String emoji) {
+  final buffer = StringBuffer();
+  for (final rune in emoji.runes) {
+    // ZWJ 及其后的修饰符（性别、肤色）都不参与比较。
+    if (rune == 0x200D) {
+      break;
+    }
+    // FE0F / FE0E 是变体选择符，不改变含义。
+    if (rune == 0xFE0F || rune == 0xFE0E) {
+      continue;
+    }
+    buffer.writeCharCode(rune);
+  }
+  return buffer.toString();
+}
+
+/// 某个 emoji 的中文标签。认不出来返回 null（用户自定义的 emoji 就属于这种）。
+String? planEmojiLabel(String emoji) {
+  final target = _baseEmoji(emoji);
+  for (final options in checkinPlanEmojis.values) {
+    for (final option in options) {
+      if (_baseEmoji(option.emoji) == target) {
+        return option.label;
+      }
+    }
+  }
+  return null;
+}
 
 /// 新建计划时给的默认配色（按分类取同序下标，保持每类风格稳定）。
 ///
@@ -106,7 +163,7 @@ final PlanColor fallbackPlanColor = checkinPlanColors.last;
 
 /// 某个分类的默认 emoji（未知分类落到「其他」）。
 String defaultPlanEmojiFor(CheckinPlanCategory category) {
-  return checkinPlanEmojis[category]!.first;
+  return checkinPlanEmojis[category]!.first.emoji;
 }
 
 /// 某个分类的默认颜色。
@@ -134,7 +191,10 @@ String resolvePlanEmoji({
 
 /// 这个 emoji 是否属于该分类的内置集合（用来区分「默认」与「自定义」）。
 bool isBuiltInPlanEmoji(String icon, CheckinPlanCategory category) {
-  return (checkinPlanEmojis[category] ?? const <String>[]).contains(icon);
+  final target = _baseEmoji(icon);
+  return (checkinPlanEmojis[category] ?? const <PlanEmojiOption>[]).any(
+    (option) => _baseEmoji(option.emoji) == target,
+  );
 }
 
 /// 把 `#RRGGBB` 解析成颜色；解析不了返回 null，由调用方决定兜底。
