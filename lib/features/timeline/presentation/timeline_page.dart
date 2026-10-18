@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:miji/core/auth/application/sensitive_access_controller.dart';
 import 'package:miji/core/presentation/components/app_skeleton.dart';
@@ -464,94 +465,99 @@ class _EventTile extends StatelessWidget {
               '${event.at!.toLocal().minute.toString().padLeft(2, '0')}'
         : '全天';
 
+    final target = event.target;
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 3,
+            height: 34,
+            margin: const EdgeInsets.only(top: 2),
+            decoration: BoxDecoration(
+              color: predicted ? Colors.transparent : color,
+              border: predicted
+                  ? Border(left: BorderSide(color: color, width: 2))
+                  : null,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 42,
+            child: Text(
+              timeText,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: event.isTimed ? scheme.onSurfaceVariant : scheme.outline,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hidden ? timelineLockedHealthTitle : event.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: dimmed ? scheme.onSurfaceVariant : scheme.onSurface,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _subtitleFor(event, hidden: hidden, masked: masked),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (event.amountMinor != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              masked ? '••••' : formatMoneyMinor(event.amountMinor!, 'CNY'),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: event.amountMinor! < 0
+                    ? theme.moneyColors.expense
+                    : theme.moneyColors.income,
+                letterSpacing: 0,
+              ),
+            ),
+          ] else if (event.emphasis == TimelineEmphasis.attention)
+            Container(
+              width: 6,
+              height: 6,
+              margin: const EdgeInsets.only(top: 7),
+              decoration: BoxDecoration(
+                color: scheme.error,
+                shape: BoxShape.circle,
+              ),
+            ),
+        ],
+      ),
+    );
     return Opacity(
       opacity: predicted ? 0.72 : 1,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 3,
-              height: 34,
-              margin: const EdgeInsets.only(top: 2),
-              decoration: BoxDecoration(
-                color: predicted ? Colors.transparent : color,
-                border: predicted
-                    ? Border(left: BorderSide(color: color, width: 2))
-                    : null,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      child: target == null
+          ? row
+          // 行可点：跳到来源（待办详情 / 模块面板）。时间线本身仍然只读。
+          : InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => context.push(target.route),
+              child: row,
             ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 42,
-              child: Text(
-                timeText,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: event.isTimed
-                      ? scheme.onSurfaceVariant
-                      : scheme.outline,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    hidden ? timelineLockedHealthTitle : event.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: dimmed
-                          ? scheme.onSurfaceVariant
-                          : scheme.onSurface,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _subtitleFor(event, hidden: hidden, masked: masked),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (event.amountMinor != null) ...[
-              const SizedBox(width: 8),
-              Text(
-                masked ? '••••' : formatMoneyMinor(event.amountMinor!, 'CNY'),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: event.amountMinor! < 0
-                      ? theme.moneyColors.expense
-                      : theme.moneyColors.income,
-                  letterSpacing: 0,
-                ),
-              ),
-            ] else if (event.emphasis == TimelineEmphasis.attention)
-              Container(
-                width: 6,
-                height: 6,
-                margin: const EdgeInsets.only(top: 7),
-                decoration: BoxDecoration(
-                  color: scheme.error,
-                  shape: BoxShape.circle,
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/auth/application/sensitive_access_controller.dart';
@@ -256,6 +257,115 @@ void main() {
     await tester.tap(find.text('回顾'));
     await tester.pumpAndSettle();
     expect(find.textContaining('回顾只包含已经发生的事'), findsOneWidget);
+  });
+
+  testWidgets('点行跳到来源；没有目标的行点不动', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final router = GoRouter(
+      initialLocation: '/timeline',
+      routes: [
+        GoRoute(
+          path: '/timeline',
+          builder: (context, state) => const TimelinePage(),
+        ),
+        GoRoute(
+          path: '/app/bookkeeping',
+          builder: (context, state) => Scaffold(
+            body: Text(
+              '记账面板 ${state.uri.queryParameters['section']}',
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/app/gtd/tasks/:taskId',
+          builder: (context, state) => Scaffold(
+            body: Text('待办详情 ${state.pathParameters['taskId']}'),
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authSessionControllerProvider.overrideWith(() => _Unlocked()),
+          timelineScopeProvider.overrideWith(_FixedScope.new),
+          timelineMoneyReaderProvider.overrideWithValue(
+            (ref, window) async => [
+              TimelineEvent(
+                id: 'money:commitment:installment:1',
+                occurredOn: DateTime.utc(2026, 10, 18),
+                module: TimelineModule.money,
+                nature: TimelineNature.commitment,
+                kind: 'commitment.installment',
+                title: '车贷第 3 期',
+                target: const TimelineTarget(
+                  route: '/app/bookkeeping?section=installments',
+                  label: '看明细',
+                ),
+              ),
+              // 没有 target 的事件（理论上不该出现，这里只验证不会崩）。
+              TimelineEvent(
+                id: 'no-target',
+                occurredOn: DateTime.utc(2026, 10, 18),
+                module: TimelineModule.money,
+                nature: TimelineNature.commitment,
+                kind: 'commitment.other',
+                title: '没有去处的那一条',
+              ),
+            ],
+          ),
+          timelineTodoReaderProvider.overrideWithValue(
+            (ref, window) async => [
+              TimelineEvent(
+                id: 'action:todo:task-9',
+                occurredOn: DateTime.utc(2026, 10, 18),
+                module: TimelineModule.action,
+                nature: TimelineNature.commitment,
+                kind: 'todoDue',
+                title: '体检预约',
+                ruleId: 'rule-1',
+                target: const TimelineTarget(
+                  route: '/app/gtd/tasks/task-9',
+                  label: '看待办',
+                  askRuleScope: true,
+                ),
+              ),
+            ],
+          ),
+          timelineHabitReaderProvider.overrideWithValue(
+            (ref, window) async => const [],
+          ),
+          timelineHealthReaderProvider.overrideWithValue(
+            (ref, window) async => const [],
+          ),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 义务 → 记账的分期面板。
+    await tester.tap(find.text('车贷第 3 期'));
+    await tester.pumpAndSettle();
+    expect(find.text('记账面板 installments'), findsOneWidget);
+
+    // 返回时间线，待办 → 待办详情。
+    router.pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('体检预约'));
+    await tester.pumpAndSettle();
+    expect(find.text('待办详情 task-9'), findsOneWidget);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    // 没有目标的行不崩。
+    await tester.tap(find.text('没有去处的那一条'));
+    await tester.pumpAndSettle();
+    expect(find.text('没有去处的那一条'), findsOneWidget);
   });
 }
 

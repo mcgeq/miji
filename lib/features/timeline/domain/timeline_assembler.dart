@@ -206,6 +206,10 @@ TimelineEvent _transactionEvent(MoneyTransactionEntity transaction) {
     subtitle: _transactionSubtitle(transaction),
     amountMinor: signed,
     currencyCode: transaction.currencyCode,
+    target: const TimelineTarget(
+      route: '/app/bookkeeping?section=transactions',
+      label: '看流水',
+    ),
   );
 }
 
@@ -234,7 +238,19 @@ TimelineEvent _commitmentEvent(MoneyBudgetCommitmentItem item) {
     subtitle: item.detail,
     amountMinor: -item.amountMinor,
     currencyCode: item.currencyCode,
+    target: TimelineTarget(route: _commitmentRoute(item.source), label: '看明细'),
   );
+}
+
+/// 四种未来义务各有自己的面板：分期、自动记账、提醒、待确认流水。
+String _commitmentRoute(MoneyBudgetCommitmentSource source) {
+  final section = switch (source) {
+    MoneyBudgetCommitmentSource.installment => 'installments',
+    MoneyBudgetCommitmentSource.autoPosting => 'autoPosting',
+    MoneyBudgetCommitmentSource.billReminder => 'reminders',
+    MoneyBudgetCommitmentSource.pendingTransaction => 'transactions',
+  };
+  return '/app/bookkeeping?section=$section';
 }
 
 // ───────────────────────── 待办 ─────────────────────────
