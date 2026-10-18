@@ -95,6 +95,12 @@ class AppSwipeAction {
   final VoidCallback onPressed;
 }
 
+/// 两列布局下每个格子的高度下限。
+///
+/// 28 是「还点得中」的下限：再小就回到原来那种十几像素的圆点了。行高不够时
+/// 由 `AppSwipeActionTile` 给 child 加最小高度来保证。
+const double _minCellHeight = 32;
+
 class AppSwipeActionTile extends StatefulWidget {
   const AppSwipeActionTile({
     super.key,
@@ -128,7 +134,19 @@ class _AppSwipeActionTileState extends State<AppSwipeActionTile> {
 
   bool get _hasActions => widget.actions.isNotEmpty;
 
-  bool get _isOpen => _dragOffset <= -widget.actionPaneWidth / 2;
+  /// 一个动作时保持单列（面板窄、不抢宽度），两个及以上排成两列。
+  ///
+  /// 为什么要分列：面板高度就是**行高**，而一列里塞四个动作时每个按钮只剩
+  /// 十几像素 —— 圆点小到点不中。竖着排还会随着动作数量继续变小；横着排，
+  /// 每个格子都能占满行高，动作多只会多一行。
+  int get _columns => widget.actions.length <= 1 ? 1 : 2;
+
+  int get _rows => (widget.actions.length / _columns).ceil();
+
+  /// 面板实际宽度：每列 `actionPaneWidth`。
+  double get _paneWidth => widget.actionPaneWidth * _columns;
+
+  bool get _isOpen => _dragOffset <= -_paneWidth / 2;
 
   @override
   void didUpdateWidget(covariant AppSwipeActionTile oldWidget) {
@@ -159,7 +177,8 @@ class _AppSwipeActionTileState extends State<AppSwipeActionTile> {
             child: Align(
               alignment: Alignment.centerRight,
               child: _AppSwipeActionPane(
-                width: widget.actionPaneWidth,
+                width: _paneWidth,
+                columns: _columns,
                 actions: [
                   for (final action in widget.actions)
                     AppSwipeAction(
@@ -183,7 +202,17 @@ class _AppSwipeActionTileState extends State<AppSwipeActionTile> {
               duration: widget.slideDuration,
               curve: Curves.easeOutCubic,
               transform: Matrix4.translationValues(_dragOffset, 0, 0),
-              child: widget.child,
+              // 两列两行时给行一个下限：格子高度 = 行高 / 行数，行太矮的话
+              // 换列也只是把「一列四个小圆点」变成「两列两个小方块」。
+              // 单个动作不受影响（它本来就占满整行高度）。
+              child: _rows <= 1
+                  ? widget.child
+                  : ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: _rows * _minCellHeight + (_rows - 1) * 4 + 8,
+                      ),
+                      child: widget.child,
+                    ),
             ),
           ),
         ],
@@ -207,7 +236,7 @@ class _AppSwipeActionTileState extends State<AppSwipeActionTile> {
   void _handleHorizontalDragUpdate(DragUpdateDetails details) {
     setState(() {
       _dragOffset = (_dragOffset + details.delta.dx)
-          .clamp(-widget.actionPaneWidth, 0)
+          .clamp(-_paneWidth, 0)
           .toDouble();
     });
   }
@@ -229,15 +258,20 @@ class _AppSwipeActionTileState extends State<AppSwipeActionTile> {
 
   void _setOpen(bool value) {
     setState(() {
-      _dragOffset = value ? -widget.actionPaneWidth : 0;
+      _dragOffset = value ? -_paneWidth : 0;
     });
   }
 }
 
 class _AppSwipeActionPane extends StatelessWidget {
-  const _AppSwipeActionPane({required this.width, required this.actions});
+  const _AppSwipeActionPane({
+    required this.width,
+    required this.columns,
+    required this.actions,
+  });
 
   final double width;
+  final int columns;
   final List<AppSwipeAction> actions;
 
   @override
@@ -248,35 +282,37 @@ class _AppSwipeActionPane extends StatelessWidget {
         if (actionCount == 0) {
           return SizedBox(width: width, height: double.infinity);
         }
-        final spacing = actionCount <= 1
-            ? 0.0
-            : actionCount >= 3
-            ? 4.0
-            : 6.0;
-        final verticalPadding =
-            constraints.maxHeight.isFinite && constraints.maxHeight < 96
-            ? 4.0
-            : 8.0;
-        final availableHeight = constraints.maxHeight.isFinite
-            ? constraints.maxHeight -
-                  verticalPadding * 2 -
-                  spacing * (actionCount - 1)
-            : 40.0;
-        final buttonSize = availableHeight / actionCount;
-        final resolvedButtonSize = buttonSize.clamp(0.0, 40.0).toDouble();
+
+        final rows = (actionCount / columns).ceil();
+        const spacing = 4.0;
+        // 上下各留 4px 的呼吸位；算格子时必须把它扣掉，否则 Column 会比
+        // 可用高度多出 8px（溢出）。
+        const verticalPadding = 4.0;
+        // 约束可能无限（列表项在 Column 里布局时），给一个保底高度，
+        // 免得算出 Infinity 的格子。
+        final height = constraints.maxHeight.isFinite
+            ? constraints.maxHeight - verticalPadding * 2
+            : rows * _minCellHeight + (rows - 1) * spacing;
+        final cellWidth = (width - spacing * (columns - 1)) / columns;
+        final cellHeight = (height - spacing * (rows - 1)) / rows;
 
         return SizedBox(
           width: width,
           height: double.infinity,
-          child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: verticalPadding),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                for (var index = 0; index < actions.length; index++) ...[
-                  if (index > 0) SizedBox(height: spacing),
-                  _AppSwipeActionButton(
-                    action: actions[index],
-                    size: resolvedButtonSize,
+                for (var row = 0; row < rows; row++) ...[
+                  if (row > 0) const SizedBox(height: spacing),
+                  Row(
+                    children: [
+                      for (var column = 0; column < columns; column++) ...[
+                        if (column > 0) const SizedBox(width: spacing),
+                        _cellFor(row, column, cellWidth, cellHeight),
+                      ],
+                    ],
                   ),
                 ],
               ],
@@ -286,31 +322,55 @@ class _AppSwipeActionPane extends StatelessWidget {
       },
     );
   }
+
+  /// 格子按「行优先」填：第 n 个动作落在 `n ~/ columns` 行。
+  Widget _cellFor(int row, int column, double cellWidth, double cellHeight) {
+    final index = row * columns + column;
+    if (index >= actions.length) {
+      // 动作数不是列数的整数倍时，最后一行留空位，格子不会撑变形。
+      return SizedBox(width: cellWidth, height: cellHeight);
+    }
+    return _AppSwipeActionButton(
+      action: actions[index],
+      width: cellWidth,
+      height: cellHeight,
+    );
+  }
 }
 
 class _AppSwipeActionButton extends StatelessWidget {
-  const _AppSwipeActionButton({required this.action, required this.size});
+  const _AppSwipeActionButton({
+    required this.action,
+    required this.width,
+    required this.height,
+  });
 
   final AppSwipeAction action;
-  final double size;
+  final double width;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(
+      (height / 2).clamp(8.0, 14.0).toDouble(),
+    );
     return Tooltip(
       message: action.tooltip,
-      child: SizedBox.square(
-        dimension: size,
+      child: SizedBox(
+        width: width,
+        height: height,
         child: Material(
           color: action.background,
-          shape: const CircleBorder(),
+          borderRadius: radius,
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            customBorder: const CircleBorder(),
+            borderRadius: radius,
             onTap: action.onPressed,
             child: Center(
               child: Icon(
                 action.icon,
-                size: (size * 0.5).clamp(12.0, 20.0).toDouble(),
+                // 图标随格子走，但不必跟着缩到看不见。
+                size: (height * 0.55).clamp(18.0, 22.0).toDouble(),
                 color: action.foreground,
               ),
             ),
