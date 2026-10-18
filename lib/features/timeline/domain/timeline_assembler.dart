@@ -2,6 +2,8 @@ import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/health/domain/health_models.dart';
+import 'package:miji/features/life_energy/domain/salary_segment.dart';
+import 'package:miji/features/life_energy/domain/wishlist_entry.dart';
 import 'package:miji/features/timeline/domain/timeline_event.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 
@@ -426,3 +428,67 @@ TimelineEvent _healthMarkerEvent(HealthCalendarMarker marker) {
 ///
 /// 连「经期」两个字都不能给：它本身就是信息。
 const String timelineLockedHealthTitle = '健康 · 需解锁';
+
+// ───────────────────────── 时薪 ─────────────────────────
+
+/// 时薪模块进时间线的两样东西：**薪水变化**（事实）与**想买冷却结束**（承诺）。
+///
+/// 年终奖**故意不进来**：表里只有「纳税年度」，没有发放日期（`taxYear = 0` 甚至
+/// 表示还没填）。把它画在 1 月 1 日是在编一个日期，而时间线上每一个点都该有
+/// 出处 —— 宁可少一条，也不要一条假的。
+List<TimelineEvent> lifeEnergyEvents({
+  Iterable<SalarySegment> segments = const [],
+  Iterable<WishlistEntry> wishlist = const [],
+}) {
+  return [
+    for (final segment in segments) _salarySegmentEvent(segment),
+    // 已买 / 已放弃的不再「等你决定」，不该出现在将来的时间线上。
+    for (final entry in wishlist)
+      if (entry.cooldownUntil != null && !entry.storedStatus.isSettled)
+        _wishlistCooldownEvent(entry),
+  ];
+}
+
+TimelineEvent _salarySegmentEvent(SalarySegment segment) {
+  final day = DateTime.utc(segment.effectiveYear, segment.effectiveMonth, 1);
+  final employer = segment.employer?.trim();
+  return TimelineEvent(
+    id: 'salary:segment:${segment.id}',
+    occurredOn: day,
+    module: TimelineModule.lifeEnergy,
+    nature: TimelineNature.fact,
+    kind: 'salaryChange',
+    title: '薪水变化',
+    subtitle: [
+      if (employer != null && employer.isNotEmpty) employer else '月薪调整',
+      '按月的起点',
+    ].join(' · '),
+    amountMinor: segment.amountMinor,
+    currencyCode: null,
+    // 段的起点是「哪个月」，不是「哪一天」。
+    target: const TimelineTarget(
+      route: '/app/bookkeeping/life-energy/raises',
+      label: '看薪资历史',
+    ),
+  );
+}
+
+TimelineEvent _wishlistCooldownEvent(WishlistEntry entry) {
+  final at = entry.cooldownUntil!.toUtc();
+  return TimelineEvent(
+    id: 'salary:wishlist:${entry.id}',
+    occurredOn: at,
+    at: at,
+    precision: TimelinePrecision.minute,
+    module: TimelineModule.lifeEnergy,
+    nature: TimelineNature.commitment,
+    kind: 'wishlistReady',
+    title: '「${entry.title}」冷却结束',
+    subtitle: '想买清单 · 今天可以决定',
+    amountMinor: -entry.targetAmountMinor,
+    target: const TimelineTarget(
+      route: '/app/bookkeeping?section=lifeEnergy',
+      label: '看想买清单',
+    ),
+  );
+}

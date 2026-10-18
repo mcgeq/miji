@@ -8,6 +8,7 @@ import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/health/providers/health_providers.dart';
+import 'package:miji/features/life_energy/providers/life_energy_providers.dart';
 import 'package:miji/features/timeline/domain/timeline_assembler.dart';
 import 'package:miji/features/timeline/domain/timeline_event.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
@@ -158,6 +159,10 @@ final timelineHealthReaderProvider = Provider<TimelineEventReader>((ref) {
   return (ref, window) => _healthEvents(ref, window);
 });
 
+final timelineLifeEnergyReaderProvider = Provider<TimelineEventReader>((ref) {
+  return (ref, window) => _lifeEnergyEvents(ref, window);
+});
+
 /// 聚合。
 ///
 /// 每一路单独 try：健康那一页要二次验证、记账可能在重算，任何一路抛错都不该
@@ -197,6 +202,10 @@ final timelineProvider = FutureProvider.autoDispose<TimelineResult>((
     await load(
       TimelineModule.health,
       () => ref.read(timelineHealthReaderProvider)(ref, window),
+    );
+    await load(
+      TimelineModule.lifeEnergy,
+      () => ref.read(timelineLifeEnergyReaderProvider)(ref, window),
     );
   }
 
@@ -271,6 +280,31 @@ Future<List<TimelineEvent>> _habitEvents(Ref ref, TimelineWindow window) async {
     records.addAll(await repository.getRecordsByDate(userId, day));
   }
   return habitEvents(records: records, plans: plans);
+}
+
+Future<List<TimelineEvent>> _lifeEnergyEvents(
+  Ref ref,
+  TimelineWindow window,
+) async {
+  final userId = ref.read(authSessionControllerProvider).userId;
+  if (userId == null) {
+    return const <TimelineEvent>[];
+  }
+  final repository = ref.watch(lifeEnergyRepositoryProvider);
+  // 段与年终奖量级很小（几十年也就几十条），一次取回按窗口过滤。
+  final segments = await repository.fetchSalarySegments(userId);
+  final wishlist = await repository.watchWishlist(userId: userId).first;
+  return lifeEnergyEvents(
+    segments: segments.where(
+      (segment) => window.contains(
+        DateTime.utc(segment.effectiveYear, segment.effectiveMonth, 1),
+      ),
+    ),
+    wishlist: wishlist.where(
+      (entry) => entry.cooldownUntil != null &&
+          window.contains(entry.cooldownUntil!),
+    ),
+  );
 }
 
 Future<List<TimelineEvent>> _healthEvents(

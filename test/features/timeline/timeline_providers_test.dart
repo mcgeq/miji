@@ -34,6 +34,7 @@ void main() {
     required List<TimelineEvent> todo,
     required List<TimelineEvent> habit,
     required List<TimelineEvent> health,
+    List<TimelineEvent> lifeEnergy = const [],
     bool failHealth = false,
   }) {
     final container = ProviderContainer(
@@ -58,6 +59,9 @@ void main() {
           }
           return health;
         }),
+        timelineLifeEnergyReaderProvider.overrideWithValue(
+          (ref, window) async => lifeEnergy,
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -127,6 +131,9 @@ void main() {
         timelineHealthReaderProvider.overrideWithValue(
           (ref, window) async => const [],
         ),
+        timelineLifeEnergyReaderProvider.overrideWithValue(
+          (ref, window) async => const [],
+        ),
       ],
     );
     addTearDown(c.dispose);
@@ -136,6 +143,29 @@ void main() {
     final window = c.read(timelineWindowProvider);
     expect(window.start, DateTime.utc(2026, 10, 12));
     expect(window.end, DateTime.utc(2026, 10, 18));
+  });
+  test('时薪那一路：薪水变化与冷却结束都能进来', () async {
+    final c = container(
+      money: const [],
+      todo: const [],
+      habit: const [],
+      health: const [],
+      lifeEnergy: [
+        event(
+          id: 'salary:segment:1',
+          day: anchor,
+          module: TimelineModule.lifeEnergy,
+        ),
+      ],
+    );
+
+    final result = await c.read(timelineProvider.future);
+    expect(result.failures, isEmpty);
+    expect(result.timeline.days.single.facts, hasLength(1));
+    expect(
+      result.timeline.days.single.facts.single.module,
+      TimelineModule.lifeEnergy,
+    );
   });
 }
 

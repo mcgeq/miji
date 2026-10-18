@@ -4,6 +4,9 @@ import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/health/domain/health_models.dart';
+import 'package:miji/features/life_energy/domain/life_energy_enums.dart';
+import 'package:miji/features/life_energy/domain/salary_segment.dart';
+import 'package:miji/features/life_energy/domain/wishlist_entry.dart';
 import 'package:miji/features/timeline/domain/timeline_assembler.dart';
 import 'package:miji/features/timeline/domain/timeline_event.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
@@ -312,4 +315,105 @@ void main() {
     expect(timeline.days, hasLength(1));
     expect(timeline.days.single.day, DateTime.utc(2026, 10, 14));
   });
+
+  // ── 时薪 ──
+  SalarySegment segment({
+    String id = 'seg-1',
+    int year = 2026,
+    int month = 10,
+    String? employer = '云图科技',
+    int amountMinor = 1600000,
+  }) {
+    return SalarySegment(
+      id: id,
+      userId: 'user-1',
+      employer: employer,
+      effectiveYear: year,
+      effectiveMonth: month,
+      amountMinor: amountMinor,
+      createdAt: day,
+      updatedAt: day,
+    );
+  }
+
+  WishlistEntry wish({
+    String id = 'w-1',
+    String title = '降噪耳机',
+    DateTime? cooldownUntil,
+    WishlistItemStatus status = WishlistItemStatus.waiting,
+  }) {
+    return WishlistEntry(
+      id: id,
+      userId: 'user-1',
+      title: title,
+      targetAmountMinor: 129900,
+      storedStatus: status,
+      cooldownUntil: cooldownUntil,
+      createdAt: day,
+      updatedAt: day,
+    );
+  }
+
+  test('时薪：段起点是事实，落在「哪个月的 1 日」', () {
+    final timeline = assembleTimeline(
+      window: week(),
+      eventGroups: [
+        lifeEnergyEvents(segments: [segment(year: 2026, month: 10)]),
+      ],
+    );
+    // 10/12–10/18 这一周里没有 10/1，所以不出现 —— 段起点是月粒度。
+    expect(timeline.days, isEmpty);
+
+    final month = assembleTimeline(
+      window: TimelineWindow.monthOf(day),
+      eventGroups: [
+        lifeEnergyEvents(segments: [segment(year: 2026, month: 10)]),
+      ],
+    );
+    final first = month.days.first;
+    expect(first.day, DateTime.utc(2026, 10, 1));
+    expect(first.facts.single.kind, 'salaryChange');
+    expect(first.facts.single.subtitle, contains('云图科技'));
+  });
+
+  test('时薪：想买冷却结束是承诺，带时刻；已买的不会再出现', () {
+    final timeline = assembleTimeline(
+      window: week(),
+      eventGroups: [
+        lifeEnergyEvents(
+          wishlist: [
+            wish(
+              id: 'w1',
+              cooldownUntil: DateTime.utc(2026, 10, 14, 22),
+            ),
+            wish(
+              id: 'w2',
+              title: '已买的',
+              cooldownUntil: DateTime.utc(2026, 10, 15, 22),
+              status: WishlistItemStatus.bought,
+            ),
+            // 没有冷却期（立刻可决定）的不需要「等到那一天」。
+            wish(id: 'w3', title: '没冷却'),
+          ],
+        ),
+      ],
+    );
+
+    final events = timeline.days.single.commitments;
+    expect(events, hasLength(1));
+    expect(events.single.kind, 'wishlistReady');
+    expect(events.single.isTimed, isTrue);
+    expect(events.single.precision, TimelinePrecision.minute);
+    expect(events.single.title, contains('降噪耳机'));
+  });
+
+  test('时薪：年终奖不进来（只有年度、没有发放日）', () {
+    // 这条用例是「不做什么」的护栏：把年度当日期画上去是编数据。
+    final timeline = assembleTimeline(
+      window: TimelineWindow.monthOf(day),
+      eventGroups: [lifeEnergyEvents()],
+    );
+    expect(timeline.days, isEmpty);
+  });
+
 }

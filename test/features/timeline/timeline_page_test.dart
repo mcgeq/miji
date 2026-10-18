@@ -80,6 +80,11 @@ void main() {
                 .where((e) => e.module == TimelineModule.health)
                 .toList();
           }),
+          timelineLifeEnergyReaderProvider.overrideWithValue(
+            (ref, window) async => events
+                .where((e) => e.module == TimelineModule.lifeEnergy)
+                .toList(),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
@@ -340,6 +345,9 @@ void main() {
             (ref, window) async => const [],
           ),
           timelineHealthReaderProvider.overrideWithValue(
+            (ref, window) async => const [],
+          ),
+          timelineLifeEnergyReaderProvider.overrideWithValue(
             (ref, window) async => const [],
           ),
         ],
