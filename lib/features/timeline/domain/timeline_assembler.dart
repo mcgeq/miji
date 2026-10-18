@@ -206,8 +206,9 @@ TimelineEvent _transactionEvent(MoneyTransactionEntity transaction) {
     subtitle: _transactionSubtitle(transaction),
     amountMinor: signed,
     currencyCode: transaction.currencyCode,
-    target: const TimelineTarget(
-      route: '/app/bookkeeping?section=transactions',
+    // 直达这一笔。时间线、通知、深链接手里都只有 id，没有实体。
+    target: TimelineTarget(
+      route: '/app/bookkeeping/transactions/${transaction.id}',
       label: '看流水',
     ),
   );

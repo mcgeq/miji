@@ -144,13 +144,14 @@ lib/features/timeline/presentation/timeline_event_tile.dart
 1. **「改这一次 / 改整条规则」没有落地**。待办详情页里没有独立的重复规则编辑器，
    两个选项会落到同一个页面 —— 那是个假选择。现在只在事件上保留 `ruleId`，
    等规则编辑入口做出来再接。
-2. **分期期次跳不到「那一笔流水」**。`MoneyBudgetCommitmentItem` 只带期次 id，
-   没有已入账流水的 id；要做得先在 `upcomingExpenseCommitments` 里把
-   `transactionId` 带出来。所以现在跳到分期面板，而不是假装精确。
+2. **分期期次不可能跳到「那一笔流水」**（2026-10 更正）：`upcomingExpenseCommitments`
+   只返回**待还**期次（`status == pending`），而那笔流水还没产生。所以这里没有
+   「精确跳转」可做，跳到分期面板就是正确终点。已入账的期次会作为**事实**
+   出现在流水里，走的是另一条（下面那条：单笔流水没有路由）。
 
-**同样没有单笔流水的路由**：流水事件跳到流水面板（`?section=transactions`），
-不定位到某一行。要精确到位需要 `getTransactionForUser` + 详情弹层，
-是下一步的事。
+**单笔流水已经有路由了**（2026-10 补）：`/app/bookkeeping/transactions/:id`
+→ `TransactionDetailPage`，按 id 取一次再复用 `TransactionDetailContent`。
+时间线上的流水事件现在直达那一笔，不再只是「进流水面板」。
 
 ## 第 6 步（原始说明）· 事件链跳转（P1）
 

@@ -9,6 +9,7 @@ import 'package:miji/features/auth/presentation/auth_entry_page.dart';
 import 'package:miji/features/auth/presentation/locked_auth_page.dart';
 import 'package:miji/features/auth/presentation/sensitive_unlock_page.dart';
 import 'package:miji/features/bookkeeping/presentation/bookkeeping_page.dart';
+import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_page.dart';
 import 'package:miji/features/gtd/presentation/gtd_page.dart';
 import 'package:miji/features/gtd/presentation/plans/plan_list_page.dart';
 import 'package:miji/features/gtd/presentation/plans/plan_form_page.dart';
@@ -177,6 +178,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ),
             routes: [
+              GoRoute(
+                path: 'transactions/:transactionId',
+                builder: (context, state) => TransactionDetailPage(
+                  transactionId: state.pathParameters['transactionId']!,
+                ),
+              ),
               GoRoute(
                 path: 'life-energy/profile',
                 builder: (context, state) => const LifeEnergyProfilePage(),

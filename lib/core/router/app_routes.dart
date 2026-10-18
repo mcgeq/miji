@@ -16,6 +16,11 @@ class AppRoutes {
   ///
   /// 挂在记账模块下而不是新开一级模块：它读的是同一批流水、同一个账本，
   /// 只是换了一个看钱的视角（钱 = 时间）。
+  /// 单笔流水详情。平时从列表点开用的是弹层；跨模块入口（时间线、通知）
+  /// 只有一个 id，需要一条能直接用 id 打开的路由。
+  static String bookkeepingTransaction(String transactionId) =>
+      '/app/bookkeeping/transactions/$transactionId';
+
   static const bookkeepingLifeEnergyProfile =
       '/app/bookkeeping/life-energy/profile';
   static const bookkeepingLifeEnergyRaises =
