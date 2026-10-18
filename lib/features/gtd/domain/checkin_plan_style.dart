@@ -10,6 +10,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
+import 'package:miji/features/gtd/domain/plan_color.dart';
 
 /// 分类的固定顺序。表单的下拉、emoji 表、默认值都以它为准。
 const List<CheckinPlanCategory> checkinPlanCategories =
@@ -87,16 +88,22 @@ const Map<CheckinPlanCategory, List<String>> checkinPlanEmojis =
     };
 
 /// 新建计划时给的默认配色（按分类取同序下标，保持每类风格稳定）。
-const List<String> checkinPlanColors = <String>[
-  '#0EA5E9', // 天蓝
-  '#8B5CF6', // 紫
-  '#EF4444', // 红
-  '#F59E0B', // 琥珀
-  '#EC4899', // 粉
-  '#10B981', // 绿
-  '#14B8A6', // 青
-  '#6366F1', // 靛
+///
+/// 这八枚只是**快捷色**：表单里另有「自定义」入口，用 HSV 调任意颜色。
+final List<PlanColor> checkinPlanColors = <PlanColor>[
+  PlanColor.tryParse('#0EA5E9')!, // 天蓝
+  PlanColor.tryParse('#8B5CF6')!, // 紫
+  PlanColor.tryParse('#EF4444')!, // 红
+  PlanColor.tryParse('#F59E0B')!, // 琥珀
+  PlanColor.tryParse('#EC4899')!, // 粉
+  PlanColor.tryParse('#10B981')!, // 绿
+  PlanColor.tryParse('#14B8A6')!, // 青
+  PlanColor.tryParse('#6366F1')!, // 靛
 ];
+
+/// 兜底色：分类默认也算不出来时用它（理论上不会发生，防御而已）。
+final PlanColor fallbackPlanColor = checkinPlanColors.last;
+
 
 /// 某个分类的默认 emoji（未知分类落到「其他」）。
 String defaultPlanEmojiFor(CheckinPlanCategory category) {
@@ -104,7 +111,7 @@ String defaultPlanEmojiFor(CheckinPlanCategory category) {
 }
 
 /// 某个分类的默认颜色。
-String defaultPlanColorFor(CheckinPlanCategory category) {
+PlanColor defaultPlanColorFor(CheckinPlanCategory category) {
   final index = checkinPlanCategories.indexOf(category);
   return checkinPlanColors[index % checkinPlanColors.length];
 }
@@ -146,22 +153,20 @@ int? planColorValue(String? hex) {
 /// 一个计划该显示的 emoji 与颜色（展示层共用，避免各处各算一遍）。
 @immutable
 class PlanVisual {
-  const PlanVisual({required this.emoji, required this.colorHex});
+  const PlanVisual({required this.emoji, required this.color});
 
   final String emoji;
-  final String colorHex;
+  final PlanColor color;
 }
 
 PlanVisual planVisualFor({
   required String icon,
   required CheckinPlanCategory category,
-  String? color,
+  PlanColor? color,
 }) {
   return PlanVisual(
     emoji: resolvePlanEmoji(icon: icon, category: category),
-    colorHex: (color == null || color.isEmpty)
-        ? defaultPlanColorFor(category)
-        : color,
+    color: color ?? defaultPlanColorFor(category),
   );
 }
 
@@ -170,12 +175,12 @@ PlanVisual planVisualFor({
 class PlanStyleSelection {
   const PlanStyleSelection({
     required this.emoji,
-    required this.colorHex,
+    required this.color,
     required this.customized,
   });
 
   final String emoji;
-  final String colorHex;
+  final PlanColor color;
 
   /// 用户是否手动选过（选过之后切换分类不再覆盖）。
   final bool customized;
@@ -191,7 +196,7 @@ class PlanStyleSelection {
     }
     return PlanStyleSelection(
       emoji: defaultPlanEmojiFor(nextCategory),
-      colorHex: defaultPlanColorFor(nextCategory),
+      color: defaultPlanColorFor(nextCategory),
       customized: false,
     );
   }
@@ -199,14 +204,14 @@ class PlanStyleSelection {
   /// 用户点了某个 emoji。
   PlanStyleSelection withEmoji(String next) => PlanStyleSelection(
     emoji: next,
-    colorHex: colorHex,
+    color: color,
     customized: true,
   );
 
-  /// 用户点了某个颜色（不动「自定义图标」的标记）。
-  PlanStyleSelection withColor(String next) => PlanStyleSelection(
+  /// 用户换了颜色（不动「自定义图标」的标记）。
+  PlanStyleSelection withColor(PlanColor next) => PlanStyleSelection(
     emoji: emoji,
-    colorHex: next,
+    color: next,
     customized: customized,
   );
 
@@ -214,11 +219,11 @@ class PlanStyleSelection {
   factory PlanStyleSelection.fromPlan({
     required String icon,
     required CheckinPlanCategory category,
-    required String color,
+    required PlanColor? color,
   }) {
     return PlanStyleSelection(
       emoji: icon,
-      colorHex: color.isEmpty ? defaultPlanColorFor(category) : color,
+      color: color ?? defaultPlanColorFor(category),
       customized: !isBuiltInPlanEmoji(icon, category),
     );
   }

@@ -74,7 +74,7 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
         _icon = style.emoji;
         _iconCustomized = style.customized;
         _iconController.text = _iconCustomized ? plan.icon : '';
-        _color = style.colorHex;
+        _color = style.color;
         _planType = plan.planType;
         _frequencyType = plan.frequencyType;
         _targetController.text = plan.targetValue.toString();
@@ -111,13 +111,13 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
           PlanStylePicker(
             category: _category,
             emoji: _icon,
-            colorHex: _color,
+            color: _color,
             customized: _iconCustomized,
             customController: _iconController,
             onEmojiChanged: (value) => setState(() {
               final next = PlanStyleSelection(
                 emoji: _icon,
-                colorHex: _color,
+                color: _color,
                 customized: _iconCustomized,
               ).withEmoji(value);
               _icon = next.emoji;
@@ -146,11 +146,11 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
                 // 这里只负责套用：改分类时默认图标跟着换，除非用户手动选过。
                 final next = PlanStyleSelection(
                   emoji: _icon,
-                  colorHex: _color,
+                  color: _color,
                   customized: _iconCustomized,
                 ).onCategoryChanged(v);
                 _icon = next.emoji;
-                _color = next.colorHex;
+                _color = next.color;
                 _iconCustomized = next.customized;
               });
             },

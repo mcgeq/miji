@@ -11,6 +11,7 @@ import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/router/app_module_nav.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
+import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
 import 'package:miji/features/gtd/presentation/checkin/record_detail_sheet.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/todo/presentation/today_action_list_view.dart';
@@ -432,9 +433,11 @@ class _PlanProgressCard extends ConsumerWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(
                     isCompleted
                         ? Colors.green.shade400
-                        : Color(
-                            int.parse(plan.color.replaceFirst('#', '0xff')),
-                          ),
+                        : planVisualFor(
+                            icon: plan.icon,
+                            category: plan.category,
+                            color: plan.color,
+                          ).color.color,
                   ),
                 ),
               ),

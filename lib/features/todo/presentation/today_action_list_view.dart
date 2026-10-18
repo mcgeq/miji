@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:miji/features/gtd/domain/checkin_models.dart';
+import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
 
@@ -502,9 +503,13 @@ class _HabitActionTile extends ConsumerWidget {
                         value: rate,
                         backgroundColor: colorScheme.surfaceContainerHighest,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(
-                            int.parse(plan.color.replaceFirst('#', '0xff')),
-                          ),
+                          // 颜色的解析只在 PlanColor 里做一次；旧数据没颜色时
+                          // 按分类给默认色，不再各调用点自己 `int.parse`。
+                          planVisualFor(
+                            icon: plan.icon,
+                            category: plan.category,
+                            color: plan.color,
+                          ).color.color,
                         ),
                       ),
                     ),

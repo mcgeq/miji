@@ -1,4 +1,5 @@
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
+import 'package:miji/features/gtd/domain/plan_color.dart';
 
 // ---------------------------------------------------------------------------
 // Extra JSON 子模型
@@ -189,7 +190,7 @@ class CheckinPlan {
     required this.userId,
     required this.name,
     this.icon = '📌',
-    this.color = '#6366F1',
+    this.color = defaultSeedPlanColor,
     this.category = CheckinPlanCategory.other,
     this.planType = CheckinPlanType.cyclic,
     this.frequencyType = CheckinFrequencyType.daily,
@@ -216,7 +217,10 @@ class CheckinPlan {
   final String userId;
   final String name;
   final String icon;
-  final String color;
+
+  /// 计划颜色。读库时解析失败会落到 [defaultSeedPlanColor]，所以这里非空 ——
+  /// 下游（渲染、导出）不必再判一次 null。
+  final PlanColor color;
   final CheckinPlanCategory category;
   final CheckinPlanType planType;
   final CheckinFrequencyType frequencyType;
@@ -243,7 +247,7 @@ class CheckinPlan {
     String? userId,
     String? name,
     String? icon,
-    String? color,
+    PlanColor? color,
     CheckinPlanCategory? category,
     CheckinPlanType? planType,
     CheckinFrequencyType? frequencyType,
@@ -299,7 +303,7 @@ class CheckinPlanDraft {
   const CheckinPlanDraft({
     required this.name,
     this.icon = '📌',
-    this.color = '#6366F1',
+    this.color = defaultSeedPlanColor,
     this.category = CheckinPlanCategory.other,
     this.planType = CheckinPlanType.cyclic,
     this.frequencyType = CheckinFrequencyType.daily,
@@ -316,7 +320,7 @@ class CheckinPlanDraft {
 
   final String name;
   final String icon;
-  final String color;
+  final PlanColor color;
   final CheckinPlanCategory category;
   final CheckinPlanType planType;
   final CheckinFrequencyType frequencyType;

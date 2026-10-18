@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
+import 'package:miji/features/gtd/domain/plan_color.dart';
 import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
 
 /// 内置 emoji / 配色的三条规则：图钉视为未选、分类默认、用户选择优先。
@@ -43,7 +44,10 @@ void main() {
       ),
       '⭐',
     );
-    expect(defaultPlanColorFor(CheckinPlanCategory.other), isNotEmpty);
+    // 每个分类都要有可用的默认色（枚举之后不再有「未知分类」）。
+    for (final category in CheckinPlanCategory.values) {
+      expect(defaultPlanColorFor(category).hex, startsWith('#'));
+    }
   });
 
   test('每个分类都有内置 emoji，且默认值就是列表第一个', () {
@@ -110,15 +114,15 @@ void main() {
       planVisualFor(
         icon: '📌',
         category: CheckinPlanCategory.exercise,
-      ).colorHex,
-      isNotEmpty,
+      ).color,
+      isA<PlanColor>(),
     );
     expect(
       planVisualFor(
         icon: '🚶',
         category: CheckinPlanCategory.exercise,
-        color: '#123456',
-      ).colorHex,
+        color: PlanColor.rgb(0x123456),
+      ).color.hex,
       '#123456',
     );
   });
@@ -126,33 +130,33 @@ void main() {
   test('换分类：没手动选过时，图标与颜色都跟着换', () {
     const initial = PlanStyleSelection(
       emoji: '⭐',
-      colorHex: '#0EA5E9',
+      color: PlanColor.rgb(0x0EA5E9),
       customized: false,
     );
 
     final next = initial.onCategoryChanged(CheckinPlanCategory.exercise);
     expect(next.emoji, defaultPlanEmojiFor(CheckinPlanCategory.exercise));
-    expect(next.colorHex, defaultPlanColorFor(CheckinPlanCategory.exercise));
+    expect(next.color, defaultPlanColorFor(CheckinPlanCategory.exercise));
     expect(next.customized, isFalse);
   });
 
   test('换分类：手动选过之后一律不动', () {
     const customized = PlanStyleSelection(
       emoji: '🐳',
-      colorHex: '#123456',
+      color: PlanColor.rgb(0x123456),
       customized: true,
     );
 
     final next = customized.onCategoryChanged(CheckinPlanCategory.anniversary);
     expect(next.emoji, '🐳', reason: '用户自己的选择不能被分类默认顶掉');
-    expect(next.colorHex, '#123456');
+    expect(next.color.hex, '#123456');
     expect(next.customized, isTrue);
   });
 
   test('点 emoji 会标记为自定义；点颜色不改变这个标记', () {
     const initial = PlanStyleSelection(
       emoji: '⭐',
-      colorHex: '#0EA5E9',
+      color: PlanColor.rgb(0x0EA5E9),
       customized: false,
     );
 
@@ -160,28 +164,28 @@ void main() {
     expect(pickedEmoji.customized, isTrue);
     expect(pickedEmoji.emoji, '🎁');
 
-    final pickedColor = pickedEmoji.withColor('#10B981');
+    final pickedColor = pickedEmoji.withColor(PlanColor.rgb(0x10B981));
     expect(pickedColor.customized, isTrue, reason: '换颜色不等于换图标');
-    expect(pickedColor.colorHex, '#10B981');
+    expect(pickedColor.color.hex, '#10B981');
   });
 
   test('编辑已有计划：内置 emoji 不算自定义，图钉算未选', () {
     final builtIn = PlanStyleSelection.fromPlan(
       icon: '🚶',
       category: CheckinPlanCategory.exercise,
-      color: '#84CC16',
+      color: PlanColor.tryParse('#84CC16'),
     );
     expect(builtIn.customized, isFalse);
-    expect(builtIn.colorHex, '#84CC16');
+    expect(builtIn.color.hex, '#84CC16');
 
     final legacy = PlanStyleSelection.fromPlan(
       icon: legacyDefaultPlanIcon,
       category: CheckinPlanCategory.exercise,
-      color: '',
+      color: null,
     );
     expect(legacy.customized, isTrue, reason: '图钉不属于内置集合，显示为自定义');
     expect(
-      legacy.colorHex,
+      legacy.color,
       defaultPlanColorFor(CheckinPlanCategory.exercise),
       reason: '旧数据没颜色时补默认',
     );
@@ -189,7 +193,7 @@ void main() {
     final custom = PlanStyleSelection.fromPlan(
       icon: '🐳',
       category: CheckinPlanCategory.exercise,
-      color: '#123456',
+      color: PlanColor.tryParse('#123456'),
     );
     expect(custom.customized, isTrue);
   });

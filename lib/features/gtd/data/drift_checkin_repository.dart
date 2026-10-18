@@ -7,6 +7,7 @@ import 'package:miji/core/attachments/attachment_store.dart';
 import 'package:miji/core/database/app_database.dart' as db;
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
+import 'package:miji/features/gtd/domain/plan_color.dart';
 import 'package:miji/features/gtd/domain/checkin_repository.dart';
 
 /// Drift 实现的打卡 Repository
@@ -87,7 +88,7 @@ class DriftCheckinRepository implements CheckinRepository {
             userId: userId,
             name: draft.name,
             icon: Value(draft.icon),
-            color: Value(draft.color),
+            color: Value(draft.color.hex),
             category: Value(draft.category.storageValue),
             planType: Value(draft.planType.value),
             frequencyType: Value(draft.frequencyType.value),
@@ -118,7 +119,7 @@ class DriftCheckinRepository implements CheckinRepository {
       db.CheckinPlansCompanion(
         name: Value(plan.name),
         icon: Value(plan.icon),
-        color: Value(plan.color),
+        color: Value(plan.color.hex),
         category: Value(plan.category.storageValue),
         planType: Value(plan.planType.value),
         frequencyType: Value(plan.frequencyType.value),
@@ -725,7 +726,8 @@ class DriftCheckinRepository implements CheckinRepository {
       userId: row.userId,
       name: row.name,
       icon: row.icon,
-      color: row.color,
+      // 解析失败落到默认色：颜色坏了不该让整条计划读不出来。
+      color: PlanColor.parseOr(row.color, defaultSeedPlanColor),
       category: CheckinPlanCategory.fromStorageValue(row.category),
       planType: CheckinPlanType.fromValue(row.planType),
       frequencyType: CheckinFrequencyType.fromValue(row.frequencyType),

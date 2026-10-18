@@ -4,6 +4,7 @@ import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
+import 'package:miji/features/gtd/domain/plan_color.dart';
 
 /// 计划的小图标（一枚圆角底 + emoji）。
 ///
@@ -19,7 +20,7 @@ class CheckinPlanIcon extends StatelessWidget {
     super.key,
     required this.icon,
     required this.category,
-    this.colorHex,
+    this.color,
     this.size = 26,
   });
 
@@ -28,18 +29,18 @@ class CheckinPlanIcon extends StatelessWidget {
         key: key,
         icon: plan?.icon ?? legacyDefaultPlanIcon,
         category: plan?.category ?? CheckinPlanCategory.other,
-        colorHex: plan?.color,
+        color: plan?.color,
         size: size,
       );
 
   final String icon;
   final CheckinPlanCategory category;
 
-  /// 计划颜色（`#RRGGBB`）。null / 坏值 → 按分类的默认色。
+  /// 计划颜色。null → 按分类的默认色（旧计划不用迁移）。
   ///
   /// 底色跟着计划颜色走，是因为计划列表里一水的灰底会让「哪个是哪个」全靠
   /// emoji 分辨；旧计划没有颜色也不需要迁移，渲染时给分类默认色即可。
-  final String? colorHex;
+  final PlanColor? color;
 
   /// 圆角底边长。emoji 按它的 0.55 缩放。
   final double size;
@@ -47,20 +48,19 @@ class CheckinPlanIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final emoji = resolvePlanEmoji(icon: icon, category: category);
-    final tint = planColorValue(
-      planVisualFor(icon: icon, category: category, color: colorHex).colorHex,
-    );
+    final tint = planVisualFor(
+      icon: icon,
+      category: category,
+      color: color,
+    ).color.color;
 
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: tint == null
-            ? scheme.surfaceContainerHighest.withValues(alpha: 0.7)
-            : Color(tint).withValues(alpha: 0.16),
+        color: tint.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
       ),
       child: Text(emoji, style: TextStyle(fontSize: size * 0.55, height: 1)),
