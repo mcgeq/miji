@@ -87,7 +87,7 @@ class _RecordDetailSheetState extends ConsumerState<_RecordDetailSheet> {
           children: [
             Row(
               children: [
-                CheckinPlanIcon(plan: plan, size: 30),
+                CheckinPlanIcon.forPlan(plan, size: 30),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(

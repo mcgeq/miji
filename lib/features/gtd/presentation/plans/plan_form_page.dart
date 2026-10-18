@@ -6,6 +6,8 @@ import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/notifications/notification_providers.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
+import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
+import 'package:miji/features/gtd/presentation/plans/plan_style_picker.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
@@ -23,7 +25,16 @@ class PlanFormPage extends ConsumerStatefulWidget {
 
 class _PlanFormPageState extends ConsumerState<PlanFormPage> {
   final _nameController = TextEditingController();
-  final _iconController = TextEditingController(text: '📌');
+
+  /// 自定义 emoji 的输入框（只有打开「自定义」时才可见）。
+  final _iconController = TextEditingController();
+
+  /// 当前选中的 emoji。默认跟随分类。
+  var _icon = defaultPlanEmojiFor('其他');
+
+  /// 用户是否手动选过图标（选过之后切换分类不再覆盖）。
+  var _iconCustomized = false;
+  var _color = defaultPlanColorFor('其他');
   var _category = '其他';
   var _planType = CheckinPlanType.cyclic;
   var _frequencyType = CheckinFrequencyType.daily;
@@ -54,8 +65,16 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
       if (plan == null) return;
       setState(() {
         _nameController.text = plan.name;
-        _iconController.text = plan.icon;
         _category = plan.category;
+        final style = PlanStyleSelection.fromPlan(
+          icon: plan.icon,
+          category: plan.category,
+          color: plan.color,
+        );
+        _icon = style.emoji;
+        _iconCustomized = style.customized;
+        _iconController.text = _iconCustomized ? plan.icon : '';
+        _color = style.colorHex;
         _planType = plan.planType;
         _frequencyType = plan.frequencyType;
         _targetController.text = plan.targetValue.toString();
@@ -89,14 +108,51 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
             hintText: '例如：喝水、学习、跑步',
           ),
           const SizedBox(height: 12),
-          AppTextField(controller: _iconController, labelText: '图标 (emoji)'),
+          PlanStylePicker(
+            category: _category,
+            emoji: _icon,
+            colorHex: _color,
+            customized: _iconCustomized,
+            customController: _iconController,
+            onEmojiChanged: (value) => setState(() {
+              final next = PlanStyleSelection(
+                emoji: _icon,
+                colorHex: _color,
+                customized: _iconCustomized,
+              ).withEmoji(value);
+              _icon = next.emoji;
+              _iconCustomized = next.customized;
+            }),
+            onColorChanged: (value) => setState(() => _color = value),
+            onCustomToggled: () => setState(() {
+              _iconCustomized = true;
+              if (_iconController.text.trim().isEmpty) {
+                _iconController.text = _icon;
+              }
+            }),
+          ),
           const SizedBox(height: 12),
           FormDropdown<String>(
             initialSelection: _category,
             label: '分类',
             enableFilter: true,
             onSelected: (v) {
-              if (v != null) setState(() => _category = v);
+              if (v == null) {
+                return;
+              }
+              setState(() {
+                _category = v;
+                // 规则在 domain 里（`PlanStyleSelection.onCategoryChanged`），
+                // 这里只负责套用：改分类时默认图标跟着换，除非用户手动选过。
+                final next = PlanStyleSelection(
+                  emoji: _icon,
+                  colorHex: _color,
+                  customized: _iconCustomized,
+                ).onCategoryChanged(v);
+                _icon = next.emoji;
+                _color = next.colorHex;
+                _iconCustomized = next.customized;
+              });
             },
             entries: const [
               DropdownMenuEntry(
@@ -278,7 +334,8 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
         if (existing != null) {
           final updated = existing.copyWith(
             name: name,
-            icon: _iconController.text,
+            icon: _icon,
+            color: _color,
             category: _category,
             planType: _planType,
             frequencyType: _frequencyType,
@@ -299,7 +356,8 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
         final newPlan = await repo.createPlan(
           CheckinPlanDraft(
             name: name,
-            icon: _iconController.text,
+            icon: _icon,
+            color: _color,
             category: _category,
             planType: _planType,
             frequencyType: _planType == CheckinPlanType.event

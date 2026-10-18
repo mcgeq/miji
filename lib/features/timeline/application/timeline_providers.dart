@@ -301,8 +301,8 @@ Future<List<TimelineEvent>> _lifeEnergyEvents(
       ),
     ),
     wishlist: wishlist.where(
-      (entry) => entry.cooldownUntil != null &&
-          window.contains(entry.cooldownUntil!),
+      (entry) =>
+          entry.cooldownUntil != null && window.contains(entry.cooldownUntil!),
     ),
   );
 }

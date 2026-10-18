@@ -145,10 +145,12 @@ class _TodoTaskListViewState extends ConsumerState<TodoTaskListView> {
     for (final group in groups) {
       rows.add(_TaskGroupHeader(label: group.label, count: group.tasks.length));
       for (final task in group.tasks) {
-        rows.add(Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: _TodoTaskTile(task: task),
-        ));
+        rows.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _TodoTaskTile(task: task),
+          ),
+        );
       }
       rows.add(const SizedBox(height: 6));
     }
@@ -198,9 +200,8 @@ class _TodoTaskListViewState extends ConsumerState<TodoTaskListView> {
 
     // 组内排序：逾期最久的在前，其余按日期近的在前，无日期的按创建时间倒序。
     overdue.sort(
-      (a, b) => (a.dueAt ?? a.scheduledDate!).compareTo(
-        b.dueAt ?? b.scheduledDate!,
-      ),
+      (a, b) =>
+          (a.dueAt ?? a.scheduledDate!).compareTo(b.dueAt ?? b.scheduledDate!),
     );
     int byDue(TodoTask a, TodoTask b) =>
         (a.dueAt ?? a.scheduledDate!).compareTo(b.dueAt ?? b.scheduledDate!);
@@ -297,9 +298,7 @@ class _TodoTaskTile extends ConsumerWidget {
                             ? Icons.check_circle_rounded
                             : Icons.cancel_rounded,
                         size: 22,
-                        color: isCompleted
-                            ? scheme.primary
-                            : scheme.outline,
+                        color: isCompleted ? scheme.primary : scheme.outline,
                       )
                     : InkResponse(
                         radius: 20,
@@ -380,7 +379,10 @@ class _TodoTaskTile extends ConsumerWidget {
                     invalidateTodayActionData(ref);
                   },
                   itemBuilder: (context) => const [
-                    PopupMenuItem(value: 'schedule_today', child: Text('安排到今天')),
+                    PopupMenuItem(
+                      value: 'schedule_today',
+                      child: Text('安排到今天'),
+                    ),
                     PopupMenuItem(value: 'cancel', child: Text('取消任务')),
                     PopupMenuItem(value: 'delete', child: Text('删除')),
                   ],
@@ -423,9 +425,7 @@ class _TodoTaskTile extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              task.dueAt != null
-                  ? Icons.schedule_rounded
-                  : Icons.event_rounded,
+              task.dueAt != null ? Icons.schedule_rounded : Icons.event_rounded,
               size: 12,
               color: overdue ? scheme.error : scheme.outline,
             ),
@@ -437,10 +437,7 @@ class _TodoTaskTile extends ConsumerWidget {
           ],
         ),
       if (task.category != null)
-        _MetaChip(
-          label: task.category!.name,
-          color: scheme.onSurfaceVariant,
-        ),
+        _MetaChip(label: task.category!.name, color: scheme.onSurfaceVariant),
       if (task.subTasks.isNotEmpty)
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -461,8 +458,7 @@ class _TodoTaskTile extends ConsumerWidget {
         _MetaChip(label: '中', color: scheme.tertiary),
       for (final tag in task.tags.take(2))
         _MetaChip(label: tag.name, color: _parseColor(tag.color, scheme)),
-      if (task.tags.length > 2)
-        Text('+${task.tags.length - 2}', style: style),
+      if (task.tags.length > 2) Text('+${task.tags.length - 2}', style: style),
     ];
   }
 

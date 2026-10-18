@@ -102,7 +102,7 @@ class _PlanTile extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       child: ListTile(
-        leading: CheckinPlanIcon(plan: plan),
+        leading: CheckinPlanIcon.forPlan(plan),
         title: Text(
           plan.name,
           style: theme.textTheme.titleSmall?.copyWith(

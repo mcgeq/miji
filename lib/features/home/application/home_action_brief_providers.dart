@@ -19,6 +19,7 @@ class HomeHabitEntry {
 
   String get name => progress.plan.name;
   String get icon => progress.plan.icon;
+  String get category => progress.plan.category;
 
   String get progressLabel {
     final value = progress.currentValue;

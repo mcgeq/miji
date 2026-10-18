@@ -24,16 +24,17 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
-        home: Scaffold(body: Center(child: CheckinPlanIcon(plan: value))),
+        home: Scaffold(body: Center(child: CheckinPlanIcon.forPlan(value))),
       ),
     );
   }
 
-  testWidgets('旧默认图钉 → 换成按分类的 Material 图标', (tester) async {
+  testWidgets('旧默认图钉 → 换成该分类的默认 emoji', (tester) async {
     await pump(tester, plan(icon: '📌', category: '运动'));
 
     expect(find.text('📌'), findsNothing, reason: '图钉不该出现在列表里');
-    expect(find.byIcon(Icons.directions_run_rounded), findsOneWidget);
+    // 运动分类的第一个内置 emoji 是散步。
+    expect(find.text('🚶'), findsOneWidget);
   });
 
   testWidgets('用户自己挑的 emoji 保留，但只有 14px 上下', (tester) async {
@@ -43,11 +44,11 @@ void main() {
     expect(text.style?.fontSize, closeTo(26 * 0.55, 0.1));
   });
 
-  testWidgets('分类不同给的图标不同', (tester) async {
+  testWidgets('分类不同给的默认 emoji 不同', (tester) async {
     await pump(tester, plan(category: '学习成长'));
-    expect(find.byIcon(Icons.menu_book_outlined), findsOneWidget);
+    expect(find.text('📖'), findsOneWidget);
 
     await pump(tester, plan(category: '纪念日'));
-    expect(find.byIcon(Icons.cake_outlined), findsOneWidget);
+    expect(find.text('🎂'), findsOneWidget);
   });
 }

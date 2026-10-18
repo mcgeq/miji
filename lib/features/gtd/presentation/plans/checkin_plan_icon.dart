@@ -2,48 +2,44 @@ import 'package:flutter/material.dart';
 
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
+import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
 
-/// 计划的小图标。
+/// 计划的小图标（一枚圆角底 + emoji）。
 ///
-/// 为什么不再直接画 emoji：`icon` 的默认值一直是「📌」，于是每个没挑过图标的
-/// 计划前面都挂着一枚图钉 —— 24px 的彩色 emoji 在列表里比标题还抢眼，而它
-/// 传达的信息是零（图钉不是任何人的习惯）。
+/// 为什么不直接 `Text(plan.icon, fontSize: 24)`：
+/// - `icon` 的默认值是「📌」，于是每个没挑过图标的计划前面都挂着一枚图钉，
+///   比计划名还抢眼，且不传达任何信息；
+/// - 同一个 emoji 曾在 20 / 22 / 24 / 28px 四处各画一次，字号与基线都不一致。
 ///
-/// 现在分两种情况：
-/// - `icon` 是旧默认值（`📌`）、空值：按**分类**给一个 Material 图标；
-/// - 用户自己挑过 emoji：照常显示，但缩到 14px 放进同一枚圆角底里。
-///
-/// 旧数据不迁移：把「📌」当成「没选过」在渲染层处理，比改库安全 —— 用户真的
-/// 想要图钉时，表单里仍然能选回来（那时它会被当成用户的选择）。
+/// 统一成 26px 圆角底之后：图钉（历史默认值）按分类换成默认 emoji，用户真正
+/// 挑过的 emoji 原样保留、缩到 14px，底色统一。
 class CheckinPlanIcon extends StatelessWidget {
-  const CheckinPlanIcon({super.key, required this.plan, this.size = 26});
+  const CheckinPlanIcon({
+    super.key,
+    required this.icon,
+    required this.category,
+    this.size = 26,
+  });
 
-  final CheckinPlan? plan;
+  CheckinPlanIcon.forPlan(CheckinPlan? plan, {Key? key, double size = 26})
+    : this(
+        key: key,
+        icon: plan?.icon ?? legacyDefaultPlanIcon,
+        category: plan?.category ?? '其他',
+        size: size,
+      );
 
-  /// 圆角底边长。图标按它的 0.6 缩放。
+  final String icon;
+  final String category;
+
+  /// 圆角底边长。emoji 按它的 0.55 缩放。
   final double size;
-
-  /// 历史默认值，等同「没选过图标」。
-  static const legacyDefaultIcon = '📌';
-
-  static IconData iconForCategory(String category) {
-    return switch (category) {
-      '健康习惯' => Icons.local_drink_outlined,
-      '学习成长' => Icons.menu_book_outlined,
-      '运动' => Icons.directions_run_rounded,
-      '生活记录' => Icons.photo_camera_outlined,
-      '纪念日' => Icons.cake_outlined,
-      _ => Icons.check_circle_outline_rounded,
-    };
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    // `icon` 本身是非空的（默认就是「📌」），所以只有 `plan` 可空。
-    final raw = plan?.icon.trim() ?? '';
-    final chosen = raw.isNotEmpty && raw != legacyDefaultIcon;
+    final emoji = resolvePlanEmoji(icon: icon, category: category);
 
     return Container(
       width: size,
@@ -53,16 +49,7 @@ class CheckinPlanIcon extends StatelessWidget {
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(theme.radiusTokens.sm),
       ),
-      child: chosen
-          ? Text(
-              raw,
-              style: TextStyle(fontSize: size * 0.55, height: 1),
-            )
-          : Icon(
-              iconForCategory(plan?.category ?? ''),
-              size: size * 0.62,
-              color: scheme.onSurfaceVariant,
-            ),
+      child: Text(emoji, style: TextStyle(fontSize: size * 0.55, height: 1)),
     );
   }
 }

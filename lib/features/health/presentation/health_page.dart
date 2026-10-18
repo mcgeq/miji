@@ -82,10 +82,7 @@ class _HealthPageState extends ConsumerState<HealthPage> {
   Widget build(BuildContext context) {
     // 工具行不再放面板 chip（按要求移除）。换面板靠底栏 / 侧栏点当前模块再点
     // 一次（两态唤出）。这里因此也不再为它留一行空白：直接给内容。
-    return AppPageFrame(
-      maxWidth: 760,
-      child: _buildSelectedTab(),
-    );
+    return AppPageFrame(maxWidth: 760, child: _buildSelectedTab());
   }
 
   /// 换面板（工具行 chip）。

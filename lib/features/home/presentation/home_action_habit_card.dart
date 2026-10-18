@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:miji/core/presentation/components/app_surface.dart';
+import 'package:miji/features/gtd/presentation/plans/checkin_plan_icon.dart';
 import 'package:miji/features/home/application/home_action_brief_providers.dart';
 
 /// 习惯打卡卡：进度 + 一键打卡。
@@ -97,7 +98,7 @@ class _HabitTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(habit.icon, style: const TextStyle(fontSize: 20)),
+            CheckinPlanIcon(icon: habit.icon, category: habit.category),
             const SizedBox(height: 6),
             Text(
               habit.name,

@@ -17,6 +17,7 @@ import 'package:miji/features/todo/presentation/today_action_list_view.dart';
 import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
 import 'package:miji/features/todo/presentation/todo_task_list_view.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
+import 'package:miji/features/gtd/presentation/plans/checkin_plan_icon.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 import 'package:miji/features/todo/presentation/todo_stats_view.dart';
 
@@ -111,12 +112,7 @@ class _GtdPageState extends ConsumerState<GtdPage> {
   /// 代价写在这里：面板自身没有标题栏，移除 chip 之后页内没有「我在哪个面板」
   /// 的文字标识。若要补，应该补在各面板自己的标题上，而不是把这个 chip 加回来。
   Widget _buildToolbarRow() {
-    return Row(
-      children: [
-        const Spacer(),
-        ..._buildToolbarActions(),
-      ],
-    );
+    return Row(children: [const Spacer(), ..._buildToolbarActions()]);
   }
 
   /// Mobile: 工具行 + PageView。
@@ -407,7 +403,7 @@ class _PlanProgressCard extends ConsumerWidget {
               // 头部：图标 + 名称 + +1 按钮
               Row(
                 children: [
-                  Text(plan.icon, style: const TextStyle(fontSize: 22)),
+                  CheckinPlanIcon.forPlan(plan),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(

@@ -1,0 +1,176 @@
+// 计划的内置 emoji 与配色。
+//
+// 为什么要有这一份常量：`CheckinPlan.icon` 是自由文本、默认 `'📌'`，于是每个
+// 没挑过图标的计划前面都挂着一枚图钉 —— 它不表达任何信息，却比计划名还抢眼。
+// 内置一套按分类的 emoji，创建时默认就选中一个「像那么回事」的。
+//
+// 为什么用 emoji 而不是 Material 图标：种子里的 17 个模板（喝水💧、早睡🌙、
+// 散步🚶…）本来就有一套精选 emoji，用户换图标时应该在同一套词汇里挑，
+// 而不是被塞进另一套视觉语言。
+import 'package:flutter/foundation.dart';
+
+/// 分类的固定顺序。表单的下拉、emoji 表、默认值都以它为准。
+const List<String> checkinPlanCategories = <String>[
+  '健康习惯',
+  '学习成长',
+  '运动',
+  '生活记录',
+  '纪念日',
+  '其他',
+];
+
+/// 历史默认值：等于「没选过图标」。渲染时会被替换成分类的默认 emoji。
+const String legacyDefaultPlanIcon = '📌';
+
+/// 每个分类内置的 emoji。
+///
+/// 每个分类的第一个是**默认值**（新建时自动选中）。种子模板里用过的 emoji
+/// 都在表里，这样「新建 → 选中 → 之后又改回默认」不会变成两套风格。
+const Map<String, List<String>> checkinPlanEmojis = <String, List<String>>{
+  '健康习惯': <String>['💧', '🌙', '🍚', '🚽', '🚿', '💊', '🧘', '🏥'],
+  '学习成长': <String>['📖', '📚', '📝', '🎧', '🧠', '✍️', '🎓', '💡'],
+  '运动': <String>['🚶', '🏃', '🚴', '🏊', '🏋️', '🤸', '⚽', '🧗'],
+  '生活记录': <String>['📸', '🍜', '🗺️', '🎬', '🐾', '🧹', '☕', '🌱'],
+  '纪念日': <String>['🎂', '💕', '💼', '🎁', '✨', '🥂', '📅', '🏆'],
+  '其他': <String>['⭐', '✅', '🎯', '🔔', '🌟', '📎', '🧩', '🕒'],
+};
+
+/// 新建计划时给的默认配色（按分类取同序下标，保持每类风格稳定）。
+const List<String> checkinPlanColors = <String>[
+  '#0EA5E9', // 天蓝
+  '#8B5CF6', // 紫
+  '#EF4444', // 红
+  '#F59E0B', // 琥珀
+  '#EC4899', // 粉
+  '#10B981', // 绿
+  '#14B8A6', // 青
+  '#6366F1', // 靛
+];
+
+/// 某个分类的默认 emoji（未知分类落到「其他」）。
+String defaultPlanEmojiFor(String category) {
+  final list = checkinPlanEmojis[category] ?? checkinPlanEmojis['其他']!;
+  return list.first;
+}
+
+/// 某个分类的默认颜色。
+String defaultPlanColorFor(String category) {
+  final index = checkinPlanCategories.indexOf(category);
+  if (index < 0) {
+    return checkinPlanColors.last;
+  }
+  return checkinPlanColors[index % checkinPlanColors.length];
+}
+
+/// 渲染时该用哪个 emoji。
+///
+/// 三条规则，顺序不能反：
+/// 1. `📌` / 空 → 分类默认（历史上「没选过」就是图钉）；
+/// 2. 用户自己挑的 emoji → 原样保留（包括不在内置表里的）；
+/// 3. 其余（内置表里的值）→ 原样。
+String resolvePlanEmoji({required String icon, required String category}) {
+  final value = icon.trim();
+  if (value.isEmpty || value == legacyDefaultPlanIcon) {
+    return defaultPlanEmojiFor(category);
+  }
+  return value;
+}
+
+/// 这个 emoji 是否属于该分类的内置集合（用来区分「默认」与「自定义」）。
+bool isBuiltInPlanEmoji(String icon, String category) {
+  final list = checkinPlanEmojis[category] ?? const <String>[];
+  return list.contains(icon);
+}
+
+/// 把 `#RRGGBB` 解析成颜色；解析不了返回 null，由调用方决定兜底。
+int? planColorValue(String? hex) {
+  if (hex == null) {
+    return null;
+  }
+  final raw = hex.replaceFirst('#', '');
+  if (raw.length != 6) {
+    return null;
+  }
+  return int.tryParse('ff$raw', radix: 16);
+}
+
+/// 一个计划该显示的 emoji 与颜色（展示层共用，避免各处各算一遍）。
+@immutable
+class PlanVisual {
+  const PlanVisual({required this.emoji, required this.colorHex});
+
+  final String emoji;
+  final String colorHex;
+}
+
+PlanVisual planVisualFor({
+  required String icon,
+  required String category,
+  String? color,
+}) {
+  return PlanVisual(
+    emoji: resolvePlanEmoji(icon: icon, category: category),
+    colorHex: (color == null || color.isEmpty)
+        ? defaultPlanColorFor(category)
+        : color,
+  );
+}
+
+/// 表单里「图标 + 颜色」的当前状态。
+@immutable
+class PlanStyleSelection {
+  const PlanStyleSelection({
+    required this.emoji,
+    required this.colorHex,
+    required this.customized,
+  });
+
+  final String emoji;
+  final String colorHex;
+
+  /// 用户是否手动选过（选过之后切换分类不再覆盖）。
+  final bool customized;
+
+  /// 换分类时该变成什么样。
+  ///
+  /// **规则（用户明确要的）**：换分类时默认图标跟着换；但用户手动选过就不动。
+  /// 抽成纯函数是因为这条规则以前写在 `setState` 里，只能靠点界面试——
+  /// 而那个下拉菜单在测试里很不稳（过滤输入框会抢焦点），规则本身反而没被钉住。
+  PlanStyleSelection onCategoryChanged(String nextCategory) {
+    if (customized) {
+      return this;
+    }
+    return PlanStyleSelection(
+      emoji: defaultPlanEmojiFor(nextCategory),
+      colorHex: defaultPlanColorFor(nextCategory),
+      customized: false,
+    );
+  }
+
+  /// 用户点了某个 emoji。
+  PlanStyleSelection withEmoji(String next) => PlanStyleSelection(
+    emoji: next,
+    colorHex: colorHex,
+    customized: true,
+  );
+
+  /// 用户点了某个颜色（不动「自定义图标」的标记）。
+  PlanStyleSelection withColor(String next) => PlanStyleSelection(
+    emoji: emoji,
+    colorHex: next,
+    customized: customized,
+  );
+
+  /// 编辑一条已有计划时的初始状态。
+  factory PlanStyleSelection.fromPlan({
+    required String icon,
+    required String category,
+    required String color,
+  }) {
+    return PlanStyleSelection(
+      emoji: icon,
+      colorHex: color.isEmpty ? defaultPlanColorFor(category) : color,
+      customized: !isBuiltInPlanEmoji(icon, category),
+    );
+  }
+}
