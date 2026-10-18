@@ -16,6 +16,7 @@ import 'package:miji/features/gtd/presentation/plans/plan_detail_page.dart';
 import 'package:miji/features/gtd/presentation/checkin/photo_checkin_page.dart';
 import 'package:miji/features/todo/presentation/todo_task_detail_page.dart';
 import 'package:miji/features/health/presentation/health_page.dart';
+import 'package:miji/features/timeline/presentation/timeline_page.dart';
 import 'package:miji/features/home/presentation/home_page.dart';
 import 'package:miji/features/life_energy/presentation/life_energy_payroll_page.dart';
 import 'package:miji/features/life_energy/presentation/life_energy_profile_page.dart';
@@ -190,6 +191,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const LifeEnergyPayrollPage(),
               ),
             ],
+          ),
+          GoRoute(
+            path: AppRoutes.timeline,
+            builder: (context, state) => const TimelinePage(),
           ),
           GoRoute(
             path: AppRoutes.health,

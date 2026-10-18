@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>miji · 跨模块时间线 · 界面稿</title>
+<style>
+/* ══════════════════════════════════════════════════════════════
+   取色自应用默认配色「靛墨」light（app_palette.dart）
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#F3F3F1; --surface:#FFFFFF; --sunken:#EAE9E5; --raised:#FFFFFF;
+  --line:#DAD9D6; --outline:#8D8C87;
+  --t1:#1B1A17; --t2:#5C5A54; --t3:#8B8880;
+  --primary:#2A3C5C; --primary-solid:#24344F; --on-primary:#FFFFFF;
+  --primary-container:#E5E9F1; --on-primary-container:#28374F;
+  --tertiary:#776950; --tertiary-container:#EFEDEA;
+  --income:#0E7A48; --income-container:#E2F0E8;
+  --expense:#B93A2C; --expense-container:#F9E6E2;
+  --transfer:#2C6E93; --transfer-container:#E2EDF3;
+  --credit:#8E5AA8; --credit-container:#F1EBF5;
+  --warning:#A9701A; --warning-container:#F3EBDF;
+  /* 模块色：全部取自既有色板，不新引颜色 */
+  --m-money:#2C6E93;   /* 记账 = transfer 蓝 */
+  --m-health:#8E5AA8;  /* 健康 = credit 紫 */
+  --m-action:#0E7A48;  /* 行动 = income 绿 */
+  --m-energy:#A9701A;  /* 时薪 = warning 琥珀 */
+  --shadow:0 1px 2px rgba(27,26,23,.05),0 8px 20px rgba(27,26,23,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{
+  font-family:"PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Hiragino Sans GB",
+    "Noto Sans CJK SC","Source Han Sans SC",Roboto,sans-serif;
+  background:var(--bg);color:var(--t1);line-height:1.5;padding:40px 28px 80px;
+}
+.wrap{max-width:1160px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--t3);text-transform:uppercase}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:8px 0 10px}
+.lede{font-size:14px;color:var(--t2);max-width:760px}
+.lede b{color:var(--t1)}
+
+/* ── 屏幕 ── */
+.stage{display:flex;gap:26px;margin-top:26px;align-items:flex-start;flex-wrap:wrap}
+.screen{
+  width:390px;flex:0 0 390px;background:var(--surface);border:1px solid var(--line);
+  border-radius:26px;box-shadow:var(--shadow);overflow:hidden;
+}
+.screen-cap{font-size:11.5px;color:var(--t3);margin:8px 2px 0;letter-spacing:.02em}
+.screen-cap b{color:var(--t2)}
+
+.appbar{display:flex;align-items:center;gap:8px;padding:14px 16px 8px}
+.appbar .ttl{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.appbar .sp{flex:1}
+.ibtn{width:34px;height:34px;border-radius:12px;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--t2);background:var(--surface)}
+.ibtn.filled{background:var(--primary-solid);border-color:var(--primary-solid);color:var(--on-primary)}
+
+/* 分段控件 */
+.seg{display:flex;gap:4px;background:var(--sunken);border-radius:12px;padding:4px;margin:2px 16px 12px}
+.seg .it{flex:1;text-align:center;font-size:12.5px;font-weight:700;color:var(--t3);
+  padding:7px 0;border-radius:9px;letter-spacing:.01em}
+.seg .it.on{background:var(--surface);color:var(--t1);box-shadow:0 1px 2px rgba(27,26,23,.08)}
+
+/* 日期条 */
+.datestrip{padding:0 16px 10px}
+.month{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:750;color:var(--t2);
+  margin:2px 0 8px}
+.month .arw{color:var(--t3);font-weight:600}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{display:flex;flex-direction:column;align-items:center;gap:5px;padding:6px 0 7px;
+  border-radius:12px;color:var(--t2)}
+.day .w{font-size:10px;font-weight:650;color:var(--t3)}
+.day .d{font-size:14px;font-weight:750;font-variant-numeric:tabular-nums}
+.day .dot{width:5px;height:5px;border-radius:50%;background:var(--t3);opacity:.45}
+.day .dot.k2{width:6px;height:6px;opacity:.75}
+.day .dot.k3{width:7px;height:7px;opacity:1}
+.day.sel{background:var(--primary-solid);color:var(--on-primary)}
+.day.sel .w,.day.sel .d{color:var(--on-primary)}
+.day.sel .dot{background:var(--on-primary);opacity:.9}
+.day.today .d{color:var(--primary)}
+.day.today.sel .d{color:var(--on-primary)}
+.day .dot.none{background:transparent;border:1px solid var(--line);width:6px;height:6px;opacity:1}
+
+/* 容器带 */
+.bands{padding:0 16px 12px;display:flex;flex-direction:column;gap:6px}
+.band{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:650;
+  border-radius:9px;padding:6px 10px}
+.band .lbl{color:var(--t2)}
+.band .val{margin-left:auto;color:var(--t3);font-variant-numeric:tabular-nums}
+.band.budget{background:var(--primary-container);color:var(--on-primary-container)}
+.band.budget .lbl,.band.budget .val{color:var(--on-primary-container);opacity:.85}
+.band.predict{background:var(--credit-container);border:1px dashed #C9B4D8}
+.band.predict .lbl{color:#6E4585}
+
+/* 日分组 */
+.daygroup{padding:0 16px}
+.dh{display:flex;align-items:baseline;gap:8px;margin:12px 0 8px}
+.dh .dd{font-size:13px;font-weight:800}
+.dh .meta{font-size:11px;color:var(--t3);font-weight:600;font-variant-numeric:tabular-nums}
+.dh .zone{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--t3);letter-spacing:.04em}
+
+/* 事件行 */
+.ev{display:flex;align-items:stretch;gap:10px;padding:9px 10px 9px 0;
+  border-bottom:1px solid var(--line);position:relative}
+.ev:last-child{border-bottom:0}
+.ev .bar{width:3px;border-radius:2px;background:var(--m-money);flex:0 0 3px;margin:1px 0 1px 4px}
+.ev.health .bar{background:var(--m-health)}
+.ev.action .bar{background:var(--m-action)}
+.ev.energy .bar{background:var(--m-energy)}
+.ev.predict .bar{background:transparent;border-left:2px dashed #B79AC9}
+.ev .time{width:42px;flex:0 0 42px;font-size:11.5px;font-weight:750;color:var(--t2);
+  font-variant-numeric:tabular-nums;padding-top:2px}
+.ev .time.allday{font-weight:650;color:var(--t3);font-size:11px}
+.ev .ico{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;
+  background:var(--sunken);color:var(--t2);flex:0 0 26px;margin-top:1px}
+.ev.commit .ico{background:transparent;border:1px solid var(--line)}
+.ev.predict .ico{background:transparent;border:1px dashed #C9B4D8;color:#7A5891}
+.ev .mid{flex:1;min-width:0}
+.ev .ti{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev .sub{font-size:11px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.ev .sub .tag{display:inline-block;font-size:9.5px;font-weight:750;letter-spacing:.03em;
+  padding:1px 4px;border-radius:4px;background:var(--sunken);color:var(--t3);vertical-align:1px}
+.ev .right{display:flex;align-items:center;gap:6px;flex:0 0 auto;font-size:11.5px;
+  font-weight:700;font-variant-numeric:tabular-nums;color:var(--t2)}
+.ev .right .amt{color:var(--expense)}
+.ev .chev{color:var(--t3);font-size:13px}
+.ev .warn{width:6px;height:6px;border-radius:50%;background:var(--expense);margin-right:2px}
+.ev.dim{opacity:.72}
+.ev.done .ti{color:var(--t2);font-weight:650}
+.ev.done .right{color:var(--income)}
+
+/* 已发生折叠 */
+.fold{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;
+  color:var(--t2);padding:10px 2px;border-bottom:1px solid var(--line)}
+.fold .cnt{color:var(--t3);font-weight:650}
+.fold .chev{margin-left:auto;color:var(--t3)}
+
+/* 更多 */
+.more{display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 0 18px;
+  font-size:11.5px;font-weight:700;color:var(--primary)}
+
+/* 底栏 */
+.tabbar{display:flex;border-top:1px solid var(--line);background:var(--surface)}
+.tabbar .t{flex:1;text-align:center;padding:10px 0 14px;font-size:10.5px;font-weight:700;
+  color:var(--t3);display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar .t.on{color:var(--primary)}
+.tabbar .t .g{width:20px;height:20px;border-radius:7px;background:var(--sunken)}
+.tabbar .t.on .g{background:var(--primary-container)}
+
+/* 空态 / 锁定态 */
+.empty{padding:40px 24px;text-align:center}
+.empty .big{font-size:15px;font-weight:750;margin-bottom:6px}
+.empty .sm{font-size:12px;color:var(--t3);line-height:1.6}
+.empty .btns{display:flex;gap:8px;justify-content:center;margin-top:16px}
+.empty .btn{font-size:12px;font-weight:750;padding:8px 14px;border-radius:11px;
+  background:var(--primary-solid);color:var(--on-primary)}
+.empty .btn.ghost{background:var(--surface);color:var(--t2);border:1px solid var(--line)}
+.lockrow{display:flex;align-items:center;gap:10px;padding:12px 10px;border-bottom:1px solid var(--line)}
+.lockrow .bar{width:3px;border-radius:2px;background:var(--m-health);flex:0 0 3px;height:32px;margin-left:4px}
+.lockrow .ti{font-size:13px;font-weight:700;color:var(--t2)}
+.lockrow .sub{font-size:11px;color:var(--t3)}
+.lockrow .chev{margin-left:auto;color:var(--t3)}
+
+/* ── 说明栏 ── */
+.notes{flex:1;min-width:300px}
+.nt{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+.nt .n{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--t3);
+  text-transform:uppercase;margin-bottom:6px}
+.nt .t{font-size:13.5px;font-weight:750;margin-bottom:8px}
+.nt ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.nt li{font-size:12px;color:var(--t2);line-height:1.6;padding-left:12px;position:relative}
+.nt li:before{content:"";position:absolute;left:0;top:7px;width:4px;height:4px;
+  border-radius:50%;background:var(--outline)}
+.nt li b{color:var(--t1)}
+.nt.quote{background:var(--primary-container);border-color:#D3DAE6}
+.nt.quote .t{color:var(--on-primary-container);font-weight:700;line-height:1.6}
+
+/* 图例 */
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:4px}
+.legend .row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--t2)}
+.legend .swatch{width:22px;height:14px;border-radius:4px;background:var(--m-money);flex:0 0 22px}
+.legend .swatch.health{background:var(--m-health)}
+.legend .swatch.action{background:var(--m-action)}
+.legend .swatch.energy{background:var(--m-energy)}
+
+/* 回顾 */
+.sum{margin:2px 16px 12px;background:var(--primary-container);border-radius:14px;padding:11px 13px}
+.sum .k{font-size:10.5px;font-weight:750;color:var(--on-primary-container);opacity:.8;letter-spacing:.04em}
+.sum .v{font-size:15px;font-weight:800;color:var(--on-primary-container);margin-top:3px;
+  font-variant-numeric:tabular-nums}
+.sum .v s{text-decoration:none;font-weight:650;font-size:11px;opacity:.75;margin-left:6px}
+.rec{display:flex;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);align-items:baseline}
+.rec .d{width:52px;flex:0 0 52px;font-size:11.5px;font-weight:750;color:var(--t2);
+  font-variant-numeric:tabular-nums}
+.rec .mid{flex:1;font-size:11.5px;color:var(--t2)}
+.rec .mid b{color:var(--t1);font-weight:700}
+.rec .ch{color:var(--t3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">miji · feature sketch</div>
+  <h1>跨模块时间线 · 界面稿</h1>
+  <p class="lede">
+    待办、计划、记账、经期各自有时间，但没有一处把它们放在一起。
+    这一稿是 <b>日程</b> 与 <b>回顾</b> 两个出口的布局：
+    按日分组，组内分「待发生 / 已发生」；容器（预算周期、经期）画成顶部区间带；
+    预测永远与事实不同形。取色全部来自应用默认配色「靛墨」，未引入新颜色。
+  </p>
+
+  <div class="stage">
+    <!-- ══════════ 屏幕 1：日程 ══════════ -->
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">时间线</div>
+          <div class="sp"></div>
+          <div class="ibtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 5h18M6 12h12M10 19h4"/></svg>
+          </div>
+          <div class="ibtn filled">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+          </div>
+        </div>
+
+        <div class="seg"><div class="it on">日程</div><div class="it">回顾</div></div>
+
+        <div class="datestrip">
+          <div class="month"><span class="arw">‹</span> 10 月 <span class="arw">›</span></div>
+          <div class="week">
+            <div class="day"><span class="w">一</span><span class="d">13</span><span class="dot k2"></span></div>
+            <div class="day"><span class="w">二</span><span class="d">14</span><span class="dot none"></span></div>
+            <div class="day"><span class="w">三</span><span class="d">15</span><span class="dot"></span></div>
+            <div class="day"><span class="w">四</span><span class="d">16</span><span class="dot k3"></span></div>
+            <div class="day"><span class="w">五</span><span class="d">17</span><span class="dot k2"></span></div>
+            <div class="day today"><span class="w">六</span><span class="d">18</span><span class="dot k3"></span></div>
+            <div class="day sel"><span class="w">日</span><span class="d">19</span><span class="dot k2"></span></div>
+          </div>
+        </div>
+
+        <div class="bands">
+          <div class="band budget">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 11h18"/></svg>
+            <span class="lbl">预算周期</span>
+            <span class="val">10/01 – 10/31 · 已用 68%</span>
+          </div>
+          <div class="band predict">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="3.2"/></svg>
+            <span class="lbl">经期（预测）</span>
+            <span class="val">10/20 – 10/24 · 按过去 5 个周期</span>
+          </div>
+        </div>
+
+        <div class="daygroup">
+          <div class="dh">
+            <span class="dd">10 月 19 日 周日</span>
+            <span class="meta">待发生 4 · 已发生 3</span>
+            <span class="zone">待发生</span>
+          </div>
+
+          <!-- 承诺：待办 -->
+          <div class="ev action commit">
+            <div class="bar"></div>
+            <div class="time">09:30</div>
+            <div class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg>
+            </div>
+            <div class="mid">
+              <div class="ti">体检预约</div>
+              <div class="sub">来自待办 · <span class="tag">计划</span> · 提醒 09:00</div>
+            </div>
+            <div class="right"><span class="chev">›</span></div>
+          </div>
+
+          <!-- 承诺：自动记账（无时刻 → 全天） -->
+          <div class="ev commit">
+            <div class="bar"></div>
+            <div class="time allday">全天</div>
+            <div class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2" y="6" width="20" height="13" rx="3"/><path d="M2 11h20"/></svg>
+            </div>
+            <div class="mid">
+              <div class="ti">房贷 自动记账</div>
+              <div class="sub">25 日扣款 · <span class="tag">承诺</span> · 每月</div>
+            </div>
+            <div class="right"><span class="amt">−¥8,000</span><span class="chev">›</span></div>
+          </div>
+
+          <!-- 推断：经期预测（虚线） -->
+          <div class="ev health predict">
+            <div class="bar"></div>
+            <div class="time allday">全天</div>
+            <div class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/><circle cx="12" cy="10" r="2.4"/></svg>
+            </div>
+            <div class="mid">
+              <div class="ti">预计经期开始</div>
+              <div class="sub">按过去 5 个周期 · 28 天 · <span class="tag">预测</span></div>
+            </div>
+            <div class="right"><span class="chev">›</span></div>
+          </div>
+
+          <!-- 承诺：冷却结束 -->
+          <div class="ev energy commit">
+            <div class="bar"></div>
+            <div class="time">22:00</div>
+            <div class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M6 2h12v4l-5 5 5 5v4H6v-4l5-5-5-5z"/></svg>
+            </div>
+            <div class="mid">
+              <div class="ti">降噪耳机 冷却结束</div>
+              <div class="sub">想买 · 2.8 个工作日 · <span class="tag">承诺</span></div>
+            </div>
+            <div class="right"><span class="chev">›</span></div>
+          </div>
+
+          <div class="fold">
+            <span>已发生</span><span class="cnt">3</span>
+            <span class="chev">▾</span>
+          </div>
+
+          <!-- 事实 -->
+          <div class="ev done">
+            <div class="bar"></div>
+            <div class="time">12:10</div>
+            <div class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 18h16"/><path d="M4 14h10"/><path d="M4 10h7"/></svg>
+            </div>
+            <div class="mid">
+              <div class="ti">午餐</div>
+              <div class="sub">餐饮 · 支付宝</div>
+            </div>
+            <div class="right"><span class="amt">−¥38</span></div>
+          </div>
+
+          <div class="ev action done">
+            <div class="bar"></div>
+            <div class="time">07:40</div>
+            <div class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <div class="mid">
+              <div class="ti">晨跑 30 分钟</div>
+              <div class="sub">打卡 · 连续 12 天</div>
+            </div>
+            <div class="right">已完成</div>
+          </div>
+
+          <div class="ev dim">
+            <div class="bar"></div>
+            <div class="time">全天</div>
+            <div class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/></svg>
+            </div>
+            <div class="mid">
+              <div class="ti">经期结束</div>
+              <div class="sub">健康记录 · 5 天</div>
+            </div>
+            <div class="right"><span class="chev">›</span></div>
+          </div>
+
+          <div class="more">还有 2 条 · 看待办 ›</div>
+        </div>
+
+        <div class="tabbar">
+          <div class="t on"><span class="g"></span>首页</div>
+          <div class="t"><span class="g"></span>记账</div>
+          <div class="t"><span class="g"></span>健康</div>
+          <div class="t"><span class="g"></span>打卡</div>
+          <div class="t"><span class="g"></span>设置</div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏幕 1 · 日程</b>：日分组 + 组内两区；容器（预算 / 经期）在顶部区间带；预测用虚线竖条与「预测」标签。</div>
+    </div>
+
+    <!-- ══════════ 屏幕 2：回顾 ══════════ -->
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">时间线</div>
+          <div class="sp"></div>
+          <div class="ibtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 5h18M6 12h12M10 19h4"/></svg>
+          </div>
+        </div>
+
+        <div class="seg"><div class="it">日程</div><div class="it on">回顾</div></div>
+
+        <div class="datestrip">
+          <div class="month"><span class="arw">‹</span> 2026 年 9 月 <span class="arw">›</span></div>
+        </div>
+
+        <div class="sum">
+          <div class="k">本月发生了什么</div>
+          <div class="v">支出 ¥8,420 <s>打卡 42 次</s><s>任务完成 18</s></div>
+        </div>
+
+        <div class="rec"><div class="d">09/30</div><div class="mid"><b>支出 ¥1,240</b> · 打卡 3 次 · 任务 2</div><div class="ch">›</div></div>
+        <div class="rec"><div class="d">09/29</div><div class="mid"><b>支出 ¥0</b> · 打卡 2 次</div><div class="ch">›</div></div>
+        <div class="rec"><div class="d">09/28</div><div class="mid"><b>支出 ¥186</b> · 打卡 4 次 · 任务 1</div><div class="ch">›</div></div>
+        <div class="rec"><div class="d">09/27</div><div class="mid"><b>支出 ¥62</b> · 打卡 3 次</div><div class="ch">›</div></div>
+        <div class="rec"><div class="d">09/26</div><div class="mid"><b>支出 ¥2,380</b> · 打卡 2 次 · 任务 3</div><div class="ch">›</div></div>
+        <div class="rec"><div class="d">09/25</div><div class="mid"><b>支出 ¥8,000</b> · 房贷 · 打卡 3 次</div><div class="ch">›</div></div>
+        <div class="rec" style="border-bottom:0"><div class="d">09/24</div><div class="mid"><b>支出 ¥0</b> · 经期第 1 天</div><div class="ch">›</div></div>
+
+        <div class="tabbar">
+          <div class="t on"><span class="g"></span>首页</div>
+          <div class="t"><span class="g"></span>记账</div>
+          <div class="t"><span class="g"></span>健康</div>
+          <div class="t"><span class="g"></span>打卡</div>
+          <div class="t"><span class="g"></span>设置</div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏幕 2 · 回顾</b>：每天一行摘要 + 月统计；只含事实，不出现预测与未发生的承诺。</div>
+    </div>
+
+    <!-- ══════════ 屏幕 3：锁定 / 空态 ══════════ -->
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">时间线</div>
+          <div class="sp"></div>
+          <div class="ibtn filled">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="4" y="10" width="16" height="10" rx="3"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+          </div>
+        </div>
+        <div class="seg"><div class="it on">日程</div><div class="it">回顾</div></div>
+
+        <div class="daygroup">
+          <div class="dh"><span class="dd">10 月 19 日 周日</span><span class="zone">待发生</span></div>
+
+          <div class="lockrow">
+            <div class="bar"></div>
+            <div>
+              <div class="ti">健康 · 需解锁</div>
+              <div class="sub">解锁后显示这一天的健康安排</div>
+            </div>
+            <div class="chev">›</div>
+          </div>
+
+          <div class="ev commit">
+            <div class="bar"></div>
+            <div class="time allday">全天</div>
+            <div class="ico">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2" y="6" width="20" height="13" rx="3"/><path d="M2 11h20"/></svg>
+            </div>
+            <div class="mid">
+              <div class="ti">房贷 自动记账</div>
+              <div class="sub">25 日扣款 · <span class="tag">承诺</span></div>
+            </div>
+            <div class="right"><span class="amt">••••</span><span class="chev">›</span></div>
+          </div>
+        </div>
+
+        <div class="empty">
+          <div class="big">今天没有别的安排</div>
+          <div class="sm">时间线只读 —— 加待办去「打卡」，记一笔去「记账」。<br>两边做完，这里会自己长出来。</div>
+          <div class="btns"><div class="btn">加一条待办</div><div class="btn ghost">记一笔</div></div>
+        </div>
+
+        <div class="tabbar">
+          <div class="t on"><span class="g"></span>首页</div>
+          <div class="t"><span class="g"></span>记账</div>
+          <div class="t"><span class="g"></span>健康</div>
+          <div class="t"><span class="g"></span>打卡</div>
+          <div class="t"><span class="g"></span>设置</div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏幕 3 · 未解锁 / 空态</b>：经期整行遮蔽（连标题都不给）、金额走全局隐私开关；空态不伪造事件。</div>
+    </div>
+
+    <!-- ══════════ 说明栏 ══════════ -->
+    <div class="notes">
+      <div class="nt">
+        <div class="n">为什么这样分组</div>
+        <div class="t">事实与承诺必须分开摆</div>
+        <ul>
+          <li><b>「待发生 / 已发生」</b>两区：混在一起时，用户会把「计划今晚 22:00 决定买不买」当成已经发生的事。</li>
+          <li>已发生默认<b>折成一行</b>，点开才展开 —— 不折会让「今天还剩什么」被历史淹没。</li>
+          <li>逾期类（承诺未完成）右侧用红点而不是红字：红色只标「需要你处理」，不标「过去」。</li>
+        </ul>
+      </div>
+
+      <div class="nt">
+        <div class="n">四类时间，三种形态</div>
+        <div class="t">不靠颜色，靠轮廓</div>
+        <ul>
+          <li><b>事实</b>：实心图标、竖条实线。</li>
+          <li><b>承诺</b>：描边图标 + 「承诺 / 计划」小标签。</li>
+          <li><b>推断</b>：虚线竖条 + 「预测」标签 + 整体 72% 不透明。</li>
+          <li><b>容器</b>（预算周期、经期）：不进行列表，画成顶部淡色区间带。</li>
+          <li>灰度打印下这三者也能分辨 —— 颜色只用来标模块。</li>
+        </ul>
+      </div>
+
+      <div class="nt">
+        <div class="n">模块色</div>
+        <div class="t">全部取自既有色板</div>
+        <div class="legend">
+          <div class="row"><span class="swatch"></span>记账</div>
+          <div class="row"><span class="swatch health"></span>健康</div>
+          <div class="row"><span class="swatch action"></span>行动（待办 / 打卡）</div>
+          <div class="row"><span class="swatch energy"></span>时薪</div>
+        </div>
+      </div>
+
+      <div class="nt quote">
+        <div class="t">「今天 09:30 要体检、25 日要还房贷、今晚 22:00 那副耳机冷却结束、这周是经期」——这句话现在要跨四个模块才拼得出来。时间线只做一件事：把这句话一次说完。</div>
+      </div>
+
+      <div class="nt">
+        <div class="n">不做的事</div>
+        <ul>
+          <li>时间线<b>只读</b>：没有左滑、没有长按、没有在这里新建。加待办去「打卡」，记一笔去「记账」。</li>
+          <li>不做无限历史滚动：回顾按月分页就够。</li>
+          <li>不经二次验证不显示经期与金额 —— 时间线要登记进敏感路由。</li>
+          <li>不做跨模块因果（「经期导致多花钱」这类结论），只在回顾里给并列统计。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="lede" style="margin-top:22px;color:var(--t3);font-size:12.5px">
+    静态稿：没有交互，只表达布局、层级与状态。<br>
+    数据与规则见 <b>docs/specs/cross-module-timeline-plan.md</b>。
+  </p>
+</div>
+</body>
+</html>

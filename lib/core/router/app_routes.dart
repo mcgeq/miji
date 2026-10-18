@@ -22,6 +22,9 @@ class AppRoutes {
       '/app/bookkeeping/life-energy/raises';
   static const bookkeepingLifeEnergyPayroll =
       '/app/bookkeeping/life-energy/payroll';
+  /// 跨模块时间线。**必须登记进敏感路由**：它同时展示经期与金额。
+  static const timeline = '/app/timeline';
+
   static const health = '/app/health';
   static const settings = '/app/settings';
   static const settingsSecurity = '/app/settings/security';
@@ -41,7 +44,7 @@ class AppRoutes {
   static const gtdTaskDetail = '/app/gtd/tasks/:taskId';
   static const gtdTaskCreate = '/app/gtd/tasks/create';
 
-  static const sensitiveRoutes = <String>{bookkeeping, health, gtd};
+  static const sensitiveRoutes = <String>{bookkeeping, health, gtd, timeline};
 
   static bool isSensitivePath(String path) {
     return sensitiveRoutes.any(

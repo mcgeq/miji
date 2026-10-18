@@ -30,7 +30,7 @@ import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/home/presentation/home_action_todo_card.dart';
 import 'package:miji/features/home/presentation/home_action_habit_card.dart';
-import 'package:miji/features/home/presentation/home_up_next_card.dart';
+import 'package:miji/features/timeline/presentation/timeline_home_card.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
 import 'package:miji/features/todo/presentation/todo_task_detail_page.dart';
@@ -403,14 +403,9 @@ class _HomeDashboard extends ConsumerWidget {
             onTapHabit: (habit) => _checkInHabit(ref, habit),
             onManage: () => context.push(AppRoutes.gtd),
           );
-    final upNextCard = showTodayAction
-        ? HomeUpNextCard(
-            brief: actionBriefValue,
-            onToggle: (task) => _toggleTodo(ref, task),
-            onAdd: () => _addTodo(context, ref),
-            onOpenAll: () => context.push(AppRoutes.gtd),
-          )
-        : null;
+    // 概览页的「接下来」交给时间线：它覆盖待办、账单、打卡、经期四类，
+    // 而 HomeUpNextCard 只有待办一类。就地勾选仍在「行动」页。
+    final timelineCard = const TimelineHomeCard();
 
     final netAssetTile = HomeNetAssetTile(
       summary: netAsset.valueOrNull,
@@ -441,6 +436,9 @@ class _HomeDashboard extends ConsumerWidget {
     );
 
     final hasAlerts = reminders.items.isNotEmpty;
+    final showTimeline = ref
+        .watch(homeBlockLayoutProvider)
+        .isVisible(HomeBlockId.timeline);
 
     if (ref.watch(homeLayoutModeProvider) == HomeLayoutMode.pager) {
       return Column(
@@ -466,7 +464,8 @@ class _HomeDashboard extends ConsumerWidget {
                 healthForecastCard: healthForecastCard,
                 todoCard: todoCard,
                 habitCard: habitCard,
-                upNextCard: upNextCard,
+                timelineCard: timelineCard,
+                showTimeline: showTimeline,
               ),
             ),
           ),
@@ -486,6 +485,10 @@ class _HomeDashboard extends ConsumerWidget {
                 _section(0, header),
                 _gap,
                 _section(1, board),
+                if (showTimeline) ...[
+                  _gap,
+                  _section(1, timelineCard),
+                ],
                 _gap,
                 _section(1, overviewCard),
                 _gap,
@@ -884,12 +887,19 @@ List<HomePagerPage> _buildPagerPages({
   required Widget? healthForecastCard,
   required Widget? todoCard,
   required Widget? habitCard,
-  required Widget? upNextCard,
+  required Widget timelineCard,
+  required bool showTimeline,
 }) {
   return [
     HomePagerPage(
       label: '概览',
-      children: [board, ?upNextCard, if (hasAlerts) alerts, insight, quote],
+      children: [
+        board,
+        if (showTimeline) ...[timelineCard, const SizedBox(height: 10)],
+        if (hasAlerts) alerts,
+        insight,
+        quote,
+      ],
     ),
     HomePagerPage(
       label: '记账',

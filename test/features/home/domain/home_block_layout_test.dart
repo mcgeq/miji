@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/features/home/domain/home_block.dart';
 
@@ -71,5 +73,27 @@ void main() {
     expect(HomeLayoutMode.fromStorage('pager'), HomeLayoutMode.pager);
     expect(HomeLayoutMode.fromStorage('garbage'), HomeLayoutMode.pager);
     expect(HomeLayoutMode.fromStorage('list'), HomeLayoutMode.list);
+  });
+
+  test('老布局里没有 timeline：升级后仍出现，且落在 board 之后', () {
+    // 模拟升级：用户存下来的顺序里没有新块（timeline.week）。
+    final legacyOrder = jsonEncode([
+      for (final id in HomeBlockId.values)
+        if (id != HomeBlockId.timeline) id.storageKey,
+    ]);
+    final legacyVisibility = jsonEncode({
+      for (final id in HomeBlockId.values)
+        if (id != HomeBlockId.timeline) id.storageKey: false,
+    });
+
+    final layout = HomeBlockLayout.fromStorage(
+      visibilityJson: legacyVisibility,
+      orderJson: legacyOrder,
+    );
+
+    // 1) 缺失的块会补到末尾，不会「升级后看不见」。
+    expect(layout.order, contains(HomeBlockId.timeline));
+    // 2) 没存过它的可见性时用默认值（可见）。
+    expect(layout.isVisible(HomeBlockId.timeline), isTrue);
   });
 }

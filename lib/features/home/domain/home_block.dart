@@ -37,6 +37,7 @@ enum HomeBlockId {
   healthForecast('health.forecast', '未来 7 天预测', HomeBlockModule.health, false),
   actionTodo('action.todo', '今日待办', HomeBlockModule.action, true),
   actionHabit('action.habit', '习惯打卡', HomeBlockModule.action, true),
+  timeline('timeline.week', '本周时间线', HomeBlockModule.global, true),
   insight('insight.cross', '跨模块洞察', HomeBlockModule.global, true),
   quote('footer.quote', '语录', HomeBlockModule.global, true);
 
