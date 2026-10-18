@@ -11,14 +11,13 @@ import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/router/app_module_nav.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
-import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
 import 'package:miji/features/gtd/presentation/checkin/record_detail_sheet.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/todo/presentation/today_action_list_view.dart';
 import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
 import 'package:miji/features/todo/presentation/todo_task_list_view.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
-import 'package:miji/features/gtd/presentation/plans/checkin_plan_icon.dart';
+import 'package:miji/features/gtd/presentation/plans/habit_plan_row.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 import 'package:miji/features/todo/presentation/todo_stats_view.dart';
 
@@ -359,299 +358,32 @@ class _TodayTab extends ConsumerWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       itemCount: progressList.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: index < progressList.length - 1 ? 10 : 0,
-          ),
-          child: _PlanProgressCard(progress: progressList[index]),
-        );
-      },
+      // 行间距由 `HabitPlanRow` 自己负责，这里不再补一层，否则两行之间会
+      // 出现 20px 的空档。
+      itemBuilder: (context, index) =>
+          _PlanProgressCard(progress: progressList[index]),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// 计划进度卡片
+// 计划进度卡片（「习惯」列表）
 // ---------------------------------------------------------------------------
 
-class _PlanProgressCard extends ConsumerWidget {
+/// 「习惯」列表里的一行。
+///
+/// 这里以前自成一派：+1 圆钮、计时胶囊、6px 进度条、进度文字各画一遍，而
+/// 「今日」的混排行又是另一套（勾选圈 + 4px 细条 + 没有按钮）。同一个计划在
+/// 两个页面长成两个样子，点一下的效果还不一样。现在两边都是 [HabitPlanRow]，
+/// 打卡逻辑也只有一份（`habit_checkin_actions.dart`）。
+class _PlanProgressCard extends StatelessWidget {
   const _PlanProgressCard({required this.progress});
 
   final PlanProgress progress;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final plan = progress.plan;
-    final rate = progress.completionRate;
-    final isCompleted = rate >= 1.0;
-
-    return Material(
-      color: colorScheme.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () {
-          ref.context.push('/app/gtd/plans/${plan.id}');
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 头部：图标 + 名称 + +1 按钮
-              Row(
-                children: [
-                  CheckinPlanIcon.forPlan(plan),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      plan.name,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  if (plan.triggerMode == CheckinTriggerMode.button)
-                    _QuickAddButton(plan: plan),
-                  if (plan.triggerMode == CheckinTriggerMode.timer)
-                    _TimerButton(plan: plan),
-                  if (plan.triggerMode == CheckinTriggerMode.photo)
-                    _PhotoButton(plan: plan),
-                ],
-              ),
-              const SizedBox(height: 10),
-              // 进度条
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: rate,
-                  minHeight: 6,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isCompleted
-                        ? Colors.green.shade400
-                        : planVisualFor(
-                            icon: plan.icon,
-                            category: plan.category,
-                            color: plan.color,
-                          ).color.color,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // 进度文字
-              Row(
-                children: [
-                  Text(
-                    _formatProgress(progress),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: isCompleted
-                          ? Colors.green.shade600
-                          : colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (progress.streak != null && progress.streak! > 1)
-                    Text(
-                      '🔥 ${progress.streak}天',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.tertiary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatProgress(PlanProgress p) {
-    if (p.plan.targetUnit == '分钟') {
-      final totalMin = p.currentValue.toInt();
-      final targetMin = p.plan.targetValue.toInt();
-      return '$totalMin / $targetMin 分钟';
-    }
-    if (p.plan.targetUnit == '杯') {
-      return '${p.currentValue.toInt()} / ${p.plan.targetValue.toInt()} 杯';
-    }
-    if (p.plan.targetUnit == '升') {
-      return '${p.currentValue.toStringAsFixed(1)} / '
-          '${p.plan.targetValue.toStringAsFixed(1)} 升';
-    }
-    return '${p.currentValue.toInt()} / ${p.plan.targetValue.toInt()} ${p.plan.targetUnit}';
-  }
-}
-
-// ---------------------------------------------------------------------------
-// 快捷 +1 按钮
-// ---------------------------------------------------------------------------
-
-class _QuickAddButton extends ConsumerWidget {
-  const _QuickAddButton({required this.plan});
-
-  final CheckinPlan plan;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: theme.colorScheme.primaryContainer,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: () => _onTap(ref),
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: Icon(
-            Icons.add_rounded,
-            size: 20,
-            color: theme.colorScheme.onPrimaryContainer,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _onTap(WidgetRef ref) async {
-    final repo = ref.read(checkinRepositoryProvider);
-    final draft = CheckinRecordDraft(
-      planId: plan.id,
-      recordDate: DateTime.now(),
-      completedAt: DateTime.now(),
-      count: 1,
-      numericValue: 1,
-    );
-    await repo.upsertRecord(draft, plan.userId);
-    // 「习惯」tab 的 +1 也要让「今日」tab 的混排条一起走进度。
-    invalidateTodayActionData(ref);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// 计时器按钮
-// ---------------------------------------------------------------------------
-
-class _TimerButton extends ConsumerWidget {
-  const _TimerButton({required this.plan});
-
-  final CheckinPlan plan;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final timerState = ref.watch(checkinTimerProvider);
-    final isThisPlan =
-        timerState is CheckinTimerRunning && timerState.planId == plan.id ||
-        timerState is CheckinTimerPaused && timerState.planId == plan.id;
-
-    return Material(
-      color: isThisPlan
-          ? Colors.orange.shade100
-          : Theme.of(context).colorScheme.tertiaryContainer,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: () => _onTap(ref, timerState),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isThisPlan ? Icons.timer_rounded : Icons.play_arrow_rounded,
-                size: 16,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                isThisPlan ? _formatTime(timerState) : '开始',
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatTime(CheckinTimerState state) {
-    final seconds = switch (state) {
-      CheckinTimerRunning(
-        startedAt: final startedAt,
-        pausedDurationSeconds: final pd,
-      ) =>
-        DateTime.now().difference(startedAt).inSeconds - pd,
-      CheckinTimerPaused(
-        pausedDurationSeconds: final pd,
-        pausedAt: final pausedAt,
-      ) =>
-        pd - DateTime.now().difference(pausedAt).inSeconds,
-      _ => 0,
-    };
-    final mins = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-  }
-
-  void _onTap(WidgetRef ref, CheckinTimerState timerState) {
-    final controller = ref.read(checkinTimerProvider.notifier);
-    final isThisPlan =
-        timerState is CheckinTimerRunning && timerState.planId == plan.id ||
-        timerState is CheckinTimerPaused && timerState.planId == plan.id;
-
-    if (isThisPlan) {
-      // 结束计时器
-      final seconds = controller.stop();
-      _recordTime(ref, seconds);
-    } else {
-      // 如果有其他计时器在跑，先停掉
-      if (timerState is! CheckinTimerIdle) {
-        controller.stop();
-      }
-      controller.start(plan.id, plan.name);
-    }
-  }
-
-  Future<void> _recordTime(WidgetRef ref, int seconds) async {
-    final repo = ref.read(checkinRepositoryProvider);
-    final draft = CheckinRecordDraft(
-      planId: plan.id,
-      recordDate: DateTime.now(),
-      completedAt: DateTime.now(),
-      count: 1,
-      durationSeconds: seconds,
-    );
-    await repo.upsertRecord(draft, plan.userId);
-    // 「习惯」tab 的 +1 也要让「今日」tab 的混排条一起走进度。
-    invalidateTodayActionData(ref);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// 拍照按钮
-// ---------------------------------------------------------------------------
-
-class _PhotoButton extends ConsumerWidget {
-  const _PhotoButton({required this.plan});
-
-  final CheckinPlan plan;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return AppIconActionButton(
-      icon: Icons.camera_alt_rounded,
-      tooltip: '拍照打卡',
-      onPressed: () {
-        ref.context.push('/app/gtd/checkin/photo/${plan.id}');
-      },
-    );
+  Widget build(BuildContext context) {
+    return HabitPlanRow(progress: progress);
   }
 }
 

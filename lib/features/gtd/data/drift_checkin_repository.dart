@@ -9,6 +9,7 @@ import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/domain/plan_color.dart';
 import 'package:miji/features/gtd/domain/checkin_repository.dart';
+import 'package:miji/features/gtd/domain/plan_checkin_progress.dart';
 
 /// Drift 实现的打卡 Repository
 class DriftCheckinRepository implements CheckinRepository {
@@ -433,21 +434,34 @@ class DriftCheckinRepository implements CheckinRepository {
     DateTime date,
   ) async {
     final plans = await getActivePlans(userId);
-    final dateKey = _dateOnly(date).millisecondsSinceEpoch;
+    final today = _dateOnly(date);
+    final dateKey = today.millisecondsSinceEpoch;
+    // 连续天数要往回数，所以多取一个窗口；今天那部分单独筛出来算进度。
+    final windowStart = today
+        .subtract(const Duration(days: _streakWindowDays - 1))
+        .millisecondsSinceEpoch;
 
     final rows =
         await (database.select(database.checkinRecords)..where(
               (row) =>
                   row.userId.equals(userId) &
-                  row.recordDate.equals(dateKey) &
+                  row.recordDate.isBiggerOrEqualValue(windowStart) &
                   row.isDeleted.equals(false),
             ))
             .get();
 
     final recordsByPlan = <String, List<CheckinRecord>>{};
+    final checkinDaysByPlan = <String, Set<DateTime>>{};
     for (final row in rows) {
       final record = await _recordFromRow(row);
-      recordsByPlan.putIfAbsent(record.planId, () => []).add(record);
+      checkinDaysByPlan
+          .putIfAbsent(record.planId, () => <DateTime>{})
+          .add(
+            DateTime.fromMillisecondsSinceEpoch(row.recordDate, isUtc: true),
+          );
+      if (row.recordDate == dateKey) {
+        recordsByPlan.putIfAbsent(record.planId, () => []).add(record);
+      }
     }
 
     return plans.map((plan) {
@@ -462,11 +476,18 @@ class DriftCheckinRepository implements CheckinRepository {
           ? planRecords.first.completedAt
           : null;
 
+      // 之前 `streak` 从来没人赋值，于是「🔥 连续 N 天」在界面上永远是空的。
+      final streak = planStreakDays(
+        checkinDays: checkinDaysByPlan[plan.id] ?? const <DateTime>{},
+        today: today,
+      );
+
       return PlanProgress(
         plan: plan,
         currentCount: totalCount,
         currentValue: totalValue,
         lastCheckinAt: lastCheckin,
+        streak: streak > 0 ? streak : null,
       );
     }).toList();
   }
@@ -714,6 +735,10 @@ class DriftCheckinRepository implements CheckinRepository {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  /// 连续天数回看的天数上限。一个人连续打卡超过三个月，界面上显示的数字
+  /// 也不会更激励人，但查询窗口越长越慢。
+  static const int _streakWindowDays = 90;
 
   DateTime _dateOnly(DateTime date) {
     return DateTime.utc(date.year, date.month, date.day);

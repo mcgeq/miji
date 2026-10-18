@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>miji · 今日 · 习惯打卡 · 界面稿</title>
+<style>
+/* ══════════════════════════════════════════════════════════════
+   取色自应用默认配色「靛墨」light（app_palette.dart）
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#F3F3F1; --surface:#FFFFFF; --sunken:#EAE9E5;
+  --line:#DAD9D6; --outline:#8D8C87;
+  --t1:#1B1A17; --t2:#5C5A54; --t3:#8B8880;
+  --primary:#2A3C5C; --primary-solid:#24344F; --on-primary:#FFFFFF;
+  --primary-container:#E5E9F1; --on-primary-container:#28374F;
+  --tertiary:#776950; --tertiary-container:#EFEDEA;
+  --income:#0E7A48; --income-container:#E2F0E8;
+  --expense:#B93A2C; --expense-container:#F9E6E2;
+  --warning:#A9701A; --warning-container:#F3EBDF;
+  --shadow:0 1px 2px rgba(27,26,23,.05),0 8px 20px rgba(27,26,23,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{
+  font-family:"PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Hiragino Sans GB",
+    "Noto Sans CJK SC","Source Han Sans SC",Roboto,sans-serif;
+  background:var(--bg);color:var(--t1);line-height:1.5;padding:40px 28px 80px;
+}
+.wrap{max-width:1180px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--t3);text-transform:uppercase}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:8px 0 10px}
+h2{font-size:15px;font-weight:800;margin:26px 0 10px;letter-spacing:0}
+.lede{font-size:14px;color:var(--t2);max-width:780px}
+.lede b{color:var(--t1)}
+
+.stage{display:flex;gap:24px;margin-top:22px;align-items:flex-start;flex-wrap:wrap}
+.screen{
+  width:390px;flex:0 0 390px;background:var(--surface);border:1px solid var(--line);
+  border-radius:26px;box-shadow:var(--shadow);overflow:hidden;
+}
+.screen-cap{font-size:11.5px;color:var(--t3);margin:8px 2px 0;line-height:1.5}
+.screen-cap b{color:var(--t2)}
+
+/* 顶栏 */
+.appbar{display:flex;align-items:center;padding:14px 16px 6px}
+.appbar .ttl{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.appbar .sp{flex:1}
+.ibtn{width:34px;height:34px;border-radius:12px;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--t2);background:var(--surface)}
+.ibtn.filled{background:var(--primary-solid);border-color:var(--primary-solid);color:var(--on-primary)}
+
+/* 顶部摘要 */
+.summary{display:flex;align-items:baseline;gap:8px;padding:0 16px 10px}
+.summary .v{font-size:13px;font-weight:700;color:var(--t2)}
+.summary .r{margin-left:auto;font-size:11px;color:var(--t3);font-weight:600}
+.summary .bar{flex:1;height:4px;border-radius:2px;background:var(--sunken);overflow:hidden}
+.summary .bar i{display:block;height:100%;background:var(--primary);width:50%}
+
+/* 分组标题 */
+.sect{display:flex;align-items:baseline;gap:6px;padding:10px 16px 8px;
+  font-size:11.5px;font-weight:800;letter-spacing:.02em;color:var(--t2)}
+.sect.danger{color:var(--expense)}
+.sect .n{font-weight:700;color:var(--t3)}
+.sect .chev{margin-left:auto;color:var(--t3);font-weight:600}
+
+/* ── 行动行 ── */
+.rows{padding:0 16px 16px;display:flex;flex-direction:column;gap:8px}
+.row{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:10px 12px;display:flex;align-items:center;gap:10px;
+}
+/* 图标底：计划颜色 16% */
+.badge{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+  font-size:15px;flex:0 0 28px;background:var(--sunken)}
+.badge.health{background:#0EA5E926}
+.badge.study{background:#8B5CF626}
+.badge.sport{background:#84CC1626}
+.badge.life{background:#D946EF26}
+.badge.other{background:#6366F126}
+
+.mid{flex:1;min-width:0}
+.ti{font-size:13.5px;font-weight:700;letter-spacing:0;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.sub{font-size:11px;color:var(--t3);margin-top:2px;letter-spacing:0;
+  font-variant-numeric:tabular-nums;display:flex;gap:6px;align-items:center}
+.sub .dot{width:3px;height:3px;border-radius:50%;background:var(--line);display:inline-block}
+.sub .streak{color:var(--tertiary);font-weight:700}
+.sub .run{color:var(--warning);font-weight:700}
+
+/* 右侧：任务勾选圈 */
+.check{width:26px;height:26px;border-radius:50%;border:1.6px solid var(--outline);
+  display:grid;place-items:center;flex:0 0 26px;color:transparent;font-size:14px}
+.check.done{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+
+/* 右侧：习惯环形进度（用 conic-gradient 画，纯 CSS） */
+.ring{width:38px;height:38px;flex:0 0 38px;border-radius:50%;position:relative;
+  display:grid;place-items:center}
+.ring i{position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(var(--ring-color) calc(var(--p) * 1%), var(--sunken) 0)}
+.ring b{position:relative;width:30px;height:30px;border-radius:50%;background:var(--surface);
+  display:grid;place-items:center;font-size:11px;font-weight:800;letter-spacing:0;
+  font-variant-numeric:tabular-nums;color:var(--t1)}
+.ring.full i{background:var(--income)}
+.ring.full b{background:var(--income);color:#fff}
+
+/* 计时 / 拍照按钮 */
+.pill{height:30px;padding:0 10px;border-radius:999px;display:flex;align-items:center;gap:5px;
+  font-size:11.5px;font-weight:750;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.pill.start{background:var(--tertiary-container);color:var(--tertiary)}
+.pill.running{background:var(--warning-container);color:var(--warning)}
+.pill.camera{background:var(--primary-container);color:var(--on-primary-container)}
+
+/* 完成态 */
+.row.done{background:var(--surface);border-color:var(--line)}
+.row.done .ti{color:var(--t2);font-weight:650}
+.row.done .badge{opacity:.5}
+.row.done .sub{color:var(--t3)}
+
+/* 空态 */
+.empty{padding:28px 24px 36px;text-align:center}
+.empty .big{font-size:14px;font-weight:750;margin-bottom:6px}
+.empty .sm{font-size:11.5px;color:var(--t3);line-height:1.6}
+
+/* 底栏 */
+.tabbar{display:flex;border-top:1px solid var(--line);background:var(--surface)}
+.tabbar .t{flex:1;text-align:center;padding:10px 0 14px;font-size:10.5px;font-weight:700;
+  color:var(--t3);display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar .t.on{color:var(--primary)}
+.tabbar .g{width:20px;height:20px;border-radius:7px;background:var(--sunken)}
+.tabbar .t.on .g{background:var(--primary-container)}
+
+/* 说明栏 */
+.notes{flex:1;min-width:320px}
+.nt{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+.nt .n{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--t3);
+  text-transform:uppercase;margin-bottom:6px}
+.nt .t{font-size:13.5px;font-weight:750;margin-bottom:8px;line-height:1.5}
+.nt ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.nt li{font-size:12px;color:var(--t2);line-height:1.6;padding-left:12px;position:relative}
+.nt li:before{content:"";position:absolute;left:0;top:7px;width:4px;height:4px;
+  border-radius:50%;background:var(--outline)}
+.nt li b{color:var(--t1)}
+.nt code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+  background:var(--sunken);padding:1px 4px;border-radius:4px}
+.nt.quote{background:var(--primary-container);border-color:#D3DAE6}
+.nt.quote .t{color:var(--on-primary-container);font-weight:700;line-height:1.65}
+.nt table{width:100%;border-collapse:collapse;font-size:11.5px}
+.nt th,.nt td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line);
+  vertical-align:top;color:var(--t2)}
+.nt th{font-weight:750;color:var(--t3);font-size:10.5px;letter-spacing:.04em}
+.nt td b{color:var(--t1)}
+.nt tr:last-child td{border-bottom:0}
+
+/* 组件放大预览 */
+.parts{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;padding:6px 2px 2px}
+.part{display:flex;flex-direction:column;align-items:center;gap:6px;
+  font-size:10.5px;color:var(--t3);font-weight:650}
+.part .box{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:12px;display:grid;place-items:center;box-shadow:var(--shadow)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">miji · feature sketch</div>
+  <h1>今日 · 习惯打卡 · 界面稿</h1>
+  <p class="lede">
+    现在的「今日」里，习惯行整块只能点进详情页 —— <b>要打卡得离开这一屏</b>；
+    完成与否只靠行尾一条 4×40px 的细进度条区分；图标还是 22px 的原始 emoji。
+    这一稿把「完成」做成行内的一等公民：<b>右侧一枚控件，既是进度也是按钮</b>。
+    取色沿用默认配色「靛墨」，计划颜色只作为图标底色与环形的强调色。
+  </p>
+
+  <h2>先说清楚现状的六个问题</h2>
+  <div class="nt">
+    <ul>
+      <li><b>没有完成入口</b>：<code>_HabitActionTile</code> 的 onTap 是 <code>push('/app/gtd/plans/:id')</code>，整行只能进详情。打卡得去「习惯」tab 或首页卡片。</li>
+      <li><b>完成态没有视觉</b>：<code>isCompleted</code> 只是让那条 4px 进度条消失。行不变灰、不打勾、不划线 —— 和未完成几乎一样。</li>
+      <li><b>进度几乎看不见</b>：40×4px 的条 + 「3 / 8 杯」小字，「还差多少」要读数字。</li>
+      <li><b>图标用了裸 emoji</b>：<code>Text(plan.icon, fontSize: 22)</code>，没走统一的 <code>CheckinPlanIcon</code>；旧默认图钉会原样出现。</li>
+      <li><b>触发方式被吞掉</b>：计时、拍照型计划在今日行里和普通点击型长得一模一样，点进去才知道。</li>
+      <li><b>同一屏两种完成语言</b>：任务行左侧有勾选圈，习惯行右侧只有细条；行高与基线也对不齐。</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <!-- ══════════ 屏 1：未完成 ══════════ -->
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">今日</div>
+          <div class="sp"></div>
+          <div class="ibtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M7 12h10M10 18h4"/></svg></div>
+          <div class="ibtn filled"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+
+        <div class="summary">
+          <span class="v">已完成 1 / 6</span>
+          <span class="bar"><i></i></span>
+          <span class="r">10 月 18 日 周六</span>
+        </div>
+
+        <div class="sect danger">逾期 <span class="n">1</span></div>
+        <div class="rows">
+          <div class="row">
+            <div class="check"></div>
+            <div class="mid">
+              <div class="ti">交房租</div>
+              <div class="sub"><span style="color:var(--expense);font-weight:700">昨天 18:00 到期</span></div>
+            </div>
+            <div class="check"></div>
+          </div>
+        </div>
+
+        <div class="sect">待完成 <span class="n">4</span></div>
+        <div class="rows">
+          <!-- 任务：一次性 -->
+          <div class="row">
+            <div class="badge other"></div>
+            <div class="mid">
+              <div class="ti">写周报</div>
+              <div class="sub">任务 <span class="dot"></span> 今天 18:00</div>
+            </div>
+            <div class="check"></div>
+          </div>
+
+          <!-- 习惯：一次型（点一下就完成） -->
+          <div class="row">
+            <div class="badge health">💧</div>
+            <div class="mid">
+              <div class="ti">喝水</div>
+              <div class="sub"><span class="streak">🔥 12 天</span> <span class="dot"></span> 目标 8 杯</div>
+            </div>
+            <div class="ring" style="--p:37;--ring-color:#0EA5E9"><i></i><b>3</b></div>
+          </div>
+
+          <!-- 习惯：计时中 -->
+          <div class="row">
+            <div class="badge sport">🏋️</div>
+            <div class="mid">
+              <div class="ti">健身</div>
+              <div class="sub"><span class="run">计时中 12:35</span> <span class="dot"></span> 目标 30 分钟</div>
+            </div>
+            <div class="pill running">⏸ 12:35</div>
+          </div>
+
+          <!-- 习惯：拍照型 -->
+          <div class="row">
+            <div class="badge life">📸</div>
+            <div class="mid">
+              <div class="ti">每日一拍</div>
+              <div class="sub">拍照打卡 <span class="dot"></span> 目标 1 张</div>
+            </div>
+            <div class="pill camera">📷 拍照</div>
+          </div>
+
+          <!-- 习惯：一次型未开始 -->
+          <div class="row">
+            <div class="badge study">📖</div>
+            <div class="mid">
+              <div class="ti">阅读</div>
+              <div class="sub"><span class="streak">🔥 5 天</span> <span class="dot"></span> 目标 30 分钟</div>
+            </div>
+            <div class="ring" style="--p:0;--ring-color:#8B5CF6"><i></i><b>0</b></div>
+          </div>
+        </div>
+
+        <div class="sect">已完成 <span class="n">1</span> <span class="chev">▾</span></div>
+        <div class="rows">
+          <div class="row done">
+            <div class="badge health">🚿</div>
+            <div class="mid">
+              <div class="ti">洗澡</div>
+              <div class="sub">今天已完成 <span class="dot"></span> <span class="streak">🔥 31 天</span></div>
+            </div>
+            <div class="ring full" style="--p:100;--ring-color:#0E7A48"><i></i><b>✓</b></div>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <div class="t"><span class="g"></span>首页</div>
+          <div class="t"><span class="g"></span>记账</div>
+          <div class="t"><span class="g"></span>健康</div>
+          <div class="t on"><span class="g"></span>打卡</div>
+          <div class="t"><span class="g"></span>设置</div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏 1 · 今日（未完成）</b>：右侧那枚控件就是「完成按钮」——
+        环里是今天的进度，点一下 +1；满环变绿勾。计时/拍照各有自己的按钮。</div>
+    </div>
+
+    <!-- ══════════ 屏 2：完成之后 ══════════ -->
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">今日</div>
+          <div class="sp"></div>
+          <div class="ibtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M7 12h10M10 18h4"/></svg></div>
+          <div class="ibtn filled"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+
+        <div class="summary">
+          <span class="v">已完成 5 / 6</span>
+          <span class="bar"><i style="width:83%"></i></span>
+          <span class="r">只剩 1 件</span>
+        </div>
+
+        <div class="sect">待完成 <span class="n">1</span></div>
+        <div class="rows">
+          <div class="row">
+            <div class="badge sport">🏋️</div>
+            <div class="mid">
+              <div class="ti">健身</div>
+              <div class="sub"><span class="streak">🔥 8 天</span> <span class="dot"></span> 目标 30 分钟</div>
+            </div>
+            <div class="ring" style="--p:80;--ring-color:#84CC16"><i></i><b>24</b></div>
+          </div>
+        </div>
+
+        <div class="sect">已完成 <span class="n">5</span> <span class="chev">▴</span></div>
+        <div class="rows">
+          <div class="row done">
+            <div class="badge health">💧</div>
+            <div class="mid">
+              <div class="ti">喝水</div>
+              <div class="sub">8 / 8 杯 <span class="dot"></span> <span class="streak">🔥 13 天</span></div>
+            </div>
+            <div class="ring full" style="--p:100;--ring-color:#0E7A48"><i></i><b>✓</b></div>
+          </div>
+          <div class="row done">
+            <div class="badge study">📖</div>
+            <div class="mid">
+              <div class="ti">阅读</div>
+              <div class="sub">30 / 30 分钟 <span class="dot"></span> <span class="streak">🔥 6 天</span></div>
+            </div>
+            <div class="ring full" style="--p:100;--ring-color:#0E7A48"><i></i><b>✓</b></div>
+          </div>
+          <div class="row done">
+            <div class="badge life">📸</div>
+            <div class="mid">
+              <div class="ti">每日一拍</div>
+              <div class="sub">今天已完成 <span class="dot"></span> 拍 1 张</div>
+            </div>
+            <div class="ring full" style="--p:100;--ring-color:#0E7A48"><i></i><b>✓</b></div>
+          </div>
+          <div class="row done">
+            <div class="badge other"></div>
+            <div class="mid">
+              <div class="ti">写周报</div>
+              <div class="sub">任务完成</div>
+            </div>
+            <div class="check done">✓</div>
+          </div>
+          <div class="row done">
+            <div class="badge health">🚿</div>
+            <div class="mid">
+              <div class="ti">洗澡</div>
+              <div class="sub">今天已完成 <span class="dot"></span> <span class="streak">🔥 31 天</span></div>
+            </div>
+            <div class="ring full" style="--p:100;--ring-color:#0E7A48"><i></i><b>✓</b></div>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <div class="t"><span class="g"></span>首页</div>
+          <div class="t"><span class="g"></span>记账</div>
+          <div class="t"><span class="g"></span>健康</div>
+          <div class="t on"><span class="g"></span>打卡</div>
+          <div class="t"><span class="g"></span>设置</div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏 2 · 完成之后</b>：完成的习惯下移进「已完成」，图标降饱和、
+        环变绿勾；任务的勾选圈实心。两种完成语言各自认得出来，位置都在右侧同一条竖线上。</div>
+    </div>
+
+    <!-- ══════════ 屏 3：按钮状态一览 ══════════ -->
+    <div>
+      <div class="screen">
+        <div class="appbar"><div class="ttl">控件状态一览</div></div>
+        <div style="padding:14px 16px 20px;display:flex;flex-direction:column;gap:14px">
+
+          <div style="font-size:11px;font-weight:800;color:var(--t3);letter-spacing:.06em">习惯 · 环形进度</div>
+          <div class="parts">
+            <div class="part"><div class="box"><div class="ring" style="--p:0;--ring-color:#0EA5E9"><i></i><b>0</b></div></div>未开始</div>
+            <div class="part"><div class="box"><div class="ring" style="--p:37;--ring-color:#0EA5E9"><i></i><b>3</b></div></div>3 / 8 杯</div>
+            <div class="part"><div class="box"><div class="ring" style="--p:80;--ring-color:#84CC16"><i></i><b>24</b></div></div>24 / 30 分钟</div>
+            <div class="part"><div class="box"><div class="ring full" style="--p:100;--ring-color:#0E7A48"><i></i><b>✓</b></div></div>已完成</div>
+          </div>
+
+          <div style="font-size:11px;font-weight:800;color:var(--t3);letter-spacing:.06em;margin-top:6px">计时 / 拍照</div>
+          <div class="parts">
+            <div class="part"><div class="box"><div class="pill start">▶ 开始</div></div>未计时</div>
+            <div class="part"><div class="box"><div class="pill running">⏸ 12:35</div></div>计时中</div>
+            <div class="part"><div class="box"><div class="pill camera">📷 拍照</div></div>待拍</div>
+          </div>
+
+          <div style="font-size:11px;font-weight:800;color:var(--t3);letter-spacing:.06em;margin-top:6px">任务 · 勾选圈</div>
+          <div class="parts">
+            <div class="part"><div class="box"><div class="check"></div></div>未完成</div>
+            <div class="part"><div class="box"><div class="check done">✓</div></div>已完成</div>
+          </div>
+
+          <div class="nt" style="margin-top:10px">
+            <div class="n">尺寸</div>
+            <table>
+              <tr><th>元素</th><th>尺寸</th><th>可点区域</th></tr>
+              <tr><td>环形进度</td><td>38（环宽 3.5，内圈 30）</td><td>44 × 44</td></tr>
+              <tr><td>任务勾选圈</td><td>26 圈</td><td>44 × 44</td></tr>
+              <tr><td>计时 / 拍照胶囊</td><td>高 30</td><td>整枚胶囊</td></tr>
+              <tr><td>图标底</td><td>28（emoji 15）</td><td>—（不接手势）</td></tr>
+              <tr><td>行高</td><td>最小 60</td><td>剩余区域 = 进详情</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏 3 · 控件状态</b>：四种环、三种计时/拍照、两种勾选。
+        环内数字是「今天的进度」，目标为 1 时环内直接是勾（不显示 0/1）。</div>
+    </div>
+
+    <!-- ══════════ 说明栏 ══════════ -->
+    <div class="notes">
+      <div class="nt">
+        <div class="n">核心决定</div>
+        <div class="t">右侧那枚控件 = 进度 + 按钮</div>
+        <ul>
+          <li>原来进度是行尾 40×4 的条，完成要进详情页。现在<b>合成一个控件</b>：环代表今天完成到哪，点它就是打卡。</li>
+          <li>为什么不是「左边圆圈 + 右边进度条」两件东西：一块屏幕上两列控件会让人先找按钮再找进度，而这两件事本来是一件事。</li>
+          <li>目标为 1 的计划（洗澡、吃药）环内不放「0/1」，直接是勾 —— 一个数字表示「0 或 1」没有意义。</li>
+          <li>多段计划环内就是数字（3 杯、24 分钟）；目标是 30 分钟时显示分钟而不用百分比，省一次换算。</li>
+        </ul>
+      </div>
+
+      <div class="nt">
+        <div class="n">交互规则</div>
+        <table>
+          <tr><th>操作</th><th>结果</th></tr>
+          <tr><td>点右侧环</td><td>今天是 <b>+1</b> 段（一次型计划即完成）；满目标自动进「已完成」</td></tr>
+          <tr><td>点行内其余区域</td><td>进计划详情（看记录、改计划）</td></tr>
+          <tr><td>长按行</td><td>小菜单：<b>撤销一次打卡</b> / 今天全部完成 / 查看记录</td></tr>
+          <tr><td>点计时胶囊</td><td>开始计时 → 再点暂停；长按结束并落一条记录</td></tr>
+          <tr><td>点拍照胶囊</td><td>进拍照打卡页</td></tr>
+          <tr><td>点已完成行的环</td><td>展开确认：撤销今天这次打卡（不静默改数）</td></tr>
+        </table>
+      </div>
+
+      <div class="nt">
+        <div class="n">与任务行的统一</div>
+        <ul>
+          <li>两者都是「左侧图标 + 中间两行 + 右侧操作」，行高、字号、间距一致；差异只在右侧控件的形状（圆环 / 圆圈）。</li>
+          <li>完成语言分开：<b>一次性任务</b>用打勾 + 删除线（这件事结束了）；<b>习惯</b>用绿环 + 降饱和（今天结束了，明天还要做）—— 习惯不打删除线，否则像被取消。</li>
+          <li>「习惯」那个小标签删掉：图标 + 环已经说明一切，标签只是噪声。</li>
+        </ul>
+      </div>
+
+      <div class="nt">
+        <div class="n">副行放什么</div>
+        <ul>
+          <li><b>连续天数</b>（🔥 12 天）：习惯的动力来源，比「3/8 杯」更值得被看见，所以放最前。</li>
+          <li><b>目标</b>（8 杯 / 30 分钟）：环里只有进度，具体目标写在副行，两者互补。</li>
+          <li><b>计时状态</b>（计时中 12:35）：运行中的数字会自己跳动，是全屏唯一需要实时更新的地方。</li>
+        </ul>
+      </div>
+
+      <div class="nt quote">
+        <div class="t">「打开今日 → 看到喝水 3/8 → 点一下变 4/8」应该在<b>同一屏、同一根手指</b>内完成。之前要先进详情页，那一步就是用户放弃打卡的地方。</div>
+      </div>
+
+      <div class="nt">
+        <div class="n">落地时与稿子的两处偏差</div>
+        <ul>
+          <li><b>「已完成」默认展开。</b>稿子里是折叠的，但实现时发现：点完进度环整行立刻折进
+            「已完成」，屏幕上没有任何东西证明刚才那一下生效了。现在默认展开，
+            用户手动折叠后的选择在这一屏里保留；新完成一条时会再次自动展开。</li>
+          <li><b>完成提示带「撤销」。</b>稿子里撤销只在长按菜单里。达标那一刻弹出的提示条
+            多了一个「撤销」按钮 —— 点错的那一下应该能当场退回，而不是去猜长按。</li>
+        </ul>
+      </div>
+
+      <div class="nt">
+        <div class="n">没做的（这一轮）</div>
+        <ul>
+          <li>不做「一键全部完成」的批量按钮：习惯的目标各不相同，批量完成是最容易把数据弄脏的操作。</li>
+          <li>不做拖拽排序：今日的顺序由「逾期 → 待完成 → 已完成」决定，用户不该在这里重排。</li>
+          <li>不做打卡动画之外的庆祝：环填满有 180ms 过渡，没有彩带、没有「太棒了」。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="lede" style="margin-top:22px;color:var(--t3);font-size:12.5px">
+    静态稿：没有交互，只表达布局、状态与操作位置。<br>
+    现状代码在 <code>lib/features/todo/presentation/today_action_list_view.dart</code>
+    （<code>_HabitActionTile</code>，第 397 行起）。
+  </p>
+</div>
+</body>
+</html>

@@ -385,6 +385,41 @@ class CheckinRecord {
   final DateTime updatedAt;
   final CheckinPlan? plan;
   final List<CheckinPhoto> photos;
+
+  CheckinRecord copyWith({
+    int? count,
+    double? numericValue,
+    int? durationSeconds,
+    int? mood,
+    String? notes,
+    CheckinVisibility? visibility,
+    String? locationJson,
+    String? extraJson,
+  }) {
+    return CheckinRecord(
+      id: id,
+      userId: userId,
+      planId: planId,
+      recordDate: recordDate,
+      completedAt: completedAt,
+      count: count ?? this.count,
+      numericValue: numericValue ?? this.numericValue,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      mood: mood ?? this.mood,
+      notes: notes ?? this.notes,
+      visibility: visibility ?? this.visibility,
+      locationJson: locationJson ?? this.locationJson,
+      extraJson: extraJson ?? this.extraJson,
+      deviceId: deviceId,
+      version: version,
+      isDeleted: isDeleted,
+      deletedAt: deletedAt,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      plan: plan,
+      photos: photos,
+    );
+  }
 }
 
 class CheckinRecordDraft {
@@ -500,10 +535,19 @@ class PlanProgress {
 
 sealed class CheckinTimerState {
   const CheckinTimerState();
+
+  /// 正在（或暂停中）计时的计划 id；空闲时为 null。
+  ///
+  /// 使用方只要判断「是不是这个计划」，不该每次都写一遍 `is Running ... ||
+  /// is Paused ...` 的 pattern —— 少写一次就少错一次。
+  String? get planId;
 }
 
 class CheckinTimerIdle extends CheckinTimerState {
   const CheckinTimerIdle();
+
+  @override
+  String? get planId => null;
 }
 
 class CheckinTimerRunning extends CheckinTimerState {
@@ -515,6 +559,7 @@ class CheckinTimerRunning extends CheckinTimerState {
     this.pausedAt,
   });
 
+  @override
   final String planId;
   final String planName;
   final DateTime startedAt;
@@ -531,6 +576,7 @@ class CheckinTimerPaused extends CheckinTimerState {
     required this.pausedAt,
   });
 
+  @override
   final String planId;
   final String planName;
   final DateTime startedAt;

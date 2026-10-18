@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:miji/features/gtd/domain/checkin_models.dart';
-import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
+import 'package:miji/features/gtd/presentation/plans/habit_plan_row.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 import 'package:miji/features/todo/providers/todo_providers.dart';
 
@@ -155,7 +155,22 @@ class _CompletedSection extends StatefulWidget {
 }
 
 class _CompletedSectionState extends State<_CompletedSection> {
-  bool _expanded = false;
+  /// 默认展开：打卡/完成任务之后那一条要立刻看得见。
+  ///
+  /// 之前这里是折叠的，于是点完进度环整行「消失」进折叠区 —— 没有任何东西
+  /// 证明刚才那一下生效了。嫌吵就点一下折起来，选择在这一屏的生命周期里保留。
+  bool _expanded = true;
+
+  @override
+  void didUpdateWidget(covariant _CompletedSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 刚完成的那一刻自动展开：打卡之后行被折进「已完成」、什么都看不见，
+    // 用户会怀疑刚才那一下有没有生效。折叠的价值在平时（不占地方），
+    // 不在完成的瞬间。
+    if (widget.completed.length > oldWidget.completed.length) {
+      _expanded = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -394,132 +409,15 @@ class _TodoActionTile extends ConsumerWidget {
   }
 }
 
-class _HabitActionTile extends ConsumerWidget {
+class _HabitActionTile extends StatelessWidget {
   const _HabitActionTile({required this.progress});
 
   final PlanProgress progress;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final plan = progress.plan;
-    final rate = progress.completionRate;
-    final isCompleted = rate >= 1.0;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            context.push('/app/gtd/plans/${plan.id}');
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Text(plan.icon, style: const TextStyle(fontSize: 22)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              plan.name,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.secondaryContainer.withValues(
-                                alpha: 0.6,
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '习惯',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSecondaryContainer,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          if (plan.targetUnit == '分钟')
-                            Text(
-                              '${progress.currentValue.toInt()} 分钟',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            )
-                          else
-                            Text(
-                              '${progress.currentValue.toInt()} / ${plan.targetValue.toInt()} ${plan.targetUnit}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          if (progress.streak != null &&
-                              progress.streak! > 1) ...[
-                            const SizedBox(width: 6),
-                            Text(
-                              '🔥 ${progress.streak}天',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.tertiary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (!isCompleted) ...[
-                  const SizedBox(width: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: SizedBox(
-                      width: 40,
-                      height: 4,
-                      child: LinearProgressIndicator(
-                        value: rate,
-                        backgroundColor: colorScheme.surfaceContainerHighest,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          // 颜色的解析只在 PlanColor 里做一次；旧数据没颜色时
-                          // 按分类给默认色，不再各调用点自己 `int.parse`。
-                          planVisualFor(
-                            icon: plan.icon,
-                            category: plan.category,
-                            color: plan.color,
-                          ).color.color,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+  Widget build(BuildContext context) {
+    // 习惯行与「习惯」列表共用 `HabitPlanRow`：图标、副行、右侧动作（进度环 /
+    // 计时 / 拍照）都在那一处实现，今日这边只负责它排在混排列表的第几个。
+    return HabitPlanRow(progress: progress, dense: true);
   }
 }

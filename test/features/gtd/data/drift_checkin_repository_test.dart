@@ -1,7 +1,8 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:miji/core/database/app_database.dart';
+// Drift 生成的表模型也叫 `CheckinPlan`，这里只用领域模型那一份。
+import 'package:miji/core/database/app_database.dart' hide CheckinPlan;
 import 'package:miji/features/gtd/data/drift_checkin_repository.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
@@ -129,5 +130,73 @@ void main() {
       DateTime.utc(2026, 7, 18),
     );
     expect(records.first.plan?.name, '喝水');
+  });
+
+  group('getTodayProgress 的连续天数', () {
+    Future<CheckinPlan> seededPlan() =>
+        repository.createPlan(const CheckinPlanDraft(name: '喝水'), 'user_1');
+
+    Future<void> checkInOn(CheckinPlan plan, int day) async {
+      await repository.upsertRecord(
+        CheckinRecordDraft(
+          planId: plan.id,
+          recordDate: DateTime.utc(2026, 7, day),
+          completedAt: DateTime.utc(2026, 7, day, 9),
+          numericValue: 1,
+        ),
+        'user_1',
+      );
+    }
+
+    test('连续三天有记录 → streak = 3', () async {
+      final plan = await seededPlan();
+      await checkInOn(plan, 16);
+      await checkInOn(plan, 17);
+      await checkInOn(plan, 18);
+
+      final progress = await repository.getTodayProgress(
+        'user_1',
+        DateTime.utc(2026, 7, 18),
+      );
+      expect(progress.single.streak, 3);
+      // 今天那部分进度仍然只算今天的记录。
+      expect(progress.single.currentValue, 1);
+    });
+
+    test('今天还没打卡：连续天数从昨天往回数，不算断', () async {
+      final plan = await seededPlan();
+      await checkInOn(plan, 16);
+      await checkInOn(plan, 17);
+
+      final progress = await repository.getTodayProgress(
+        'user_1',
+        DateTime.utc(2026, 7, 18),
+      );
+      expect(progress.single.streak, 2);
+      expect(progress.single.currentValue, 0);
+    });
+
+    test('中间缺一天就断在那里；从没打过卡就没有 streak', () async {
+      final plan = await seededPlan();
+      await checkInOn(plan, 18);
+      await checkInOn(plan, 17);
+      await checkInOn(plan, 15);
+
+      final progress = await repository.getTodayProgress(
+        'user_1',
+        DateTime.utc(2026, 7, 18),
+      );
+      expect(progress.single.streak, 2);
+
+      final other = await repository.createPlan(
+        const CheckinPlanDraft(name: '阅读', targetUnit: '分钟', targetValue: 30),
+        'user_1',
+      );
+      final after = await repository.getTodayProgress(
+        'user_1',
+        DateTime.utc(2026, 7, 18),
+      );
+      expect(after.firstWhere((p) => p.plan.id == other.id).streak, isNull);
+    });
   });
 }

@@ -109,8 +109,20 @@ class CheckinTimerController extends Notifier<CheckinTimerState> {
     });
   }
 
+  // 下面三个持久化方法都是「尽力而为」：读不到或写不进（首次运行、平台插件
+  // 没装、测试环境、存储被清）就当没有这回事，绝不能因为一次 prefs 失败让打卡
+  // 页抛异常 —— 计时器本身是内存里的状态，重启丢失可以接受，崩溃不行。
+  Future<SharedPreferences?> _prefs() async {
+    try {
+      return await SharedPreferences.getInstance();
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _persistState(CheckinTimerState s) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
+    if (prefs == null) return;
     if (s is CheckinTimerRunning) {
       await prefs.setString(_keyPlanId, s.planId);
       await prefs.setString(_keyPlanName, s.planName);
@@ -128,7 +140,8 @@ class CheckinTimerController extends Notifier<CheckinTimerState> {
   }
 
   Future<void> _clearPersistedState() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
+    if (prefs == null) return;
     await prefs.remove(_keyPlanId);
     await prefs.remove(_keyPlanName);
     await prefs.remove(_keyStartedAt);
@@ -138,7 +151,8 @@ class CheckinTimerController extends Notifier<CheckinTimerState> {
   }
 
   Future<void> _loadPersistedState() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _prefs();
+    if (prefs == null) return;
     final planId = prefs.getString(_keyPlanId);
     if (planId == null || planId.isEmpty) return;
 

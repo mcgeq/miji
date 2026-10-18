@@ -234,11 +234,7 @@ void main() {
     for (final entry in checkinPlanEmojis.entries) {
       for (final option in entry.value) {
         expect(option.label.trim(), isNotEmpty, reason: option.emoji);
-        expect(
-          seen.add(option.label),
-          isTrue,
-          reason: '标签重复：${option.label}',
-        );
+        expect(seen.add(option.label), isTrue, reason: '标签重复：${option.label}');
       }
     }
     // 认得出的 emoji 能查回标签。
