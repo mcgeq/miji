@@ -190,7 +190,7 @@ class CheckinPlan {
     required this.name,
     this.icon = '📌',
     this.color = '#6366F1',
-    this.category = '其他',
+    this.category = CheckinPlanCategory.other,
     this.planType = CheckinPlanType.cyclic,
     this.frequencyType = CheckinFrequencyType.daily,
     this.frequencyConfig,
@@ -217,7 +217,7 @@ class CheckinPlan {
   final String name;
   final String icon;
   final String color;
-  final String category;
+  final CheckinPlanCategory category;
   final CheckinPlanType planType;
   final CheckinFrequencyType frequencyType;
   final String? frequencyConfig;
@@ -244,7 +244,7 @@ class CheckinPlan {
     String? name,
     String? icon,
     String? color,
-    String? category,
+    CheckinPlanCategory? category,
     CheckinPlanType? planType,
     CheckinFrequencyType? frequencyType,
     String? frequencyConfig,
@@ -300,7 +300,7 @@ class CheckinPlanDraft {
     required this.name,
     this.icon = '📌',
     this.color = '#6366F1',
-    this.category = '其他',
+    this.category = CheckinPlanCategory.other,
     this.planType = CheckinPlanType.cyclic,
     this.frequencyType = CheckinFrequencyType.daily,
     this.frequencyConfig,
@@ -317,7 +317,7 @@ class CheckinPlanDraft {
   final String name;
   final String icon;
   final String color;
-  final String category;
+  final CheckinPlanCategory category;
   final CheckinPlanType planType;
   final CheckinFrequencyType frequencyType;
   final String? frequencyConfig;

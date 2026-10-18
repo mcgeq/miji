@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:miji/core/auth/application/auth_session_controller.dart';
+import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
@@ -19,7 +20,7 @@ class HomeHabitEntry {
 
   String get name => progress.plan.name;
   String get icon => progress.plan.icon;
-  String get category => progress.plan.category;
+  CheckinPlanCategory get category => progress.plan.category;
 
   String get progressLabel {
     final value = progress.currentValue;

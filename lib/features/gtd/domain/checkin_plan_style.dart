@@ -9,15 +9,11 @@
 // 而不是被塞进另一套视觉语言。
 import 'package:flutter/foundation.dart';
 
+import 'package:miji/features/gtd/domain/checkin_enums.dart';
+
 /// 分类的固定顺序。表单的下拉、emoji 表、默认值都以它为准。
-const List<String> checkinPlanCategories = <String>[
-  '健康习惯',
-  '学习成长',
-  '运动',
-  '生活记录',
-  '纪念日',
-  '其他',
-];
+const List<CheckinPlanCategory> checkinPlanCategories =
+    CheckinPlanCategory.values;
 
 /// 历史默认值：等于「没选过图标」。渲染时会被替换成分类的默认 emoji。
 const String legacyDefaultPlanIcon = '📌';
@@ -26,14 +22,69 @@ const String legacyDefaultPlanIcon = '📌';
 ///
 /// 每个分类的第一个是**默认值**（新建时自动选中）。种子模板里用过的 emoji
 /// 都在表里，这样「新建 → 选中 → 之后又改回默认」不会变成两套风格。
-const Map<String, List<String>> checkinPlanEmojis = <String, List<String>>{
-  '健康习惯': <String>['💧', '🌙', '🍚', '🚽', '🚿', '💊', '🧘', '🏥'],
-  '学习成长': <String>['📖', '📚', '📝', '🎧', '🧠', '✍️', '🎓', '💡'],
-  '运动': <String>['🚶', '🏃', '🚴', '🏊', '🏋️', '🤸', '⚽', '🧗'],
-  '生活记录': <String>['📸', '🍜', '🗺️', '🎬', '🐾', '🧹', '☕', '🌱'],
-  '纪念日': <String>['🎂', '💕', '💼', '🎁', '✨', '🥂', '📅', '🏆'],
-  '其他': <String>['⭐', '✅', '🎯', '🔔', '🌟', '📎', '🧩', '🕒'],
-};
+const Map<CheckinPlanCategory, List<String>> checkinPlanEmojis =
+    <CheckinPlanCategory, List<String>>{
+      CheckinPlanCategory.healthHabit: <String>[
+        '💧',
+        '🌙',
+        '🍚',
+        '🚽',
+        '🚿',
+        '💊',
+        '🧘',
+        '🏥',
+      ],
+      CheckinPlanCategory.study: <String>[
+        '📖',
+        '📚',
+        '📝',
+        '🎧',
+        '🧠',
+        '✍️',
+        '🎓',
+        '💡',
+      ],
+      CheckinPlanCategory.exercise: <String>[
+        '🚶',
+        '🏃',
+        '🚴',
+        '🏊',
+        '🏋️',
+        '🤸',
+        '⚽',
+        '🧗',
+      ],
+      CheckinPlanCategory.lifeLog: <String>[
+        '📸',
+        '🍜',
+        '🗺️',
+        '🎬',
+        '🐾',
+        '🧹',
+        '☕',
+        '🌱',
+      ],
+      CheckinPlanCategory.anniversary: <String>[
+        '🎂',
+        '💕',
+        '💼',
+        '🎁',
+        '✨',
+        '🥂',
+        '📅',
+        '🏆',
+      ],
+      CheckinPlanCategory.other: <String>[
+        '⭐',
+        '✅',
+        '🎯',
+        '🔔',
+        '🌟',
+        '📎',
+        '🧩',
+        '🕒',
+      ],
+    };
 
 /// 新建计划时给的默认配色（按分类取同序下标，保持每类风格稳定）。
 const List<String> checkinPlanColors = <String>[
@@ -48,17 +99,13 @@ const List<String> checkinPlanColors = <String>[
 ];
 
 /// 某个分类的默认 emoji（未知分类落到「其他」）。
-String defaultPlanEmojiFor(String category) {
-  final list = checkinPlanEmojis[category] ?? checkinPlanEmojis['其他']!;
-  return list.first;
+String defaultPlanEmojiFor(CheckinPlanCategory category) {
+  return checkinPlanEmojis[category]!.first;
 }
 
 /// 某个分类的默认颜色。
-String defaultPlanColorFor(String category) {
+String defaultPlanColorFor(CheckinPlanCategory category) {
   final index = checkinPlanCategories.indexOf(category);
-  if (index < 0) {
-    return checkinPlanColors.last;
-  }
   return checkinPlanColors[index % checkinPlanColors.length];
 }
 
@@ -68,7 +115,10 @@ String defaultPlanColorFor(String category) {
 /// 1. `📌` / 空 → 分类默认（历史上「没选过」就是图钉）；
 /// 2. 用户自己挑的 emoji → 原样保留（包括不在内置表里的）；
 /// 3. 其余（内置表里的值）→ 原样。
-String resolvePlanEmoji({required String icon, required String category}) {
+String resolvePlanEmoji({
+  required String icon,
+  required CheckinPlanCategory category,
+}) {
   final value = icon.trim();
   if (value.isEmpty || value == legacyDefaultPlanIcon) {
     return defaultPlanEmojiFor(category);
@@ -77,9 +127,8 @@ String resolvePlanEmoji({required String icon, required String category}) {
 }
 
 /// 这个 emoji 是否属于该分类的内置集合（用来区分「默认」与「自定义」）。
-bool isBuiltInPlanEmoji(String icon, String category) {
-  final list = checkinPlanEmojis[category] ?? const <String>[];
-  return list.contains(icon);
+bool isBuiltInPlanEmoji(String icon, CheckinPlanCategory category) {
+  return (checkinPlanEmojis[category] ?? const <String>[]).contains(icon);
 }
 
 /// 把 `#RRGGBB` 解析成颜色；解析不了返回 null，由调用方决定兜底。
@@ -105,7 +154,7 @@ class PlanVisual {
 
 PlanVisual planVisualFor({
   required String icon,
-  required String category,
+  required CheckinPlanCategory category,
   String? color,
 }) {
   return PlanVisual(
@@ -136,7 +185,7 @@ class PlanStyleSelection {
   /// **规则（用户明确要的）**：换分类时默认图标跟着换；但用户手动选过就不动。
   /// 抽成纯函数是因为这条规则以前写在 `setState` 里，只能靠点界面试——
   /// 而那个下拉菜单在测试里很不稳（过滤输入框会抢焦点），规则本身反而没被钉住。
-  PlanStyleSelection onCategoryChanged(String nextCategory) {
+  PlanStyleSelection onCategoryChanged(CheckinPlanCategory nextCategory) {
     if (customized) {
       return this;
     }
@@ -164,7 +213,7 @@ class PlanStyleSelection {
   /// 编辑一条已有计划时的初始状态。
   factory PlanStyleSelection.fromPlan({
     required String icon,
-    required String category,
+    required CheckinPlanCategory category,
     required String color,
   }) {
     return PlanStyleSelection(

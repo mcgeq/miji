@@ -699,7 +699,7 @@ class _HabitStatsPanel extends ConsumerWidget {
                       SizedBox(
                         width: 72,
                         child: Text(
-                          entry.key,
+                          entry.key.label,
                           style: theme.textTheme.bodySmall,
                         ),
                       ),

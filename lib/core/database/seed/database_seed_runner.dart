@@ -170,7 +170,7 @@ class DatabaseSeedRunner {
                 name: t.name,
                 icon: Value(t.icon),
                 color: Value(t.color),
-                category: Value(t.category),
+                category: Value(t.category.storageValue),
                 planType: Value(t.planType),
                 frequencyType: Value(t.frequencyType),
                 frequencyConfig: Value(t.frequencyConfig),

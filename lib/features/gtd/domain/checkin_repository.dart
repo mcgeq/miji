@@ -1,3 +1,4 @@
+import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 
 /// 打卡模块 Repository 接口
@@ -31,7 +32,10 @@ abstract class CheckinRepository {
   Future<void> reorderPlans(List<String> planIdsInOrder);
 
   /// 按分类获取模板计划（seed 数据用的接口）
-  Future<List<CheckinPlan>> getPlansByCategory(String userId, String category);
+  Future<List<CheckinPlan>> getPlansByCategory(
+    String userId,
+    CheckinPlanCategory category,
+  );
 
   // ---------------------------------------------------------------------------
   // 打卡记录
@@ -106,7 +110,7 @@ abstract class CheckinRepository {
   );
 
   /// 按分类统计打卡次数
-  Future<Map<String, int>> getCategoryStats(
+  Future<Map<CheckinPlanCategory, int>> getCategoryStats(
     String userId,
     DateTime startDate,
     DateTime endDate,

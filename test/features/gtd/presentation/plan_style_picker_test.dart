@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:miji/core/theme/app_theme.dart';
+import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
 import 'package:miji/features/gtd/presentation/plans/plan_style_picker.dart';
 
@@ -9,7 +10,7 @@ import 'package:miji/features/gtd/presentation/plans/plan_style_picker.dart';
 void main() {
   Future<void> pump(
     WidgetTester tester, {
-    String category = '运动',
+    CheckinPlanCategory category = CheckinPlanCategory.exercise,
     String emoji = '🚶',
     String colorHex = '#EF4444',
     bool customized = false,
@@ -47,7 +48,7 @@ void main() {
     String? picked;
     await pump(tester, onEmoji: (value) => picked = value);
 
-    for (final emoji in checkinPlanEmojis['运动']!) {
+    for (final emoji in checkinPlanEmojis[CheckinPlanCategory.exercise]!) {
       expect(find.text(emoji), findsWidgets, reason: emoji);
     }
 

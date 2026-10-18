@@ -30,12 +30,12 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
   final _iconController = TextEditingController();
 
   /// 当前选中的 emoji。默认跟随分类。
-  var _icon = defaultPlanEmojiFor('其他');
+  var _icon = defaultPlanEmojiFor(CheckinPlanCategory.other);
 
   /// 用户是否手动选过图标（选过之后切换分类不再覆盖）。
   var _iconCustomized = false;
-  var _color = defaultPlanColorFor('其他');
-  var _category = '其他';
+  var _color = defaultPlanColorFor(CheckinPlanCategory.other);
+  var _category = CheckinPlanCategory.other;
   var _planType = CheckinPlanType.cyclic;
   var _frequencyType = CheckinFrequencyType.daily;
   final _targetController = TextEditingController(text: '1');
@@ -132,7 +132,7 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
             }),
           ),
           const SizedBox(height: 12),
-          FormDropdown<String>(
+          FormDropdown<CheckinPlanCategory>(
             initialSelection: _category,
             label: '分类',
             enableFilter: true,
@@ -154,37 +154,15 @@ class _PlanFormPageState extends ConsumerState<PlanFormPage> {
                 _iconCustomized = next.customized;
               });
             },
-            entries: const [
-              DropdownMenuEntry(
-                value: '健康习惯',
-                label: '健康习惯',
-                labelWidget: Text('💧 健康习惯'),
-              ),
-              DropdownMenuEntry(
-                value: '学习成长',
-                label: '学习成长',
-                labelWidget: Text('📚 学习成长'),
-              ),
-              DropdownMenuEntry(
-                value: '运动',
-                label: '运动',
-                labelWidget: Text('🏃 运动'),
-              ),
-              DropdownMenuEntry(
-                value: '生活记录',
-                label: '生活记录',
-                labelWidget: Text('📸 生活记录'),
-              ),
-              DropdownMenuEntry(
-                value: '纪念日',
-                label: '纪念日',
-                labelWidget: Text('🎉 纪念日'),
-              ),
-              DropdownMenuEntry(
-                value: '其他',
-                label: '其他',
-                labelWidget: Text('📌 其他'),
-              ),
+            entries: [
+              for (final category in CheckinPlanCategory.values)
+                DropdownMenuEntry(
+                  value: category,
+                  label: category.label,
+                  labelWidget: Text(
+                    '${defaultPlanEmojiFor(category)} ${category.label}',
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),

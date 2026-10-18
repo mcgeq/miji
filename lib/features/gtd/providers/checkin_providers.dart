@@ -5,6 +5,7 @@ import 'package:miji/core/attachments/attachment_providers.dart';
 import 'package:miji/core/database/database_providers.dart';
 import 'package:miji/features/gtd/application/checkin_timer_controller.dart';
 import 'package:miji/features/gtd/data/drift_checkin_repository.dart';
+import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/domain/checkin_repository.dart';
 
@@ -171,7 +172,8 @@ final planTrendProvider = FutureProvider.autoDispose
 // 分类统计
 // ---------------------------------------------------------------------------
 
-final categoryStatsProvider = FutureProvider.autoDispose<Map<String, int>>((
+final categoryStatsProvider =
+    FutureProvider.autoDispose<Map<CheckinPlanCategory, int>>((
   ref,
 ) async {
   final session = ref.watch(authSessionControllerProvider);

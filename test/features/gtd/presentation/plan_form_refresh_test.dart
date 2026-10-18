@@ -173,7 +173,7 @@ GoRouter _buildRouter() {
 CheckinPlanDraft _draft(String name) => CheckinPlanDraft(
   name: name,
   icon: '📌',
-  category: '其他',
+  category: CheckinPlanCategory.other,
   planType: CheckinPlanType.cyclic,
   frequencyType: CheckinFrequencyType.daily,
   targetValue: 1,

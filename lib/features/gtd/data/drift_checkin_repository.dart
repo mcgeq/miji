@@ -88,7 +88,7 @@ class DriftCheckinRepository implements CheckinRepository {
             name: draft.name,
             icon: Value(draft.icon),
             color: Value(draft.color),
-            category: Value(draft.category),
+            category: Value(draft.category.storageValue),
             planType: Value(draft.planType.value),
             frequencyType: Value(draft.frequencyType.value),
             frequencyConfig: Value(draft.frequencyConfig),
@@ -119,7 +119,7 @@ class DriftCheckinRepository implements CheckinRepository {
         name: Value(plan.name),
         icon: Value(plan.icon),
         color: Value(plan.color),
-        category: Value(plan.category),
+        category: Value(plan.category.storageValue),
         planType: Value(plan.planType.value),
         frequencyType: Value(plan.frequencyType.value),
         frequencyConfig: Value(plan.frequencyConfig),
@@ -185,14 +185,14 @@ class DriftCheckinRepository implements CheckinRepository {
   @override
   Future<List<CheckinPlan>> getPlansByCategory(
     String userId,
-    String category,
+    CheckinPlanCategory category,
   ) async {
     final rows =
         await (database.select(database.checkinPlans)
               ..where(
                 (row) =>
                     row.userId.equals(userId) &
-                    row.category.equals(category) &
+                    row.category.equals(category.storageValue) &
                     row.isDeleted.equals(false),
               )
               ..orderBy([(row) => OrderingTerm.asc(row.sortOrder)]))
@@ -669,7 +669,7 @@ class DriftCheckinRepository implements CheckinRepository {
   }
 
   @override
-  Future<Map<String, int>> getCategoryStats(
+  Future<Map<CheckinPlanCategory, int>> getCategoryStats(
     String userId,
     DateTime startDate,
     DateTime endDate,
@@ -695,11 +695,16 @@ class DriftCheckinRepository implements CheckinRepository {
             ))
             .get();
 
-    final planCategoryMap = {for (final plan in plans) plan.id: plan.category};
+    // 这里的 plan 是 drift 行，`category` 是字符串列 —— 转成枚举再聚合。
+    final planCategoryMap = <String, CheckinPlanCategory>{
+      for (final plan in plans)
+        plan.id: CheckinPlanCategory.fromStorageValue(plan.category),
+    };
 
-    final stats = <String, int>{};
+    final stats = <CheckinPlanCategory, int>{};
     for (final row in rows) {
-      final category = planCategoryMap[row.planId] ?? '其他';
+      final category =
+          planCategoryMap[row.planId] ?? CheckinPlanCategory.other;
       stats[category] = (stats[category] ?? 0) + 1;
     }
 
@@ -721,7 +726,7 @@ class DriftCheckinRepository implements CheckinRepository {
       name: row.name,
       icon: row.icon,
       color: row.color,
-      category: row.category,
+      category: CheckinPlanCategory.fromStorageValue(row.category),
       planType: CheckinPlanType.fromValue(row.planType),
       frequencyType: CheckinFrequencyType.fromValue(row.frequencyType),
       frequencyConfig: row.frequencyConfig,
@@ -881,7 +886,7 @@ class DriftCheckinRepository implements CheckinRepository {
               'id': p.id,
               'name': p.name,
               'icon': p.icon,
-              'category': p.category,
+              'category': p.category.storageValue,
               'planType': p.planType.value,
               'frequencyType': p.frequencyType.value,
               'targetValue': p.targetValue,

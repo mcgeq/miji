@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:miji/core/theme/app_design_tokens.dart';
+import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
 
 /// 创建/编辑计划时的「图标 + 颜色」选择器。
@@ -25,7 +26,7 @@ class PlanStylePicker extends StatelessWidget {
     required this.onCustomToggled,
   });
 
-  final String category;
+  final CheckinPlanCategory category;
   final String emoji;
   final String colorHex;
 
@@ -43,8 +44,7 @@ class PlanStylePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final options =
-        checkinPlanEmojis[category] ?? checkinPlanEmojis['其他']!;
+    final options = checkinPlanEmojis[category]!;
     final color = planColorValue(colorHex);
 
     return Column(
@@ -61,7 +61,7 @@ class PlanStylePicker extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              customized ? '自定义 · $emoji' : '$category 默认',
+              customized ? '自定义 · $emoji' : '${category.label} 默认',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: scheme.onSurfaceVariant,
                 letterSpacing: 0,
