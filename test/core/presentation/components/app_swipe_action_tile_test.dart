@@ -72,8 +72,8 @@ void main() {
       ('删除', 1, 1),
     ]) {
       final rect = tester.getRect(find.byTooltip(tooltip));
-      // 目标尺寸下限：宽 >= 48、高 >= 28（一行 56 + 行高下限 72 → 每格约 32）。
-      expect(rect.width, greaterThanOrEqualTo(48), reason: '$tooltip 太窄');
+      // 目标尺寸下限：宽 >= 44、高 >= 28（两列两行时约 50×32）。
+      expect(rect.width, greaterThanOrEqualTo(44), reason: '$tooltip 太窄');
       expect(rect.height, greaterThanOrEqualTo(28), reason: '$tooltip 太矮');
       // 位置：第一行在上、第二行在下；左右按列排。
       final other = tester.getRect(find.text('一行流水'));
@@ -87,6 +87,33 @@ void main() {
         expect(rect.height, closeTo(left.height, 0.5));
       }
     }
+  });
+
+  testWidgets('第一列不贴卡片边缘：左右都留出空隙，格子也收窄了一点', (tester) async {
+    await pumpTile(
+      tester,
+      rowHeight: 72,
+      actions: [
+        action('编辑', Icons.edit_outlined),
+        action('删除', Icons.delete_outline_rounded),
+      ],
+    );
+    await tester.drag(find.text('一行流水'), const Offset(-200, 0));
+    await tester.pumpAndSettle();
+
+    final card = tester.getRect(find.text('一行流水'));
+    final edit = tester.getRect(find.byTooltip('编辑'));
+    final delete = tester.getRect(find.byTooltip('删除'));
+
+    // 卡片滑开后的右边缘与第一列之间至少留 4px。
+    expect(
+      edit.left - card.right,
+      greaterThanOrEqualTo(4),
+      reason: '第一列不能紧贴卡片的边框',
+    );
+    // 整行宽度仍是 2×58 = 116，扣掉左右各 6 的留白与 4 的间距 → 每格 50。
+    expect(edit.width, closeTo(50, 1));
+    expect(delete.width, closeTo(edit.width, 0.5));
   });
 
   testWidgets('两个动作：并排两列，各自占满整行高度', (tester) async {

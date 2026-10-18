@@ -288,19 +288,26 @@ class _AppSwipeActionPane extends StatelessWidget {
         // 上下各留 4px 的呼吸位；算格子时必须把它扣掉，否则 Column 会比
         // 可用高度多出 8px（溢出）。
         const verticalPadding = 4.0;
+        // 左右也留出空隙：不留的话第一列紧贴着滑开的卡片边缘，看着像被挤住，
+        // 手指也容易误触到卡片上去。顺带把格子宽度收窄一点，比贴边好看。
+        const horizontalPadding = 6.0;
         // 约束可能无限（列表项在 Column 里布局时），给一个保底高度，
         // 免得算出 Infinity 的格子。
         final height = constraints.maxHeight.isFinite
             ? constraints.maxHeight - verticalPadding * 2
             : rows * _minCellHeight + (rows - 1) * spacing;
-        final cellWidth = (width - spacing * (columns - 1)) / columns;
+        final cellWidth =
+            (width - horizontalPadding * 2 - spacing * (columns - 1)) / columns;
         final cellHeight = (height - spacing * (rows - 1)) / rows;
 
         return SizedBox(
           width: width,
           height: double.infinity,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: verticalPadding),
+            padding: const EdgeInsets.symmetric(
+              vertical: verticalPadding,
+              horizontal: horizontalPadding,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
