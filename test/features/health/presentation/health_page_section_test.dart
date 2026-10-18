@@ -20,20 +20,16 @@ import 'package:miji/features/health/presentation/health_trends_tab.dart';
 /// 只走「今日 ↔ 趋势」：日历面板会开一批长生命周期的 drift 流，测试结束时
 /// `database.close()` 等它们取消会一直不返回（与本次改动无关的既有现象）。
 void main() {
-  testWidgets('顶部不再有 tab 栏，改成工具行 chip', (tester) async {
+  testWidgets('页内没有面板切换控件：tab 栏和面板 chip 都不该回来', (tester) async {
     final router = _router();
     addTearDown(router.dispose);
     await _pump(tester, router);
 
-    // 回归：这里曾是一枚 4 段分段控件（今日 / 日历 / 趋势 / 设置）。
+    // 回归：这里曾是一枚 4 段分段控件，后来换成工具行左端的 chip，两者都已移除。
     expect(find.byType(AppSlidingSegmentedControl), findsNothing);
-
-    final chip = find.byKey(const ValueKey('module-section-chip-health'));
-    expect(chip, findsOneWidget);
     expect(
-      find.descendant(of: chip, matching: find.text('今日')),
-      findsOneWidget,
-      reason: 'chip 上要常驻当前面板名，否则用户不知道自己在哪',
+      find.byKey(const ValueKey('module-section-chip-health')),
+      findsNothing,
     );
   });
 
@@ -54,12 +50,12 @@ void main() {
     expect(find.byType(HealthTodayTab), findsOneWidget);
     expect(router.state.uri.queryParameters['section'], isNull);
 
-    await _switchPanel(tester, 'trends');
+    await _switchPanel(tester, 'trends', router);
 
     expect(router.state.uri.queryParameters['section'], 'trends');
     expect(find.byType(HealthTrendsTab), findsOneWidget);
 
-    await _switchPanel(tester, 'today');
+    await _switchPanel(tester, 'today', router);
 
     expect(router.state.uri.queryParameters['section'], 'today');
     expect(find.byType(HealthTodayTab), findsOneWidget);
@@ -75,14 +71,16 @@ void main() {
   });
 }
 
-/// 换面板：点工具行 chip 唤起选择器，再点目标面板。
+/// 换面板：直接改地址（页内已没有切换控件）。
 ///
-/// 顶部 tab 栏删掉之后，这是页内唯一的换面板通路（底栏「健康」那条走的是
-/// 外壳的两态唤出，用例见 `test/features/shell/app_shell_navigation_test.dart`）。
-Future<void> _switchPanel(WidgetTester tester, String sectionId) async {
-  await tester.tap(find.byKey(const ValueKey('module-section-chip-health')));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(ValueKey('module-section-item-$sectionId')));
+/// 真实用户路径是底栏 / 侧栏点当前模块再点一次，那条由
+/// `test/features/shell/app_shell_navigation_test.dart` 覆盖。
+Future<void> _switchPanel(
+  WidgetTester tester,
+  String sectionId,
+  GoRouter router,
+) async {
+  router.go('/app/health?section=$sectionId');
   await tester.pumpAndSettle();
 }
 

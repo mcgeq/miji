@@ -13,51 +13,28 @@ import 'package:miji/features/gtd/presentation/gtd_page.dart';
 
 /// 打卡页的三件事：
 ///
-/// 1. 顶部**不再有 tab 栏**：原先那枚 5 段的分段控件换成了工具行左端的 chip
-///    （形态与记账页一致），底栏「打卡」两态唤出的也是同一张选择器；
+/// 1. 页内**没有任何面板切换控件**（既没有 tab 栏，也没有面板 chip）：换面板
+///    只走底栏 / 侧栏「点当前模块再点一次」那条路；
 /// 2. 页级动作（新建任务 / 新建计划 / 管理计划）必须真的能用；
 /// 3. 面板要进地址（`?section=`）——以前只活在 State 里，深链、底栏切回、
 ///    系统返回键全都拿不到「我在哪个面板」。
 void main() {
-  testWidgets('顶部不再有 tab 栏，改成工具行 chip（选择器一次列全 5 个面板）', (tester) async {
+  testWidgets('页内没有面板切换控件：tab 栏和面板 chip 都不该回来', (tester) async {
     final router = _router();
     addTearDown(router.dispose);
     await _pump(tester, router);
 
-    // 回归：这里曾是一枚横跨整行的 5 段分段控件（今日 / 任务 / 习惯 / 日历 / 统计）。
+    // 回归：这里曾是一枚横跨整行的 5 段分段控件，后来又换成工具行左端的 chip。
+    // 两者都已按要求移除，换面板只走底栏 / 侧栏的两态唤出。
     expect(find.byType(AppSlidingSegmentedControl), findsNothing);
-
-    final chip = find.byKey(const ValueKey('module-section-chip-gtd'));
-    expect(chip, findsOneWidget);
     expect(
-      find.descendant(of: chip, matching: find.text('今日')),
-      findsOneWidget,
-      reason: 'chip 上要常驻当前面板名，否则用户不知道自己在哪',
+      find.byKey(const ValueKey('module-section-chip-gtd')),
+      findsNothing,
     );
 
-    await tester.tap(chip);
+    // 面板仍然要能切：地址是唯一入口。
+    router.go('/app/gtd?section=tasks');
     await tester.pumpAndSettle();
-
-    // 面板之间没有横向通路（只有底栏 / chip 两个入口），选择器必须一次列全，
-    // 否则删掉 tab 行会留下死胡同。
-    final picker = find.byKey(const ValueKey('module-section-picker'));
-    expect(picker, findsOneWidget);
-    for (final label in ['今日', '任务', '习惯', '日历', '统计']) {
-      expect(
-        find.descendant(of: picker, matching: find.text(label)),
-        findsOneWidget,
-        reason: '选择器里缺少 $label',
-      );
-    }
-
-    // 选完必须收起：它取代 tab 栏，绝不能又变成压在内容上的浮层。
-    await tester.tap(find.byKey(const ValueKey('module-section-item-tasks')));
-    await tester.pumpAndSettle();
-    expect(picker, findsNothing);
-    expect(
-      find.descendant(of: chip, matching: find.text('任务')),
-      findsOneWidget,
-    );
     expect(router.state.uri.queryParameters['section'], 'tasks');
   });
 
@@ -66,7 +43,7 @@ void main() {
     addTearDown(router.dispose);
     await _pump(tester, router);
 
-    await _switchPanel(tester, 'tasks');
+    await _switchPanel(tester, 'tasks', router);
 
     await tester.tap(find.byTooltip('新建任务'));
     await tester.pumpAndSettle();
@@ -81,7 +58,7 @@ void main() {
     await _pump(tester, router);
 
     for (final section in ['tasks', 'habits', 'calendar', 'statistics']) {
-      await _switchPanel(tester, section);
+      await _switchPanel(tester, section, router);
       expect(tester.takeException(), isNull, reason: '切到 $section 时抛异常');
       // 「习惯」有两个动作，最宽；至少保证有动作入口渲染出来。
       expect(find.byIcon(Icons.add_rounded), findsWidgets);
@@ -97,7 +74,7 @@ void main() {
     expect(find.byTooltip('新建任务'), findsOneWidget);
     expect(find.byTooltip('管理计划'), findsNothing);
 
-    await _switchPanel(tester, 'habits');
+    await _switchPanel(tester, 'habits', router);
 
     expect(router.state.uri.queryParameters['section'], 'habits');
     expect(find.byTooltip('管理计划'), findsOneWidget);
@@ -120,21 +97,23 @@ void main() {
 
     expect(router.state.uri.queryParameters['section'], isNull);
 
-    await _switchPanel(tester, 'statistics');
+    await _switchPanel(tester, 'statistics', router);
 
     expect(router.state.uri.queryParameters['section'], 'statistics');
   });
 }
 
-/// 换面板：点工具行 chip 唤起选择器，再点目标面板。
+/// 换面板：直接改地址（页内已经没有切换控件）。
 ///
-/// 顶部 tab 栏删掉之后，这是页内唯一的换面板通路，测试也照真实路径走——
-/// 直接 tap 分段图标的日子过去了（想走底栏那条，见
-/// `test/features/shell/app_shell_navigation_test.dart`）。
-Future<void> _switchPanel(WidgetTester tester, String sectionId) async {
-  await tester.tap(find.byKey(const ValueKey('module-section-chip-gtd')));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(ValueKey('module-section-item-$sectionId')));
+/// 真正的用户路径是底栏 / 侧栏点当前模块再点一次，那条路径由
+/// `test/features/shell/app_shell_navigation_test.dart` 覆盖；这里只关心
+/// 「面板按 section 渲染」，所以走最短的等价路径。
+Future<void> _switchPanel(
+  WidgetTester tester,
+  String sectionId,
+  GoRouter router,
+) async {
+  router.go('/app/gtd?section=$sectionId');
   await tester.pumpAndSettle();
 }
 

@@ -8,7 +8,6 @@ import 'package:miji/core/presentation/app_page_layout.dart';
 import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
-import 'package:miji/core/presentation/components/app_module_section_picker.dart';
 import 'package:miji/core/router/app_module_nav.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
@@ -103,24 +102,17 @@ class _GtdPageState extends ConsumerState<GtdPage> {
     );
   }
 
-  /// 工具行：左端「面板 chip」（显示当前面板名，点开就是选择器），右端是
-  /// 当前面板自己的页级动作。
+  /// 工具行：只有当前面板自己的页级动作。
   ///
-  /// 这里原本是一枚 5 段的分段控件（今日 / 任务 / 习惯 / 日历 / 统计）：它横跨
-  /// 整行，手机上和第二行的内容抢视线，而记账页早在同一轮改版里就换成了
-  /// 「chip + 底栏两态唤出」的形态——同一个应用里两套面板切换形态本身就是负担。
+  /// 左端原本有一枚「面板 chip」（显示当前面板名、点开是选择器），已按要求移除。
+  /// 换面板现在只有一条路：底栏 / 侧栏点当前模块再点一次（两态唤出）——
+  /// 外壳的 `_openModule` 就是为这件事存在的，所以这不构成死胡同。
   ///
-  /// chip 只占一个按钮宽，却把分段控件最要紧的两件事原样留下：**当前面板名
-  /// 常驻**（面板自身没有标题栏，这是唯一的「我在哪」标识）和**一拍点开选择器**
-  /// （底栏「打卡」再点一次唤起的是同一张选择器）。
+  /// 代价写在这里：面板自身没有标题栏，移除 chip 之后页内没有「我在哪个面板」
+  /// 的文字标识。若要补，应该补在各面板自己的标题上，而不是把这个 chip 加回来。
   Widget _buildToolbarRow() {
     return Row(
       children: [
-        AppModuleSectionChip(
-          spec: gtdModuleNav,
-          sectionId: _selectedPanel.name,
-          onTap: _openSectionPicker,
-        ),
         const Spacer(),
         ..._buildToolbarActions(),
       ],
@@ -179,36 +171,11 @@ class _GtdPageState extends ConsumerState<GtdPage> {
   }
 
   /// 换面板（工具行 chip）。
-  void _selectPanel(_GtdPanel panel) {
-    if (panel == _selectedPanel) {
-      return;
-    }
-    setState(() => _selectedPanel = panel);
-    // 宽屏走的是 `_buildSelectedTab()`，没有 PageView —— 控制器没挂上时
-    // `jumpToPage` 会在 debug 下断言失败。
-    if (_pageController.hasClients) {
-      _pageController.jumpToPage(panel.index);
-    }
-    _syncSectionToUrl(panel);
-  }
 
   /// 工具行 chip：弹出面板选择器并落到选中的面板。
   ///
   /// 与底栏「打卡」的两态唤出走的是同一张选择器，差别只是这里一次点击到位
   /// （已经知道自己在这个模块里，不必先判断「在不在模块内」）。
-  Future<void> _openSectionPicker() async {
-    final current = _selectedPanel.name;
-    final picked = await showAppModuleSectionPicker(
-      context,
-      spec: gtdModuleNav,
-      currentSectionId: current,
-    );
-    if (!mounted || picked == null || picked == current) {
-      return;
-    }
-    _selectPanel(_panelFromSection(picked));
-  }
-
   /// 把当前面板写回 `?section=`。
   ///
   /// 以前打卡的面板只活在 State 里，地址永远是 `/app/gtd`：从首页 / 通知进来
