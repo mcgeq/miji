@@ -1,0 +1,121 @@
+import 'package:intl/intl.dart';
+
+import 'package:miji/features/bookkeeping/application/money_amount_expression.dart';
+
+class MoneyAmountParseException implements Exception {
+  const MoneyAmountParseException(this.input);
+
+  final String input;
+
+  @override
+  String toString() {
+    return 'MoneyAmountParseException(input: $input)';
+  }
+}
+
+int parseMoneyAmountToMinor(String input) {
+  final normalized = input.trim().replaceAll(',', '');
+  if (normalized.isEmpty) {
+    return 0;
+  }
+
+  final value = double.tryParse(normalized);
+  if (value != null) {
+    return (value * 100).round();
+  }
+
+  // 不是纯数字：再按四则表达式试一次（合计小票：`12.5+38+6`）。
+  // 仍然解析不了才抛错，保持调用方原有的错误处理不变。
+  final evaluated = MoneyAmountExpression.tryEvaluateToMinor(normalized);
+  if (evaluated == null) {
+    throw MoneyAmountParseException(input);
+  }
+  return evaluated;
+}
+
+String formatMoneyMinor(int amountMinor, String currencyCode) {
+  final formatter = NumberFormat.currency(
+    locale: _localeForCurrency(currencyCode),
+    name: currencyCode,
+    symbol: _symbolForCurrency(currencyCode),
+    decimalDigits: 2,
+  );
+
+  return formatter.format(amountMinor / 100);
+}
+
+/// 压缩后的金额，用于横向空间紧张的汇总条。
+///
+/// 千位以上折算成 `k` / `w`（万），保留一位小数并在整数时省略，例如
+/// `¥2.3k`、`¥3.2w`、`-¥1.5k`；千位以下沿用 [formatMoneyMinor] 的完整格式，
+/// 保证小额仍然精确到分。
+String formatMoneyMinorCompact(int amountMinor, String currencyCode) {
+  final sign = amountMinor < 0 ? '-' : '';
+  final symbol = _symbolForCurrency(currencyCode);
+  final amount = amountMinor.abs() / 100;
+
+  if (amount >= 10000) {
+    return '$sign$symbol${_compactDecimal(amount / 10000)}w';
+  }
+  if (amount >= 1000) {
+    return '$sign$symbol${_compactDecimal(amount / 1000)}k';
+  }
+
+  return formatMoneyMinor(amountMinor, currencyCode);
+}
+
+String _compactDecimal(double value) {
+  final text = value.toStringAsFixed(1);
+  return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
+}
+
+/// 指定位数的金额格式。
+///
+/// [formatMoneyMinor] 固定两位小数，适合「一笔账」；而**时薪**这类派生值
+/// 需要一位小数（`¥48.2`）——两位会让 Hero 上的大数字变成 `¥48.19`，
+/// 看起来像精确到分的账单，实际上它是个估算值。
+String formatMoneyMinorWithDigits(
+  int amountMinor,
+  String currencyCode,
+  int decimalDigits,
+) {
+  final formatter = NumberFormat.currency(
+    locale: _localeForCurrency(currencyCode),
+    name: currencyCode,
+    symbol: _symbolForCurrency(currencyCode),
+    decimalDigits: decimalDigits,
+  );
+  return formatter.format(amountMinor / 100);
+}
+
+String _localeForCurrency(String currencyCode) {
+  return switch (currencyCode) {
+    'CNY' => 'zh_CN',
+    'USD' => 'en_US',
+    'EUR' => 'de_DE',
+    'JPY' => 'ja_JP',
+    'HKD' => 'zh_HK',
+    'GBP' => 'en_GB',
+    'AUD' => 'en_AU',
+    'CAD' => 'en_CA',
+    'SGD' => 'en_SG',
+    'KRW' => 'ko_KR',
+    _ => 'zh_CN',
+  };
+}
+
+String _symbolForCurrency(String currencyCode) {
+  return switch (currencyCode) {
+    'CNY' => '¥',
+    'USD' => r'$',
+    'EUR' => '€',
+    'JPY' => '¥',
+    'HKD' => r'HK$',
+    'GBP' => '£',
+    'AUD' => r'A$',
+    'CAD' => r'C$',
+    'SGD' => r'S$',
+    'KRW' => '₩',
+    _ => currencyCode,
+  };
+}

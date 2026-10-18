@@ -1,0 +1,16 @@
+# Generate a new upload keystore when this app needs its own signing key:
+#
+# .\scripts\android-generate-keystore.ps1
+#
+# Then copy this file to android/key.properties and fill in the real values.
+# android/key.properties is ignored by Git and must not be committed.
+storeFile=G:\\keystore\\miji-upload-keystore.p12
+storePassword=<store-password>
+keyAlias=upload
+keyPassword=<key-password>
+
+# The Gradle config also accepts the legacy Tauri format from the old project:
+#
+# password=<shared-password>
+# keyAlias=upload
+# storeFile=G:\\keystore\\upload-keystore.jks

@@ -1,0 +1,738 @@
+import 'package:miji/core/sync/delta_sync/delta_conflict_models.dart';
+import 'package:miji/core/sync/delta_sync/delta_package_models.dart';
+import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_auto_posting_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_bill_reminder_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_commitment_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_category_usage.dart';
+import 'package:miji/features/bookkeeping/domain/money_credit_card_bill_view.dart';
+import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_entry_suggestions.dart';
+import 'package:miji/features/bookkeeping/domain/money_auto_posting_conflict_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_statistics_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_transaction_summary_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_spending_analysis_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_reminder_center_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_analysis_report_entity.dart';
+
+abstract class MoneyRepository {
+  Future<void> ensureReadyForUser(String userId);
+
+  Future<void> applyRemoteMoneyChange(
+    DeltaChangeRecord change,
+    DeltaLocalRecord? local,
+  );
+
+  Stream<List<MoneyAccountEntity>> watchVisibleAccountsForUser(String userId);
+
+  /// 系统默认创建的唯一内部虚拟账户（他人代付用途，如 `internal_account_$userId`）。
+  Stream<List<MoneyAccountEntity>> watchSystemInternalAccountsForUser(
+    String userId,
+  );
+
+  Stream<List<MoneyAccountEntity>> watchAccountsForLedger(
+    String userId,
+    String ledgerId,
+  );
+
+  Stream<List<MoneyAccountEntity>> watchTransferAccountsForLedger(
+    String userId,
+    String ledgerId,
+  );
+
+  Future<void> addAccountToLedger(
+    String userId,
+    String ledgerId,
+    String accountId,
+  );
+
+  Future<void> removeAccountFromLedger(
+    String userId,
+    String ledgerId,
+    String accountId,
+  );
+
+  Future<Map<String, MoneyAccountMonthlySummary>>
+  getAccountMonthlySummariesForUser(String userId, {String? ledgerId});
+
+  Future<MoneyCreditCardStatement?> getCreditCardStatementForAccount(
+    String userId,
+    String accountId, {
+    DateTime? asOf,
+  });
+
+  Future<MoneyCreditCardBillView?> getCurrentCreditCardBillViewForAccount(
+    String userId,
+    String accountId, {
+    DateTime? asOf,
+  });
+
+  Stream<MoneyCategoryCatalog> watchCategoryCatalogForUser(
+    String userId,
+    MoneyCategoryKind kind, {
+    bool includeDeleted = false,
+  });
+
+  /// 按给定顺序重排分类的业务顺序（`sort_order` = 下标 + 1）。
+  ///
+  /// * 只写真正变化的行（避免无意义的 version 增长与同步记录）；
+  /// * **内置分类也允许重排**：它们的行是 `user_id IS NULL` 的设备共享行，
+  ///   现有 `updateCategory` 的 `is_system = 0` 约束写不进去，所以需要这条专用路径；
+  /// * 内置分类只改本地（不同步，见实现注释），自建分类会把 sort_order 同步出去。
+  Future<void> reorderCategories(
+    String userId,
+    MoneyCategoryKind kind,
+    List<String> orderedIds,
+  );
+
+  /// 同一父分类下的子分类重排，语义同 [reorderCategories]。
+  Future<void> reorderSubCategories(
+    String userId,
+    String categoryId,
+    List<String> orderedIds,
+  );
+
+  /// 把分类顺序恢复成默认：内置分类按种子声明顺序，自建分类按创建时间排在后面。
+  Future<void> resetCategoryOrder(String userId, MoneyCategoryKind kind);
+
+  /// 同一父分类下的子分类恢复默认顺序（种子声明顺序，自建排后面）。
+  Future<void> resetSubCategoryOrder(String userId, String categoryId);
+
+  /// 分类 / 子分类的历史用量（次数 + 最近使用时间，覆盖全时段）。
+  ///
+  /// 用于「常用」排序：窗口口径（本月金额）会在月初或某分类本月未用时归零，
+  /// 把真正常用的项挤掉。
+  Future<MoneyCategoryUsage> getCategoryUsageStatsForUser(String userId);
+
+  Future<Map<MoneyPaymentMethod, int>> getPaymentMethodUsageRanksForUser(
+    String userId,
+  );
+
+  Future<MoneyEntrySuggestions> getEntrySuggestionsForUser(
+    String userId, {
+    int merchantLimit = 8,
+    int paymentMethodLimit = 6,
+  });
+
+  Future<void> refreshUsageStatsForUser(String userId);
+
+  Future<void> refreshUsageStatsForAllUsers();
+
+  Future<MoneyCategoryEntity> createCategory(
+    String userId,
+    MoneyCategoryDraft draft,
+  );
+
+  Future<MoneyCategoryEntity> updateCategory(
+    String userId,
+    MoneyCategoryUpdate update,
+  );
+
+  Future<void> deleteCategory(String userId, String categoryId);
+
+  Future<void> restoreCategory(String userId, String categoryId);
+
+  Future<MoneySubCategoryEntity> createSubCategory(
+    String userId,
+    MoneySubCategoryDraft draft,
+  );
+
+  Future<MoneySubCategoryEntity> updateSubCategory(
+    String userId,
+    MoneySubCategoryUpdate update,
+  );
+
+  Future<void> deleteSubCategory(String userId, String subCategoryId);
+
+  Future<void> restoreSubCategory(String userId, String subCategoryId);
+
+  Stream<List<MoneyBudgetEntity>> watchBudgetsForUser(
+    String userId, {
+    String? ledgerId,
+  });
+
+  /// 标签候选：历史交易标签 + 已有预算标签（去重、排序）。
+  Stream<List<String>> watchTagCandidatesForUser(String userId);
+
+  /// 重命名标签：同步更新所有引用该标签的流水与预算，保证链接不断。
+  Future<void> renameTag(String userId, String oldName, String newName);
+
+  /// 删除标签：从所有流水与预算中移除该标签。
+  Future<void> deleteTag(String userId, String tagName);
+
+  Stream<List<MoneyBudgetAllocationEntity>> watchBudgetAllocationsForUser(
+    String userId,
+    String budgetId,
+  );
+
+  Stream<List<MoneyBudgetHistorySnapshotEntity>> watchBudgetSnapshotsForUser(
+    String userId, {
+    String? budgetId,
+  });
+
+  Stream<List<MoneyBudgetAllocationHistorySnapshotEntity>>
+  watchBudgetAllocationSnapshotsForUser(String userId, String budgetId);
+
+  Future<void> ensureBudgetSnapshotForBudget(String userId, String budgetId);
+
+  Future<void> refreshBudgetSnapshotsForUser(String userId);
+
+  Stream<List<MoneyBillReminderEntity>> watchBillRemindersForUser(
+    String userId, {
+    String? ledgerId,
+  });
+
+  Stream<List<MoneyAutoPostingTemplateEntity>> watchAutoPostingTemplatesForUser(
+    String userId, {
+    String? ledgerId,
+  });
+
+  Stream<List<MoneyAutoPostingRunEntity>> watchAutoPostingRunsForTemplate(
+    String userId,
+    String templateId,
+  );
+
+  Future<List<MoneyReminderCenterItem>> getPendingReminderCenterItems(
+    String userId, {
+    String? ledgerId,
+    DateTime? today,
+  });
+
+  Future<List<MoneyReminderCenterItem>> getReminderCenterHistory(
+    String userId, {
+    String? ledgerId,
+    int limit = 50,
+  });
+
+  Future<void> setReminderCenterState(
+    String userId,
+    MoneyReminderCenterItem item,
+    MoneyReminderCenterState state, {
+    DateTime? snoozedUntil,
+  });
+
+  /// 把「已在提醒中心处理过（completed / ignored）但提醒行 status 仍是 pending」的
+  /// 账单提醒收敛为 `done`。幂等，可重复执行，返回本次实际修正的条数。
+  ///
+  /// `moneyBillReminders.status` 长期不被置终态，而 `MoneyBillReminderEntity.isActive`
+  /// 只看 status，于是已经处理掉的非重复提醒仍然:
+  /// 持续推送系统通知（逾期还会逐日重复）、并计入统计页「即将到期账单」。
+  ///
+  /// 刻意**排除**两类提醒，它们必须保持 pending:
+  /// * 周期性提醒（`repeatPeriodType != null`）：置终态会让下一期不再出现。
+  /// * 自动托管提醒（`autoManaged == true`）：`_syncCreditAccountRepaymentReminder`
+  ///   在每次流水写入时都会把 status 改回 pending，与本方法互踢会导致 version 抖动；
+  ///   这类提醒本就有自己的终止路径（欠款归零时被删除）。
+  Future<int> repairBillReminderProcessingStatuses(
+    String userId, {
+    String? ledgerId,
+  });
+
+  /// 把已经产生的流水 id 写回账单提醒（relatedTransactionId），使提醒 ↔ 流水双向可查。
+  ///
+  /// 同样只对非自动托管的提醒有意义：托管提醒的同步逻辑会把该字段清成 null。
+  Future<void> linkBillReminderTransaction(
+    String userId,
+    String reminderId,
+    String transactionId,
+  );
+  Stream<List<MoneyInstallmentPlanEntity>> watchInstallmentPlansForUser(
+    String userId, {
+    String? ledgerId,
+  });
+
+  Stream<List<MoneyInstallmentDetailEntity>> watchInstallmentDetailsForPlan(
+    String userId,
+    String planId,
+  );
+
+  Future<void> repairInstallmentPlanStatuses(String userId, {String? ledgerId});
+
+  Future<MoneySplitContextEntity> getDefaultSplitContextForUser(String userId);
+
+  Stream<List<MoneyMemberEntity>> watchMembersForUser(String userId);
+
+  Stream<List<MoneyLedgerEntity>> watchLedgersForUser(String userId);
+
+  Stream<List<MoneyLedgerEntity>> watchLedgersForTransaction(
+    String userId,
+    String transactionId,
+  );
+
+  Stream<List<MoneyMemberEntity>> watchMembersForLedger(
+    String userId,
+    String ledgerId,
+  );
+
+  Future<MoneyLedgerEntity> getDefaultLedgerForUser(String userId);
+
+  Stream<List<MoneySplitRecordEntity>> watchSplitRecordsForTransaction(
+    String userId,
+    String transactionId,
+  );
+
+  Stream<List<MoneySplitRuleEntity>> watchSplitRulesForLedger(
+    String userId,
+    String ledgerId, {
+    bool includeDeleted = false,
+  });
+
+  Future<MoneyAccountEntity> createAccount(
+    String userId,
+    MoneyAccountDraft draft,
+  );
+
+  Future<MoneyAccountEntity> updateAccount(
+    String userId,
+    MoneyAccountUpdate update,
+  );
+
+  /// 把账户余额校正到 [targetBalanceMinor]（账面余额对不上实际余额时用）。
+  ///
+  /// 差额走的是 `initialBalanceMinor`——它不会产生任何流水，也就不会污染
+  /// 收支统计和分类排行。只支持资产类账户：信用账户的「余额」是可用额度，
+  /// 应该走账单对账（补记差额流水或还款），改初始余额等于改信用额度。
+  Future<MoneyAccountEntity> adjustAccountBalance(
+    String userId,
+    String accountId,
+    int targetBalanceMinor,
+  );
+
+  /// 账户在 `[from, to)` 区间的收入 / 支出合计（只算已完成、非转账的交易）。
+  ///
+  /// 对账时用 `账面余额 − 区间净额` 反推「期初余额」，所以这里的口径必须与
+  /// 账户余额一致：作废 / 待处理不计、退款按净额、转账不计。
+  Future<MoneyAccountPeriodFlows> getAccountFlowsForPeriod(
+    String userId,
+    String accountId, {
+    required DateTime from,
+    required DateTime to,
+  });
+
+  Future<void> setAccountActive(String userId, String accountId, bool isActive);
+
+  Future<void> deleteAccount(String userId, String accountId);
+
+  Future<void> restoreAccount(String userId, String accountId);
+
+  Future<List<MoneyAccountEntity>> getDeletedAccountsForUser(String userId);
+
+  Future<MoneyTransactionEntity> createTransaction(
+    String userId,
+    MoneyTransactionDraft draft,
+  );
+
+  Future<MoneyTransactionEntity> createTransactionWithSplit(
+    String userId,
+    MoneyTransactionDraft draft,
+    MoneySplitConfigDraft splitConfig,
+  );
+
+  Future<MoneyTransferResult> createTransfer(
+    String userId,
+    MoneyTransferDraft draft,
+  );
+
+  Future<MoneyTransactionEntity> updateTransaction(
+    String userId,
+    MoneyTransactionUpdate update,
+  );
+
+  Future<MoneyTransactionEntity> recordTransactionRefund(
+    String userId,
+    String transactionId,
+    int refundAmountMinor,
+  );
+
+  Future<MoneyTransferResult> updateTransfer(
+    String userId,
+    MoneyTransferUpdate update,
+  );
+
+  Future<void> deleteTransaction(String userId, String transactionId);
+
+  /// 批量修改流水的分类 / 账户 / 标签，返回实际写入的条数。
+  ///
+  /// 与单条 `updateTransaction` 共用同一套校验与余额处理；分期入账流水、
+  /// 转账流水（一对两行，改一行就会对不上）、已作废流水直接跳过，
+  /// 而不是让整批失败。副作用（预算快照 / 信用卡提醒 / 用量统计）只在最后
+  /// 各跑一次——每条都刷一遍会把「改 20 笔」拖成 20 次全量重算。
+  Future<int> updateTransactions(
+    String userId,
+    List<String> transactionIds,
+    MoneyTransactionBatchUpdate patch,
+  );
+
+  /// 批量删除流水，返回实际删除的条数（转账一对算 1 条）。
+  Future<int> deleteTransactions(String userId, List<String> transactionIds);
+
+  /// 撤销删除，返回实际恢复的条数。
+  ///
+  /// 删除是软删除（isDeleted + deletedAt），所以撤销就是把账户余额加回去、
+  /// 自动记账 run 状态撤回、预算快照重算。恢复不了的直接跳过（账户已删、
+  /// 分期入账流水、转账的另一半不在回收站里），不牵连同一批的其他流水。
+  Future<int> restoreTransactions(String userId, List<String> transactionIds);
+
+  /// 回收站：近期被删除的流水，按删除时间倒序。
+  ///
+  /// [deletedAfter] 传 null 表示不限时间；回收站语义上只展示最近 30 天，
+  /// 更老的软删除记录留着做同步依据，但不再打扰用户。
+  Future<List<MoneyTransactionEntity>> listDeletedTransactions(
+    String userId, {
+    DateTime? deletedAfter,
+    int limit = 100,
+  });
+
+  /// 变更流水状态：待处理 → 已完成（入账）/ 已作废；已完成 → 已作废（回滚余额）。
+  Future<MoneyTransactionEntity> setTransactionStatus(
+    String userId,
+    String transactionId,
+    MoneyTransactionStatus status,
+  );
+
+  /// 批量变更流水状态，返回实际写入的条数。
+  ///
+  /// 与单条版本共用同一套校验与余额处理；不合法的流转（已作废 → 已完成、
+  /// 转账流水、分期入账流水）直接跳过而不是让整批失败。
+  Future<int> setTransactionsStatus(
+    String userId,
+    List<String> transactionIds,
+    MoneyTransactionStatus status,
+  );
+
+  Future<MoneyBudgetEntity> createBudget(String userId, MoneyBudgetDraft draft);
+
+  Future<MoneyBillReminderEntity> createBillReminder(
+    String userId,
+    MoneyBillReminderDraft draft,
+  );
+
+  Future<MoneyAutoPostingTemplateEntity> createAutoPostingTemplate(
+    String userId,
+    MoneyAutoPostingTemplateDraft draft,
+  );
+
+  Future<MoneyBudgetAllocationEntity> createBudgetAllocation(
+    String userId,
+    MoneyBudgetAllocationDraft draft,
+  );
+
+  Future<MoneyInstallmentPlanEntity> createInstallmentPlan(
+    String userId,
+    MoneyInstallmentPlanDraft draft,
+  );
+
+  Future<void> cancelInstallmentPlan(String userId, String planId);
+
+  Future<MoneyTransactionEntity> postInstallmentDetail(
+    String userId,
+    String detailId,
+  );
+
+  Future<MoneyLedgerEntity> createLedger(String userId, MoneyLedgerDraft draft);
+
+  Future<MoneyLedgerEntity> updateLedger(
+    String userId,
+    MoneyLedgerUpdate update,
+  );
+
+  Future<void> deleteLedger(String userId, String ledgerId);
+
+  Future<MoneyMemberEntity> createMember(
+    String userId,
+    MoneyMemberDraft draft, {
+    required String ledgerId,
+  });
+
+  Future<MoneyMemberEntity> updateMember(
+    String userId,
+    MoneyMemberUpdate update, {
+    required String ledgerId,
+  });
+
+  Future<void> deleteMember(
+    String userId,
+    String memberId, {
+    required String ledgerId,
+  });
+
+  Future<MoneySplitRecordEntity> createSplitForTransaction(
+    String userId,
+    MoneySplitDraft draft,
+  );
+
+  Future<void> linkTransactionToLedger(
+    String userId,
+    String transactionId,
+    String ledgerId,
+  );
+
+  Future<void> unlinkTransactionFromLedger(
+    String userId,
+    String transactionId,
+    String ledgerId,
+  );
+
+  Future<MoneySplitRecordEntity> replaceSplitForTransaction(
+    String userId,
+    MoneySplitDraft draft,
+  );
+
+  Future<void> cancelSplitRecord(String userId, String splitRecordId);
+
+  Future<MoneySplitRuleEntity> createSplitRule(
+    String userId,
+    MoneySplitRuleDraft draft,
+  );
+
+  Future<MoneySplitRuleEntity> updateSplitRule(
+    String userId,
+    MoneySplitRuleUpdate update,
+  );
+
+  Future<void> deleteSplitRule(String userId, String ruleId);
+
+  Future<MoneyBudgetEntity> updateBudget(
+    String userId,
+    MoneyBudgetUpdate update,
+  );
+
+  Future<MoneyBudgetAllocationEntity> updateBudgetAllocation(
+    String userId,
+    MoneyBudgetAllocationUpdate update,
+  );
+
+  Future<void> deleteBudget(String userId, String budgetId);
+
+  Future<MoneyBillReminderEntity> updateBillReminder(
+    String userId,
+    MoneyBillReminderUpdate update,
+  );
+
+  Future<void> setBillReminderStatus(
+    String userId,
+    String reminderId,
+    MoneyBillReminderStatus status,
+  );
+
+  Future<void> deleteBillReminder(String userId, String reminderId);
+
+  Future<MoneyAutoPostingTemplateEntity> updateAutoPostingTemplate(
+    String userId,
+    MoneyAutoPostingTemplateUpdate update,
+  );
+
+  Future<void> deleteAutoPostingTemplate(String userId, String templateId);
+
+  Future<MoneyAutoPostingExecutionSummary> executeDueAutoPostings(
+    String userId, {
+    DateTime? now,
+  });
+
+  Future<MoneyAutoPostingExecutionSummary> executeAutoPostingTemplateNow(
+    String userId,
+    String templateId, {
+    DateTime? now,
+  });
+
+  /// 重置自动记账执行记录：将“已拦截”的记录恢复为待执行，
+  /// 下次执行时重新校验（账户/分类/余额等），成功则转为已入账。
+  Future<void> resetAutoPostingRun(String userId, String runId);
+
+  /// 把自动记账模板标记为「已由分期计划 [planId] 接管」。
+  ///
+  /// 接管后模板 isActive 置 false，不再独立入账、也不再计入预算预留——
+  /// 这笔还款由分期引擎独占。分期被取消 / 完成后，用
+  /// [releaseAutoPostingTakeOver] 交还给模板。
+  Future<MoneyAutoPostingTemplateEntity> takeOverAutoPostingTemplate(
+    String userId,
+    String templateId,
+    String planId,
+  );
+
+  /// 解除接管，模板恢复启用（回到它自己记账的状态）。
+  Future<MoneyAutoPostingTemplateEntity> releaseAutoPostingTakeOver(
+    String userId,
+    String templateId,
+  );
+
+  /// 找出「同一笔还款既登记为分期期次、又登记为自动记账模板」的冲突。
+  ///
+  /// 只读，不改任何数据。返回项里 [isTakenOver] 为 true 的表示已处置过。
+  Future<List<MoneyAutoPostingInstallmentConflict>>
+  findAutoPostingInstallmentConflicts(String userId);
+
+  Future<MoneyInstallmentExecutionSummary> executeDueInstallmentPostings(
+    String userId, {
+    DateTime? now,
+  });
+
+  /// 单个预算在当前周期内被「未来义务」占用的额度。
+  ///
+  /// 判定依据是各来源的**记账日是否落在预算自己的周期内**，周期与
+  /// `usedAmountMinor` 用的是同一个区间（[MoneyBudgetEntity.periodStart] /
+  /// [MoneyBudgetEntity.periodEnd] 即由此得出）。
+  Future<MoneyBudgetCommitment> budgetCommitmentForBudget(
+    String userId,
+    String budgetId, {
+    MoneyBudgetCommitmentOptions options = const MoneyBudgetCommitmentOptions(),
+  });
+
+  /// 批量版本：数据源只加载一次，避免逐个预算各查一遍退化成 N× 查询。
+  Future<Map<String, MoneyBudgetCommitment>> budgetCommitmentsForUser(
+    String userId, {
+    String? ledgerId,
+    MoneyBudgetCommitmentOptions options = const MoneyBudgetCommitmentOptions(),
+  });
+
+  /// 一段时间内**还没入账**的支出义务：自动记账模板（含周期展开）、分期
+  /// 待还期次、账单提醒、待确认流水。
+  ///
+  /// 与 [budgetCommitmentsForUser] 的区别是**不分预算、不分分类**：它回答的是
+  /// 「这个月剩下还要付多少」，不是「某个预算还剩多少」。同一笔还款同时登记成
+  /// 模板和分期时同样只算一份（分期优先），判定复用预算那条规则。
+  ///
+  /// 只收支出、只收指定账本（和币种，传了的话）。收入不算 —— 这里是「已经
+  /// 被安排掉的现金流」，不是收支总额。
+  Future<List<MoneyBudgetCommitmentItem>> upcomingExpenseCommitments(
+    String userId, {
+    String? ledgerId,
+    required DateTime start,
+    required DateTime end,
+    String? currencyCode,
+    bool includePendingTransactions = true,
+  });
+
+  Future<void> deleteBudgetAllocation(String userId, String allocationId);
+
+  Future<MoneyTransactionPage> listTransactions(
+    String userId,
+    MoneyTransactionQuery query,
+  );
+
+  /// 同一筛选条件下的全量汇总（不受分页影响）。
+  Future<MoneyTransactionSummary> summarizeTransactions(
+    String userId,
+    MoneyTransactionQuery query,
+  );
+
+  Stream<List<MoneyTransactionEntity>> watchRecentTransactionsForUser(
+    String userId, {
+    int limit = 20,
+    String? ledgerId,
+  });
+
+  Future<MoneyTransactionEntity> getTransactionForUser(
+    String userId,
+    String transactionId,
+  );
+
+  Future<MoneyStatisticsSummary> getStatisticsForUser(
+    String userId,
+    MoneyStatisticsQuery query,
+  );
+
+  Future<MoneyStatisticsInsights> getStatisticsInsightsForUser(
+    String userId,
+    MoneyStatisticsQuery query,
+  );
+
+  Future<MoneySpendingAnalysis> getSpendingAnalysisForUser(
+    String userId,
+    MoneySpendingAnalysisQuery query,
+  );
+
+  Future<List<MoneyBudgetHistoryTrendPoint>> getBudgetHistoryTrendForUser(
+    String userId,
+    String ledgerId, {
+    int months = 6,
+  });
+
+  Future<MoneyUpcomingCashFlowSummary> getUpcomingCashFlowForUser(
+    String userId, {
+    required String ledgerId,
+    int windowDays = 90,
+  });
+
+  Future<MoneyAnalysisReportEntity> generateReportForUser(
+    String userId,
+    MoneyAnalysisReportRequest request,
+  );
+
+  Future<MoneyAnalysisReportEntity?> getLatestReportForUser(
+    String userId,
+    String ledgerId,
+    String reportPeriod,
+  );
+
+  Future<MoneyReportGenerationConfigEntity> getReportGenerationConfig(
+    String userId,
+    String ledgerId,
+  );
+
+  Future<void> updateReportGenerationConfig(
+    String userId,
+    MoneyReportGenerationConfigEntity config,
+  );
+
+  Future<void> captureAssetSnapshotsForUser(String userId);
+
+  Future<void> refreshAssetSnapshotsForUser(String userId);
+
+  Future<List<MoneyNetWorthTrendPoint>> getNetWorthTrendForUser(
+    String userId, {
+    int days = 90,
+  });
+}
+
+enum MoneyRepositoryErrorCode {
+  databaseReadFailed,
+  databaseWriteFailed,
+  invalidAccountBalance,
+  invalidTransactionAmount,
+  accountNotFound,
+  categoryNotFound,
+  budgetNotFound,
+  reminderNotFound,
+  autoPostingTemplateNotFound,
+  invalidCategoryName,
+  invalidBudgetAmount,
+  invalidBudgetScope,
+  unsupportedBudgetPeriod,
+  invalidInstallmentAmount,
+  invalidInstallmentAccount,
+  installmentPlanNotFound,
+  invalidInstallmentStatus,
+  invalidTransactionStatus,
+  ledgerNotFound,
+  memberNotFound,
+  activeSplitAlreadyExists,
+  invalidSplitAmount,
+  invalidSplitTransaction,
+  cannotUnlinkPersonalLedger,
+  cannotDeletePersonalLedger,
+  cannotUnlinkLedgerWithActiveSplit,
+  splitRecordNotFound,
+  insufficientFunds,
+  invalidTransferAccounts,
+  creditCardLimitExceeded,
+  invalidInstallmentTakeOver,
+}
+
+class MoneyRepositoryException implements Exception {
+  const MoneyRepositoryException(this.code, [this.cause]);
+
+  final MoneyRepositoryErrorCode code;
+  final Object? cause;
+
+  @override
+  String toString() {
+    return 'MoneyRepositoryException($code, cause: $cause)';
+  }
+}

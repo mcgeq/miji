@@ -1,0 +1,272 @@
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:miji/core/database/app_database.dart';
+import 'package:miji/core/database/seed/database_seed_runner.dart';
+import 'package:miji/features/bookkeeping/data/drift_money_repository.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
+import 'package:miji/features/bookkeeping/domain/money_budget_history_entity.dart';
+
+void main() {
+  late AppDatabase database;
+
+  setUp(() async {
+    database = AppDatabase(NativeDatabase.memory());
+
+    final now = DateTime.utc(2026, 1, 2, 3, 4, 5);
+    await database
+        .into(database.users)
+        .insert(
+          UsersCompanion.insert(
+            id: 'user_1',
+            username: 'user_1',
+            email: 'user_1@example.com',
+            displayName: '用户',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await database
+        .into(database.moneyMembers)
+        .insert(
+          MoneyMembersCompanion.insert(
+            id: 'default_member_user_1',
+            userId: 'user_1',
+            name: '用户',
+            role: 'owner',
+            status: 'active',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+    await database
+        .into(database.moneyLedgers)
+        .insert(
+          MoneyLedgersCompanion.insert(
+            id: 'default_ledger_user_1',
+            userId: 'user_1',
+            name: '个人账本',
+            createdByMemberId: 'default_member_user_1',
+            ledgerType: 'personal',
+            status: 'active',
+            baseCurrencyCode: 'CNY',
+            settlementCycle: 'manual',
+            settlementDay: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+    await database
+        .into(database.moneyLedgerMembers)
+        .insert(
+          MoneyLedgerMembersCompanion.insert(
+            ledgerId: 'default_ledger_user_1',
+            memberId: 'default_member_user_1',
+            createdAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+  });
+
+  tearDown(() async {
+    await database.close();
+  });
+
+  test(
+    'monthly budget period follows local calendar month across UTC boundary',
+    () async {
+      // 2026-07-31T16:00Z is 2026-08-01 00:00 in UTC+8 timezones.
+      final localNow = DateTime.fromMillisecondsSinceEpoch(
+        DateTime.utc(2026, 7, 31, 16).millisecondsSinceEpoch,
+      );
+      final pinned = DriftMoneyRepository(
+        database: database,
+        seedRunner: DatabaseSeedRunner(database: database),
+        now: () => localNow,
+      );
+
+      final budget = await pinned.createBudget(
+        'user_1',
+        const MoneyBudgetDraft(name: '月度消费', amountMinor: 100000),
+      );
+
+      expect(budget.periodStart, DateTime(localNow.year, localNow.month));
+      expect(
+        budget.periodEnd,
+        DateTime(
+          localNow.year,
+          localNow.month + 1,
+        ).subtract(const Duration(milliseconds: 1)),
+      );
+      expect(budget.periodType, MoneyBudgetPeriodType.monthly);
+    },
+  );
+
+  test(
+    'weekly budget period starts on the local Monday of the pinned clock',
+    () async {
+      // 2026-07-30T16:00Z is 2026-07-31 00:00 (Friday) in UTC+8 timezones.
+      final localNow = DateTime.fromMillisecondsSinceEpoch(
+        DateTime.utc(2026, 7, 30, 16).millisecondsSinceEpoch,
+      );
+      final pinned = DriftMoneyRepository(
+        database: database,
+        seedRunner: DatabaseSeedRunner(database: database),
+        now: () => localNow,
+      );
+
+      final budget = await pinned.createBudget(
+        'user_1',
+        const MoneyBudgetDraft(
+          name: '周度消费',
+          amountMinor: 50000,
+          periodType: MoneyBudgetPeriodType.weekly,
+        ),
+      );
+
+      final localDay = DateTime(localNow.year, localNow.month, localNow.day);
+      final expectedStart = localDay.subtract(
+        Duration(days: localDay.weekday - 1),
+      );
+      expect(budget.periodStart, expectedStart);
+      expect(
+        budget.periodEnd,
+        expectedStart
+            .add(const Duration(days: 7))
+            .subtract(const Duration(milliseconds: 1)),
+      );
+    },
+  );
+
+  test('rolls over remaining amount into the next period snapshot', () async {
+    var localNow = DateTime(2026, 7, 15);
+    final pinned = DriftMoneyRepository(
+      database: database,
+      seedRunner: DatabaseSeedRunner(database: database),
+      now: () => localNow,
+    );
+
+    final budget = await pinned.createBudget(
+      'user_1',
+      const MoneyBudgetDraft(
+        name: '结转预算',
+        amountMinor: 100000,
+        autoRollover: true,
+      ),
+    );
+    expect(budget.autoRollover, isTrue);
+
+    // 推进到下个月，触发周期滚动。
+    localNow = DateTime(2026, 8, 15);
+    await pinned.refreshBudgetSnapshotsForUser('user_1');
+
+    final snapshots = await pinned
+        .watchBudgetSnapshotsForUser('user_1', budgetId: budget.id)
+        .first;
+    final july = snapshots.singleWhere((s) => s.periodStart.month == 7);
+    final august = snapshots.singleWhere((s) => s.periodStart.month == 8);
+
+    expect(july.status, MoneyBudgetHistoryStatus.rolledOver);
+    expect(july.remainingAmountMinor, 100000);
+    expect(august.status, MoneyBudgetHistoryStatus.open);
+    expect(august.budgetAmountMinor, 200000);
+    expect(august.remainingAmountMinor, 200000);
+  });
+
+  test('does not roll over when autoRollover is disabled', () async {
+    var localNow = DateTime(2026, 7, 15);
+    final pinned = DriftMoneyRepository(
+      database: database,
+      seedRunner: DatabaseSeedRunner(database: database),
+      now: () => localNow,
+    );
+
+    final budget = await pinned.createBudget(
+      'user_1',
+      const MoneyBudgetDraft(name: '不结转', amountMinor: 100000),
+    );
+    expect(budget.autoRollover, isFalse);
+
+    localNow = DateTime(2026, 8, 15);
+    await pinned.refreshBudgetSnapshotsForUser('user_1');
+
+    final snapshots = await pinned
+        .watchBudgetSnapshotsForUser('user_1', budgetId: budget.id)
+        .first;
+    final august = snapshots.singleWhere((s) => s.periodStart.month == 8);
+    expect(august.budgetAmountMinor, 100000);
+  });
+
+  test('weekly budget honors repeatInterval of 2', () async {
+    // 2026-07-06 is a Monday.
+    var localNow = DateTime(2026, 7, 6);
+    final pinned = DriftMoneyRepository(
+      database: database,
+      seedRunner: DatabaseSeedRunner(database: database),
+      now: () => localNow,
+    );
+
+    final budget = await pinned.createBudget(
+      'user_1',
+      const MoneyBudgetDraft(
+        name: '双周消费',
+        amountMinor: 50000,
+        periodType: MoneyBudgetPeriodType.weekly,
+        repeatInterval: 2,
+      ),
+    );
+
+    expect(budget.periodStart, DateTime(2026, 7, 6));
+    expect(budget.periodEnd, DateTime(2026, 7, 19, 23, 59, 59, 999));
+
+    // 推进一周，仍处于首个两周周期内。
+    localNow = DateTime(2026, 7, 13);
+    var list = await pinned.watchBudgetsForUser('user_1').first;
+    var refreshed = list.singleWhere((b) => b.id == budget.id);
+    expect(refreshed.periodStart, DateTime(2026, 7, 6));
+
+    // 再推进一周（共两周），进入下一个周期。
+    localNow = DateTime(2026, 7, 20);
+    list = await pinned.watchBudgetsForUser('user_1').first;
+    refreshed = list.singleWhere((b) => b.id == budget.id);
+    expect(refreshed.periodStart, DateTime(2026, 7, 20));
+    expect(refreshed.periodEnd, DateTime(2026, 8, 2, 23, 59, 59, 999));
+  });
+
+  test('monthly budget honors repeatInterval of 3', () async {
+    var localNow = DateTime(2026, 1, 15);
+    final pinned = DriftMoneyRepository(
+      database: database,
+      seedRunner: DatabaseSeedRunner(database: database),
+      now: () => localNow,
+    );
+
+    final budget = await pinned.createBudget(
+      'user_1',
+      const MoneyBudgetDraft(
+        name: '季度消费',
+        amountMinor: 300000,
+        periodType: MoneyBudgetPeriodType.monthly,
+        repeatInterval: 3,
+      ),
+    );
+
+    expect(budget.periodStart, DateTime(2026, 1, 1));
+    expect(budget.periodEnd, DateTime(2026, 3, 31, 23, 59, 59, 999));
+
+    // 第二个月仍处于首个季度周期内。
+    localNow = DateTime(2026, 2, 20);
+    var list = await pinned.watchBudgetsForUser('user_1').first;
+    var refreshed = list.singleWhere((b) => b.id == budget.id);
+    expect(refreshed.periodStart, DateTime(2026, 1, 1));
+
+    // 跨入下一季度。
+    localNow = DateTime(2026, 4, 2);
+    list = await pinned.watchBudgetsForUser('user_1').first;
+    refreshed = list.singleWhere((b) => b.id == budget.id);
+    expect(refreshed.periodStart, DateTime(2026, 4, 1));
+    expect(refreshed.periodEnd, DateTime(2026, 6, 30, 23, 59, 59, 999));
+  });
+}
