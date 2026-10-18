@@ -24,7 +24,17 @@ enum TimelineScope {
   final String label;
 }
 
-/// 当前窗口：选中日 + 范围。日期条与分段控件都改它。
+/// 看日程还是看回顾。两者共用同一份事件，只是过滤与排序不同。
+enum TimelineViewMode {
+  schedule('日程'),
+  history('回顾');
+
+  const TimelineViewMode(this.label);
+
+  final String label;
+}
+
+/// 当前窗口：选中日 + 范围 + 视图。日期条与分段控件都改它。
 final timelineScopeProvider =
     NotifierProvider<TimelineScopeController, TimelineSelection>(
       TimelineScopeController.new,
@@ -33,16 +43,25 @@ final timelineScopeProvider =
 /// 选中的日期与范围。
 @immutable
 class TimelineSelection {
-  const TimelineSelection({required this.anchor, required this.scope});
+  const TimelineSelection({
+    required this.anchor,
+    required this.scope,
+    this.viewMode = TimelineViewMode.schedule,
+  });
 
   final DateTime anchor;
   final TimelineScope scope;
+  final TimelineViewMode viewMode;
 
-  TimelineSelection copyWith({DateTime? anchor, TimelineScope? scope}) =>
-      TimelineSelection(
-        anchor: anchor ?? this.anchor,
-        scope: scope ?? this.scope,
-      );
+  TimelineSelection copyWith({
+    DateTime? anchor,
+    TimelineScope? scope,
+    TimelineViewMode? viewMode,
+  }) => TimelineSelection(
+    anchor: anchor ?? this.anchor,
+    scope: scope ?? this.scope,
+    viewMode: viewMode ?? this.viewMode,
+  );
 }
 
 class TimelineScopeController extends Notifier<TimelineSelection> {
@@ -56,6 +75,10 @@ class TimelineScopeController extends Notifier<TimelineSelection> {
 
   void setScope(TimelineScope scope) {
     state = state.copyWith(scope: scope);
+  }
+
+  void setViewMode(TimelineViewMode mode) {
+    state = state.copyWith(viewMode: mode);
   }
 
   void shift(int days) {
@@ -80,6 +103,10 @@ class TimelineScopeController extends Notifier<TimelineSelection> {
 /// 窗口本身（供日期条与查询共用）。
 final timelineWindowProvider = Provider<TimelineWindow>((ref) {
   final selected = ref.watch(timelineScopeProvider);
+  // 回顾永远按月：一天的回顾只有一行摘要，一周的回顾看不出趋势。
+  if (selected.viewMode == TimelineViewMode.history) {
+    return TimelineWindow.monthOf(selected.anchor);
+  }
   return switch (selected.scope) {
     TimelineScope.day => TimelineWindow.dayOf(selected.anchor),
     TimelineScope.week => TimelineWindow.weekOf(selected.anchor),

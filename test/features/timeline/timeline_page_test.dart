@@ -22,6 +22,7 @@ void main() {
     required TimelineModule module,
     required TimelineNature nature,
     required String title,
+    String kind = 'test',
     int? amountMinor,
     bool sensitive = false,
     DateTime? day,
@@ -31,7 +32,7 @@ void main() {
       occurredOn: day ?? anchor,
       module: module,
       nature: nature,
-      kind: 'test',
+      kind: kind,
       title: title,
       amountMinor: amountMinor,
       sensitive: sensitive,
@@ -184,6 +185,77 @@ void main() {
   testWidgets('没有事件时给空态，不伪造内容', (tester) async {
     await pump(tester, events: const []);
     expect(find.text('这段时间没有安排'), findsOneWidget);
+  });
+  testWidgets('回顾：按月汇总事实，只出现「已经发生」的那几项', (tester) async {
+    await pump(
+      tester,
+      events: [
+        event(
+          id: 'm1',
+          module: TimelineModule.money,
+          nature: TimelineNature.fact,
+          kind: 'transaction',
+          title: '午餐',
+          amountMinor: -3800,
+          day: DateTime.utc(2026, 10, 18),
+        ),
+        event(
+          id: 'a1',
+          module: TimelineModule.action,
+          nature: TimelineNature.fact,
+          kind: 'todoCompleted',
+          title: '写周报',
+          day: DateTime.utc(2026, 10, 17),
+        ),
+        // 预测与承诺都不该出现在回顾里。
+        event(
+          id: 'p1',
+          module: TimelineModule.health,
+          nature: TimelineNature.prediction,
+          kind: 'health.predictedPeriod',
+          title: '预计经期开始',
+          day: DateTime.utc(2026, 10, 20),
+        ),
+        event(
+          id: 'c1',
+          module: TimelineModule.money,
+          nature: TimelineNature.commitment,
+          kind: 'commitment.auto_posting',
+          title: '房贷自动记账',
+          amountMinor: -800000,
+          day: DateTime.utc(2026, 10, 25),
+        ),
+      ],
+    );
+
+    await tester.tap(find.text('回顾'));
+    await tester.pumpAndSettle();
+    expect(find.text('本月发生了什么'), findsOneWidget);
+    expect(find.textContaining('支出'), findsWidgets);
+    // 承诺与预测都不在。
+    expect(find.text('房贷自动记账'), findsNothing);
+    expect(find.text('预计经期开始'), findsNothing);
+    // 有内容的两天各一行。
+    expect(find.text('10/18'), findsOneWidget);
+    expect(find.text('10/17'), findsOneWidget);
+  });
+
+  testWidgets('回顾为空时直说「只包含已经发生的事」', (tester) async {
+    await pump(
+      tester,
+      events: [
+        event(
+          id: 'c1',
+          module: TimelineModule.money,
+          nature: TimelineNature.commitment,
+          title: '房贷自动记账',
+        ),
+      ],
+    );
+
+    await tester.tap(find.text('回顾'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('回顾只包含已经发生的事'), findsOneWidget);
   });
 }
 

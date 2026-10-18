@@ -22,8 +22,7 @@ class TimelineHomeCard extends ConsumerWidget {
     final data = ref.watch(timelineProvider).asData?.value;
     final upcoming = <TimelineEvent>[
       if (data != null)
-        for (final day in data.timeline.days)
-          ...day.commitments,
+        for (final day in data.timeline.days) ...day.commitments,
     ]..sort((a, b) => a.occurredOn.compareTo(b.occurredOn));
     final shown = upcoming.take(maxItems).toList(growable: false);
 

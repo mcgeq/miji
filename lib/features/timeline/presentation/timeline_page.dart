@@ -10,6 +10,7 @@ import 'package:miji/features/bookkeeping/application/money_amount_formatter.dar
 import 'package:miji/features/timeline/application/timeline_providers.dart';
 import 'package:miji/features/timeline/domain/timeline_assembler.dart';
 import 'package:miji/features/timeline/domain/timeline_event.dart';
+import 'package:miji/features/timeline/domain/timeline_history.dart';
 
 /// 跨模块时间线：日程视图。
 ///
@@ -47,20 +48,98 @@ class TimelinePage extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: _ScopeSwitch(selection: selection),
+            child: _ViewModeSwitch(selection: selection),
           ),
-          _DayStrip(selection: selection, window: window),
-          const SizedBox(height: 4),
+          if (selection.viewMode == TimelineViewMode.schedule) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: _ScopeSwitch(selection: selection),
+            ),
+            _DayStrip(selection: selection, window: window),
+            const SizedBox(height: 4),
+          ] else
+            _MonthHeader(selection: selection),
           Expanded(
             child: result.when(
               loading: () => const AppSkeletonList(rows: 6),
-              error: (error, stackTrace) => _ErrorState(
-                onRetry: () => ref.invalidate(timelineProvider),
-              ),
-              data: (data) => data.timeline.isEmpty
+              error: (error, stackTrace) =>
+                  _ErrorState(onRetry: () => ref.invalidate(timelineProvider)),
+              data: (data) => selection.viewMode == TimelineViewMode.history
+                  ? _HistoryBody(data: data)
+                  : data.timeline.isEmpty
                   ? const _EmptyState()
                   : _TimelineBody(data: data),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewModeSwitch extends ConsumerWidget {
+  const _ViewModeSwitch({required this.selection});
+
+  final TimelineSelection selection;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        for (final mode in TimelineViewMode.values) ...[
+          if (mode != TimelineViewMode.values.first) const SizedBox(width: 8),
+          ChoiceChip(
+            label: Text(mode.label),
+            selected: selection.viewMode == mode,
+            showCheckmark: false,
+            onSelected: (_) =>
+                ref.read(timelineScopeProvider.notifier).setViewMode(mode),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// 回顾的月份导航：‹ 2026 年 10 月 ›
+class _MonthHeader extends ConsumerWidget {
+  const _MonthHeader({required this.selection});
+
+  final TimelineSelection selection;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final anchor = selection.anchor;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: '上个月',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.chevron_left_rounded, size: 20),
+            onPressed: () => ref
+                .read(timelineScopeProvider.notifier)
+                .shift(-DateTime.utc(anchor.year, anchor.month, 0).day),
+          ),
+          Expanded(
+            child: Text(
+              '${anchor.year} 年 ${anchor.month} 月',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: '下个月',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.chevron_right_rounded, size: 20),
+            onPressed: () => ref
+                .read(timelineScopeProvider.notifier)
+                .shift(DateTime.utc(anchor.year, anchor.month + 1, 0).day),
           ),
         ],
       ),
@@ -122,8 +201,7 @@ class _DayStrip extends ConsumerWidget {
             tooltip: '上一周',
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.chevron_left_rounded, size: 20),
-            onPressed: () =>
-                ref.read(timelineScopeProvider.notifier).shift(-7),
+            onPressed: () => ref.read(timelineScopeProvider.notifier).shift(-7),
           ),
           for (var i = 0; i < days.length; i++)
             Expanded(
@@ -138,8 +216,7 @@ class _DayStrip extends ConsumerWidget {
             tooltip: '下一周',
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.chevron_right_rounded, size: 20),
-            onPressed: () =>
-                ref.read(timelineScopeProvider.notifier).shift(7),
+            onPressed: () => ref.read(timelineScopeProvider.notifier).shift(7),
           ),
         ],
       ),
@@ -164,7 +241,9 @@ class _DayCell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final dotSize = count == 0 ? 6.0 : (count <= 3 ? 5.0 : (count <= 6 ? 6.0 : 7.0));
+    final dotSize = count == 0
+        ? 6.0
+        : (count <= 3 ? 5.0 : (count <= 6 ? 6.0 : 7.0));
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () => ref.read(timelineScopeProvider.notifier).selectDay(day),
@@ -265,7 +344,15 @@ class _DayHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final weekday = const ['一', '二', '三', '四', '五', '六', '日'][day.day.weekday - 1];
+    final weekday = const [
+      '一',
+      '二',
+      '三',
+      '四',
+      '五',
+      '六',
+      '日',
+    ][day.day.weekday - 1];
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 6),
       child: Row(
@@ -402,7 +489,9 @@ class _EventTile extends StatelessWidget {
               child: Text(
                 timeText,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: event.isTimed ? scheme.onSurfaceVariant : scheme.outline,
+                  color: event.isTimed
+                      ? scheme.onSurfaceVariant
+                      : scheme.outline,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0,
                 ),
@@ -419,7 +508,9 @@ class _EventTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: dimmed ? scheme.onSurfaceVariant : scheme.onSurface,
+                      color: dimmed
+                          ? scheme.onSurfaceVariant
+                          : scheme.onSurface,
                       letterSpacing: 0,
                     ),
                   ),
@@ -493,6 +584,149 @@ class _EventTile extends StatelessWidget {
       TimelineModule.action => theme.moneyColors.income,
       TimelineModule.lifeEnergy => theme.moneyColors.warning,
     };
+  }
+}
+
+/// 回顾：一个月的每天一行摘要。
+///
+/// 只含事实（见 `buildHistory`）。点一行回到那一天的日程 —— 回顾用来「发现」，
+/// 日程用来「看细节」。
+class _HistoryBody extends ConsumerWidget {
+  const _HistoryBody({required this.data});
+
+  final TimelineResult data;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final masked = MoneyPrivacy.of(context);
+    final history = buildHistory(data.timeline);
+    if (history.isEmpty) {
+      return const _EmptyHistory();
+    }
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+      children: [
+        AppSurface(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '本月发生了什么',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _summaryLine(history),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        for (final day in history.days)
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () {
+              ref.read(timelineScopeProvider.notifier)
+                ..selectDay(
+                  DateTime.utc(day.day.year, day.day.month, day.day.day),
+                )
+                ..setViewMode(TimelineViewMode.schedule)
+                ..setScope(TimelineScope.day);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 52,
+                    child: Text(
+                      '${day.day.month.toString().padLeft(2, '0')}/'
+                      '${day.day.day.toString().padLeft(2, '0')}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      _dayLine(day, masked),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        letterSpacing: 0,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _summaryLine(TimelineHistory history) {
+    final parts = <String>[
+      if (history.totalExpenseMinor > 0)
+        '支出 ${formatMoneyMinor(history.totalExpenseMinor, 'CNY')}',
+      if (history.totalCheckinCount > 0) '打卡 ${history.totalCheckinCount} 次',
+      if (history.totalTaskCompletedCount > 0)
+        '任务完成 ${history.totalTaskCompletedCount}',
+    ];
+    return parts.isEmpty ? '这个月还没有记录' : parts.join(' · ');
+  }
+
+  /// 「支出 ¥158 · 打卡 3 次 · 任务 1 · 经期」
+  String _dayLine(TimelineHistoryDay day, bool masked) {
+    final parts = <String>[
+      if (day.expenseMinor > 0)
+        masked ? '支出 ••••' : '支出 ${formatMoneyMinor(day.expenseMinor, 'CNY')}',
+      if (day.checkinCount > 0) '打卡 ${day.checkinCount} 次',
+      if (day.taskCompletedCount > 0) '任务 ${day.taskCompletedCount}',
+      if (day.hasPeriod) '经期',
+    ];
+    return parts.isEmpty ? '—' : parts.join(' · ');
+  }
+}
+
+class _EmptyHistory extends StatelessWidget {
+  const _EmptyHistory();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Text(
+          '这个月还没有可回顾的记录。\n回顾只包含已经发生的事。',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.6,
+            letterSpacing: 0,
+          ),
+        ),
+      ),
+    );
   }
 }
 

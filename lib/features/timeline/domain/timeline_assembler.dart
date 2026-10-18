@@ -367,6 +367,7 @@ TimelineEvent _habitDayEvent(
     kind: 'checkinDay',
     title: '打卡 ${records.length} 次',
     subtitle: subtitle,
+    count: records.length,
     target: const TimelineTarget(route: '/app/gtd', label: '看打卡'),
   );
 }

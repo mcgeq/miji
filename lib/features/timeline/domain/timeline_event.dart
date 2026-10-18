@@ -85,6 +85,7 @@ class TimelineEvent {
     this.ruleId,
     this.target,
     this.sensitive = false,
+    this.count,
   });
 
   /// 稳定身份：`module:table:id`。同一件事不能因为被两个窗口查到就出现两次。
@@ -121,6 +122,11 @@ class TimelineEvent {
 
   /// 需要二次验证才显示细节（经期、金额）。
   final bool sensitive;
+
+  /// 聚合行背后的条数（例如「打卡 4 次」→ 4）。
+  ///
+  /// 回顾视图要按天汇总这些数字；从 title 里解析「4」是在给未来的自己挖坑。
+  final int? count;
 
   /// 桶键：只按年月日，不看时刻。
   DateTime get dayKey =>
