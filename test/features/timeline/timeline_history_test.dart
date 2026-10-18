@@ -29,9 +29,7 @@ void main() {
   }
 
   TimelineHistory build(List<TimelineEvent> events) {
-    return buildHistory(
-      assembleTimeline(window: month, eventGroups: [events]),
-    );
+    return buildHistory(assembleTimeline(window: month, eventGroups: [events]));
   }
 
   test('按天汇总：支出合计、打卡次数、完成任务数', () {
@@ -54,11 +52,7 @@ void main() {
         day: DateTime.utc(2026, 10, 18),
         count: 3,
       ),
-      event(
-        id: 'a1',
-        kind: 'todoCompleted',
-        day: DateTime.utc(2026, 10, 17),
-      ),
+      event(id: 'a1', kind: 'todoCompleted', day: DateTime.utc(2026, 10, 17)),
     ]);
 
     expect(history.days, hasLength(2));

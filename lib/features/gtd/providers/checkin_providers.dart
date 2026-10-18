@@ -173,19 +173,17 @@ final planTrendProvider = FutureProvider.autoDispose
 // ---------------------------------------------------------------------------
 
 final categoryStatsProvider =
-    FutureProvider.autoDispose<Map<CheckinPlanCategory, int>>((
-  ref,
-) async {
-  final session = ref.watch(authSessionControllerProvider);
-  final userId = session.userId;
-  if (userId == null) return {};
+    FutureProvider.autoDispose<Map<CheckinPlanCategory, int>>((ref) async {
+      final session = ref.watch(authSessionControllerProvider);
+      final userId = session.userId;
+      if (userId == null) return {};
 
-  final endDate = DateTime.now();
-  final startDate = endDate.subtract(const Duration(days: 30));
+      final endDate = DateTime.now();
+      final startDate = endDate.subtract(const Duration(days: 30));
 
-  final repo = ref.watch(checkinRepositoryProvider);
-  return repo.getCategoryStats(userId, startDate, endDate);
-});
+      final repo = ref.watch(checkinRepositoryProvider);
+      return repo.getCategoryStats(userId, startDate, endDate);
+    });
 
 // ---------------------------------------------------------------------------
 // 心情分布

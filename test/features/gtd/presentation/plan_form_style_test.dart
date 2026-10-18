@@ -19,10 +19,7 @@ void main() {
         overrides: [
           authSessionControllerProvider.overrideWith(() => _Unlocked()),
         ],
-        child: MaterialApp(
-          theme: AppTheme.light(),
-          home: const PlanFormPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light(), home: const PlanFormPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -36,14 +33,10 @@ void main() {
     // 名称 + 自定义 emoji 文本框，新建时后者不该存在
     expect(find.text('自定义 emoji'), findsNothing);
   });
-
 }
 
 class _Unlocked extends AuthSessionController {
   @override
-  AuthSession build() => const AuthSession(
-    userId: 'user-1',
-    isUnlocked: true,
-    unlockedAt: null,
-  );
+  AuthSession build() =>
+      const AuthSession(userId: 'user-1', isUnlocked: true, unlockedAt: null);
 }

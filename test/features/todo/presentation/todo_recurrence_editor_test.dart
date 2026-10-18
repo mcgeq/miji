@@ -92,9 +92,13 @@ void main() {
     );
 
     expect(find.text('重复规则'), findsOneWidget);
-    final monday = tester.widget<FilterChip>(find.widgetWithText(FilterChip, '一'));
+    final monday = tester.widget<FilterChip>(
+      find.widgetWithText(FilterChip, '一'),
+    );
     expect(monday.selected, isTrue);
-    final wednesday = tester.widget<FilterChip>(find.widgetWithText(FilterChip, '三'));
+    final wednesday = tester.widget<FilterChip>(
+      find.widgetWithText(FilterChip, '三'),
+    );
     expect(wednesday.selected, isFalse);
   });
 
@@ -114,10 +118,7 @@ void main() {
   });
 
   testWidgets('切到每月：出现日期下拉；再切回每周：日期下拉消失', (tester) async {
-    await pumpEditor(
-      tester,
-      rule(frequency: RecurrenceFrequencyType.daily),
-    );
+    await pumpEditor(tester, rule(frequency: RecurrenceFrequencyType.daily));
 
     await tester.tap(find.text('每月'));
     await tester.pumpAndSettle();
@@ -129,9 +130,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('新建模式：标题是「设为重复」，并给出一个可用的默认（本周几）', (
-    tester,
-  ) async {
+  testWidgets('新建模式：标题是「设为重复」，并给出一个可用的默认（本周几）', (tester) async {
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -174,7 +173,9 @@ void main() {
       dayOfMonth: 5,
     );
 
-    final applied = spec.applyTo(rule(frequency: RecurrenceFrequencyType.daily));
+    final applied = spec.applyTo(
+      rule(frequency: RecurrenceFrequencyType.daily),
+    );
     expect(applied.id, 'rule-1', reason: '改整条规则：id 不变');
     expect(applied.frequencyType, RecurrenceFrequencyType.monthly);
     expect(applied.interval_, 3);

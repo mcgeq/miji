@@ -704,8 +704,7 @@ class DriftCheckinRepository implements CheckinRepository {
 
     final stats = <CheckinPlanCategory, int>{};
     for (final row in rows) {
-      final category =
-          planCategoryMap[row.planId] ?? CheckinPlanCategory.other;
+      final category = planCategoryMap[row.planId] ?? CheckinPlanCategory.other;
       stats[category] = (stats[category] ?? 0) + 1;
     }
 

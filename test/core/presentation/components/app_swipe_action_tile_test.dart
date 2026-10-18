@@ -136,7 +136,10 @@ void main() {
   });
 
   testWidgets('一个动作：保持单列，不额外占宽', (tester) async {
-    await pumpTile(tester, actions: [action('删除', Icons.delete_outline_rounded)]);
+    await pumpTile(
+      tester,
+      actions: [action('删除', Icons.delete_outline_rounded)],
+    );
     await tester.drag(find.text('一行流水'), const Offset(-200, 0));
     await tester.pumpAndSettle();
 

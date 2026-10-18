@@ -34,7 +34,10 @@ void main() {
   }
 
   testWidgets('旧默认图钉 → 换成该分类的默认 emoji', (tester) async {
-    await pump(tester, plan(icon: '📌', category: CheckinPlanCategory.exercise));
+    await pump(
+      tester,
+      plan(icon: '📌', category: CheckinPlanCategory.exercise),
+    );
 
     expect(find.text('📌'), findsNothing, reason: '图钉不该出现在列表里');
     // 运动分类的第一个内置 emoji 是散步。
@@ -42,7 +45,10 @@ void main() {
   });
 
   testWidgets('用户自己挑的 emoji 保留，但只有 14px 上下', (tester) async {
-    await pump(tester, plan(icon: '🏃', category: CheckinPlanCategory.exercise));
+    await pump(
+      tester,
+      plan(icon: '🏃', category: CheckinPlanCategory.exercise),
+    );
 
     final text = tester.widget<Text>(find.text('🏃'));
     expect(text.style?.fontSize, closeTo(26 * 0.55, 0.1));

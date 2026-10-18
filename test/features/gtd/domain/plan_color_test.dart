@@ -16,10 +16,7 @@ void main() {
   });
 
   test('parseOr：坏值落到给定的兜底', () {
-    expect(
-      PlanColor.parseOr('乱写', defaultSeedPlanColor),
-      defaultSeedPlanColor,
-    );
+    expect(PlanColor.parseOr('乱写', defaultSeedPlanColor), defaultSeedPlanColor);
     expect(PlanColor.parseOr('#123456', defaultSeedPlanColor).hex, '#123456');
   });
 
@@ -38,10 +35,7 @@ void main() {
     // 720 度 = 0 度。
     expect(PlanColor.fromHsv(hue: 720, saturation: 1, value: 1).hex, '#FF0000');
     // 越界的饱和度 / 明度被夹到 [0,1]。
-    expect(
-      PlanColor.fromHsv(hue: 0, saturation: 5, value: 5).hex,
-      '#FF0000',
-    );
+    expect(PlanColor.fromHsv(hue: 0, saturation: 5, value: 5).hex, '#FF0000');
     // 全黑、全白。
     expect(PlanColor.fromHsv(hue: 200, saturation: 0, value: 1).hex, '#FFFFFF');
     expect(PlanColor.fromHsv(hue: 200, saturation: 1, value: 0).hex, '#000000');

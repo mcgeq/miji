@@ -60,14 +60,12 @@ void main() {
           ),
           timelineScopeProvider.overrideWith(_FixedScope.new),
           timelineMoneyReaderProvider.overrideWithValue(
-            (ref, window) async => events
-                .where((e) => e.module == TimelineModule.money)
-                .toList(),
+            (ref, window) async =>
+                events.where((e) => e.module == TimelineModule.money).toList(),
           ),
           timelineTodoReaderProvider.overrideWithValue(
-            (ref, window) async => events
-                .where((e) => e.module == TimelineModule.action)
-                .toList(),
+            (ref, window) async =>
+                events.where((e) => e.module == TimelineModule.action).toList(),
           ),
           timelineHabitReaderProvider.overrideWithValue(
             (ref, window) async => const [],
@@ -88,10 +86,7 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
-          home: MoneyPrivacy(
-            masked: moneyMasked,
-            child: const TimelinePage(),
-          ),
+          home: MoneyPrivacy(masked: moneyMasked, child: const TimelinePage()),
         ),
       ),
     );
@@ -279,16 +274,13 @@ void main() {
         GoRoute(
           path: '/app/bookkeeping',
           builder: (context, state) => Scaffold(
-            body: Text(
-              '记账面板 ${state.uri.queryParameters['section']}',
-            ),
+            body: Text('记账面板 ${state.uri.queryParameters['section']}'),
           ),
         ),
         GoRoute(
           path: '/app/gtd/tasks/:taskId',
-          builder: (context, state) => Scaffold(
-            body: Text('待办详情 ${state.pathParameters['taskId']}'),
-          ),
+          builder: (context, state) =>
+              Scaffold(body: Text('待办详情 ${state.pathParameters['taskId']}')),
         ),
       ],
     );
@@ -351,7 +343,10 @@ void main() {
             (ref, window) async => const [],
           ),
         ],
-        child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
+        child: MaterialApp.router(
+          theme: AppTheme.light(),
+          routerConfig: router,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -384,11 +379,8 @@ void main() {
 
 class _Unlocked extends AuthSessionController {
   @override
-  AuthSession build() => const AuthSession(
-    userId: 'user-1',
-    isUnlocked: true,
-    unlockedAt: null,
-  );
+  AuthSession build() =>
+      const AuthSession(userId: 'user-1', isUnlocked: true, unlockedAt: null);
 }
 
 class _Sensitive extends SensitiveAccessController {

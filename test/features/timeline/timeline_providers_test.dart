@@ -40,9 +40,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         // 会话：聚合只对已解锁的用户取数。
-        authSessionControllerProvider.overrideWith(
-          () => _UnlockedSession(),
-        ),
+        authSessionControllerProvider.overrideWith(() => _UnlockedSession()),
         timelineScopeProvider.overrideWith(_FixedScope.new),
         timelineMoneyReaderProvider.overrideWithValue(
           (ref, window) async => money,
@@ -171,11 +169,8 @@ void main() {
 
 class _UnlockedSession extends AuthSessionController {
   @override
-  AuthSession build() => const AuthSession(
-    userId: 'user-1',
-    isUnlocked: true,
-    unlockedAt: null,
-  );
+  AuthSession build() =>
+      const AuthSession(userId: 'user-1', isUnlocked: true, unlockedAt: null);
 }
 
 class _LockedSession extends AuthSessionController {

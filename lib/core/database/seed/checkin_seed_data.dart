@@ -1,4 +1,5 @@
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
+
 /// 打卡预置模板种子数据。
 ///
 /// 按分类组织，在用户首次登陆时按兴趣标签过滤插入。

@@ -55,11 +55,7 @@ void main() {
       final list = checkinPlanEmojis[category];
       expect(list, isNotNull, reason: category.label);
       expect(list!, isNotEmpty, reason: category.label);
-      expect(
-        defaultPlanEmojiFor(category),
-        list.first,
-        reason: category.label,
-      );
+      expect(defaultPlanEmojiFor(category), list.first, reason: category.label);
       // 同一个分类里不该有重复 emoji。
       expect(list.toSet().length, list.length, reason: category.label);
     }
@@ -92,14 +88,8 @@ void main() {
   });
 
   test('isBuiltInPlanEmoji 能区分内置与自定义', () {
-    expect(
-      isBuiltInPlanEmoji('🚶', CheckinPlanCategory.exercise),
-      isTrue,
-    );
-    expect(
-      isBuiltInPlanEmoji('🐳', CheckinPlanCategory.exercise),
-      isFalse,
-    );
+    expect(isBuiltInPlanEmoji('🚶', CheckinPlanCategory.exercise), isTrue);
+    expect(isBuiltInPlanEmoji('🐳', CheckinPlanCategory.exercise), isFalse);
   });
 
   test('颜色解析：#RRGGBB 可解析，坏值返回 null', () {
@@ -111,10 +101,7 @@ void main() {
 
   test('没有颜色时按分类给默认色，有颜色就照用', () {
     expect(
-      planVisualFor(
-        icon: '📌',
-        category: CheckinPlanCategory.exercise,
-      ).color,
+      planVisualFor(icon: '📌', category: CheckinPlanCategory.exercise).color,
       isA<PlanColor>(),
     );
     expect(
@@ -200,10 +187,14 @@ void main() {
 
   test('分类枚举：六个值、存储值与旧中文串一致、未知值落到「其他」', () {
     expect(CheckinPlanCategory.values, hasLength(6));
-    expect(
-      CheckinPlanCategory.values.map((c) => c.storageValue).toList(),
-      ['健康习惯', '学习成长', '运动', '生活记录', '纪念日', '其他'],
-    );
+    expect(CheckinPlanCategory.values.map((c) => c.storageValue).toList(), [
+      '健康习惯',
+      '学习成长',
+      '运动',
+      '生活记录',
+      '纪念日',
+      '其他',
+    ]);
     // 老库 / 老导出里的值能原样读回来。
     expect(
       CheckinPlanCategory.fromStorageValue('运动'),

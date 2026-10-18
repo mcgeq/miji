@@ -88,7 +88,9 @@ void main() {
       id: id,
       userId: 'user-1',
       title: title,
-      status: completedAt == null ? TodoTaskStatus.todo : TodoTaskStatus.completed,
+      status: completedAt == null
+          ? TodoTaskStatus.todo
+          : TodoTaskStatus.completed,
       priority: TodoTaskPriority.medium,
       scheduledDate: scheduled,
       dueAt: dueAt,
@@ -262,8 +264,16 @@ void main() {
     final timeline = build(
       commitments: [commitment(date: day, title: '全天还款')],
       transactions: [
-        transaction(id: 'morning', description: '早餐', at: DateTime.utc(2026, 10, 18, 8)),
-        transaction(id: 'noon', description: '午餐', at: DateTime.utc(2026, 10, 18, 12)),
+        transaction(
+          id: 'morning',
+          description: '早餐',
+          at: DateTime.utc(2026, 10, 18, 8),
+        ),
+        transaction(
+          id: 'noon',
+          description: '午餐',
+          at: DateTime.utc(2026, 10, 18, 12),
+        ),
       ],
     );
 
@@ -382,10 +392,7 @@ void main() {
       eventGroups: [
         lifeEnergyEvents(
           wishlist: [
-            wish(
-              id: 'w1',
-              cooldownUntil: DateTime.utc(2026, 10, 14, 22),
-            ),
+            wish(id: 'w1', cooldownUntil: DateTime.utc(2026, 10, 14, 22)),
             wish(
               id: 'w2',
               title: '已买的',
@@ -415,5 +422,4 @@ void main() {
     );
     expect(timeline.days, isEmpty);
   });
-
 }

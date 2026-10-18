@@ -64,8 +64,7 @@ class PlanColor {
   Color get color => Color(0xFF000000 | value);
 
   /// 落库 / 导出用的形式，与大写十六进制无关（解析是大小写不敏感的）。
-  String get hex =>
-      '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
+  String get hex => '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
   /// 在它上面写字该用黑还是白。给「色块 + 文字」的地方用。
   Color get onColor {

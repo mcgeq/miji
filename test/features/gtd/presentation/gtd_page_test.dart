@@ -27,10 +27,7 @@ void main() {
     // 回归：这里曾是一枚横跨整行的 5 段分段控件，后来又换成工具行左端的 chip。
     // 两者都已按要求移除，换面板只走底栏 / 侧栏的两态唤出。
     expect(find.byType(AppSlidingSegmentedControl), findsNothing);
-    expect(
-      find.byKey(const ValueKey('module-section-chip-gtd')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey('module-section-chip-gtd')), findsNothing);
 
     // 面板仍然要能切：地址是唯一入口。
     router.go('/app/gtd?section=tasks');

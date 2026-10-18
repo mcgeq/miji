@@ -250,10 +250,7 @@ class _ColorDot extends StatelessWidget {
           ),
         ),
         child: DecoratedBox(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.color,
-          ),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color.color),
         ),
       ),
     );
@@ -333,11 +330,8 @@ class _PlanColorSheetState extends State<PlanColorSheet> {
     _value = hsv.value;
   }
 
-  PlanColor get _color => PlanColor.fromHsv(
-    hue: _hue,
-    saturation: _saturation,
-    value: _value,
-  );
+  PlanColor get _color =>
+      PlanColor.fromHsv(hue: _hue, saturation: _saturation, value: _value);
 
   @override
   Widget build(BuildContext context) {
@@ -487,11 +481,7 @@ class _Slider extends StatelessWidget {
                 ),
               ),
             ),
-            Slider(
-              value: value.clamp(0, max),
-              max: max,
-              onChanged: onChanged,
-            ),
+            Slider(value: value.clamp(0, max), max: max, onChanged: onChanged),
           ],
         ),
       ],

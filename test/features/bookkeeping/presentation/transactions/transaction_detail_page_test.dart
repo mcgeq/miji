@@ -115,9 +115,6 @@ void main() {
 
 class _Unlocked extends AuthSessionController {
   @override
-  AuthSession build() => const AuthSession(
-    userId: 'user-1',
-    isUnlocked: true,
-    unlockedAt: null,
-  );
+  AuthSession build() =>
+      const AuthSession(userId: 'user-1', isUnlocked: true, unlockedAt: null);
 }

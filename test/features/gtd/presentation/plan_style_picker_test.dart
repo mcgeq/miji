@@ -75,10 +75,7 @@ void main() {
 
     // 8 个快捷色都在，另有一枚自定义入口。
     for (final preset in checkinPlanColors) {
-      expect(
-        find.byKey(ValueKey('plan-color-${preset.hex}')),
-        findsOneWidget,
-      );
+      expect(find.byKey(ValueKey('plan-color-${preset.hex}')), findsOneWidget);
     }
     expect(find.byKey(const ValueKey('plan-color-custom')), findsOneWidget);
 

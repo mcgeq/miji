@@ -104,7 +104,6 @@ final List<PlanColor> checkinPlanColors = <PlanColor>[
 /// 兜底色：分类默认也算不出来时用它（理论上不会发生，防御而已）。
 final PlanColor fallbackPlanColor = checkinPlanColors.last;
 
-
 /// 某个分类的默认 emoji（未知分类落到「其他」）。
 String defaultPlanEmojiFor(CheckinPlanCategory category) {
   return checkinPlanEmojis[category]!.first;
@@ -202,18 +201,12 @@ class PlanStyleSelection {
   }
 
   /// 用户点了某个 emoji。
-  PlanStyleSelection withEmoji(String next) => PlanStyleSelection(
-    emoji: next,
-    color: color,
-    customized: true,
-  );
+  PlanStyleSelection withEmoji(String next) =>
+      PlanStyleSelection(emoji: next, color: color, customized: true);
 
   /// 用户换了颜色（不动「自定义图标」的标记）。
-  PlanStyleSelection withColor(PlanColor next) => PlanStyleSelection(
-    emoji: emoji,
-    color: next,
-    customized: customized,
-  );
+  PlanStyleSelection withColor(PlanColor next) =>
+      PlanStyleSelection(emoji: emoji, color: next, customized: customized);
 
   /// 编辑一条已有计划时的初始状态。
   factory PlanStyleSelection.fromPlan({
