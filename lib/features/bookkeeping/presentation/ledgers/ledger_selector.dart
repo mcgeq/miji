@@ -9,6 +9,7 @@ import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/account_icon_catalog.dart';
 import 'package:miji/shared/widgets/app_form_layout.dart';
 import 'package:miji/shared/widgets/app_text_field.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
@@ -775,15 +776,35 @@ class _LedgerAccountTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         clipBehavior: Clip.antiAlias,
         child: ListTile(
-          leading: CircleAvatar(
-            backgroundColor: selected
-                ? colorScheme.primaryContainer
-                : colorScheme.surfaceContainerHighest,
-            foregroundColor: selected
-                ? colorScheme.onPrimaryContainer
-                : colorScheme.onSurfaceVariant,
-            child: Icon(_accountIcon(account.type), size: 20),
-          ),
+          // 自定义 logo 不套 CircleAvatar 的圆形底：正方形品牌图会被裁掉
+          // 四角，圆形底 + 20 的小图也不好认，直接按原比例出图。
+          leading: AccountIconView.usesCustomImage(account)
+              ? SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: Center(
+                    child: AccountIconView(
+                      account: account,
+                      size: 20,
+                      imageSize: 30,
+                    ),
+                  ),
+                )
+              : CircleAvatar(
+                  backgroundColor: selected
+                      ? colorScheme.primaryContainer
+                      : colorScheme.surfaceContainerHighest,
+                  foregroundColor: selected
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSurfaceVariant,
+                  child: AccountIconView(
+                    account: account,
+                    size: 20,
+                    color: selected
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ),
           title: Text(
             account.name,
             maxLines: 1,
@@ -812,27 +833,6 @@ class _LedgerAccountTile extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  IconData _accountIcon(MoneyAccountType type) {
-    return switch (type) {
-      MoneyAccountType.cash => Icons.payments_outlined,
-      MoneyAccountType.bank ||
-      MoneyAccountType.saving => Icons.account_balance_outlined,
-      MoneyAccountType.creditCard ||
-      MoneyAccountType.huabei ||
-      MoneyAccountType.baitiao ||
-      MoneyAccountType.meituanCredit ||
-      MoneyAccountType.otherCredit => Icons.credit_card_outlined,
-      MoneyAccountType.alipay ||
-      MoneyAccountType.wechat ||
-      MoneyAccountType.cloudQuickPass => Icons.wallet_outlined,
-      MoneyAccountType.investment => Icons.trending_up_rounded,
-      MoneyAccountType.loan => Icons.request_quote_outlined,
-      MoneyAccountType.prepaidCard => Icons.card_giftcard_outlined,
-      MoneyAccountType.internal => Icons.sync_alt_rounded,
-      MoneyAccountType.other => Icons.account_balance_wallet_outlined,
-    };
   }
 }
 

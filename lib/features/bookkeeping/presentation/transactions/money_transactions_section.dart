@@ -18,6 +18,7 @@ import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/paged_load_more_list.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
+import 'package:miji/core/presentation/app_color_utils.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/shared/widgets/date_picker.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
@@ -25,6 +26,7 @@ import 'package:miji/shared/widgets/form_dropdown.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/application/money_export_service.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/account_icon_catalog.dart';
 import 'package:miji/features/bookkeeping/domain/money_budget_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/budgets/budget_form_dialog.dart';
 import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_panel_header.dart';
@@ -2494,11 +2496,27 @@ class _AccountTransactionSummaryPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppListItemIcon(
-                icon: Icons.account_balance_wallet_rounded,
-                color: colorScheme.primary,
-                size: 42,
-              ),
+              // 自定义 logo 不进 `AppListItemIcon` 的浅色底壳：底壳是给字形
+              // 图标用的，品牌 logo 铺满 42 槽位直接出图才好看。
+              AccountIconView.usesCustomImage(account)
+                  ? SizedBox(
+                      width: 42,
+                      height: 42,
+                      child: Center(
+                        child: AccountIconView(
+                          account: account,
+                          size: 24,
+                          imageSize: accountCardLogoSize,
+                        ),
+                      ),
+                    )
+                  : AppListItemIcon(
+                      icon: AccountIconCatalog.forAccount(account),
+                      color: account.color == null
+                          ? colorScheme.primary
+                          : appColorFromHex(account.color),
+                      size: 42,
+                    ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

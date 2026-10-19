@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>miji · 账户卡片堆叠展示 · 界面稿</title>
+<style>
+/* ══════════════════════════════════════════════════════════════
+   取色自应用默认配色「靛墨」light（app_palette.dart）
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#F3F3F1; --surface:#FFFFFF; --sunken:#EAE9E5;
+  --line:#DAD9D6;
+  --t1:#1B1A17; --t2:#5C5A54; --t3:#8B8880;
+  --primary:#2A3C5C; --primary-solid:#24344F; --on-primary:#FFFFFF;
+  --primary-container:#E5E9F1; --on-primary-container:#28374F;
+  --income:#0E7A48; --expense:#B93A2C;
+  --shadow:0 1px 2px rgba(27,26,23,.05),0 8px 20px rgba(27,26,23,.05);
+  /* 卡片几何：与 Flutter 侧一一对应 */
+  --card-h:108px;   /* 卡片全高 */
+  --pad:12px;       /* 卡内边距 */
+  --icon:38px;      /* 账户图标 */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{
+  font-family:"PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Hiragino Sans GB",
+    "Noto Sans CJK SC","Source Han Sans SC",Roboto,sans-serif;
+  background:var(--bg);color:var(--t1);line-height:1.5;padding:40px 28px 80px;
+}
+.wrap{max-width:1280px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--t3);text-transform:uppercase}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:8px 0 10px}
+.lede{font-size:14px;color:var(--t2);max-width:860px}
+.lede b{color:var(--t1)}
+
+/* ── 对照栏 ── */
+.stage{display:flex;gap:22px;margin-top:26px;align-items:flex-start;flex-wrap:wrap}
+.col{flex:0 0 300px;width:300px}
+.col-cap{font-size:11.5px;color:var(--t3);margin:0 2px 8px;letter-spacing:.02em;min-height:32px}
+.col-cap b{color:var(--t2)}
+.screen{
+  width:100%;background:var(--surface);border:1px solid var(--line);
+  border-radius:24px;box-shadow:var(--shadow);overflow:hidden;
+}
+.panel{padding:13px 13px 16px;background:var(--bg)}
+.ptitle{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:800;margin-bottom:3px}
+.ptitle .n{font-size:11px;font-weight:700;color:var(--t3)}
+.psub{font-size:10.5px;color:var(--t3);margin-bottom:9px;line-height:1.45}
+
+/* ── 卡片本体（米基现有 3 行结构）── */
+.acard{
+  border-radius:var(--pad);padding:var(--pad);
+  color:#fff;display:flex;flex-direction:column;
+  position:relative;overflow:hidden;height:var(--card-h);
+}
+.acard .row1{display:flex;align-items:center;gap:var(--pad);height:var(--icon);flex:0 0 var(--icon)}
+.acard .ico{
+  width:var(--icon);height:var(--icon);flex:0 0 var(--icon);border-radius:10px;
+  display:grid;place-items:center;font-size:15px;font-weight:800;
+  background:rgba(255,255,255,.20);border:1px solid rgba(255,255,255,.28);
+}
+.acard .mid{flex:1;min-width:0}
+.acard .nm{font-size:15px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acard .sub{font-size:10.5px;opacity:.82;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acard .menu{width:20px;flex:0 0 20px;text-align:center;opacity:.75;font-size:15px;font-weight:800}
+.acard .bal{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-top:10px;
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.acard .lim{margin-top:10px;height:5px;border-radius:3px;background:rgba(255,255,255,.28);overflow:hidden}
+.acard .lim i{display:block;height:100%;border-radius:3px;background:rgba(255,255,255,.85)}
+
+/* 卡面外观 */
+.bg-navy{background:linear-gradient(135deg,#1F2A37 0%,#2D3A4B 100%)}
+.bg-green{background:linear-gradient(135deg,#06AD56 0%,#07C160 100%)}
+.bg-blue{background:linear-gradient(135deg,#4D9CF6 0%,#1677FF 100%)}
+.bg-orange{background:linear-gradient(135deg,#FFB088 0%,#FF9463 100%);color:#4A2410}
+.bg-orange .ico{background:rgba(74,36,16,.16);border-color:rgba(74,36,16,.22)}
+.bg-orange .lim{background:rgba(74,36,16,.20)}
+.bg-orange .lim i{background:rgba(74,36,16,.75)}
+.bg-img{
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,.50) 100%),
+    radial-gradient(at 72% 28%,#A9DDF0 0%,transparent 55%),
+    linear-gradient(180deg,#CFE9F4 0%,#7FBFD1 48%,#D79C63 100%);
+}
+
+/* ══ A 现状：顺序列表（每张完整、有 10px 间距）══ */
+.list-a{display:flex;flex-direction:column;gap:10px}
+
+/* ══ 几何 1：向下偏移 · 首卡置顶（露出「下半部分」）══ */
+.g1{position:relative;height:calc(var(--card-h) + 4 * 52px)}
+.g1 .acard{position:absolute;left:0;right:0}
+.g1 .c0{top:0;z-index:5;box-shadow:0 10px 26px rgba(27,26,23,.20)}
+.g1 .c1{top:52px;z-index:4;opacity:.97}
+.g1 .c2{top:104px;z-index:3;opacity:.94}
+.g1 .c3{top:156px;z-index:2;opacity:.91}
+.g1 .c4{top:208px;z-index:1;opacity:.88}
+
+/* ══ 几何 2：向下偏移 · 后续卡裁顶部 52（露出「图标+名称」）══ */
+.g2{position:relative;height:calc(var(--card-h) + 4 * 44px)}
+.g2 .acard{position:absolute;left:0;right:0}
+.g2 .c0{top:0;z-index:5;box-shadow:0 10px 26px rgba(27,26,23,.20)}
+/* 后续卡：ClipRect 只留顶部 52px，再上移 8px 形成叠压唇边 */
+.g2 .clip{position:absolute;left:0;right:0;overflow:hidden;height:52px}
+.g2 .clip .acard{position:absolute;top:0;left:0;right:0}
+.g2 .w1{top:calc(var(--card-h) - 8px);height:44px;z-index:4}
+.g2 .w2{top:calc(var(--card-h) - 8px + 44px);height:44px;z-index:3}
+.g2 .w3{top:calc(var(--card-h) - 8px + 88px);height:44px;z-index:2}
+.g2 .w4{top:calc(var(--card-h) - 8px + 132px);height:44px;z-index:1}
+
+/* ══ 几何 3：向上偏移（露出「上半部分」，但顺序反转）══ */
+.g3{position:relative;height:calc(var(--card-h) + 4 * 40px)}
+.g3 .acard{position:absolute;left:0;right:0}
+.g3 .c0{top:160px;z-index:5;box-shadow:0 10px 26px rgba(27,26,23,.20)}
+.g3 .c1{top:120px;z-index:4;opacity:.97}
+.g3 .c2{top:80px;z-index:3;opacity:.94}
+.g3 .c3{top:40px;z-index:2;opacity:.91}
+.g3 .c4{top:0;z-index:1;opacity:.88}
+
+/* 露出区高亮提示 */
+.hintbar{
+  position:absolute;left:0;right:0;border:1px dashed rgba(255,255,255,.85);
+  border-radius:6px;pointer-events:none;z-index:9;
+}
+.hintbar::after{
+  content:attr(data-lbl);position:absolute;left:4px;top:2px;
+  font-size:8.5px;font-weight:800;letter-spacing:.02em;color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;
+}
+
+/* 折叠提示 */
+.foldmore{
+  margin:9px 0 0;display:flex;align-items:center;gap:6px;
+  font-size:10.5px;font-weight:700;color:var(--primary);
+  padding:8px 10px;border:1px dashed var(--line);border-radius:11px;
+}
+.foldmore .sp{flex:1}
+.foldmore .chev{color:var(--t3)}
+
+/* 管理态 */
+.modebar{
+  display:flex;align-items:center;gap:8px;margin-bottom:9px;
+  padding:7px 10px;border-radius:11px;background:var(--primary-container);
+  font-size:10.5px;font-weight:700;color:var(--on-primary-container);
+}
+.modebar .sp{flex:1}
+.modebar .btn{
+  font-size:10px;font-weight:800;padding:3px 8px;border-radius:7px;
+  background:var(--primary-solid);color:var(--on-primary);
+}
+.list-d{display:flex;flex-direction:column;gap:8px}
+.list-d .row{display:flex;flex-direction:row;align-items:center;gap:9px;
+  border-radius:11px;padding:9px 11px;color:#fff;box-shadow:0 1px 2px rgba(27,26,23,.06)}
+.list-d .handle{width:15px;flex:0 0 15px;text-align:center;opacity:.7;font-size:13px}
+.list-d .i2{width:28px;height:28px;flex:0 0 28px;border-radius:8px;display:grid;place-items:center;
+  background:rgba(255,255,255,.20);font-size:12px;font-weight:800}
+.list-d .mid{flex:1;min-width:0}
+.list-d .nm{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-d .bal{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* ── 说明区 ── */
+.notes{margin-top:34px;background:var(--surface);border:1px solid var(--line);
+  border-radius:18px;padding:22px 24px;box-shadow:var(--shadow)}
+.notes h2{font-size:16px;font-weight:800;margin:0 0 4px}
+.notes .h2sub{font-size:12px;color:var(--t3);margin-bottom:15px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 0;vertical-align:top;text-align:left;border-bottom:1px solid var(--line)}
+th{width:148px;color:var(--t3);font-weight:700;font-size:12px;padding-right:16px}
+tr:last-child th,tr:last-child td{border-bottom:0}
+td b{color:var(--t1)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;
+  background:var(--sunken);padding:1px 5px;border-radius:5px}
+.pill{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.02em;
+  padding:2px 7px;border-radius:6px;background:var(--primary-container);
+  color:var(--on-primary-container);vertical-align:1px;white-space:nowrap}
+.pill.warn{background:#F9E6E2;color:#8E2A1E}
+.pill.ok{background:#E2F0E8;color:#0B5C36}
+.pick{background:var(--income);color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Account cards · Stacked layout</div>
+  <h1>账户卡片 · 堆叠展示</h1>
+  <p class="lede">
+    对照 <b>IMG_4667</b>（米基现状＝顺序列表）与 <b>IMG_4668</b>（钱包 App＝卡片叠压）。<br>
+    <b>先说一个反直觉的几何事实</b>：卡片向下偏移、首卡置顶时，后面每张卡露出的其实是它的
+    <b>下半部分</b>（余额区），不是图标行 —— 因为上一张卡压住的是它的上半部分。
+    这决定了「露出口放什么信息」，是本方案最关键的取舍，下面用三种几何摆出来对比。
+  </p>
+
+  <div class="stage">
+
+    <!-- ══ A 现状 ══ -->
+    <div class="col">
+      <p class="col-cap"><b>A · 现状</b>（IMG_4667）<br>顺序列表，每张完整、彼此不重叠</p>
+      <div class="screen">
+        <div class="panel">
+          <div class="ptitle">账户卡片 <span class="n">5 个</span></div>
+          <p class="psub">点按查看 · 长按拖动排序</p>
+          <div class="list-a">
+            <div class="acard bg-navy">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">工资卡 (1234)</div><div class="sub">银行卡 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥38,620.50</div>
+            </div>
+            <div class="acard bg-green">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">微信余额</div><div class="sub">微信 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥328.60</div>
+            </div>
+            <div class="acard bg-blue">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">支付宝余额</div><div class="sub">支付宝 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥1,280.00</div>
+            </div>
+            <div class="acard bg-orange">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">日常信用卡</div><div class="sub">信用卡 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">待还 ¥1,286.40</div>
+              <div class="lim"><i style="width:34%"></i></div>
+            </div>
+            <div class="acard bg-img">
+              <div class="row1"><div class="ico">✈</div>
+                <div class="mid"><div class="nm">旅行基金</div><div class="sub">储蓄 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥6,800.00</div>
+            </div>
+          </div>
+          <p class="psub" style="margin:11px 0 0">总高 ≈ <b style="color:var(--t1)">590px</b>　一屏只见 2~3 张</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 几何 1 ══ -->
+    <div class="col">
+      <p class="col-cap"><b>几何 1 · 向下偏移</b><br>顺序自然，露出<b>下半部分</b>（背景 + 余额）</p>
+      <div class="screen">
+        <div class="panel">
+          <div class="ptitle">账户卡片 <span class="n">5 个</span></div>
+          <p class="psub">露出 52px · 名称被上一张挡住</p>
+          <div class="g1">
+            <div class="acard bg-navy c0">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">工资卡 (1234)</div><div class="sub">银行卡 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥38,620.50</div>
+            </div>
+            <div class="acard bg-green c1">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">微信余额</div><div class="sub">微信 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥328.60</div>
+              <!-- 露出区 = 卡片局部 [56,108] -->
+              <div class="hintbar" data-lbl="露出区：余额" style="top:56px;height:52px"></div>
+            </div>
+            <div class="acard bg-blue c2">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">支付宝余额</div><div class="sub">支付宝 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥1,280.00</div>
+            </div>
+            <div class="acard bg-orange c3">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">日常信用卡</div><div class="sub">信用卡 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">待还 ¥1,286.40</div>
+              <div class="lim"><i style="width:34%"></i></div>
+            </div>
+            <div class="acard bg-img c4">
+              <div class="row1"><div class="ico">✈</div>
+                <div class="mid"><div class="nm">旅行基金</div><div class="sub">储蓄 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥6,800.00</div>
+            </div>
+          </div>
+          <div class="foldmore"><span>还有 2 张</span><span class="sp"></span><span class="chev">管理 ›</span></div>
+          <p class="psub" style="margin:9px 0 0">总高 ≈ <b style="color:var(--t1)">316px</b>　<span class="pill warn">账户名不可见，只见孤立数字</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 几何 2（推荐）══ -->
+    <div class="col">
+      <p class="col-cap"><b>几何 2 · 裁顶 + 微叠</b> <span class="pill pick">推荐</span><br>顺序自然，露出<b>图标 + 名称</b></p>
+      <div class="screen">
+        <div class="panel">
+          <div class="ptitle">账户卡片 <span class="n">5 个</span></div>
+          <p class="psub">后续卡裁顶部 52px · 叠压 8px 唇边</p>
+          <div class="g2">
+            <div class="acard bg-navy c0">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">工资卡 (1234)</div><div class="sub">银行卡 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥38,620.50</div>
+            </div>
+            <div class="clip w1"><div class="acard bg-green">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">微信余额</div><div class="sub">微信 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥328.60</div>
+            </div></div>
+            <div class="clip w2"><div class="acard bg-blue">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">支付宝余额</div><div class="sub">支付宝 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥1,280.00</div>
+            </div></div>
+            <div class="clip w3"><div class="acard bg-orange">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">日常信用卡</div><div class="sub">信用卡 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">待还 ¥1,286.40</div>
+              <div class="lim"><i style="width:34%"></i></div>
+            </div></div>
+            <div class="clip w4"><div class="acard bg-img">
+              <div class="row1"><div class="ico">✈</div>
+                <div class="mid"><div class="nm">旅行基金</div><div class="sub">储蓄 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥6,800.00</div>
+            </div></div>
+          </div>
+          <div class="foldmore"><span>还有 2 张</span><span class="sp"></span><span class="chev">管理 ›</span></div>
+          <p class="psub" style="margin:9px 0 0">总高 ≈ <b style="color:var(--t1)">284px</b>　<span class="pill ok">账户名可见，身份能认出</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 几何 3 ══ -->
+    <div class="col">
+      <p class="col-cap"><b>几何 3 · 向上偏移</b><br>露出<b>图标 + 名称</b>，但视觉顺序反转</p>
+      <div class="screen">
+        <div class="panel">
+          <div class="ptitle">账户卡片 <span class="n">5 个</span></div>
+          <p class="psub">露出 40px · 注意最上方是账户 5</p>
+          <div class="g3">
+            <div class="acard bg-navy c0">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">工资卡 (1234)</div><div class="sub">银行卡 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥38,620.50</div>
+            </div>
+            <div class="acard bg-green c1">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">微信余额</div><div class="sub">微信 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥328.60</div>
+            </div>
+            <div class="acard bg-blue c2">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">支付宝余额</div><div class="sub">支付宝 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥1,280.00</div>
+            </div>
+            <div class="acard bg-orange c3">
+              <div class="row1"><div class="ico">¥</div>
+                <div class="mid"><div class="nm">日常信用卡</div><div class="sub">信用卡 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">待还 ¥1,286.40</div>
+              <div class="lim"><i style="width:34%"></i></div>
+            </div>
+            <div class="acard bg-img c4">
+              <div class="row1"><div class="ico">✈</div>
+                <div class="mid"><div class="nm">旅行基金 ✕ 排在最上</div><div class="sub">储蓄 · CNY</div></div>
+                <div class="menu">⋯</div></div>
+              <div class="bal">¥6,800.00</div>
+            </div>
+          </div>
+          <div class="foldmore"><span>还有 2 张</span><span class="sp"></span><span class="chev">管理 ›</span></div>
+          <p class="psub" style="margin:9px 0 0">总高 ≈ <b style="color:var(--t1)">268px</b>　<span class="pill warn">顺序与列表相反</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 管理态 ══ -->
+    <div class="col">
+      <p class="col-cap"><b>管理态</b><br>恢复现有列表：左滑 / 拖拽 / 分页全保留</p>
+      <div class="screen">
+        <div class="panel">
+          <div class="modebar"><span>管理 · 排序模式</span><span class="sp"></span><span class="btn">完成</span></div>
+          <div class="list-d">
+            <div class="row bg-navy">
+              <div class="handle">⠿</div><div class="i2">¥</div>
+              <div class="mid"><div class="nm">工资卡 (1234)</div></div>
+              <div class="bal">¥38,620.50</div>
+            </div>
+            <div class="row bg-green">
+              <div class="handle">⠿</div><div class="i2">¥</div>
+              <div class="mid"><div class="nm">微信余额</div></div>
+              <div class="bal">¥328.60</div>
+            </div>
+            <div class="row bg-blue">
+              <div class="handle">⠿</div><div class="i2">¥</div>
+              <div class="mid"><div class="nm">支付宝余额</div></div>
+              <div class="bal">¥1,280.00</div>
+            </div>
+            <div class="row bg-orange">
+              <div class="handle">⠿</div><div class="i2">¥</div>
+              <div class="mid"><div class="nm">日常信用卡</div></div>
+              <div class="bal">待还 ¥1,286.40</div>
+            </div>
+            <div class="row bg-img">
+              <div class="handle">⠿</div><div class="i2">✈</div>
+              <div class="mid"><div class="nm">旅行基金</div></div>
+              <div class="bal">¥6,800.00</div>
+            </div>
+          </div>
+          <p class="psub" style="margin:9px 0 0">长按把手拖动 · 左滑编辑/删除 · 分页加载</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ 设计决策 ══ -->
+  <div class="notes">
+    <h2>设计决策</h2>
+    <p class="h2sub">为什么不能简单把 ListView 换成 Stack</p>
+    <table>
+      <tr>
+        <th>核心冲突</th>
+        <td>
+          现有列表挂了三个交互，堆叠会直接撞车：<br>
+          <span class="pill warn">左滑</span> <code>AppSwipeActionTile</code> 编辑/删除 —— 被埋在后面的卡只剩一条缝，够不着；<br>
+          <span class="pill warn">拖拽</span> 长按排序 —— 藏在后面的卡抓不到把手；<br>
+          <span class="pill warn">分页</span> <code>PagedLoadMoreList</code> —— 堆叠是固定高度 Stack，天然不可滚动。<br>
+          <b>结论：堆叠与「每张卡都能被完整触碰」互斥，必须拆成两个状态。</b>
+        </td>
+      </tr>
+      <tr>
+        <th>双态切换</th>
+        <td>
+          <b>浏览态</b>（默认）＝堆叠，负责看；<b>管理态</b>＝现有列表，负责改。<br>
+          管理态复用既有「管理与排序」入口，<b>不新增 UI</b>，实现完全保持现在的
+          <code>PagedLoadMoreList</code> + <code>_AccountTile</code>。
+        </td>
+      </tr>
+      <tr>
+        <th>几何取舍</th>
+        <td>
+          三种几何各有代价，<b>推荐几何 2</b>：<br>
+          <b>几何 1</b>（向下偏移）：顺序自然，但露出的是卡片下半部分 → 只见余额、不见名称，会出现「孤立数字」。<br>
+          <b>几何 2</b>（裁顶 + 8px 叠压）：顺序自然 <span class="pill ok">且</span> 露出图标+名称 → 身份能认出，叠压唇边保留卡组质感。<b>代价：后续卡要额外套一层 ClipRect。</b><br>
+          <b>几何 3</b>（向上偏移）：露出顶部，但最上方是最后一张卡，<b>顺序与列表相反</b>，阅读预期错乱。
+        </td>
+      </tr>
+      <tr>
+        <th>52px 裁切高度</th>
+        <td>
+          不是随手取值：<code>52 = padding 12 + 图标 38 + 2</code>，<b>正好切在图标行结束、10px 间距开始处</b>。<br>
+          再少图标被切一半，再多就退化成普通列表。这个数与卡高(108)/内边距(12)/图标(38)绑死，
+          落地时抽成常量 <code>stackPeekHeight</code>。
+        </td>
+      </tr>
+      <tr>
+        <th>层次表达</th>
+        <td>
+          仅首卡投影 <code>0 10px 26px</code>；往下 <code>opacity</code> 递减 0.97 → 0.88，<code>zIndex</code> 递减。
+          越深越轻，形成「一叠卡」的质感。
+        </td>
+      </tr>
+      <tr>
+        <th>张数上限</th>
+        <td>
+          只堆前 <b>6 张</b>，超出折叠为「还有 N 张」→ 进管理态。
+          堆叠是固定高度，20 张堆出来比列表还长，失去意义。
+        </td>
+      </tr>
+      <tr>
+        <th>边界情况</th>
+        <td>0 张 → <code>_EmptyAccountsPanel</code>；1 张 → 不堆叠，直接单卡；&gt;6 张 → 折叠提示。</td>
+      </tr>
+      <tr>
+        <th>暗色主题</th>
+        <td>
+          <span class="pill warn">待验证</span> 层次感靠阴影，暗色下阴影几乎不可见，
+          需改用「边框 + 明度差」补层次。实现时必须单独调。
+        </td>
+      </tr>
+      <tr>
+        <th>卡片本体</th>
+        <td>
+          <span class="pill ok">零改动</span> <code>_AccountTileContent</code> 已是
+          <code>AccountCardBackground</code> + 3 行内容，堆叠只改<b>外层容器排布</b>，不动卡内结构。
+        </td>
+      </tr>
+      <tr>
+        <th>值不值得做</th>
+        <td>
+          它是<b>浏览体验升级</b>，不是信息密度升级（几何 2 下余额信息其实被藏了）。<br>
+          真实收益：一屏看完所有账户（590 → 284）+ 钱包质感。<br>
+          代价：多一个状态要维护、两套布局分别测。<br>
+          <b>建议先只做浏览态堆叠</b>，管理态保留现有列表（本来就是两个入口），看反馈再决定是否合并。
+        </td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>

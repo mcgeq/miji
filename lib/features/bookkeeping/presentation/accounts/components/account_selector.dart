@@ -4,7 +4,7 @@ import 'package:miji/shared/widgets/form_dropdown.dart';
 import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
-import 'package:miji/features/bookkeeping/presentation/accounts/account_presentation_helpers.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/account_icon_catalog.dart';
 
 class AccountSelector extends StatelessWidget {
   const AccountSelector({
@@ -148,9 +148,11 @@ class AccountOptionContent extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          accountIconDataForType(account.type),
+        AccountIconView(
+          account: account,
           size: 20,
+          // 品牌 logo 自带轮廓，给到 22 才和 20 的字形视觉分量相当。
+          imageSize: 22,
           color: account.isActive
               ? colorScheme.primary
               : colorScheme.onSurfaceVariant,

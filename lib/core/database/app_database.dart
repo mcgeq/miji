@@ -105,7 +105,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 33;
+  int get schemaVersion => 34;
 
   @override
   MigrationStrategy get migration {
@@ -555,6 +555,40 @@ class AppDatabase extends _$AppDatabase {
               'ALTER TABLE life_energy_profiles DROP COLUMN city_preset_id',
             );
           }
+        }
+        if (from < 34) {
+          // V1.16: 账户卡片个性化 —— 背景样式 / 背景色 / 背景图。
+          // 全部可空：NULL 视同 default，老数据升级后外观零变化。
+          //
+          // 按列名逐个查再补：迁移测试是用「当前 schema 再减列」模拟旧库，
+          // 模拟库里这些列还在，直接 addColumn 会撞 duplicate。
+          final accountColumns =
+              await customSelect(
+                "PRAGMA table_info('money_accounts')",
+              ).get().then(
+                (rows) => {for (final row in rows) row.read<String>('name')},
+              );
+          Future<void> addAccountColumnIfMissing(
+            String name,
+            GeneratedColumn<Object> column,
+          ) async {
+            if (!accountColumns.contains(name)) {
+              await migrator.addColumn(moneyAccounts, column);
+            }
+          }
+
+          await addAccountColumnIfMissing(
+            'background_style',
+            moneyAccounts.backgroundStyle,
+          );
+          await addAccountColumnIfMissing(
+            'background_color',
+            moneyAccounts.backgroundColor,
+          );
+          await addAccountColumnIfMissing(
+            'background_image',
+            moneyAccounts.backgroundImage,
+          );
         }
       },
     );

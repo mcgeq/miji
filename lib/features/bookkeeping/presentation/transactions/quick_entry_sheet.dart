@@ -21,7 +21,7 @@ import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
-import 'package:miji/features/bookkeeping/presentation/accounts/account_presentation_helpers.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/account_icon_catalog.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/category_icon.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_leaf_selector.dart';
@@ -1300,7 +1300,7 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
         scrollDirection: Axis.horizontal,
         children: [
           _DockFieldChip(
-            icon: Icons.notes_rounded,
+            icon: const Icon(Icons.notes_rounded),
             label: notes.isEmpty ? '备注' : notes,
             filled: notes.isNotEmpty,
             tooltip: '备注',
@@ -1309,8 +1309,8 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
           const SizedBox(width: 6),
           _DockFieldChip(
             icon: account == null
-                ? Icons.account_balance_wallet_rounded
-                : accountIconDataForType(account.type),
+                ? const Icon(Icons.account_balance_wallet_rounded)
+                : AccountIconView(account: account, size: 14, imageSize: 18),
             label: account?.name ?? '账户',
             tooltip: '账户',
             onTap: _submitting ? null : _pickAccount,
@@ -1321,7 +1321,7 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
           // 真正需要选的是信用卡 / 其它信用这类一个账户能走好几条渠道的。
           if (lockedPaymentMethodForAccount(account) == null) ...[
             _DockFieldChip(
-              icon: Icons.credit_card_rounded,
+              icon: const Icon(Icons.credit_card_rounded),
               label: effectivePaymentMethodForAccount(
                 account,
                 _paymentMethod,
@@ -1332,7 +1332,7 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
             const SizedBox(width: 6),
           ],
           _DockFieldChip(
-            icon: Icons.event_rounded,
+            icon: const Icon(Icons.event_rounded),
             label: _dateLabel(),
             filled: !_isToday,
             // chip 限宽会截断长日期，完整取值放 tooltip。
@@ -1341,7 +1341,7 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
           ),
           const SizedBox(width: 6),
           _DockFieldChip(
-            icon: Icons.settings_rounded,
+            icon: const Icon(Icons.settings_rounded),
             label: '更多',
             tooltip: '更多设置',
             onTap: _submitting ? null : _openDockMore,
@@ -1444,22 +1444,22 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
           _chip(
             context,
             icon: account == null
-                ? Icons.account_balance_wallet_rounded
-                : accountIconDataForType(account.type),
+                ? const Icon(Icons.account_balance_wallet_rounded)
+                : AccountIconView(account: account, size: 15, imageSize: 20),
             label: account?.name ?? '选择账户',
             onTap: _submitting ? null : _pickAccount,
           ),
           const SizedBox(width: 8),
           _chip(
             context,
-            icon: Icons.event_rounded,
+            icon: const Icon(Icons.event_rounded),
             label: _dateLabel(),
             onTap: _submitting ? null : _pickDate,
           ),
           const SizedBox(width: 8),
           _chip(
             context,
-            icon: Icons.tune_rounded,
+            icon: const Icon(Icons.tune_rounded),
             label: '更多',
             onTap: _submitting ? null : _openMorePanel,
           ),
@@ -1469,7 +1469,7 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
           // 让人分不清哪个点下去会换页面，所以名字分开写。
           _chip(
             context,
-            icon: Icons.edit_note_rounded,
+            icon: const Icon(Icons.edit_note_rounded),
             label: '详细填写',
             onTap: _submitting ? null : _openDetailedForm,
           ),
@@ -1480,7 +1480,7 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
 
   Widget _chip(
     BuildContext context, {
-    required IconData icon,
+    required Widget icon,
     required String label,
     required VoidCallback? onTap,
   }) {
@@ -1497,7 +1497,13 @@ class _QuickEntrySheetState extends ConsumerState<QuickEntrySheet> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 15, color: colorScheme.onSurfaceVariant),
+              IconTheme.merge(
+                data: IconThemeData(
+                  size: 15,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                child: icon,
+              ),
               const SizedBox(width: 6),
               Text(
                 label,
@@ -1727,7 +1733,8 @@ class _DockFieldChip extends StatelessWidget {
     this.filled = false,
   });
 
-  final IconData icon;
+  /// 图标走 Widget：账户 chip 要能渲染用户自定义图片 / SVG 图标。
+  final Widget icon;
   final String label;
 
   /// 长按提示：值被截断时它是看清完整内容的唯一途径。
@@ -1760,7 +1767,10 @@ class _DockFieldChip extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, size: 14, color: accent),
+                  IconTheme.merge(
+                    data: IconThemeData(size: 14, color: accent),
+                    child: icon,
+                  ),
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(

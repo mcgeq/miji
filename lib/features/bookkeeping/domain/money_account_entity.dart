@@ -125,6 +125,34 @@ enum MoneyAccountType {
   bool get isInternal => this == MoneyAccountType.internal;
 }
 
+/// 账户卡片的背景样式。
+enum MoneyAccountBackgroundStyle {
+  /// 跟随主题的默认卡片外观。
+  defaultStyle,
+
+  /// 纯色 / 渐变背景，颜色取自 backgroundColor。
+  color,
+
+  /// 图片背景，路径取自 backgroundImage。
+  image;
+
+  static MoneyAccountBackgroundStyle fromStorageValue(String? value) {
+    return switch (value) {
+      'color' || 'solid' => MoneyAccountBackgroundStyle.color,
+      'image' => MoneyAccountBackgroundStyle.image,
+      _ => MoneyAccountBackgroundStyle.defaultStyle,
+    };
+  }
+
+  String get storageValue {
+    return switch (this) {
+      MoneyAccountBackgroundStyle.defaultStyle => 'default',
+      MoneyAccountBackgroundStyle.color => 'color',
+      MoneyAccountBackgroundStyle.image => 'image',
+    };
+  }
+}
+
 class MoneyAccountEntity {
   const MoneyAccountEntity({
     required this.id,
@@ -150,6 +178,9 @@ class MoneyAccountEntity {
     this.description,
     this.color,
     this.icon,
+    this.backgroundStyle,
+    this.backgroundColor,
+    this.backgroundImage,
   });
 
   final String id;
@@ -171,6 +202,42 @@ class MoneyAccountEntity {
   final bool isVirtual;
   final String? color;
   final String? icon;
+
+  /// 卡片背景样式：`default` / `color` / `image`；null 视同 default。
+  final String? backgroundStyle;
+
+  /// 卡片背景色（hex），[backgroundStyle] 为 `color` 时生效。
+  final String? backgroundColor;
+
+  /// 卡片背景图相对路径（AttachmentStore）；文件不参与同步，跨端需降级。
+  final String? backgroundImage;
+
+  /// 解析后的背景样式；非法存储值一律回退 default。
+  MoneyAccountBackgroundStyle get resolvedBackgroundStyle {
+    return MoneyAccountBackgroundStyle.fromStorageValue(backgroundStyle);
+  }
+
+  /// 有效的背景渲染样式：style 声明了但对应素材缺失时自动降级。
+  ///
+  /// 背景图只在本机落盘（附件不参与同步），另一台设备拿着路径也读不到
+  /// 文件 —— 那就退回背景色，再不行退回默认外观，而不是渲染一张破图。
+  MoneyAccountBackgroundStyle effectiveBackgroundStyle({
+    bool backgroundImageExists = true,
+  }) {
+    final style = resolvedBackgroundStyle;
+    if (style == MoneyAccountBackgroundStyle.image &&
+        (backgroundImage == null || !backgroundImageExists)) {
+      if (backgroundColor != null) {
+        return MoneyAccountBackgroundStyle.color;
+      }
+      return MoneyAccountBackgroundStyle.defaultStyle;
+    }
+    if (style == MoneyAccountBackgroundStyle.color && backgroundColor == null) {
+      return MoneyAccountBackgroundStyle.defaultStyle;
+    }
+    return style;
+  }
+
   final bool isActive;
   final bool isDeleted;
   final DateTime createdAt;
@@ -220,6 +287,9 @@ class MoneyAccountDraft {
     this.currencyCode = 'CNY',
     this.color,
     this.icon,
+    this.backgroundStyle,
+    this.backgroundColor,
+    this.backgroundImage,
     this.statementDay,
     this.budgetCycleStartDay,
     this.repaymentDay,
@@ -233,6 +303,9 @@ class MoneyAccountDraft {
   final String currencyCode;
   final String? color;
   final String? icon;
+  final MoneyAccountBackgroundStyle? backgroundStyle;
+  final String? backgroundColor;
+  final String? backgroundImage;
   final int? statementDay;
   final int? budgetCycleStartDay;
   final int? repaymentDay;
@@ -249,6 +322,9 @@ class MoneyAccountUpdate {
     this.description,
     this.color,
     this.icon,
+    this.backgroundStyle,
+    this.backgroundColor,
+    this.backgroundImage,
     this.statementDay,
     this.budgetCycleStartDay,
     this.repaymentDay,
@@ -263,6 +339,9 @@ class MoneyAccountUpdate {
   final int initialBalanceMinor;
   final String? color;
   final String? icon;
+  final MoneyAccountBackgroundStyle? backgroundStyle;
+  final String? backgroundColor;
+  final String? backgroundImage;
   final int? statementDay;
   final int? budgetCycleStartDay;
   final int? repaymentDay;

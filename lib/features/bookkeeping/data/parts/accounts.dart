@@ -441,6 +441,9 @@ mixin _Accounts on _DriftMoneyRepositoryBase {
         isVirtual: const Value(false),
         color: Value<String?>(draft.color),
         icon: Value<String?>(draft.icon),
+        backgroundStyle: Value<String?>(draft.backgroundStyle?.storageValue),
+        backgroundColor: Value<String?>(draft.backgroundColor),
+        backgroundImage: Value<String?>(draft.backgroundImage),
         isActive: const Value(true),
         createdAt: now,
         updatedAt: now,
@@ -517,6 +520,11 @@ mixin _Accounts on _DriftMoneyRepositoryBase {
               currencyCode: Value(update.currencyCode),
               color: Value<String?>(update.color),
               icon: Value<String?>(update.icon),
+              backgroundStyle: Value<String?>(
+                update.backgroundStyle?.storageValue,
+              ),
+              backgroundColor: Value<String?>(update.backgroundColor),
+              backgroundImage: Value<String?>(update.backgroundImage),
               version: Value(existing.version + 1),
               updatedAt: Value(now),
             ),
@@ -589,6 +597,11 @@ mixin _Accounts on _DriftMoneyRepositoryBase {
         initialBalanceMinor: nextInitialBalanceMinor,
         color: existing.color,
         icon: existing.icon,
+        backgroundStyle: MoneyAccountBackgroundStyle.fromStorageValue(
+          existing.backgroundStyle,
+        ),
+        backgroundColor: existing.backgroundColor,
+        backgroundImage: existing.backgroundImage,
         statementDay: existing.statementDay,
         budgetCycleStartDay: existing.budgetCycleStartDay,
         repaymentDay: existing.repaymentDay,
@@ -812,6 +825,9 @@ mixin _Accounts on _DriftMoneyRepositoryBase {
       'currency_code': draft.currencyCode,
       'color': _blankToNull(draft.color),
       'icon': _blankToNull(draft.icon),
+      'background_style': draft.backgroundStyle?.storageValue,
+      'background_color': _blankToNull(draft.backgroundColor),
+      'background_image': _blankToNull(draft.backgroundImage),
       'is_active': true,
     };
   }
@@ -837,6 +853,24 @@ mixin _Accounts on _DriftMoneyRepositoryBase {
     );
     _putIfChanged(fields, 'color', existing.color, _blankToNull(update.color));
     _putIfChanged(fields, 'icon', existing.icon, _blankToNull(update.icon));
+    _putIfChanged(
+      fields,
+      'background_style',
+      existing.backgroundStyle,
+      update.backgroundStyle?.storageValue,
+    );
+    _putIfChanged(
+      fields,
+      'background_color',
+      existing.backgroundColor,
+      _blankToNull(update.backgroundColor),
+    );
+    _putIfChanged(
+      fields,
+      'background_image',
+      existing.backgroundImage,
+      _blankToNull(update.backgroundImage),
+    );
     _putIfChanged(
       fields,
       'statement_day',

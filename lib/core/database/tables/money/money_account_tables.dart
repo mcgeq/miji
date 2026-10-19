@@ -45,6 +45,19 @@ class MoneyAccounts extends Table {
 
   TextColumn get icon => text().nullable()();
 
+  /// 卡片背景样式：`default` / `color` / `image`。NULL 视同 `default`。
+  ///
+  /// 与 [color]（标识色：图标底色、图表分布色）语义分离，改背景不能
+  /// 连带动到全 App 的标识色。
+  TextColumn get backgroundStyle => text().nullable()();
+
+  /// 卡片背景色（hex 字符串），[backgroundStyle] 为 `color` 时生效。
+  TextColumn get backgroundColor => text().nullable()();
+
+  /// 卡片背景图相对路径（AttachmentStore 存储）。附件文件不参与同步，
+  /// 其他设备读不到文件时按「背景图 → 背景色 → 默认」降级。
+  TextColumn get backgroundImage => text().nullable()();
+
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
 
   TextColumn get deviceId => text().nullable()();

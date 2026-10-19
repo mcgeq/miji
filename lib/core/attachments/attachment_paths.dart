@@ -87,6 +87,7 @@ const Set<String> knownAttachmentExtensions = <String>{
   'bmp',
   'tif',
   'tiff',
+  'svg',
   'pdf',
   'txt',
 };
@@ -103,6 +104,7 @@ const Map<String, String> _extensionByMimeType = <String, String>{
   'image/webp': 'webp',
   'image/gif': 'gif',
   'image/bmp': 'bmp',
+  'image/svg+xml': 'svg',
   'image/tiff': 'tiff',
   'application/pdf': 'pdf',
   'text/plain': 'txt',

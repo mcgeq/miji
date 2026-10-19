@@ -59,6 +59,9 @@ dependencies:
   email_validator: ^3.0.0
   fluttertoast: ^9.1.0
   image_picker: ^1.2.3
+  # 账户自定义图标：file_selector 选任意图片（含 SVG），flutter_svg 渲染矢量图标。
+  file_selector: ^1.1.0
+  flutter_svg: ^2.3.0
   # 端侧 OCR（仅 Android / iOS）：支付截图识别记账用。
   # 中文语言包需在 android/app/build.gradle.kts 里单独引入，见该文件注释。
   google_mlkit_text_recognition: ^0.17.1

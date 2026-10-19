@@ -16,6 +16,8 @@ import 'package:miji/core/presentation/components/app_confirm_dialog.dart';
 import 'package:miji/core/presentation/components/app_filter_sheet.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
 import 'package:miji/core/presentation/components/app_list_item.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/account_icon_catalog.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/components/account_card_background.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
 import 'package:miji/core/presentation/components/money_amount_text.dart';
 import 'package:miji/core/presentation/components/paged_load_more_list.dart';
@@ -1838,8 +1840,10 @@ class _AccountTileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppListItemPanel(
-      padding: const EdgeInsets.all(12),
+    // 背景容器按账户设置渲染 默认 / 纯色 / 图片 三种外观；默认外观与
+    // 原 AppListItemPanel 逐像素一致（内边距 12 也搬进了容器）。
+    return AccountCardBackground(
+      account: account,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1917,6 +1921,13 @@ class _AccountIdentity extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isInactive = !account.isActive;
+    // 自定义背景上文字走卡片前景色；默认背景维持主题色。
+    final titleColor = AccountCardScope.textColorOf(
+      context,
+      fallback: isInactive
+          ? colorScheme.onSurfaceVariant
+          : colorScheme.onSurface,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1930,9 +1941,7 @@ class _AccountIdentity extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: isInactive
-                      ? colorScheme.onSurfaceVariant
-                      : colorScheme.onSurface,
+                  color: titleColor,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0,
                 ),
@@ -1950,7 +1959,10 @@ class _AccountIdentity extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.labelSmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+            color: AccountCardScope.textColorOf(
+              context,
+              fallback: colorScheme.onSurfaceVariant,
+            ).withValues(alpha: AccountCardScope.secondaryOpacity),
             fontWeight: FontWeight.w600,
             letterSpacing: 0,
           ),
@@ -1991,6 +2003,15 @@ class _AccountBalance extends StatelessWidget {
     final primaryAmount = isCredit
         ? account.availableCreditMinor
         : account.balanceMinor;
+    // 自定义背景上金额与标签走卡片前景色（credit 语气色可能与背景冲突）。
+    final onSurface = AccountCardScope.textColorOf(
+      context,
+      fallback: colorScheme.onSurface,
+    );
+    final onVariant = AccountCardScope.textColorOf(
+      context,
+      fallback: colorScheme.onSurfaceVariant,
+    );
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -2003,7 +2024,9 @@ class _AccountBalance extends StatelessWidget {
               Text(
                 isCredit ? '可用额度' : '当前余额',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  color: onVariant.withValues(
+                    alpha: AccountCardScope.secondaryOpacity,
+                  ),
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0,
                 ),
@@ -2016,7 +2039,11 @@ class _AccountBalance extends StatelessWidget {
                 tone: isCredit
                     ? MoneyAmountTone.credit
                     : MoneyAmountTone.neutral,
-                color: isInactive ? colorScheme.onSurfaceVariant : null,
+                color: isInactive
+                    ? onVariant
+                    : AccountCardScope.maybeOf(context) == null
+                    ? null
+                    : onSurface,
                 textStyle: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0,
@@ -2037,7 +2064,10 @@ class _AccountBalance extends StatelessWidget {
           ? '初始 ***'
           : '初始 ${formatMoneyMinor(account.initialBalanceMinor, account.currencyCode)}',
       style: theme.textTheme.labelSmall?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
+        color: AccountCardScope.textColorOf(
+          context,
+          fallback: theme.colorScheme.onSurfaceVariant,
+        ).withValues(alpha: AccountCardScope.secondaryOpacity),
         fontWeight: FontWeight.w600,
         letterSpacing: 0,
       ),
@@ -2053,7 +2083,10 @@ class _AccountBalance extends StatelessWidget {
             ? '已用 ***'
             : '已用 ${formatMoneyMinor(account.effectivePostedDebtMinor, account.currencyCode)}',
         style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
+          color: AccountCardScope.textColorOf(
+            context,
+            fallback: theme.colorScheme.onSurfaceVariant,
+          ).withValues(alpha: AccountCardScope.secondaryOpacity),
           fontWeight: FontWeight.w600,
           letterSpacing: 0,
         ),
@@ -2063,7 +2096,10 @@ class _AccountBalance extends StatelessWidget {
     final color = switch (statement.state) {
       MoneyCreditCardStatementState.overdue => theme.colorScheme.error,
       MoneyCreditCardStatementState.dueSoon => theme.moneyColors.warning,
-      _ => theme.colorScheme.onSurface,
+      _ => AccountCardScope.textColorOf(
+        context,
+        fallback: theme.colorScheme.onSurface,
+      ),
     };
 
     return Column(
@@ -2073,7 +2109,10 @@ class _AccountBalance extends StatelessWidget {
         Text(
           '本期应还',
           style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+            color: AccountCardScope.textColorOf(
+              context,
+              fallback: theme.colorScheme.onSurfaceVariant,
+            ).withValues(alpha: AccountCardScope.secondaryOpacity),
             fontWeight: FontWeight.w700,
             letterSpacing: 0,
           ),
@@ -2097,7 +2136,10 @@ class _AccountBalance extends StatelessWidget {
               child: Text(
                 '账单 ›',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.primary,
+                  color: AccountCardScope.textColorOf(
+                    context,
+                    fallback: theme.colorScheme.primary,
+                  ),
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0,
                 ),
@@ -2124,11 +2166,20 @@ class _CreditLimitBar extends StatelessWidget {
     final used = account.usedCreditMinor;
     final ratio = limit <= 0 ? 0.0 : (used / limit).clamp(0.0, 1.0);
 
+    final inScope = AccountCardScope.maybeOf(context) != null;
+    final textColor = AccountCardScope.textColorOf(
+      context,
+      fallback: theme.colorScheme.onSurfaceVariant,
+    );
+
     final color = ratio >= 0.9
         ? theme.colorScheme.error
         : ratio >= 0.8
         ? theme.moneyColors.warning
-        : theme.moneyColors.credit;
+        : AccountCardScope.textColorOf(
+            context,
+            fallback: theme.moneyColors.credit,
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2139,7 +2190,10 @@ class _CreditLimitBar extends StatelessWidget {
             value: ratio,
             minHeight: 8,
             color: color,
-            backgroundColor: color.withValues(alpha: 0.14),
+            // 自定义背景上轨道用前景色淡染（原语义色淡底可能与背景打架）。
+            backgroundColor: inScope
+                ? textColor.withValues(alpha: 0.18)
+                : color.withValues(alpha: 0.14),
           ),
         ),
         const SizedBox(height: 6),
@@ -2153,7 +2207,9 @@ class _CreditLimitBar extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: textColor.withValues(
+                    alpha: AccountCardScope.secondaryOpacity,
+                  ),
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0,
                 ),
@@ -2166,7 +2222,9 @@ class _CreditLimitBar extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: textColor.withValues(
+                  alpha: AccountCardScope.secondaryOpacity,
+                ),
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0,
               ),
@@ -2281,15 +2339,25 @@ class _AccountActionsMenu extends StatelessWidget {
         height: 30,
         alignment: Alignment.center,
         decoration: BoxDecoration(
+          // 自定义背景上边框/图标跟随卡片前景色，默认背景维持主题色。
           border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+            color:
+                AccountCardScope.textColorOf(
+                  context,
+                  fallback: theme.colorScheme.outlineVariant,
+                ).withValues(
+                  alpha: AccountCardScope.maybeOf(context) == null ? 0.7 : 0.4,
+                ),
           ),
           borderRadius: BorderRadius.circular(9),
         ),
         child: Icon(
           Icons.more_horiz_rounded,
           size: 17,
-          color: theme.colorScheme.onSurfaceVariant,
+          color: AccountCardScope.textColorOf(
+            context,
+            fallback: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -2337,17 +2405,69 @@ class _AccountIcon extends StatelessWidget {
 
   final MoneyAccountEntity account;
 
+  /// 图标槽位边长，整列账户卡共用，保证左侧竖线对齐。
+  static const double _slot = 42;
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scope = AccountCardScope.maybeOf(context);
+
+    // 自定义图标是用户自己的品牌 logo（多为透明底位图 / SVG），本身就是
+    // 一块完整图形：铺满槽位、不画底壳和描边。套上浅色圆角壳会把图形压到
+    // 21 大小，看着又小又闷，和系统里其他 App 图标的观感也不一致。
+    // 字形图标没有自带轮廓，仍然需要浅色底衬托。
+    if (AccountIconView.usesCustomImage(account)) {
+      return SizedBox(
+        width: _slot,
+        height: _slot,
+        child: Center(
+          child: AccountIconView(
+            account: account,
+            size: 21,
+            imageSize: accountCardLogoSize,
+          ),
+        ),
+      );
+    }
+
     // 未显式设置颜色时用类型对应的品牌色，一列账户能靠颜色区分。
     final accentColor = account.color == null
         ? appColorFromHex(defaultAccountColorForType(account.type))
         : appColorFromHex(account.color);
 
-    return AppListItemIcon(
-      icon: accountIconDataForType(account.type),
-      color: accentColor,
-      size: 42,
+    // 自定义背景（纯色/图片）上，彩色浅底图标会看不清：改成磨砂反色块，
+    // 图标走卡片前景色。
+    if (scope != null) {
+      final isLight = theme.brightness == Brightness.light;
+      final frosted = isLight ? Colors.white : Colors.black;
+      return Container(
+        width: _slot,
+        height: _slot,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: frosted.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+          border: Border.all(color: scope.onColor.withValues(alpha: 0.28)),
+        ),
+        child: AccountIconView(
+          account: account,
+          size: 21,
+          color: scope.onColor,
+        ),
+      );
+    }
+
+    return Container(
+      width: _slot,
+      height: _slot,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(theme.radiusTokens.md),
+        border: Border.all(color: accentColor.withValues(alpha: 0.22)),
+      ),
+      child: AccountIconView(account: account, size: 21, color: accentColor),
     );
   }
 }
