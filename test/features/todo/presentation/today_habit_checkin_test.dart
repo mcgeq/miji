@@ -101,7 +101,12 @@ void main() {
       final records = await todayRecords(tester, plan.id);
       expect(records.single.numericValue, 1);
       expect(records.single.count, 1);
-      expect(find.text('1'), findsOneWidget, reason: '环里当场变成 1');
+      // 必须限定在环里找：HUD 的「还剩 1 件」和段标题的计数也是 "1"。
+      expect(
+        find.descendant(of: ring, matching: find.text('1')),
+        findsOneWidget,
+        reason: '环里当场变成 1',
+      );
     });
 
     testWidgets('目标达成后画勾并进入已完成区，再点先问是否撤销', (tester) async {
@@ -118,9 +123,21 @@ void main() {
 
       await tester.tap(ring);
       await tester.pumpAndSettle();
+      expect(
+        find.byType(SnackBar),
+        findsNothing,
+        reason: '完成提示走 toast，不该是贴着底部导航常驻的 SnackBar',
+      );
+
+      // 完成后落进「已完成」区，而那一区默认是折叠的（勾完不把列表顶下来）。
+      await tester.tap(find.text('已完成 1'));
+      await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.check_rounded), findsOneWidget);
       expect(find.text('今天已完成'), findsOneWidget);
+      // 推完 toast 的计时器，否则测试结束时会留下 pending timer。
+      await tester.pump(const Duration(seconds: 7));
+      await tester.pumpAndSettle();
 
       // 完成之后再点不会默默把数字加到 2：先确认要不要撤销。
       await tester.tap(find.byKey(ValueKey('habit-ring-${plan.id}')));
@@ -128,6 +145,8 @@ void main() {
       expect(find.text('撤销今天的打卡？'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('habit-undo-confirm')));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 7));
       await tester.pumpAndSettle();
 
       expect(await todayRecords(tester, plan.id), isEmpty);
@@ -147,10 +166,19 @@ void main() {
 
       var records = await todayRecords(tester, plan.id);
       expect(records.single.numericValue, 8, reason: '一次补满到目标');
+      // 推完 toast 的计时器，否则测试结束时会留下 pending timer。
+      await tester.pump(const Duration(seconds: 7));
+      await tester.pumpAndSettle();
+
+      // 做满之后这一行进了「已完成」区（默认折叠），要先展开才长按得到。
+      await tester.tap(find.text('已完成 1'));
+      await tester.pumpAndSettle();
 
       await tester.longPress(find.text('喝水'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('撤销一次打卡'));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 7));
       await tester.pumpAndSettle();
 
       records = await todayRecords(tester, plan.id);

@@ -149,6 +149,7 @@ void main() {
           categoryBudgets: const HomeCategoryBudgetSummary(
             totalCount: 3,
             nearLimitCount: 2,
+            exceededCount: 0,
             items: [
               HomeCategoryBudgetProgress(
                 budgetId: 'b1',
@@ -272,9 +273,95 @@ void main() {
     await tester.pumpAndSettle();
 
     _expectHeroAmountIsLarge(tester, expected: '200');
-    // 超支时不再在标题行重复一个「已超支」胶囊。
-    expect(find.text('已超支'), findsNothing);
     expect(find.text('本月已超支'), findsOneWidget);
+    // 「已超支」出现两处：标题行的告警胶囊 + 环中心的状态小字。
+    expect(find.text('已超支'), findsNWidgets(2));
+    // 明细行换成「超出」，不再留一句恒为 0 的「日均可花」。
+    expect(find.text('超出'), findsOneWidget);
+    expect(find.text('日均可花'), findsNothing);
+    // 环中心的小字不再写「已占用」。
+    expect(find.text('已占用'), findsNothing);
+  });
+
+  testWidgets('超支时环中心读出真实百分比，不再被 clamp 到 100%', (tester) async {
+    // 预算 800,000，已用 1,040,000（130%）。
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(progress: 1.3, remainingMinor: -240000),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('130%'), findsOneWidget);
+    expect(find.text('100%'), findsNothing);
+  });
+
+  testWidgets('未超支时保留节奏胶囊与「日均可花」', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('已超支'), findsNothing);
+    expect(find.text('超出'), findsNothing);
+    expect(find.text('日均可花'), findsOneWidget);
+    expect(find.text('已占用'), findsOneWidget);
+  });
+
+  testWidgets('分类预算超支与「接近上限」分开报', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary(
+            totalCount: 3,
+            nearLimitCount: 2,
+            exceededCount: 1,
+            items: [
+              HomeCategoryBudgetProgress(
+                budgetId: 'b1',
+                name: '餐饮',
+                amountMinor: 200000,
+                usedMinor: 240000,
+                currencyCode: 'CNY',
+              ),
+              HomeCategoryBudgetProgress(
+                budgetId: 'b2',
+                name: '购物',
+                amountMinor: 150000,
+                usedMinor: 130000,
+                currencyCode: 'CNY',
+              ),
+            ],
+          ),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 超支是终态，不能被「接近上限」这句话含过去。
+    expect(find.text('1 项已超支'), findsOneWidget);
+    expect(find.text('2 项接近上限'), findsNothing);
+    // 超支的那条在金额后带「超」标记，未超支的没有。
+    expect(find.textContaining('2,000.00 超'), findsOneWidget);
+    expect(find.textContaining('1,500.00 超'), findsNothing);
   });
 
   testWidgets('进度算上「已预留」：环画到占用位置，而不是只画已用', (tester) async {

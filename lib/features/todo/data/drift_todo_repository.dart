@@ -250,6 +250,16 @@ class DriftTodoRepository implements TodoRepository {
                     row.parentTaskId.isNull() &
                     (row.scheduledDate.equals(todayMs) |
                         row.occurrenceDate.equals(todayMs) |
+                        // 顺延：昨天及更早排的、还没做完的，今天继续出现在列表里。
+                        //
+                        // 只认 scheduledDate，不认 occurrenceDate——重复实例是规则
+                        // 一次性成批补出来的（一次 30 天），把它们也顺延过来的话，
+                        // 一个长期没做的每日任务会在今天堆出几十条。
+                        //
+                        // 只兜「没有 dueAt」的情况：有 dueAt 时那两条才是准的，
+                        // 否则一个「排昨天、下周三截止」的任务会被提前拉进今天。
+                        (row.scheduledDate.isSmallerThanValue(todayMs) &
+                            row.dueAt.isNull()) |
                         row.dueAt.isBetweenValues(todayStart, todayEnd) |
                         row.dueAt.isSmallerThanValue(DateTime.now().toUtc())),
               )

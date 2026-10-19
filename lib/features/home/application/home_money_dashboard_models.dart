@@ -343,19 +343,27 @@ class HomeCategoryBudgetSummary {
   const HomeCategoryBudgetSummary({
     required this.items,
     required this.nearLimitCount,
+    required this.exceededCount,
     required this.totalCount,
   });
 
   const HomeCategoryBudgetSummary.empty()
     : items = const <HomeCategoryBudgetProgress>[],
       nearLimitCount = 0,
+      exceededCount = 0,
       totalCount = 0;
 
   /// 展示用的前几条（按预算金额降序）。
   final List<HomeCategoryBudgetProgress> items;
 
   /// 全部本月分类预算中接近或超过上限的条数。
+  ///
+  /// 含 [exceededCount]。以前只有这一个数，卡片标题只能说「N 项接近上限」，
+  /// 于是真超支的和 80% 的被说成同一件事。
   final int nearLimitCount;
+
+  /// 其中**已经超支**的条数。超支是终态，必须和「快到顶」分开报。
+  final int exceededCount;
 
   final int totalCount;
 

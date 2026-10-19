@@ -12,6 +12,7 @@ import 'package:miji/features/timeline/application/timeline_providers.dart';
 import 'package:miji/features/timeline/domain/timeline_assembler.dart';
 import 'package:miji/features/timeline/domain/timeline_event.dart';
 import 'package:miji/features/timeline/domain/timeline_history.dart';
+import 'package:miji/features/timeline/presentation/timeline_style.dart';
 
 /// 跨模块时间线：日程视图。
 ///
@@ -457,7 +458,7 @@ class _EventTile extends StatelessWidget {
     final scheme = theme.colorScheme;
     final masked = MoneyPrivacy.of(context);
     final hidden = locked && event.sensitive;
-    final color = _moduleColor(theme, event.module);
+    final color = timelineModuleColor(theme, event.module);
     final predicted = event.nature.isPrediction;
 
     final timeText = event.isTimed
@@ -622,15 +623,6 @@ class _EventTile extends StatelessWidget {
       if (nature.isNotEmpty) nature,
     ];
     return parts.join(' · ');
-  }
-
-  static Color _moduleColor(ThemeData theme, TimelineModule module) {
-    return switch (module) {
-      TimelineModule.money => const Color(0xFF2C6E93),
-      TimelineModule.health => theme.moneyColors.credit,
-      TimelineModule.action => theme.moneyColors.income,
-      TimelineModule.lifeEnergy => theme.moneyColors.warning,
-    };
   }
 }
 

@@ -24,13 +24,14 @@ import 'package:miji/features/home/application/home_money_dashboard_models.dart'
 import 'package:miji/features/home/application/home_money_dashboard_providers.dart';
 import 'package:miji/features/home/application/home_cross_insight_providers.dart';
 import 'package:miji/features/home/application/home_today_board_providers.dart';
+import 'package:miji/features/home/application/home_upcoming_providers.dart';
 import 'package:miji/features/home/application/home_action_brief_providers.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/home/presentation/home_action_todo_card.dart';
 import 'package:miji/features/home/presentation/home_action_habit_card.dart';
-import 'package:miji/features/timeline/presentation/timeline_home_card.dart';
+import 'package:miji/features/home/presentation/home_up_next_card.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 import 'package:miji/features/todo/presentation/todo_quick_create_sheet.dart';
 import 'package:miji/features/todo/presentation/todo_task_detail_page.dart';
@@ -152,6 +153,7 @@ class _HomeDataPreloaderState extends ConsumerState<_HomeDataPreloader> {
         ref.read(allTodoTasksProvider.future),
         ref.read(todayProgressProvider.future),
         ref.read(todayActionItemsProvider.future),
+        ref.read(homeUpcomingProvider.future),
       ]),
     );
 
@@ -403,9 +405,9 @@ class _HomeDashboard extends ConsumerWidget {
             onTapHabit: (habit) => _checkInHabit(ref, habit),
             onManage: () => context.push(AppRoutes.gtd),
           );
-    // 概览页的「接下来」交给时间线：它覆盖待办、账单、打卡、经期四类，
-    // 而 HomeUpNextCard 只有待办一类。就地勾选仍在「行动」页。
-    final timelineCard = const TimelineHomeCard();
+    // 概览页的「接下来」：明天起的日程预览（账单 / 待办 / 打卡 / 经期）。
+    // 今天与逾期归「需要关注」，那里才负责就地处理，两边不重复。
+    final upNextCard = const HomeUpNextCard();
 
     final netAssetTile = HomeNetAssetTile(
       summary: netAsset.valueOrNull,
@@ -464,7 +466,7 @@ class _HomeDashboard extends ConsumerWidget {
                 healthForecastCard: healthForecastCard,
                 todoCard: todoCard,
                 habitCard: habitCard,
-                timelineCard: timelineCard,
+                upNextCard: upNextCard,
                 showTimeline: showTimeline,
               ),
             ),
@@ -485,7 +487,7 @@ class _HomeDashboard extends ConsumerWidget {
                 _section(0, header),
                 _gap,
                 _section(1, board),
-                if (showTimeline) ...[_gap, _section(1, timelineCard)],
+                if (showTimeline) ...[_gap, _section(1, upNextCard)],
                 _gap,
                 _section(1, overviewCard),
                 _gap,
@@ -884,7 +886,7 @@ List<HomePagerPage> _buildPagerPages({
   required Widget? healthForecastCard,
   required Widget? todoCard,
   required Widget? habitCard,
-  required Widget timelineCard,
+  required Widget upNextCard,
   required bool showTimeline,
 }) {
   return [
@@ -892,7 +894,7 @@ List<HomePagerPage> _buildPagerPages({
       label: '概览',
       children: [
         board,
-        if (showTimeline) ...[timelineCard, const SizedBox(height: 10)],
+        if (showTimeline) ...[upNextCard, const SizedBox(height: 10)],
         if (hasAlerts) alerts,
         insight,
         quote,

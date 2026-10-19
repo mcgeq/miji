@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>miji · 预算 Hero · 超支态对照</title>
+<style>
+:root{
+  --bg:#F3F3F1; --surface:#FFFFFF; --sunken:#EAE9E5; --line:#DAD9D6;
+  --t1:#1B1A17; --t2:#5C5A54; --t3:#8B8880;
+  --expense:#B93A2C; --amber:#FFC94F; --ok:#0E7A48;
+  --shadow:0 1px 2px rgba(27,26,23,.05),0 8px 20px rgba(27,26,23,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:"PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Hiragino Sans GB",
+  "Noto Sans CJK SC","Source Han Sans SC",Roboto,sans-serif;
+  background:var(--bg);color:var(--t1);line-height:1.5;padding:36px 28px 80px}
+.wrap{max-width:1120px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--t3);text-transform:uppercase}
+h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:8px 0 10px}
+h2{font-size:15px;font-weight:800;margin:32px 0 8px}
+.lede{font-size:14px;color:var(--t2);max-width:820px}
+.lede b{color:var(--t1)}
+
+.stage{display:flex;gap:22px;margin-top:22px;align-items:flex-start;flex-wrap:wrap}
+.col{width:400px;flex:0 0 400px}
+.cap{font-size:11.5px;color:var(--t3);margin:0 2px 8px;line-height:1.55}
+.cap b{color:var(--t2)}
+.cap.bad b{color:var(--expense)}
+.cap.good b{color:var(--ok)}
+
+/* Hero 卡：danger 渐变取自 AppHeroGradients.danger */
+.hero{border-radius:22px;padding:16px 16px 18px;color:#fff;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#800E50 0%,#A01445 52%,#921921 100%);
+  box-shadow:0 14px 28px -16px rgba(128,14,80,.55)}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.1)}
+.hero::before{width:200px;height:200px;right:-60px;top:-80px}
+.hero::after{width:160px;height:160px;right:40px;bottom:-100px;background:rgba(255,255,255,.06)}
+.hero>*{position:relative}
+
+.chiprow{display:flex;align-items:center;gap:8px;min-height:24px}
+.chip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;
+  background:rgba(255,255,255,.2);font-size:11px;font-weight:800;color:#fff}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:#9BF5D4}
+.chip.alert{background:#fff;color:#A01445}
+.chip.ghost{border:1.5px dashed rgba(255,255,255,.5);background:transparent;
+  color:rgba(255,255,255,.8);font-weight:700}
+
+.mainrow{display:flex;align-items:flex-end;gap:16px;margin-top:14px}
+.mainrow .l{flex:1;min-width:0}
+.lbl{font-size:12px;font-weight:700;color:rgba(255,255,255,.86)}
+.amt{font-size:44px;font-weight:900;letter-spacing:-.02em;line-height:1.05;margin-top:5px;
+  font-variant-numeric:tabular-nums}
+.amt small{font-size:25px;font-weight:700;color:rgba(255,255,255,.8)}
+.bd{margin-top:8px}
+.bd .r{display:flex;justify-content:space-between;font-size:11px;line-height:1.75}
+.bd .k{color:rgba(255,255,255,.78);font-weight:600}
+.bd .v{color:#fff;font-weight:700;font-variant-numeric:tabular-nums}
+.bd .v.hi{color:var(--amber)}
+
+.ring{position:relative;width:84px;height:84px;flex:0 0 84px;display:grid;place-items:center}
+.ring i{position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(#fff calc(var(--p) * 1%), rgba(255,255,255,.24) 0)}
+.ring b{position:relative;width:60px;height:60px;display:grid;place-items:center;text-align:center}
+.ring b .p{font-size:17px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.ring b .p.hi{color:var(--amber)}
+.ring b .s{font-size:9px;font-weight:700;color:rgba(255,255,255,.8);margin-top:2px}
+.ring b .s.hi{color:var(--amber)}
+
+.pills{display:flex;gap:8px;margin-top:16px}
+.pill{flex:1;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.16)}
+.pill .k{font-size:10px;font-weight:700;color:rgba(255,255,255,.84)}
+.pill .v{font-size:14px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+
+.cat{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.22)}
+.cat .hd{display:flex;justify-content:space-between;font-size:10.5px;font-weight:800}
+.cat .hd .r{color:rgba(255,255,255,.8);font-weight:700}
+.cat .hd .r.hi{color:var(--amber)}
+.row{display:flex;align-items:center;gap:9px;margin-top:9px}
+.row .n{width:46px;font-size:10.5px;font-weight:700;color:rgba(255,255,255,.9)}
+.row .n.hi{color:var(--amber)}
+.row .bar{flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,.22);overflow:hidden}
+.row .bar i{display:block;height:100%;border-radius:999px;background:#fff}
+.row .bar i.warn{background:var(--amber)}
+.row .m{width:96px;text-align:right;font-size:10.5px;font-weight:800;
+  color:rgba(255,255,255,.92);font-variant-numeric:tabular-nums}
+.row .m.hi{color:var(--amber)}
+
+.dual{margin-top:14px}
+.track{height:16px;position:relative}
+.track .bg{position:absolute;left:0;right:0;top:4px;height:8px;border-radius:999px;
+  background:rgba(255,255,255,.18)}
+.track .tm{position:absolute;left:0;top:4px;height:8px;border-radius:999px;
+  background:rgba(255,255,255,.38)}
+.track .us{position:absolute;left:0;top:4px;height:8px;border-radius:999px;background:#fff}
+.track .us.warn{background:var(--amber)}
+.track .mk{position:absolute;top:0;width:2px;height:16px;border-radius:2px;
+  background:rgba(255,255,255,.9)}
+.dual .lg{display:flex;justify-content:space-between;margin-top:7px;font-size:10.5px;font-weight:700;
+  color:rgba(255,255,255,.86)}
+.dual .lg .hi{color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">miji · home · budget hero</div>
+  <h1>超支在 Hero 卡上「看不出来」</h1>
+  <p class="lede">
+    超支时卡片确实切到了 <b>danger 渐变</b>，但 brand（深石墨 #1D252D→#30363E）与 danger（暗紫红
+    #800E50→#A01445→#921921）的<b>明度几乎相同</b>——不并排放在一起，扫视时分不出「正常」和「超支」。
+    而卡上其余元素还各自把超支信息吞掉了一部分：<b>顶部胶囊直接留空</b>、
+    环与进度条都 <b>clamp 到 100%</b>、明细行留一句恒为 0 的「日均可花」、
+    分类预算把「已超支」和「接近上限」说成同一件事。
+  </p>
+
+  <div class="stage">
+    <div class="col">
+      <div class="cap bad"><b>修复前</b> · 已用 ¥8,200 / 预算 ¥8,000（103%）</div>
+      <div class="hero">
+        <div class="chiprow">
+          <span class="chip ghost">（超支时胶囊被隐藏，这里空着）</span>
+        </div>
+        <div class="mainrow">
+          <div class="l">
+            <div class="lbl">本月已超支</div>
+            <div class="amt">¥200<small>.00</small></div>
+            <div class="bd">
+              <div class="r"><span class="k">预算</span><span class="v">¥8,000.00</span></div>
+              <div class="r"><span class="k">已用</span><span class="v">¥8,200.00</span></div>
+              <div class="r"><span class="k">日均可花</span><span class="v">¥0.00</span></div>
+            </div>
+          </div>
+          <div class="ring" style="--p:103">
+            <i></i>
+            <b><span class="p">103%</span><span class="s">已占用</span></b>
+          </div>
+        </div>
+        <div class="pills">
+          <div class="pill"><div class="k">今日支出</div><div class="v">¥58.00</div></div>
+          <div class="pill"><div class="k">本月收入</div><div class="v">¥0.00</div></div>
+          <div class="pill"><div class="k">日均支出</div><div class="v">¥218.60</div></div>
+        </div>
+        <div class="cat">
+          <div class="hd"><span>分类预算</span><span class="r">2 项接近上限</span></div>
+          <div class="row">
+            <span class="n">餐饮</span>
+            <span class="bar"><i class="warn" style="width:100%"></i></span>
+            <span class="m">¥2,400.00 / ¥2,000.00</span>
+          </div>
+          <div class="row">
+            <span class="n">购物</span>
+            <span class="bar"><i class="warn" style="width:87%"></i></span>
+            <span class="m">¥1,300.00 / ¥1,500.00</span>
+          </div>
+        </div>
+        <div class="dual">
+          <div class="track">
+            <div class="bg"></div>
+            <div class="tm" style="width:52%"></div>
+            <div class="us" style="width:100%"></div>
+            <div class="mk" style="left:52%"></div>
+          </div>
+          <div class="lg"><span>时间进度 52%</span><span>花费进度 103%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="cap good"><b>修复后</b> · 同一份数据</div>
+      <div class="hero">
+        <div class="chiprow">
+          <span class="chip alert">▲ 已超支</span>
+        </div>
+        <div class="mainrow">
+          <div class="l">
+            <div class="lbl">本月已超支</div>
+            <div class="amt">¥200<small>.00</small></div>
+            <div class="bd">
+              <div class="r"><span class="k">预算</span><span class="v">¥8,000.00</span></div>
+              <div class="r"><span class="k">已用</span><span class="v">¥8,200.00</span></div>
+              <div class="r"><span class="k">超出</span><span class="v hi">¥200.00</span></div>
+            </div>
+          </div>
+          <div class="ring" style="--p:103">
+            <i></i>
+            <b><span class="p hi">103%</span><span class="s hi">已超支</span></b>
+          </div>
+        </div>
+        <div class="pills">
+          <div class="pill"><div class="k">今日支出</div><div class="v">¥58.00</div></div>
+          <div class="pill"><div class="k">本月收入</div><div class="v">¥0.00</div></div>
+          <div class="pill"><div class="k">日均支出</div><div class="v">¥218.60</div></div>
+        </div>
+        <div class="cat">
+          <div class="hd"><span>分类预算</span><span class="r hi">1 项已超支</span></div>
+          <div class="row">
+            <span class="n hi">餐饮</span>
+            <span class="bar"><i class="warn" style="width:100%"></i></span>
+            <span class="m hi">¥2,400.00 / ¥2,000.00 超</span>
+          </div>
+          <div class="row">
+            <span class="n">购物</span>
+            <span class="bar"><i class="warn" style="width:87%"></i></span>
+            <span class="m">¥1,300.00 / ¥1,500.00</span>
+          </div>
+        </div>
+        <div class="dual">
+          <div class="track">
+            <div class="bg"></div>
+            <div class="tm" style="width:52%"></div>
+            <div class="us warn" style="width:100%"></div>
+            <div class="mk" style="left:52%"></div>
+          </div>
+          <div class="lg"><span>时间进度 52%</span><span class="hi">花费进度 103%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>改了什么</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);
+    border:1px solid var(--line);border-radius:14px;overflow:hidden">
+    <thead>
+      <tr style="background:var(--sunken);text-align:left">
+        <th style="padding:10px 12px;font-size:12px">位置</th>
+        <th style="padding:10px 12px;font-size:12px">修复前</th>
+        <th style="padding:10px 12px;font-size:12px">修复后</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:10px 12px;font-weight:700">顶部胶囊</td>
+        <td style="padding:10px 12px;color:var(--t2)">超支时整个留空</td>
+        <td style="padding:10px 12px">白底深红实心胶囊「已超支」</td>
+      </tr>
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:10px 12px;font-weight:700">环中心</td>
+        <td style="padding:10px 12px;color:var(--t2)">白字「已占用」，且弧在超支时退回白色</td>
+        <td style="padding:10px 12px">百分比与小字转琥珀，小字改「已超支」</td>
+      </tr>
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:10px 12px;font-weight:700">金额明细</td>
+        <td style="padding:10px 12px;color:var(--t2)">「日均可花 ¥0.00」（超支时恒为 0）</td>
+        <td style="padding:10px 12px">换成「超出 ¥200.00」，行数不变</td>
+      </tr>
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:10px 12px;font-weight:700">双轨条文案</td>
+        <td style="padding:10px 12px;color:var(--t2)">白色</td>
+        <td style="padding:10px 12px">超支时转琥珀</td>
+      </tr>
+      <tr style="border-top:1px solid var(--line)">
+        <td style="padding:10px 12px;font-weight:700">分类预算</td>
+        <td style="padding:10px 12px;color:var(--t2)">超支与接近上限同色同文案</td>
+        <td style="padding:10px 12px">标题「N 项已超支」，整行转琥珀 + 金额后「超」</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>一处刻意的保留</h2>
+  <p class="lede" style="font-size:13px">
+    进度条<b>仍然画到满格</b>。超出部分画成「溢出条」会让条的读法变成两套（0–100% 与 100%+），
+    得不偿失；「超了多少」交给环中心的真实百分比和明细行的「超出」去说。
+  </p>
+</div>
+</body>
+</html>

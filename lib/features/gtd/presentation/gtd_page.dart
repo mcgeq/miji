@@ -156,7 +156,8 @@ class _GtdPageState extends ConsumerState<GtdPage> {
         setState(() => _selectedPanel = panel);
         _syncSectionToUrl(panel);
       },
-      children: const [
+      // 「今日」是有状态视图（常驻输入框 / 多选），不能再放在 const 列表里。
+      children: [
         TodayActionListView(),
         TodoTaskListView(),
         _TodayTab(),
@@ -186,7 +187,7 @@ class _GtdPageState extends ConsumerState<GtdPage> {
 
   Widget _buildSelectedTab() {
     return switch (_selectedPanel) {
-      _GtdPanel.today => const TodayActionListView(),
+      _GtdPanel.today => TodayActionListView(),
       _GtdPanel.tasks => const TodoTaskListView(),
       _GtdPanel.habits => const _TodayTab(),
       _GtdPanel.calendar => const _CalendarTab(),
@@ -204,7 +205,18 @@ class _GtdPageState extends ConsumerState<GtdPage> {
 
   List<Widget> _buildToolbarActions() {
     return switch (_selectedPanel) {
+      // 「今日」以前只有「新建计划」：想往今天加一件要做的事，得先切到
+      // 「任务」面板。对每天进出十几次的页面来说这是最贵的一次切页，
+      // 所以这里把两枚新建按钮都给上（任务在左、计划在右）。
       _GtdPanel.today => [
+        AppIconActionButton(
+          icon: Icons.checklist_rounded,
+          tooltip: '新建任务',
+          size: 36,
+          iconSize: 20,
+          padding: const EdgeInsets.all(4),
+          onPressed: _openTaskQuickCreate,
+        ),
         AppIconActionButton(
           icon: Icons.add_rounded,
           tooltip: '新建计划',

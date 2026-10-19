@@ -2,8 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/features/gtd/domain/checkin_enums.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/domain/checkin_plan_style.dart';
@@ -95,17 +97,15 @@ class _RingButton extends ConsumerWidget {
     final nowCompleted = progress.currentValue + step >= plan.targetValue;
     if (nowCompleted) {
       // 点错了要能立刻退回来：完成提示里带一个「撤销」，比让用户去长按找菜单快。
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('「${plan.name}」今日完成'),
-            action: SnackBarAction(
-              label: '撤销',
-              onPressed: () => undoPlanCheckIn(ref, plan),
-            ),
-          ),
-        );
+      // 用 toast 而不是 SnackBar：SnackBar 会紧贴底部导航条常驻（无障碍导航
+      // 开启时甚至不会自动消失），既挡内容又关不掉。
+      AppToast.undo(
+        toast: FToast()..init(context),
+        context: context,
+        message: '「${plan.name}」今日完成',
+        actionLabel: '撤销',
+        onAction: () => undoPlanCheckIn(ref, plan),
+      );
     }
   }
 }
@@ -217,13 +217,11 @@ class _TimerPill extends ConsumerWidget {
     final seconds = ref.read(checkinTimerProvider.notifier).stop();
     final recorded = await recordPlanTimer(ref, plan, seconds: seconds);
     if (!recorded || !context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('「${plan.name}」记下 ${formatTimerClock(seconds)}'),
-        ),
-      );
+    AppToast.success(
+      FToast()..init(context),
+      context,
+      '「${plan.name}」记下 ${formatTimerClock(seconds)}',
+    );
   }
 
   /// 给「被我打断的那个计划」补一条记录。
@@ -317,7 +315,5 @@ Future<void> _confirmUndo(
 
   final undone = await undoPlanCheckIn(ref, plan);
   if (!undone || !context.mounted) return;
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text('已撤销「${plan.name}」的一次打卡')));
+  AppToast.success(FToast()..init(context), context, '已撤销「${plan.name}」的一次打卡');
 }

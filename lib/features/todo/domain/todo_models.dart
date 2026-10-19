@@ -188,11 +188,67 @@ class TodoTask {
     return false;
   }
 
-  bool get isOverdue {
+  /// 这条任务「本来该在哪天做掉」的日键。
+  ///
+  /// 只认 `dueAt` 与 `scheduledDate`，**故意不认 `occurrenceDate`**：重复实例
+  /// 由规则按自己的节奏成批生成（一次补 30 天），把过期实例也顺延过来的话，
+  /// 一个 30 天没做的每日任务会在今天堆出 30 条。
+  DateTime? get plannedDay {
+    final source = dueAt ?? scheduledDate;
+    if (source == null) {
+      return null;
+    }
+    return DateTime(source.year, source.month, source.day);
+  }
+
+  /// 是否已经过期（相对于 [now]）。
+  ///
+  /// 两个口径，各有原因：`dueAt` 精确到分钟，过了那个点就算过期；
+  /// `scheduledDate` 只有「哪天」，所以要到**第二天**才算过期——当天 17:00
+  /// 看一个「今天做」的任务，它不该被标成逾期。
+  bool isOverdueAt(DateTime now) {
     if (status != TodoTaskStatus.todo) return false;
-    if (dueAt == null) return false;
-    final now = DateTime.now();
-    return dueAt!.isBefore(now);
+    if (isDeleted) return false;
+    final due = dueAt;
+    if (due != null) {
+      return due.isBefore(now);
+    }
+    final day = plannedDay;
+    if (day == null) {
+      return false;
+    }
+    return day.isBefore(DateTime(now.year, now.month, now.day));
+  }
+
+  bool get isOverdue => isOverdueAt(DateTime.now());
+
+  /// 拖了几天：0 表示今天到期，`1` 表示昨天排的、今天还没做。
+  ///
+  /// 顺延只发生在**查询层**：数据里仍留着原计划日期，所以这里算得出「拖了几天」；
+  /// 如果把 `scheduledDate` 直接改成今天，这条信息就没了，也统计不出逾期次数。
+  int overdueDaysAt(DateTime now) {
+    if (!isOverdueAt(now)) {
+      return 0;
+    }
+    final day = plannedDay;
+    if (day == null) {
+      return 0;
+    }
+    final today = DateTime(now.year, now.month, now.day);
+    final days = today.difference(day).inDays;
+    return days < 0 ? 0 : days;
+  }
+
+  /// 逾期文案：拖了 N 天就写「逾期 N 天」，今天刚过点的只写「逾期」。
+  ///
+  /// 「逾期 3 天」比「逾期」有用——它顺带回答了「拖了多久」，而顺延过来的任务
+  /// 正是靠这个数字和「本来就今天做」区分开。
+  String overdueLabelAt(DateTime now) {
+    if (!isOverdueAt(now)) {
+      return '';
+    }
+    final days = overdueDaysAt(now);
+    return days > 0 ? '逾期 $days 天' : '逾期';
   }
 
   double get subTaskProgress {

@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>miji · 今日视图 · 重设计稿</title>
+<style>
+/* ══════════════════════════════════════════════════════════════
+   取色自应用默认配色「靛墨」light（app_palette.dart）
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#F3F3F1; --surface:#FFFFFF; --sunken:#EAE9E5;
+  --line:#DAD9D6; --outline:#8D8C87;
+  --t1:#1B1A17; --t2:#5C5A54; --t3:#8B8880;
+  --primary:#2A3C5C; --primary-solid:#24344F; --on-primary:#FFFFFF;
+  --primary-container:#E5E9F1; --on-primary-container:#28374F;
+  --tertiary:#776950; --tertiary-container:#EFEDEA;
+  --income:#0E7A48; --income-container:#E2F0E8;
+  --expense:#B93A2C; --expense-container:#F9E6E2;
+  --warning:#A9701A; --warning-container:#F3EBDF;
+  --shadow:0 1px 2px rgba(27,26,23,.05),0 8px 20px rgba(27,26,23,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{
+  font-family:"PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Hiragino Sans GB",
+    "Noto Sans CJK SC","Source Han Sans SC",Roboto,sans-serif;
+  background:var(--bg);color:var(--t1);line-height:1.5;padding:40px 28px 80px;
+}
+.wrap{max-width:1180px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--t3);text-transform:uppercase}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:8px 0 10px}
+h2{font-size:15px;font-weight:800;margin:30px 0 10px;letter-spacing:0}
+.lede{font-size:14px;color:var(--t2);max-width:800px}
+.lede b{color:var(--t1)}
+
+.stage{display:flex;gap:24px;margin-top:20px;align-items:flex-start;flex-wrap:wrap}
+.screen{
+  width:390px;flex:0 0 390px;background:var(--surface);border:1px solid var(--line);
+  border-radius:26px;box-shadow:var(--shadow);overflow:hidden;
+}
+.screen-cap{font-size:11.5px;color:var(--t3);margin:8px 2px 0;line-height:1.55}
+.screen-cap b{color:var(--t2)}
+
+/* ── 顶栏 ── */
+.appbar{display:flex;align-items:center;gap:8px;padding:14px 16px 8px}
+.appbar .ttl{font-size:19px;font-weight:800;letter-spacing:-.01em}
+.appbar .sp{flex:1}
+.ibtn{width:34px;height:34px;border-radius:12px;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--t2);background:var(--surface)}
+.ibtn.filled{background:var(--primary-solid);border-color:var(--primary-solid);color:var(--on-primary)}
+
+/* ── HUD：今天还剩几件 ── */
+.hud{display:flex;align-items:center;gap:14px;margin:2px 16px 12px;
+  background:linear-gradient(180deg,#FBFAF8,var(--surface));
+  border:1px solid var(--line);border-radius:18px;padding:12px 14px}
+.ring{position:relative;border-radius:50%;display:grid;place-items:center;flex:0 0 auto}
+.ring i{position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(var(--ring-color) calc(var(--p) * 1%), var(--sunken) 0)}
+.ring b{position:relative;border-radius:50%;background:var(--surface);display:grid;
+  place-items:center;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.ring.big{width:54px;height:54px}
+.ring.big i{background:conic-gradient(var(--ring-color) calc(var(--p) * 1%), #E4E3DE 0)}
+.ring.big b{width:44px;height:44px;font-size:18px;color:var(--t1)}
+.ring.sm{width:38px;height:38px}
+.ring.sm b{width:30px;height:30px;font-size:11px;color:var(--t1)}
+.ring.full i{background:var(--income)}
+.ring.full b{background:var(--income);color:#fff}
+.hu{min-width:0;flex:1}
+.hu .a{font-size:15px;font-weight:800;letter-spacing:-.01em;line-height:1.3}
+.hu .b{font-size:11.5px;color:var(--t3);margin-top:3px;font-variant-numeric:tabular-nums}
+.hu .c{font-size:11.5px;margin-top:5px;font-weight:700;color:var(--t2);
+  display:flex;align-items:center;gap:4px}
+.hu .c.danger{color:var(--expense)}
+
+/* ── 常驻快速添加 ── */
+.qa{display:flex;align-items:center;gap:9px;margin:0 16px 14px;padding:8px 10px;
+  background:var(--sunken);border:1px solid transparent;border-radius:14px;
+  transition:border-color .15s}
+.qa.on{background:var(--surface);border-color:var(--primary)}
+.qa .pl{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;
+  background:var(--primary-container);color:var(--on-primary-container);flex:0 0 24px}
+.qa .ph{flex:1;font-size:13px;color:var(--t3);text-align:left}
+.qa .sn{width:26px;height:26px;border-radius:9px;background:var(--primary-solid);
+  color:var(--on-primary);display:grid;place-items:center;flex:0 0 26px}
+.chips{display:flex;gap:6px;margin:8px 16px 12px;flex-wrap:wrap}
+.chip{height:28px;padding:0 10px;border-radius:999px;background:var(--sunken);
+  font-size:11.5px;font-weight:700;color:var(--t2);display:flex;align-items:center;gap:4px}
+.chip.on{background:var(--primary-container);color:var(--on-primary-container)}
+.chip.warn{background:var(--expense-container);color:var(--expense)}
+.chip .cdot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ── 分组标题 ── */
+.sect{display:flex;align-items:baseline;gap:6px;padding:12px 16px 7px;
+  font-size:11.5px;font-weight:800;letter-spacing:.02em;color:var(--t2)}
+.sect.danger{color:var(--expense)}
+.sect .n{font-weight:700;color:var(--t3)}
+.sect .act{margin-left:auto;font-size:11px;font-weight:700;color:var(--primary);
+  background:var(--primary-container);border-radius:999px;padding:2px 8px}
+.sect .act.ghost{background:transparent;color:var(--t3);padding:2px 0}
+.sect .tm{font-weight:700;color:var(--t3);font-size:10.5px}
+
+/* ── 行动行 ── */
+.rows{padding:0 16px;display:flex;flex-direction:column;gap:7px}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:9px 11px;display:flex;align-items:center;gap:10px}
+.lslot{flex:0 0 26px;width:26px;display:grid;place-items:center}
+.check{width:24px;height:24px;border-radius:50%;border:1.6px solid var(--outline);
+  display:grid;place-items:center;color:transparent}
+.check.done{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.check.sel{background:var(--primary-solid);border-color:var(--primary-solid);color:var(--on-primary)}
+.check.od{border-color:var(--expense)}
+.badge{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;
+  font-size:14px;background:var(--sunken)}
+.badge.health{background:#0EA5E926}
+.badge.study{background:#8B5CF626}
+.badge.life{background:#D946EF26}
+.mid{flex:1;min-width:0}
+.ti{font-size:13.5px;font-weight:700;letter-spacing:0;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.sub{font-size:11px;color:var(--t3);margin-top:2px;letter-spacing:0;
+  font-variant-numeric:tabular-nums;display:flex;gap:5px;align-items:center;
+  white-space:nowrap;overflow:hidden}
+.sub .cdot{width:7px;height:7px;border-radius:50%;flex:0 0 7px;display:inline-block}
+.sub .dot{width:3px;height:3px;border-radius:50%;background:var(--line);flex:0 0 3px}
+.sub .streak{color:var(--tertiary);font-weight:700}
+.sub .run{color:var(--warning);font-weight:700}
+.sub .od{color:var(--expense);font-weight:700}
+.rslot{flex:0 0 auto;display:flex;align-items:center;gap:6px}
+.flag{font-size:13px;color:var(--expense)}
+.tag{font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;
+  background:var(--tertiary-container);color:var(--tertiary)}
+.pill{height:28px;padding:0 9px;border-radius:999px;display:flex;align-items:center;gap:4px;
+  font-size:11.5px;font-weight:750;font-variant-numeric:tabular-nums}
+.pill.running{background:var(--warning-container);color:var(--warning)}
+.pill.camera{background:var(--primary-container);color:var(--on-primary-container)}
+.chev{color:var(--outline);font-size:13px}
+
+.row.done{background:#FBFAF8;border-color:#E7E6E1}
+.row.done .ti{color:var(--t3);font-weight:650;text-decoration:line-through}
+.row.done .badge{opacity:.5}
+.row.done .sub{color:var(--t3)}
+.row.ghosted{opacity:.55}
+
+/* ── 滑动手势 ── */
+.sw{position:relative;border-radius:14px;overflow:hidden}
+.sw .bg{position:absolute;inset:0;display:flex;align-items:center;gap:6px;
+  padding:0 16px;font-size:12px;font-weight:800;color:#fff}
+.sw.r .bg{background:var(--income);justify-content:flex-start}
+.sw.l .bg{background:var(--sunken);justify-content:flex-end;color:var(--t2)}
+.sw.r .row{transform:translateX(58px);border-radius:0 14px 14px 0;border-left:0}
+.sw.l .row{transform:translateX(-104px);border-radius:14px 0 0 14px;border-right:0}
+.sw .row{position:relative;background:var(--surface)}
+.swcap{font-size:10.5px;color:var(--t3);padding:6px 2px 0;font-weight:650}
+
+/* ── 批量条 ── */
+.bulk{display:flex;align-items:center;gap:8px;margin:10px 16px 0;padding:9px 12px;
+  background:var(--primary-solid);border-radius:14px;color:var(--on-primary)}
+.bulk .n{font-size:12.5px;font-weight:800}
+.bulk .sp{flex:1}
+.bulk .b{font-size:11.5px;font-weight:700;opacity:.9}
+
+/* ── 空态 / 全完成 ── */
+.empty{padding:34px 26px 40px;text-align:center}
+.empty .orb{width:76px;height:76px;border-radius:50%;margin:0 auto 14px;display:grid;
+  place-items:center;background:var(--primary-container);font-size:32px}
+.empty .orb.win{background:var(--income-container)}
+.empty .big{font-size:15px;font-weight:800;margin-bottom:6px}
+.empty .sm{font-size:12px;color:var(--t3);line-height:1.65;max-width:250px;margin:0 auto}
+.empty .btns{display:flex;gap:8px;justify-content:center;margin-top:16px}
+.empty .btn{height:34px;padding:0 14px;border-radius:11px;display:flex;align-items:center;
+  gap:5px;font-size:12.5px;font-weight:750}
+.empty .btn.solid{background:var(--primary-solid);color:var(--on-primary)}
+.empty .btn.line{background:var(--surface);border:1px solid var(--line);color:var(--t2)}
+
+/* ── 底栏 ── */
+.tabbar{display:flex;border-top:1px solid var(--line);background:var(--surface);margin-top:12px}
+.tabbar .t{flex:1;text-align:center;padding:9px 0 13px;font-size:10.5px;font-weight:700;
+  color:var(--t3);display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar .t.on{color:var(--primary)}
+.tabbar .g{width:19px;height:19px;border-radius:7px;background:var(--sunken)}
+.tabbar .t.on .g{background:var(--primary-container)}
+
+/* ── 说明栏 ── */
+.notes{flex:1;min-width:320px}
+.nt{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+.nt .n{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--t3);
+  text-transform:uppercase;margin-bottom:6px}
+.nt .t{font-size:13.5px;font-weight:750;margin-bottom:8px;line-height:1.5}
+.nt ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.nt li{font-size:12px;color:var(--t2);line-height:1.62;padding-left:13px;position:relative}
+.nt li:before{content:"";position:absolute;left:0;top:7.5px;width:4px;height:4px;
+  border-radius:50%;background:var(--outline)}
+.nt li b{color:var(--t1)}
+.nt li .k{color:var(--expense);font-weight:700}
+.nt code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+  background:var(--sunken);padding:1px 4px;border-radius:4px}
+.nt.quote{background:var(--primary-container);border-color:#D3DAE6}
+.nt.quote .t{color:var(--on-primary-container);font-weight:700;line-height:1.65}
+.nt table{width:100%;border-collapse:collapse;font-size:11.5px}
+.nt th,.nt td{text-align:left;padding:7px 5px;border-bottom:1px solid var(--line);
+  vertical-align:top;color:var(--t2);line-height:1.55}
+.nt th{font-weight:750;color:var(--t3);font-size:10.5px;letter-spacing:.04em}
+.nt td b{color:var(--t1)}
+.nt td .yes{color:var(--income);font-weight:800}
+.nt td .no{color:var(--t3)}
+.nt tr:last-child td{border-bottom:0}
+
+/* ── 组件放大预览 ── */
+.parts{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;padding:6px 2px 2px}
+.part{display:flex;flex-direction:column;align-items:center;gap:6px;
+  font-size:10.5px;color:var(--t3);font-weight:650}
+.part .box{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:12px;box-shadow:var(--shadow)}
+.part .mini{width:250px}
+.part .mini .row{border:0;padding:0;background:transparent}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">miji · feature sketch · 待确认</div>
+  <h1>今日视图 · 重设计稿</h1>
+  <p class="lede">
+    现在的「今日」（<code>today_action_list_view.dart</code>）是一张<b>只有两档分组的平铺清单</b>：
+    「逾期 / 待完成 / 已完成」三个小节，行里塞着一枚零信息量的「任务」标签，顶部只有一行小字计数。
+    它回答不了「今天还剩几件」「最紧的是哪件」「先做哪个」，也<b>加不了任务</b>。
+    这一稿把它重做成一屏「今天该怎么过」：顶部 HUD 给结论、中间按时间分段、行内可直接完成、顶部常驻添加。
+  </p>
+
+  <h2>一、现状诊断：十个具体问题</h2>
+  <div class="stage">
+    <div class="notes">
+      <div class="nt">
+        <div class="n">功能缺陷</div>
+        <ul>
+          <li><b>今日页根本加不了任务。</b><code>gtd_page.dart</code> 里 <code>_GtdPanel.today</code> 的工具栏只有一枚「新建计划」（<code>push('/app/gtd/plans/create')</code>）；「新建任务」只挂在 <code>_GtdPanel.tasks</code> 上。想往今天加一件事，得先切到「任务」页——这是当下最硬的一处不便。</li>
+          <li><b>没有时间轴。</b>排序是「逾期 → 优先级 → sortTime」，<code>dueAt</code> 只在行尾以 <code>18:00</code> 小字出现。一天里什么时候做什么，<span class="k">布局上完全看不出来</span>。</li>
+          <li><b>分组等于没分。</b>「待完成」承载 90% 的行，标题只提供计数，不提供组织作用。</li>
+          <li><b>没有批量操作。</b>逾期攒了 8 条，只能一条条点；也没有「把逾期全部改到今天」这类一键处理。</li>
+          <li><b>没有视图控制。</b>不能切换排序（时间 / 优先级 / 清单），不能只看任务或只看打卡。</li>
+        </ul>
+      </div>
+      <div class="nt">
+        <div class="n">布局与视觉</div>
+        <ul>
+          <li><b>行内杂音。</b>每行挂一枚「任务」pill（<code>tertiaryContainer</code>），整页都是任务，这枚标签<span class="k">零信息量</span>；而真正该显示的分类 / 清单、来源反而不显示。</li>
+          <li><b>两类行不同构。</b>待办行是「圈 + 标题 + meta」，打卡行直接复用 <code>HabitPlanRow</code>（图标 + 名称 + 副行 + 环形/计时/拍照）。第二行格式、右侧控件、基线都对不齐。</li>
+          <li><b>完成态视觉太弱。</b>只有标题加删除线 + 变灰，行高不压缩、meta 行照常显示，已完成区仍占满屏。</li>
+          <li><b>已完成区默认展开，还会被强制展开。</b><code>didUpdateWidget</code> 里 <code>completed.length</code> 一变多就 <code>_expanded = true</code>：勾完一条，整块内容顶下来，列表跳动。</li>
+          <li><b>命中区太小。</b>勾选圈 22px，<code>GestureDetector</code> 嵌套在整行 <code>InkWell</code> 内，容易误触进详情；且<span class="k">没有滑动手势</span>——移动端「完成 / 更多」的通用语言缺失。</li>
+          <li><b>空态没有出口。</b>只有一句「创建任务或打卡计划，开始行动吧」，没有任何按钮。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h2>二、竞品对照：今日视图各自解了什么</h2>
+  <div class="stage">
+    <div class="notes">
+      <div class="nt">
+        <table>
+          <tr><th style="width:22%">产品</th><th style="width:38%">今日视图的关键设计</th><th>值得抄 / 不该抄</th></tr>
+          <tr>
+            <td><b>Microsoft To Do</b><br>「我的一天」</td>
+            <td>大标题 + 日期 + 圆形进度；<b>「智能建议」</b>把其他清单的任务拉进今天；已完成沉底折叠；右滑完成、左滑删除；底部常驻「添加任务」输入框。</td>
+            <td><span class="yes">抄</span>：常驻添加、进度环、智能建议。<br><span class="no">不抄</span>：它的行过于素，没有时间与分类信息。</td>
+          </tr>
+          <tr>
+            <td><b>Things 3</b><br>「Today」</td>
+            <td>分组「Today / This Evening」（可手动归组）；完成的行<b>原地淡出</b>再收进「Completed」折叠区，右上角常显计数；可把 Anytime 的任务拖进 Today。</td>
+            <td><span class="yes">抄</span>：完成后的「原地留存 → 沉降」节奏（比现在的立即重排更稳）；「从待安排拉进今天」。</td>
+          </tr>
+          <tr>
+            <td><b>Todoist</b><br>「今天」</td>
+            <td>逾期红标 + 「逾期 N 天」；行内显示<b>项目色点 + 时间 + P1/P2/P3 带色优先级</b>；自然语言快速添加（「明天下午 3 点」）；长按进入多选。</td>
+            <td><span class="yes">抄</span>：行内 meta 的三段式（色点·时间·子任务）、长按多选。</td>
+          </tr>
+          <tr>
+            <td><b>滴答清单</b><br>TickTick「今天」</td>
+            <td><b>按时间分段</b>：有具体时间的按小时排，没时间的进「全天」；右侧「▶ 开始专注」；左滑更多。</td>
+            <td><span class="yes">抄</span>：时间分段——这是「今日」视图区别于「全部任务」的根本。</td>
+          </tr>
+          <tr>
+            <td><b>Structured</b></td>
+            <td>小时块时间轴，视觉最强，一眼看到一天的空隙。</td>
+            <td><span class="no">不抄</span>：容量太小，超过 8 件事就挤爆；只适合纯日程型用户。</td>
+          </tr>
+          <tr>
+            <td><b>Sunsama</b></td>
+            <td>每日规划仪式：先给时间盒，再从各来源收拢任务到今天。</td>
+            <td><span class="yes">抄</span>：顶部一句「今天还剩几件 · 最紧的是什么」的<b>结论式摘要</b>。</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <h2>三、五条设计原则</h2>
+  <div class="stage">
+    <div class="notes">
+      <div class="nt quote">
+        <div class="t">「今日」不是「全部任务」的一个筛选结果，它是一个<b>有开始和结束的一天</b>。
+          所以它必须回答：还剩几件、最紧的是哪件、什么时候做、做完能看到什么。</div>
+      </div>
+      <div class="nt">
+        <ul>
+          <li><b>① 先给结论，再给清单。</b>顶部 HUD 一屏内回答「还剩几件 / 最紧的是什么」，列表只负责执行。</li>
+          <li><b>② 时间是唯一主轴。</b>有 <code>dueAt</code> 的按 上午 / 下午 / 晚上 归组；没有的进「随时」，且<b>「随时」紧随逾期</b>（先清掉无约束的杂事，再进入有时间约束的日程）。打卡单独成段（动作控件不同）。</li>
+          <li><b>③ 一类行骨架，两种右侧控件。</b>左槽 26px、中槽「标题 + 一行 meta」、右槽动作 —— 待办与打卡共用，只有右槽不同（勾选圈 / 环形 / 计时 / 拍照）。</li>
+          <li><b>④ 完成是行内一等公民。</b>点圈、右滑都能完成；完成后原地降饱和，收进「已完成」折叠区（<b>不再强制展开</b>）。</li>
+          <li><b>⑤ 今日页必须能加任务。</b>顶部常驻输入行，一键落到今天。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h2>四、方案 · 屏 1 主视图（有数据）</h2>
+  <div class="stage">
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">今日</div>
+          <div class="sp"></div>
+          <div class="ibtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg></div>
+          <div class="ibtn filled"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+
+        <!-- HUD -->
+        <div class="hud">
+          <div class="ring big" style="--p:38;--ring-color:var(--primary)"><i></i><b>6</b></div>
+          <div class="hu">
+            <div class="a">今天还剩 6 件</div>
+            <div class="b">10 月 20 日 周一 · 已完成 3 / 9</div>
+            <div class="c danger">⚑ 最紧：交房租 · 逾期 2 天</div>
+          </div>
+        </div>
+
+        <!-- 常驻快速添加 -->
+        <div class="qa">
+          <div class="pl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div class="ph">添加任务到今天…</div>
+          <div class="sn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+        </div>
+
+        <!-- 逾期 -->
+        <div class="sect danger">逾期 <span class="n">1</span><span class="act">全部改到今天</span></div>
+        <div class="rows">
+          <div class="row">
+            <div class="lslot"><div class="check od"></div></div>
+            <div class="mid">
+              <div class="ti">交房租</div>
+              <div class="sub"><span class="cdot" style="background:#D946EF"></span>生活<span class="dot"></span><span class="od">昨天 18:00 · 逾期 2 天</span></div>
+            </div>
+            <div class="rslot"><span class="flag">⚑</span></div>
+          </div>
+        </div>
+
+        <!-- 随时（已确认：提到逾期之后、时间分段之前） -->
+        <div class="sect">随时 <span class="n">2</span><span class="act ghost">挑一件先做 ›</span></div>
+        <div class="rows">
+          <div class="row">
+            <div class="lslot"><div class="check"></div></div>
+            <div class="mid">
+              <div class="ti">回王工的邮件</div>
+              <div class="sub"><span class="cdot" style="background:#2A3C5C"></span>工作</div>
+            </div>
+            <div class="rslot"><span class="chev">›</span></div>
+          </div>
+          <div class="row">
+            <div class="lslot"><div class="check"></div></div>
+            <div class="mid">
+              <div class="ti">想一下周末去哪</div>
+              <div class="sub">未分类</div>
+            </div>
+            <div class="rslot"><span class="chev">›</span></div>
+          </div>
+        </div>
+
+        <!-- 上午 -->
+        <div class="sect">上午 <span class="tm">06–12</span> <span class="n">2</span></div>
+        <div class="rows">
+          <div class="row">
+            <div class="lslot"><div class="check"></div></div>
+            <div class="mid">
+              <div class="ti">团队站会</div>
+              <div class="sub"><span class="cdot" style="background:#2A3C5C"></span>工作<span class="dot"></span>09:30</div>
+            </div>
+            <div class="rslot"><span class="tag">每天</span></div>
+          </div>
+          <div class="row">
+            <div class="lslot"><div class="check"></div></div>
+            <div class="mid">
+              <div class="ti">把季度复盘框架写完</div>
+              <div class="sub"><span class="cdot" style="background:#2A3C5C"></span>工作<span class="dot"></span>11:00<span class="dot"></span>子任务 2/5</div>
+            </div>
+            <div class="rslot"><span class="chev">›</span></div>
+          </div>
+        </div>
+
+        <!-- 下午 -->
+        <div class="sect">下午 <span class="tm">12–18</span> <span class="n">1</span></div>
+        <div class="rows">
+          <div class="row">
+            <div class="lslot"><div class="check"></div></div>
+            <div class="mid">
+              <div class="ti">牙医复诊</div>
+              <div class="sub"><span class="cdot" style="background:#776950"></span>健康<span class="dot"></span>15:00<span class="dot"></span>提醒 已开</div>
+            </div>
+            <div class="rslot"><span class="chev">›</span></div>
+          </div>
+        </div>
+
+        <!-- 打卡 -->
+        <div class="sect">今日打卡 <span class="n">3</span><span class="act ghost">全部完成 ›</span></div>
+        <div class="rows">
+          <div class="row">
+            <div class="lslot"><div class="badge health">💧</div></div>
+            <div class="mid">
+              <div class="ti">喝水</div>
+              <div class="sub"><span class="streak">🔥 12 天</span><span class="dot"></span>3 / 8 杯</div>
+            </div>
+            <div class="rslot"><div class="ring sm" style="--p:37;--ring-color:#0EA5E9"><i></i><b>3</b></div></div>
+          </div>
+          <div class="row">
+            <div class="lslot"><div class="badge study">📖</div></div>
+            <div class="mid">
+              <div class="ti">阅读</div>
+              <div class="sub"><span class="run">计时中 12:35</span><span class="dot"></span>目标 30 分钟</div>
+            </div>
+            <div class="rslot"><div class="pill running">⏸ 12:35</div></div>
+          </div>
+          <div class="row">
+            <div class="lslot"><div class="badge life">📸</div></div>
+            <div class="mid">
+              <div class="ti">每日一拍</div>
+              <div class="sub"><span class="streak">🔥 5 天</span><span class="dot"></span>目标 1 张</div>
+            </div>
+            <div class="rslot"><div class="pill camera">📷 拍照</div></div>
+          </div>
+        </div>
+
+        <!-- 已完成 -->
+        <div class="sect">已完成 <span class="n">3</span><span class="act ghost">展开 ▾</span></div>
+        <div class="rows" style="padding-bottom:4px">
+          <div class="row">
+            <div class="lslot"><div class="badge health" style="opacity:.5">🚿</div></div>
+            <div class="mid">
+              <div class="ti" style="color:var(--t3);font-weight:650;text-decoration:line-through">洗澡</div>
+            </div>
+            <div class="rslot"><span class="tag" style="color:var(--income);background:var(--income-container)">✓</span></div>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <div class="t"><span class="g"></span>首页</div>
+          <div class="t"><span class="g"></span>记账</div>
+          <div class="t"><span class="g"></span>健康</div>
+          <div class="t on"><span class="g"></span>打卡</div>
+          <div class="t"><span class="g"></span>设置</div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏 1 · 主视图</b>：HUD 给结论（还剩 6 件 / 最紧是逾期 2 天的交房租）→
+        常驻添加 → 逾期置顶（右侧一键「全部改到今天」）→ 按 上午 / 下午 / 随时 分段 → 打卡独立成段 →
+        已完成折叠（只留一行，不顶屏）。</div>
+    </div>
+
+    <div class="notes">
+      <div class="nt">
+        <div class="n">变在哪儿</div>
+        <ul>
+          <li><b>HUD 取代小字计数。</b>环内是「还剩下的件数」（不是完成数——用户看今日是要知道还要做多少），右侧一句「最紧」直接指出第一条该做的事。</li>
+          <li><b>删掉「任务」pill，换成分类色点。</b>整页都是任务，标「任务」等于没说；标「工作 / 生活 / 健康」才有筛选价值。</li>
+          <li><b>时间分段替代「待完成」。</b>「上午 / 下午 / 晚上 / 随时」四段；没有 <code>dueAt</code> 的落「随时」，不再和定时任务混在一起。</li>
+          <li><b>打卡单独成段。</b>它的完成方式（计数 / 计时 / 拍照）与勾选不同，混排会破坏「右槽 = 完成」的一致性。</li>
+          <li><b>已完成默认折叠且只显示一行。</b>不再强制展开，勾完不跳动。</li>
+          <li><b>分组标题带批量入口。</b>「逾期」右侧直接给「全部改到今天」——比长按多选轻，且就长在最需要它的地方。</li>
+        </ul>
+      </div>
+      <div class="nt">
+        <div class="n">分段规则（供实现）</div>
+        <table>
+          <tr><th style="width:30%">条件</th><th>归组</th></tr>
+          <tr><td><code>isOverdueAt(now)</code></td><td><b>逾期</b>（永远置顶，不管有没有时间）</td></tr>
+          <tr><td>未完成 + 无 <code>dueAt</code></td><td><b>随时</b>（已确认：紧跟逾期，排在时间分段之前）</td></tr>
+          <tr><td><code>dueAt</code> 06:00–11:59</td><td>上午</td></tr>
+          <tr><td><code>dueAt</code> 12:00–17:59</td><td>下午</td></tr>
+          <tr><td><code>dueAt</code> 18:00–23:59<br>或 00:00–05:59</td><td>晚上（含深夜，标「晚上」比标「凌晨」友好）</td></tr>
+          <tr><td>打卡计划</td><td>今日打卡</td></tr>
+          <tr><td>已完成</td><td>已完成（折叠）</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <h2>五、方案 · 屏 2 手势与批量</h2>
+  <div class="stage">
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">今日</div>
+          <div class="sp"></div>
+          <div class="ibtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg></div>
+          <div class="ibtn filled"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+
+        <div class="hud">
+          <div class="ring big" style="--p:38;--ring-color:var(--primary)"><i></i><b>6</b></div>
+          <div class="hu">
+            <div class="a">今天还剩 6 件</div>
+            <div class="b">10 月 20 日 周一 · 已完成 3 / 9</div>
+            <div class="c danger">⚑ 最紧：交房租 · 逾期 2 天</div>
+          </div>
+        </div>
+
+        <div class="sect">手势 <span class="n">右滑 / 左滑</span></div>
+        <div class="rows">
+          <div class="sw r">
+            <div class="bg"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 完成</div>
+            <div class="row">
+              <div class="lslot"><div class="check"></div></div>
+              <div class="mid">
+                <div class="ti">回王工的邮件</div>
+                <div class="sub"><span class="cdot" style="background:#2A3C5C"></span>工作</div>
+              </div>
+              <div class="rslot"><span class="chev">›</span></div>
+            </div>
+          </div>
+          <div class="swcap">↑ 右滑：整行完成（绿色底 + ✓，松手即生效）</div>
+
+          <div class="sw l">
+            <div class="bg">
+              <span style="padding:0 10px">改期</span>
+              <span style="padding:0 10px;color:var(--expense)">删除</span>
+            </div>
+            <div class="row">
+              <div class="lslot"><div class="check"></div></div>
+              <div class="mid">
+                <div class="ti">牙医复诊</div>
+                <div class="sub"><span class="cdot" style="background:#776950"></span>健康<span class="dot"></span>15:00</div>
+              </div>
+              <div class="rslot"><span class="chev">›</span></div>
+            </div>
+          </div>
+          <div class="swcap">↑ 左滑：改期 / 删除（次要动作，不占行内空间）</div>
+        </div>
+
+        <div class="sect">长按进入多选</div>
+        <div class="rows">
+          <div class="row">
+            <div class="lslot"><div class="check sel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+            <div class="mid">
+              <div class="ti">回王工的邮件</div>
+              <div class="sub"><span class="cdot" style="background:#2A3C5C"></span>工作</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="lslot"><div class="check sel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+            <div class="mid">
+              <div class="ti">想一下周末去哪</div>
+              <div class="sub">未分类</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="lslot"><div class="check"></div></div>
+            <div class="mid">
+              <div class="ti">把季度复盘框架写完</div>
+              <div class="sub"><span class="cdot" style="background:#2A3C5C"></span>工作<span class="dot"></span>11:00</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bulk">
+          <div class="n">已选 2 项</div>
+          <div class="sp"></div>
+          <div class="b">✓ 完成</div>
+          <div class="b">📅 改到今天</div>
+          <div class="b">› 更多</div>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="tabbar">
+          <div class="t"><span class="g"></span>首页</div>
+          <div class="t"><span class="g"></span>记账</div>
+          <div class="t"><span class="g"></span>健康</div>
+          <div class="t on"><span class="g"></span>打卡</div>
+          <div class="t"><span class="g"></span>设置</div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏 2 · 手势与批量</b>：右滑完成 / 左滑改期删除（To Do、滴答的通用语言）；
+        长按进多选，底部批量条给「完成 / 改到今天 / 更多」。批量操作不再只能一条条点。</div>
+    </div>
+
+    <div class="notes">
+      <div class="nt">
+        <div class="n">交互规格</div>
+        <ul>
+          <li><b>右滑完成</b>：阈值 25% 行宽，越过后松手即完成；完成后行原地降饱和 400ms，再收进「已完成」（Things 3 的节奏，避免列表瞬间重排）。</li>
+          <li><b>左滑更多</b>：露出「改期 / 删除」，不再往行内塞 ⋯ 按钮。</li>
+          <li><b>点圈完成</b>：保留，但命中区从 22px 扩到 <b>44×44</b>（用 <code>padding</code> 撑，视觉仍是 24px 圈）。这是当前最容易误触进详情的地方。</li>
+          <li><b>长按多选</b>：底部浮出批量条；「改到今天」专治逾期堆积。</li>
+          <li><b>打卡行不参与多选</b>：它是计数/计时语义，「完成」与「撤销一次」不同；多选只作用于待办。</li>
+        </ul>
+      </div>
+      <div class="nt">
+        <div class="n">一处刻意不做</div>
+        <ul>
+          <li><b>不做拖放排序。</b>今日视图是「一天的执行清单」，不是「规划板」；拖动在 6 英寸屏上的命中率远低于滑动手势，而收益（手动排优先级）已被「时间分段 + 逾期置顶」覆盖了。</li>
+          <li><b>不做小时块时间轴。</b>Structured 那套超过 8 件事就崩，且与「随时」类任务天然冲突。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h2>六、方案 · 屏 3 空态与全部完成</h2>
+  <div class="stage">
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">今日</div>
+          <div class="sp"></div>
+          <div class="ibtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg></div>
+          <div class="ibtn filled"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+        <div class="empty">
+          <div class="orb">🌤</div>
+          <div class="big">今天还没有安排</div>
+          <div class="sm">写下第一件想做的事，或者从「待安排」里挑几件拉进今天。</div>
+          <div class="btns">
+            <div class="btn solid">＋ 新建任务</div>
+            <div class="btn line">从待安排挑</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="t"><span class="g"></span>首页</div>
+          <div class="t"><span class="g"></span>记账</div>
+          <div class="t"><span class="g"></span>健康</div>
+          <div class="t on"><span class="g"></span>打卡</div>
+          <div class="t"><span class="g"></span>设置</div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏 3a · 空态</b>：给两个出口——直接新建、或「从待安排挑」
+        （To Do 的智能建议 / Things 的 Anytime→Today）。现在的空态只有一句话，没有任何按钮。</div>
+    </div>
+
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">今日</div>
+          <div class="sp"></div>
+          <div class="ibtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg></div>
+          <div class="ibtn filled"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        </div>
+
+        <div class="hud">
+          <div class="ring big" style="--p:100;--ring-color:var(--income)"><i></i><b>✓</b></div>
+          <div class="hu">
+            <div class="a">今天全做完了</div>
+            <div class="b">10 月 20 日 周一 · 9 / 9</div>
+            <div class="c" style="color:var(--income)">🔥 连续 4 天清盘</div>
+          </div>
+        </div>
+
+        <div class="empty" style="padding-top:10px">
+          <div class="orb win">🎉</div>
+          <div class="big">今天没有待办了</div>
+          <div class="sm">明天已有 3 件事：<b style="color:var(--t2)">房租水电、牙医复查、周报</b>。<br>现在可以收工了。</div>
+          <div class="btns">
+            <div class="btn line">看看明天 ›</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="t"><span class="g"></span>首页</div>
+          <div class="t"><span class="g"></span>记账</div>
+          <div class="t"><span class="g"></span>健康</div>
+          <div class="t on"><span class="g"></span>打卡</div>
+          <div class="t"><span class="g"></span>设置</div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏 3b · 全部完成</b>：满环变绿 + 连续清盘天数，并预告明天——
+        把「今天结束了」变成一个可以收工的信号，而不是一个空列表。</div>
+    </div>
+
+    <div class="notes">
+      <div class="nt">
+        <div class="n">两处补上的出口</div>
+        <ul>
+          <li><b>空态给动作</b>：现在只有「创建任务或打卡计划，开始行动吧」一行字；改成插画 + 两个按钮。</li>
+          <li><b>「从待安排挑」</b>：把没有 <code>scheduledDate</code>、也没有 <code>dueAt</code> 的任务（即「收集箱」里的）挑 3 条建议加入今天。这是 To Do「智能建议」的做法，也是让人不必切页就能把今天填满的唯一低成本路径。</li>
+          <li><b>全完成态预告明天</b>：给一个「看看明天 ›」，把结束变成延续。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h2>七、行组件规格</h2>
+  <div class="stage">
+    <div class="notes">
+      <div class="nt">
+        <div class="n">统一的行骨架</div>
+        <div class="parts">
+          <div class="part">
+            <div class="box mini">
+              <div class="row">
+                <div class="lslot"><div class="check"></div></div>
+                <div class="mid">
+                  <div class="ti">标题（1 行，省略）</div>
+                  <div class="sub"><span class="cdot" style="background:#2A3C5C"></span>分类<span class="dot"></span>时间<span class="dot"></span>子任务 2/5</div>
+                </div>
+                <div class="rslot"><span class="flag">⚑</span></div>
+              </div>
+            </div>
+            <span>待办行 · 左槽勾选圈 / 右槽优先级</span>
+          </div>
+          <div class="part">
+            <div class="box mini">
+              <div class="row">
+                <div class="lslot"><div class="badge health">💧</div></div>
+                <div class="mid">
+                  <div class="ti">喝水</div>
+                  <div class="sub"><span class="streak">🔥 12 天</span><span class="dot"></span>3 / 8 杯</div>
+                </div>
+                <div class="rslot"><div class="ring sm" style="--p:37;--ring-color:#0EA5E9"><i></i><b>3</b></div></div>
+              </div>
+            </div>
+            <span>打卡行 · 左槽计划图标 / 右槽环形</span>
+          </div>
+        </div>
+      </div>
+      <div class="nt">
+        <ul>
+          <li><b>三槽固定宽度</b>：左 26px、中 <code>flex</code>、右自适应。两类行只在左槽与右槽的内容上不同，基线、行高、圆角、内边距完全一致。</li>
+          <li><b>meta 行最多三段</b>：<code>分类色点+名</code> · <code>时间</code> · <code>子任务/目标</code>。超过三段用 <code>·</code> 截断，绝不换行（换行会让行高参差不齐）。</li>
+          <li><b>优先级只在 high 时显形</b>：红色旗放右槽；medium / low 不显示，改成排序权重。现在「每面旗都显示」反而让「哪件最紧」看不出来。</li>
+          <li><b>删除「任务」pill</b>：零信息量。分类色点取代它的位置。</li>
+          <li><b>已完成行压缩</b>：只留一行标题（划线 + 降饱和），不显示 meta 行。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h2>八、已确认的四个决策</h2>
+  <div class="stage">
+    <div class="notes">
+      <div class="nt">
+        <div class="n">2026-10-20 拍板</div>
+        <table>
+          <tr><th style="width:26%">议题</th><th>结论</th></tr>
+          <tr><td>打卡的归属</td><td><b>单独成段</b>（不并入时间分段）。右槽控件在一段里换三种形态会破坏「右槽 = 完成」的一致性。</td></tr>
+          <tr><td>HUD 环内</td><td><b>剩余件数</b>（6）。今日视图要回答的是「还要做多少」，不是「做了百分之多少」。</td></tr>
+          <tr><td>「随时」段位置</td><td><b>紧跟逾期</b>，排在上午 / 下午 / 晚上之前。先清掉无约束的杂事，再进有时间约束的日程。</td></tr>
+          <tr><td>「从待安排挑」</td><td><b>做</b>。复用既有的 <code>allTodoTasksProvider</code> 在内存里筛（无 <code>scheduledDate</code>、无 <code>dueAt</code>、无 <code>occurrenceDate</code>），<b>不新增 repository 方法</b>。</td></tr>
+        </table>
+      </div>
+      <div class="nt quote">
+        <div class="n">实现拆解</div>
+        <div class="t">
+          ① <code>todo/domain/today_board.dart</code>：新增纯函数 <code>buildTodayBoard</code>（分段归组 + 剩余件数 + 最紧提示）。<br>
+          ② <code>todo/application/today_board_providers.dart</code>：<code>todayBoardProvider</code> +
+          <code>todayCompletedTodoProvider</code>（今天完成的待办，让「已完成」段不再只有打卡）+
+          <code>todayUnscheduledProvider</code>（待安排）。<br>
+          ③ <code>today_action_list_view.dart</code> 整体重写。<br>
+          ④ <code>gtd_page.dart</code> 的 <code>_GtdPanel.today</code> 补一枚「新建任务」按钮。<br>
+          <b>数据层不动</b>：<code>TodayActionView</code> 保留原样（首页多处依赖），分段只是它之上的派生层。
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

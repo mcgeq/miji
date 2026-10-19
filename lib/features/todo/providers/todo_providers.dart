@@ -5,6 +5,7 @@ import 'package:miji/core/database/database_providers.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/providers/checkin_providers.dart';
 import 'package:miji/features/todo/data/drift_todo_repository.dart';
+import 'package:miji/features/todo/domain/today_board.dart';
 import 'package:miji/features/todo/domain/todo_models.dart';
 import 'package:miji/features/todo/domain/todo_repository.dart';
 import 'package:miji/core/sync/delta_sync/delta_sync_providers.dart';
@@ -195,6 +196,24 @@ final todayActionItemsProvider = FutureProvider.autoDispose<TodayActionView>((
     return const TodayActionView(items: [], completedCount: 0, totalCount: 0);
   }
 
+  final items = await loadTodayActionItems(ref, userId);
+  final completed = items.where((item) => item.isCompleted).length;
+
+  return TodayActionView(
+    items: items,
+    completedCount: completed,
+    totalCount: items.length,
+  );
+});
+
+/// 今日行动项（待办 + 打卡），排好序返回。
+///
+/// 抽成函数是因为 [todayBoardProvider] 要的是**同一批数据、同一套排序**，但它
+/// 不能用 `ref.watch(todayActionItemsProvider.future)` 去拿 —— 见那边的注释。
+Future<List<TodayActionItem>> loadTodayActionItems(
+  Ref ref,
+  String userId,
+) async {
   final todoRepo = ref.watch(todoRepositoryProvider);
   final checkinRepo = ref.watch(checkinRepositoryProvider);
 
@@ -224,14 +243,8 @@ final todayActionItemsProvider = FutureProvider.autoDispose<TodayActionView>((
   final allItems = <TodayActionItem>[...todoItems, ...habitItems];
   allItems.sort(_compareActionItems);
 
-  final completed = allItems.where((item) => item.isCompleted).length;
-
-  return TodayActionView(
-    items: allItems,
-    completedCount: completed,
-    totalCount: allItems.length,
-  );
-});
+  return allItems;
+}
 
 int _compareActionItems(TodayActionItem a, TodayActionItem b) {
   // 逾期 Todo 优先
@@ -263,6 +276,99 @@ int _compareActionItems(TodayActionItem a, TodayActionItem b) {
 
   return 0;
 }
+
+// ---------------------------------------------------------------------------
+// 今日分段视图（「今日」tab 用）
+// ---------------------------------------------------------------------------
+
+/// 「今日」tab 的分段视图：把同一批行动项按一天的时间轴归组。
+///
+/// **刻意不去** `ref.watch(todayActionItemsProvider.future)`，而是像它一样直接
+/// 查 repository。原因是 Riverpod 的暂停 / 恢复机制：`ConsumerStatefulWidget`
+/// 的 element 会按 `TickerMode` 暂停订阅（被路由盖住时），回来时 `resume()` 会
+/// **同步** flush 依赖链 —— 若这条链上有别的异步 provider（`X 依赖 Y.future`），
+/// Y 在暂停期间被 invalidate 过后重算，X 就会 `invalidateSelf` 并立刻
+/// `scheduleRefresh`，而那一刻框架正在 build 另一个 widget，直接抛
+/// `setState() called during build`。自己查库就没有这条链。
+///
+/// 代价：它不会被 `todayActionItemsProvider` 的失效带着走，所以
+/// `invalidateTodoData` 里必须显式 invalidate 它（已经加上了）。
+final todayBoardProvider = FutureProvider.autoDispose<TodayBoard>((ref) async {
+  final session = ref.watch(authSessionControllerProvider);
+  final userId = session.userId;
+  final now = DateTime.now();
+  if (userId == null) {
+    return buildTodayBoard(items: const [], now: now);
+  }
+
+  final items = await loadTodayActionItems(ref, userId);
+  final completedTodos = await loadCompletedTodayTodos(ref, userId, now);
+
+  return buildTodayBoard(
+    items: <TodayActionItem>[
+      ...items,
+      ...completedTodos.map((task) => TodayTodoActionItem(task: task)),
+    ],
+    now: now,
+  );
+});
+
+/// 今天之内完成的待办。
+///
+/// `getTodayTasks` 只查 `status = todo`，所以「今日」页上原本**看不到**今天已经
+/// 做完的任务 —— 勾完就消失，连「我今天做了 5 件」的痕迹都没有。这里从已完成
+/// 列表里按 `completedAt` 捞回今天那批，补进「已完成」段。
+Future<List<TodoTask>> loadCompletedTodayTodos(
+  Ref ref,
+  String userId,
+  DateTime now,
+) async {
+  final repo = ref.watch(todoRepositoryProvider);
+  final all = await repo.getTasks(
+    userId,
+    const TodoTaskFilter(statuses: [TodoTaskStatus.completed]),
+  );
+
+  final start = DateTime(now.year, now.month, now.day);
+  final end = start.add(const Duration(days: 1));
+
+  return all
+      .where((task) {
+        final at = task.completedAt;
+        if (at == null) return false;
+        return !at.isBefore(start) && at.isBefore(end);
+      })
+      .toList(growable: false);
+}
+
+/// 收集箱里那些既没排期、也没截止日的未完成任务。
+///
+/// 空态只说「去创建任务」是不够的：多数时候人不是没任务，是有一堆没归到某一天
+/// 的任务。这个 provider 让人不必切页就能把今天填满。上限 6 条 —— 建议一旦变成
+/// 一张长清单，就退化成第二个「全部任务」页了。
+final todayUnscheduledProvider = FutureProvider.autoDispose<List<TodoTask>>((
+  ref,
+) async {
+  final session = ref.watch(authSessionControllerProvider);
+  final userId = session.userId;
+  if (userId == null) return [];
+
+  final repo = ref.watch(todoRepositoryProvider);
+  final all = await repo.getTasks(
+    userId,
+    const TodoTaskFilter(statuses: [TodoTaskStatus.todo]),
+  );
+
+  final candidates = all.where(isUnscheduledTodo).toList();
+  candidates.sort((a, b) {
+    final pw = b.priority.sortWeight.compareTo(a.priority.sortWeight);
+    if (pw != 0) return pw;
+    // 同等优先级时新的在前：刚想到的通常比陈年旧账更该先做。
+    return b.createdAt.compareTo(a.createdAt);
+  });
+
+  return candidates.take(6).toList(growable: false);
+});
 
 // ---------------------------------------------------------------------------
 // V1.2: 统计范围
@@ -375,6 +481,8 @@ final todoExportCsvProvider = FutureProvider.autoDispose
 void invalidateTodoData(WidgetRef ref) {
   ref.invalidate(todayTodoTasksProvider);
   ref.invalidate(todayActionItemsProvider);
+  ref.invalidate(todayBoardProvider);
+  ref.invalidate(todayUnscheduledProvider);
   ref.invalidate(todoTaskListProvider);
   ref.invalidate(allTodoTasksProvider);
   ref.invalidate(completedTodoTasksProvider);

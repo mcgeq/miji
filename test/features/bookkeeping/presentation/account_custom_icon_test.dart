@@ -59,9 +59,8 @@ void main() {
 
   setUp(() async {
     tempRoot = await Directory.systemTemp.createTemp('acct_icon_test');
-    iconFile = File(
-      '${tempRoot.path}${Platform.pathSeparator}logo.png',
-    )..writeAsBytesSync(
+    iconFile = File('${tempRoot.path}${Platform.pathSeparator}logo.png')
+      ..writeAsBytesSync(
         base64Decode(
           'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAC'
           'hwGA60e6kgAAAABJRU5ErkJggg==',
@@ -78,7 +77,9 @@ void main() {
   Widget host(Widget child, AttachmentStore store) {
     return ProviderScope(
       overrides: [attachmentStoreProvider.overrideWithValue(store)],
-      child: MaterialApp(home: Scaffold(body: Center(child: child))),
+      child: MaterialApp(
+        home: Scaffold(body: Center(child: child)),
+      ),
     );
   }
 
@@ -87,7 +88,10 @@ void main() {
       AccountIconView.usesCustomImage(_entity(icon: 'file:u1/2099/logo.png')),
       isTrue,
     );
-    expect(AccountIconView.usesCustomImage(_entity(icon: 'credit_card')), isFalse);
+    expect(
+      AccountIconView.usesCustomImage(_entity(icon: 'credit_card')),
+      isFalse,
+    );
     expect(AccountIconView.usesCustomImage(_entity()), isFalse);
   });
 

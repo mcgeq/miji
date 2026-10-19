@@ -242,6 +242,19 @@ class _Header extends StatelessWidget {
       children: [
         if (pace.isNotEmpty)
           _HeroChip(text: pace, dotColor: _dotColor(theme), onHero: onHero),
+        // 超支时把节奏胶囊换成实心的告警胶囊。
+        //
+        // 以前这里直接留空（理由是「正文已经写了本月已超支，不再重复」），
+        // 结果整张卡只剩「底色变红」这一个信号 —— 而 brand（深石墨
+        // #1D252D→#30363E）与 danger（暗紫红 #800E50→#921921）的明度几乎
+        // 相同，两张卡不并排放一起根本分不出「正常」和「超支」。
+        if (exceeded)
+          _HeroChip(
+            text: '已超支',
+            icon: Icons.error_rounded,
+            onHero: theme.heroGradients.danger.colors[1],
+            background: Colors.white,
+          ),
         const Spacer(),
         if (isLoading)
           const SizedBox(
@@ -262,14 +275,24 @@ class _Header extends StatelessWidget {
 class _HeroChip extends StatelessWidget {
   const _HeroChip({
     required this.text,
-    required this.dotColor,
     required this.onHero,
+    this.dotColor,
+    this.icon,
+    this.background,
   });
 
   final String text;
 
-  /// 圆点颜色；为 null 时不画圆点。
+  /// 圆点颜色；为 null 且不传 [icon] 时不画前置标记。
   final Color? dotColor;
+
+  /// 前置图标；优先于 [dotColor]。
+  final IconData? icon;
+
+  /// 胶囊底色。默认半透明白；告警胶囊传纯白，把整颗胶囊变成高对比块。
+  final Color? background;
+
+  /// 胶囊上的文字色（深卡上是白，白底告警胶囊上是深红）。
   final Color onHero;
 
   @override
@@ -278,13 +301,16 @@ class _HeroChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: background ?? Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (dotColor != null) ...[
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: onHero),
+            const SizedBox(width: 5),
+          ] else if (dotColor != null) ...[
             Container(
               width: 6,
               height: 6,
@@ -363,11 +389,18 @@ class _MainRow extends StatelessWidget {
         ('已用', formatMoneyMinor(summary.usedMinor, currencyCode), false),
         if (committed > 0)
           ('已预留', formatMoneyMinor(committed, currencyCode), false),
-        (
-          '日均可花',
-          formatMoneyMinor(summary.dailyAllowanceMinor, currencyCode),
-          false,
-        ),
+        // 超支后「日均可花」恒为 0（`availableMinor <= 0` 时按 0 算），
+        // 留着它等于在告警卡上写一句没有信息量的话。换成「超出」，把
+        // 预算 / 已用 / 超出 串成一条能对账的链。行数保持不变，卡片高度
+        // 不会在跨过 100% 那一刻跳一下。
+        if (exceeded)
+          ('超出', formatMoneyMinor(-remaining, currencyCode), false)
+        else
+          (
+            '日均可花',
+            formatMoneyMinor(summary.dailyAllowanceMinor, currencyCode),
+            false,
+          ),
       ];
     } else {
       label = '本月结余';
@@ -660,18 +693,25 @@ class _BudgetRing extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
+                    // 不 clamp 到 100%：超支时环画满，但中心仍要读出「超了多少」。
+                    // clamp 掉的话 104% 与「刚好用满」长得一模一样。
                     '${(occupiedProgress * 100).clamp(0, 999).toStringAsFixed(0)}%',
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
+                      color: exceeded
+                          ? theme.heroGradients.amber
+                          : Colors.white,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0,
                     ),
                   ),
-                  // 环的百分比不再是「已用占比」，标出来免得被误读。
+                  // 环的百分比不再是「已用占比」，标出来免得被误读；
+                  // 超支时直接把这句话换成状态。
                   Text(
-                    '已占用',
+                    exceeded ? '已超支' : '已占用',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: exceeded
+                          ? theme.heroGradients.amber
+                          : Colors.white.withValues(alpha: 0.8),
                       fontWeight: FontWeight.w700,
                       fontSize: 9,
                       height: 1.1,
@@ -854,11 +894,18 @@ class _CategoryBudgetBlock extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                summary.nearLimitCount > 0
+                // 超支是终态，不能被「接近上限」这句话含过去：
+                // 以前两者共用 nearLimitCount，真正已经超了的那条和
+                // 80% 的那条在卡片上是同一种说法、同一种颜色。
+                summary.exceededCount > 0
+                    ? '${summary.exceededCount} 项已超支'
+                    : summary.nearLimitCount > 0
                     ? '${summary.nearLimitCount} 项接近上限'
                     : '共 ${summary.totalCount} 项',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: summary.exceededCount > 0
+                      ? theme.heroGradients.amber
+                      : Colors.white.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0,
                 ),
@@ -885,6 +932,11 @@ class _CategoryBudgetRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final warn = item.isNearLimit;
+    final over = item.isExceeded;
+    final alertColor = theme.heroGradients.amber;
+    // 超支时整行转琥珀（名称 + 条 + 金额），「接近上限」只有条转琥珀。
+    // 两者以前长得完全一样：条都是满格琥珀，用户只能靠自己除一下两个数。
+    final rowColor = over ? alertColor : Colors.white.withValues(alpha: 0.9);
 
     return Row(
       children: [
@@ -895,7 +947,7 @@ class _CategoryBudgetRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: rowColor,
               fontWeight: FontWeight.w700,
               letterSpacing: 0,
             ),
@@ -910,7 +962,7 @@ class _CategoryBudgetRow extends StatelessWidget {
               minHeight: 6,
               backgroundColor: Colors.white.withValues(alpha: 0.22),
               valueColor: AlwaysStoppedAnimation(
-                warn ? theme.heroGradients.amber : Colors.white,
+                warn ? alertColor : Colors.white,
               ),
             ),
           ),
@@ -922,12 +974,13 @@ class _CategoryBudgetRow extends StatelessWidget {
             masked
                 ? '••••'
                 : '${formatMoneyMinor(item.usedMinor, item.currencyCode)}'
-                      ' / ${formatMoneyMinor(item.amountMinor, item.currencyCode)}',
+                      ' / ${formatMoneyMinor(item.amountMinor, item.currencyCode)}'
+                      '${over ? ' 超' : ''}',
             textAlign: TextAlign.right,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.92),
+              color: over ? alertColor : Colors.white.withValues(alpha: 0.92),
               fontWeight: FontWeight.w800,
               letterSpacing: 0,
             ),
@@ -1074,11 +1127,15 @@ class _DualProgress extends StatelessWidget {
             ),
             Text(
               // 有预留时把两段都写出来，用户才知道进度条里那段浅色是什么。
+              // 超支时这行转琥珀：条已经画满（clamp 到 100%），只有这个数字
+              // 还在说「到底超了多少」。
               hasCommitted
                   ? '已用+预留 ${(occupiedProgress * 100).clamp(0, 999).toStringAsFixed(0)}%'
                   : '花费进度 ${(occupiedProgress * 100).clamp(0, 999).toStringAsFixed(0)}%',
               style: theme.textTheme.labelSmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.86),
+                color: exceeded
+                    ? theme.heroGradients.amber
+                    : Colors.white.withValues(alpha: 0.86),
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0,
               ),

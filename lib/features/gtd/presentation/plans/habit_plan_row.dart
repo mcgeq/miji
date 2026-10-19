@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:miji/core/presentation/app_toast.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/gtd/domain/checkin_models.dart';
 import 'package:miji/features/gtd/domain/plan_checkin_progress.dart';
@@ -159,9 +161,11 @@ class HabitPlanRow extends ConsumerWidget {
       case 'undo':
         final undone = await undoPlanCheckIn(ref, plan);
         if (!undone || !context.mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text('已撤销「${plan.name}」的一次打卡')));
+        AppToast.success(
+          FToast()..init(context),
+          context,
+          '已撤销「${plan.name}」的一次打卡',
+        );
       case 'complete':
         final changed = await completePlanToday(
           ref,
@@ -169,9 +173,11 @@ class HabitPlanRow extends ConsumerWidget {
           currentValue: progress.currentValue,
         );
         if (!changed || !context.mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text('「${plan.name}」今日完成')));
+        AppToast.success(
+          FToast()..init(context),
+          context,
+          '「${plan.name}」今日完成',
+        );
       case 'records':
         context.push('/app/gtd/plans/${plan.id}');
     }

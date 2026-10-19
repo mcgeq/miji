@@ -35,13 +35,17 @@ void main() {
     await tester.pumpWidget(_buildHost(database: database, router: router));
     await tester.pumpAndSettle();
 
-    expect(find.text('今日没有待办事项'), findsOneWidget);
+    expect(find.text('今天还没有安排'), findsOneWidget);
 
     await tester.tap(find.byTooltip('新建计划'));
     await tester.pumpAndSettle();
 
     // 表单里第一个输入框就是「计划名称」。
-    await tester.enterText(find.byType(TextField).first, '每日阅读');
+    //
+    // 必须限定在表单页内找：「今日」页顶部现在有一行常驻的快速添加输入框，
+    // 而 push 之后它仍留在导航栈里 —— 裸的 `byType(TextField).first` 会抓到它，
+    // 于是名字被输进了今日页而不是表单。
+    await tester.enterText(_planFormTextField(), '每日阅读');
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, '创建计划'));
@@ -77,7 +81,7 @@ void main() {
     router.push('/app/gtd/plans/create?edit=${created.id}');
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField).first, '新名字');
+    await tester.enterText(_planFormTextField(), '新名字');
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, '保存修改'));
@@ -125,6 +129,13 @@ void main() {
     expect(actionValue(), '0 / 1');
   });
 }
+
+/// 表单页里的第一个输入框（= 计划名称）。
+///
+/// 之所以要加 `descendant` 限定：见上面两处调用的注释。
+Finder _planFormTextField() => find
+    .descendant(of: find.byType(PlanFormPage), matching: find.byType(TextField))
+    .first;
 
 void _usePhoneSize(WidgetTester tester) {
   tester.view.physicalSize = const Size(390 * 3, 844 * 3);

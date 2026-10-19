@@ -193,7 +193,7 @@ class _TodoRow extends StatelessWidget {
             ),
             if (overdue)
               Text(
-                '逾期',
+                task.overdueLabelAt(DateTime.now()),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: colorScheme.error,
                   fontWeight: FontWeight.w800,

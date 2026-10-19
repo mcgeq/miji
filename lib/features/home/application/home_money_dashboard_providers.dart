@@ -1147,6 +1147,13 @@ final homeCategoryBudgetSummaryProvider =
                   budget.usedAmountMinor / budget.amountMinor >= 0.8,
             )
             .length,
+        exceededCount: active
+            .where(
+              (budget) =>
+                  budget.amountMinor > 0 &&
+                  budget.usedAmountMinor >= budget.amountMinor,
+            )
+            .length,
         totalCount: active.length,
       );
     });

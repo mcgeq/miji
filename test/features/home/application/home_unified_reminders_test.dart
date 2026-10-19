@@ -136,6 +136,80 @@ void main() {
     });
   });
 
+  group('与「接下来」按时间切分', () {
+    test('明天及以后到期的不进「需要关注」', () {
+      final result = buildHomeUnifiedReminders(
+        money: const [],
+        budgets: const [],
+        todos: [task('1', '明天', dueAt: DateTime(2026, 10, 13, 20))],
+        habits: const [],
+        health: null,
+        now: _now,
+      );
+      expect(result.items, isEmpty);
+    });
+
+    test('3 天后到期的账单不进（交给「接下来」预览）', () {
+      final result = buildHomeUnifiedReminders(
+        money: [
+          MoneyReminderCenterItem(
+            sourceType: MoneyReminderCenterSourceType.billReminder,
+            sourceId: 'b1',
+            title: '房租',
+            dueDate: DateTime(2026, 10, 15),
+            amountMinor: 350000,
+            currencyCode: 'CNY',
+            actionType: MoneyReminderCenterActionType.recordTransaction,
+          ),
+        ],
+        budgets: const [],
+        todos: const [],
+        habits: const [],
+        health: null,
+        now: _now,
+      );
+      expect(result.items, isEmpty);
+    });
+
+    test('预算超支例外：它没有到期日，属于「现在」', () {
+      final result = buildHomeUnifiedReminders(
+        money: [
+          MoneyReminderCenterItem(
+            sourceType: MoneyReminderCenterSourceType.budget,
+            sourceId: 'bud1',
+            title: '餐饮超支',
+            dueDate: DateTime(2026, 10, 30),
+            amountMinor: 12000,
+            currencyCode: 'CNY',
+            actionType: MoneyReminderCenterActionType.viewBudget,
+            isBudgetExceeded: true,
+          ),
+        ],
+        budgets: const [],
+        todos: const [],
+        habits: const [],
+        health: null,
+        now: _now,
+      );
+      expect(result.items.single.title, '餐饮超支');
+    });
+
+    test('逾期、今天到期、今天没打卡都留下', () {
+      final result = buildHomeUnifiedReminders(
+        money: const [],
+        budgets: const [],
+        todos: [
+          task('1', '逾期', dueAt: DateTime(2026, 10, 8)),
+          task('2', '今天', dueAt: DateTime(2026, 10, 12, 20)),
+        ],
+        habits: [PlanProgress(plan: plan('h', '阅读'), currentValue: 0)],
+        health: null,
+        now: _now,
+      );
+      expect(result.items.map((i) => i.title).toList(), ['逾期', '今天', '阅读']);
+    });
+  });
+
   group('merge and sort', () {
     test('orders overdue before due-today before due-soon', () {
       final result = buildHomeUnifiedReminders(

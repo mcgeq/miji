@@ -171,7 +171,15 @@ final timelineProvider = FutureProvider.autoDispose<TimelineResult>((
   ref,
 ) async {
   final window = ref.watch(timelineWindowProvider);
-  final session = ref.watch(authSessionControllerProvider);
+  return loadTimeline(ref, window);
+});
+
+/// 按给定窗口读满五路并组装。
+///
+/// 抽出来是为了让首页的「接下来」能用自己的窗口（未来 7 天）复用同一套读取器，
+/// 而不是把五个仓库的调用再抄一遍——抄一次的代价是两边永远不同步。
+Future<TimelineResult> loadTimeline(Ref ref, TimelineWindow window) async {
+  final session = ref.read(authSessionControllerProvider);
   final failures = <TimelineSourceFailure>[];
   final groups = <List<TimelineEvent>>[];
 
@@ -213,7 +221,7 @@ final timelineProvider = FutureProvider.autoDispose<TimelineResult>((
     timeline: assembleTimeline(window: window, eventGroups: groups),
     failures: failures,
   );
-});
+}
 
 Future<List<TimelineEvent>> _moneyEvents(Ref ref, TimelineWindow window) async {
   final userId = ref.read(authSessionControllerProvider).userId;

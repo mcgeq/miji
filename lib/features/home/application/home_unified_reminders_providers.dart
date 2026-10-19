@@ -50,6 +50,7 @@ class HomeReminderItem {
     this.amountMinor,
     this.currencyCode,
     this.isIncome = false,
+    this.isBudgetExceeded = false,
   });
 
   final HomeReminderSource source;
@@ -61,6 +62,12 @@ class HomeReminderItem {
   final int? amountMinor;
   final String? currencyCode;
   final bool isIncome;
+
+  /// 预算超支：它不是「哪天到期」，而是**当前状态**。
+  ///
+  /// 所以它不受「只留今天与逾期」的过滤影响——否则一个已经超支的预算会因为
+  /// 没有到期日而从提醒里消失。
+  final bool isBudgetExceeded;
 }
 
 class HomeUnifiedReminders {
@@ -102,6 +109,26 @@ final homeUnifiedRemindersProvider = Provider<HomeUnifiedReminders>((ref) {
   );
 });
 
+/// 这条提醒该不该出现在「需要关注」。
+///
+/// 全站只有两个「待处理」入口：本卡与首页的「接下来」。两者按**时间**切分，
+/// 不按来源切分：
+/// - 需要关注 = 今天 + 逾期（外加预算超支这类没有日期的当前状态）——可以就地处理；
+/// - 接下来 = 严格明天起——只读预览，不催你动手。
+///
+/// 不这样切就会撞车：同一个「今天到期的待办」会在两张卡上各出现一次，
+/// 一边能勾选、一边只能看。
+bool isReminderDueNow(HomeReminderItem item) {
+  switch (item.severity) {
+    case HomeReminderSeverity.overdue:
+    case HomeReminderSeverity.dueToday:
+      return true;
+    case HomeReminderSeverity.dueSoon:
+    case HomeReminderSeverity.normal:
+      return item.isBudgetExceeded;
+  }
+}
+
 HomeUnifiedReminders buildHomeUnifiedReminders({
   required List<MoneyReminderCenterItem> money,
   required List<MoneyBudgetEntity> budgets,
@@ -115,7 +142,7 @@ HomeUnifiedReminders buildHomeUnifiedReminders({
     ...buildTodoReminders(todos, now),
     ...buildHabitReminders(habits),
     ...buildHealthReminders(health, now),
-  ];
+  ]..retainWhere(isReminderDueNow);
   items.sort(_compareReminders);
   return HomeUnifiedReminders(items: List.unmodifiable(items));
 }
@@ -138,6 +165,7 @@ List<HomeReminderItem> buildMoneyReminders(
         amountMinor: item.amountMinor,
         currencyCode: item.currencyCode,
         isIncome: item.isIncomeAmount(budgets),
+        isBudgetExceeded: item.isBudgetExceeded,
         action: const OpenMoneyRemindersAction(),
       ),
   ];
@@ -150,11 +178,12 @@ List<HomeReminderItem> buildTodoReminders(List<TodoTask> tasks, DateTime now) {
     if (task.status != TodoTaskStatus.todo || task.isDeleted) {
       continue;
     }
-    final due = task.dueAt ?? task.scheduledDate;
-    if (due == null) {
+    // 与「今日待办」同一口径（见 TodoTask.plannedDay）：dueAt 优先，其次
+    // scheduledDate。重复实例不进这里，它们按规则自己的节奏生成。
+    final dueDay = task.plannedDay;
+    if (dueDay == null) {
       continue;
     }
-    final dueDay = _dateOnly(due);
     final diff = dueDay.difference(today).inDays;
     if (diff > 0) {
       continue;
@@ -167,7 +196,7 @@ List<HomeReminderItem> buildTodoReminders(List<TodoTask> tasks, DateTime now) {
             : HomeReminderSeverity.dueToday,
         title: task.title,
         subtitle: diff < 0 ? '逾期 ${-diff} 天' : '今天到期',
-        dueDate: due,
+        dueDate: dueDay,
         action: CompleteTodoAction(task),
       ),
     );
