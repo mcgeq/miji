@@ -247,8 +247,8 @@ final homeMonthBudgetSummaryProvider = FutureProvider<HomeMonthBudgetSummary>((
     usedMinor: usedMinor,
     committedMinor: committedMinor,
   );
-  // 顶部胶囊：已超支 > 额度被预留占满 > 节奏 > 大半被预留。预留只作
-  // 「占用」参与判定、不混进「已用」（否则「还没花」会被说成已超支）。
+  // 顶部胶囊：已超支 > 节奏 > 大半被预留。判超支用的是「占用」口径
+  // （已用 + 已预留），与首页记账卡、Hero 主值、明细行的「超出」同源。
   final paceLabel = homeBudgetHeroPaceLabel(
     usedProgress: progress,
     spendableProgress: spendableProgress,
@@ -950,25 +950,25 @@ String homeBudgetPaceLabelFor({
   return homeBudgetPaceNormalLabel;
 }
 
-/// 顶部胶囊文案，优先级：已超支 > 额度被预留占满 > 节奏 > 大半被预留。
+/// 顶部胶囊文案，优先级：已超支 > 节奏 > 大半被预留。
 ///
-/// 前三档压过「大半被预留」是刻意的：节奏已经报警时，行动项是「别再花」，
+/// 「已超支」按**占用**（已用 + 已预留）判，不按已用单独判。额度被未来义务
+/// 吃穿之后，这个月一分钱都再花不出去，结论上和真花超了没有区别；差别只在
+/// 构成，而构成由 Hero 明细行的「已用 / 已预留 / 超出（含预留）」拆开说明。
+/// 两处卡片必须共用这一条判据——只按已用判，会同时出现「记账卡说已超支、
+/// 预算卡说还可花 ¥0」的两套结论。
+///
+/// 节奏压过「大半被预留」是刻意的：节奏已经报警时，行动项是「别再花」，
 /// 这时候再报占用只会把行动项藏起来；而节奏没报警、占用却又很高时（已用
 /// 不足 5% 被 0.05 的下限挡掉了「偏慢」），才轮到它来解释「钱为什么这么紧」。
-///
-/// 预留不能混进「已用」去判超支（那会把「还没花」说成已超支），所以它
-/// 单独成档、单独措辞。
 String homeBudgetHeroPaceLabel({
   required double usedProgress,
   required double spendableProgress,
   required double periodProgress,
   required double occupiedProgress,
 }) {
-  if (usedProgress >= 1) {
-    return '已超支';
-  }
   if (occupiedProgress >= 1) {
-    return '额度已被预留占满';
+    return '已超支';
   }
   final pace = homeBudgetPaceLabelFor(
     spendableProgress: spendableProgress,
@@ -1271,41 +1271,32 @@ HomeInsight? buildHomeInsight({
   final currencyCode = today.currencyCode;
   final items = <HomeInsightItem>[];
 
-  // 1. 预算超支 —— 最严重，且给出超出金额。
-  if (budget.hasBudget && budget.progress >= 1) {
+  // 1. 预算已破（已用 + 已预留 超过预算）—— 最严重。
+  //    判据用 isBusted 而不是 `progress >= 1`：只看已用的话，额度被未来账目
+  //    吃穿时洞察条会说「可支配额度已用 40%，还剩 15 天」，而卡上写着还可花 0。
+  if (budget.hasBudget && budget.isBusted) {
+    final over = formatMoneyMinor(budget.bustedMinor, currencyCode);
     items.add(
       HomeInsightItem(
-        kind: HomeInsightKind.budgetExceeded,
-        tone: HomeInsightTone.danger,
+        // 真花超 vs 只是被预留吃穿，语气与措辞都不同：前者是既成事实，
+        // 后者是「还没花，但这个月已经花不出去了」。
+        kind: budget.isUsedOverBudget
+            ? HomeInsightKind.budgetExceeded
+            : HomeInsightKind.budgetPace,
+        tone: budget.isUsedOverBudget
+            ? HomeInsightTone.danger
+            : HomeInsightTone.warning,
         target: HomeInsightTarget.budgets,
         actionLabel: '看预算',
-        segments: [
-          const HomeInsightSegment('本月预算已超支 '),
-          HomeInsightSegment(
-            formatMoneyMinor(
-              budget.usedMinor - budget.totalMinor,
-              currencyCode,
-            ),
-            emphasis: true,
-          ),
-        ],
-      ),
-    );
-  } else if (budget.hasBudget &&
-      budget.paceLabel == homeInsightCommittedFullLabel) {
-    // 2. 额度被未来义务吃光 —— 还没超支，但今天已经花不动了。
-    //    这条以前不存在：那种状态下胶囊会走到「花费偏快」，于是洞察条说
-    //    「花得比时间进度快，日均可花 ¥0.00」，方向完全不对。
-    items.add(
-      HomeInsightItem(
-        kind: HomeInsightKind.budgetPace,
-        tone: HomeInsightTone.warning,
-        target: HomeInsightTarget.budgets,
-        actionLabel: '看预算',
-        segments: [
-          const HomeInsightSegment('本月额度已被未来账目预留占满，'),
-          HomeInsightSegment('日均可花归零', emphasis: true),
-        ],
+        segments: budget.isUsedOverBudget
+            ? [
+                const HomeInsightSegment('本月预算已超支 '),
+                HomeInsightSegment(over, emphasis: true),
+              ]
+            : [
+                const HomeInsightSegment('本月额度已被未来账目预留占满，还差 '),
+                HomeInsightSegment(over, emphasis: true),
+              ],
       ),
     );
   } else if (budget.hasBudget && budget.paceLabel == homeInsightFastPaceLabel) {
@@ -1422,11 +1413,6 @@ HomeInsight? buildHomeInsight({
 
 /// `homeBudgetPaceLabelFor` 里表示「花得偏快」的文案。
 const homeInsightFastPaceLabel = homeBudgetPaceFastLabel;
-
-/// `homeBudgetHeroPaceLabel` 里表示「额度被未来义务占满」的文案。
-///
-/// 这一档比「花费偏快」更需要提醒：卡片说的是「还可花 ¥0」，而日均已经归零。
-const homeInsightCommittedFullLabel = '额度已被预留占满';
 
 /// 首页最多展示几条洞察。
 const homeInsightMaxItems = 3;

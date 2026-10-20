@@ -21,6 +21,22 @@ void main() {
       expect(cell.valueAlert, isFalse);
     });
 
+    test('额度刚好用完（还可花 0）不算超支，不进告警态', () {
+      // 已用 + 已预留 == 预算 → 还可花为 0。这与 Hero 的 isBusted 是同一个
+      // 判据（availableMinor < 0），边界上必须是「还可花 ¥0」而非「已超支 ¥0」。
+      final cell = buildMoneyBoardCell(
+        todayExpenseMinor: 5117,
+        monthRemainingMinor: 0,
+        monthNetMinor: 12000000,
+        currencyCode: 'CNY',
+        masked: false,
+      );
+      expect(cell.label, '本月还可花');
+      expect(cell.valueAlert, isFalse);
+      expect(cell.value, contains('0.00'));
+      expect(cell.value, isNot(contains('-')));
+    });
+
     test('超支时把主值标成告警并改写口径标签', () {
       final cell = buildMoneyBoardCell(
         todayExpenseMinor: 5117,
@@ -31,6 +47,9 @@ void main() {
       );
       expect(cell.label, '本月已超支');
       expect(cell.valueAlert, isTrue);
+      // 超支金额按正数展示：`-¥42.00` 配「本月已超支」读起来像「超支了负四十二」。
+      expect(cell.value, contains('42'));
+      expect(cell.value, isNot(contains('-')));
     });
 
     test('没有预算时退化为本月结余', () {

@@ -157,6 +157,27 @@ class HomeMonthBudgetSummary {
   double get occupiedProgress =>
       totalMinor <= 0 ? 0.0 : occupiedMinor / totalMinor;
 
+  /// 已入账的钱是否超过预算。只回答「花了多少」，不含未来义务。
+  bool get isUsedOverBudget =>
+      hasBudget && totalMinor > 0 && usedMinor > totalMinor;
+
+  /// 预算是否**已经破了**：已用 + 已预留超过预算。
+  ///
+  /// 这才是「这个月还能不能花」的答案，也是两处卡片必须共用的判据。
+  /// 之前 Hero 用 [isUsedOverBudget]、首页记账卡用「还可花 < 0」，同一份数据
+  /// 会同时出现「本月已超支」与「本月还可花 ¥0.00」两种结论 —— 用户没法
+  /// 判断到底超没超。
+  ///
+  /// 为什么把预留算进来：未来义务一旦占满额度，剩下一个月一分钱都花不出去，
+  /// 结果和真花超了没有区别。区别在**构成**，不在**结论**；构成交给明细行
+  /// 的「已用 / 已预留 / 超出」去拆，不必让主值含糊。
+  bool get isBusted =>
+      hasBudget && totalMinor > 0 && occupiedMinor > totalMinor;
+
+  /// 超支金额（占用 − 预算）。含已预留，与 [isBusted] 同一口径。
+  int get bustedMinor =>
+      occupiedMinor > totalMinor ? occupiedMinor - totalMinor : 0;
+
   /// 可支配额度已被用掉的比例，与 [dailyAllowanceMinor] 是同一个分母。
   double get spendableProgress => homeBudgetSpendableProgress(
     totalMinor: totalMinor,

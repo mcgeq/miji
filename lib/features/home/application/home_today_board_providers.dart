@@ -108,13 +108,17 @@ HomeBoardCell buildMoneyBoardCell({
 
   // 有预算时主值是「还可花」；没有预算才退化成「本月结余」——
   // 与顶部预算 Hero 同一口径，两处不会各说各话。
+  //
+  // 判据同 Hero：`availableMinor < 0` 等价于「已用 + 已预留 > 预算」，
+  // 也就是 HomeMonthBudgetSummary.isBusted。值是负数时把符号翻正——
+  // 「本月已超支 -¥300」读起来像「超支了负三百」，摆一个正数才是人话。
   if (monthRemainingMinor != null) {
     final exceeded = monthRemainingMinor < 0;
     return HomeBoardCell(
       id: HomeBlockId.boardMoney,
       emoji: '💰',
       title: '记账',
-      value: money(monthRemainingMinor),
+      value: money(exceeded ? -monthRemainingMinor : monthRemainingMinor),
       label: exceeded ? '本月已超支' : '本月还可花',
       noteLabel: '今日支出',
       noteValue: todayValue,

@@ -27,17 +27,19 @@ HomeTodaySpendingSummary _today({
 HomeMonthBudgetSummary _budget({
   bool hasBudget = true,
   double progress = 0.5,
+  int committedMinor = 0,
   String paceLabel = '节奏正常',
 }) {
+  final usedMinor = (800000 * progress).round();
   return HomeMonthBudgetSummary(
     hasBudget: hasBudget,
     currencyCode: 'CNY',
     budgetId: hasBudget ? 'budget-1' : null,
     budgetName: hasBudget ? '本月预算' : null,
     totalMinor: 800000,
-    usedMinor: (800000 * progress).round(),
-    remainingMinor: 800000 - (800000 * progress).round(),
-    committedMinor: 0,
+    usedMinor: usedMinor,
+    remainingMinor: 800000 - usedMinor,
+    committedMinor: committedMinor,
     progress: progress,
     periodProgress: 0.5,
     paceRatio: 1,
@@ -149,10 +151,8 @@ void main() {
           monthExpenseMinor: 657900,
           dailyAverageExpenseMinor: 21200,
         ),
-        budget: _budget(
-          progress: 0.4,
-          paceLabel: homeInsightCommittedFullLabel,
-        ),
+        // 已用 40%（¥3,200）+ 已预留 ¥5,000 → 占用 ¥8,200，超出预算 ¥200。
+        budget: _budget(progress: 0.4, committedMinor: 500000),
         categories: const [],
       );
 
@@ -161,6 +161,8 @@ void main() {
       );
       expect(pace.tone, HomeInsightTone.warning);
       expect(pace.segments.map((s) => s.text).join(), contains('预留占满'));
+      // 说的是「还差多少」，不是笼统的「日均可花归零」。
+      expect(pace.segments.map((s) => s.text).join(), contains('200.00'));
     });
 
     test('does not warn about pace when the budget is on track', () {

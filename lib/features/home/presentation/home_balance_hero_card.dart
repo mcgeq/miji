@@ -40,7 +40,10 @@ class HomeBalanceHeroCard extends StatelessWidget {
     final summary = budget;
     final spending = today ?? const HomeTodaySpendingSummary.empty();
     final hasBudget = summary?.hasBudget ?? false;
-    final exceeded = hasBudget && (summary!.progress >= 1);
+    // 与首页记账卡同一判据：已用 + 已预留 超过预算就算破。只看已用的话，
+    // 额度被预留吃穿时会显示「还可花 ¥0.00」，而旁边的记账卡已经写着
+    // 「本月已超支」—— 同一块屏幕给出两个相反结论。
+    final exceeded = hasBudget && (summary?.isBusted ?? false);
     // 判一次、传下去：环 / 进度条 / 圆点必须同时变色。
     final nearLimit =
         hasBudget && (summary?.occupiedProgress ?? 0) >= _nearLimitProgress;
@@ -374,11 +377,14 @@ class _MainRow extends StatelessWidget {
     final List<(String, String, bool)> breakdown;
 
     if (hasBudget && summary != null) {
-      final remaining = summary.remainingMinor;
       final committed = summary.committedMinor;
+      // 超支金额也用「占用 − 预算」，与 [exceeded] 同一个判据。以前这里取
+      // `-remaining`（只含已用），判据和金额因此各说一套：判据说「没超」，
+      // 金额却算得出一笔「被预留超出」。一个结论只能有一个来源。
+      final busted = summary.bustedMinor;
       if (exceeded) {
         label = '本月已超支';
-        amountMinor = -remaining;
+        amountMinor = busted;
       } else {
         // 已预留的钱不算「已经花掉」，但它已经不是你能花的了。
         label = '本月还可花';
@@ -391,14 +397,30 @@ class _MainRow extends StatelessWidget {
           ('已预留', formatMoneyMinor(committed, currencyCode), false),
         // 超支后「日均可花」恒为 0（`availableMinor <= 0` 时按 0 算），
         // 留着它等于在告警卡上写一句没有信息量的话。换成「超出」，把
-        // 预算 / 已用 / 超出 串成一条能对账的链。行数保持不变，卡片高度
-        // 不会在跨过 100% 那一刻跳一下。
+        // 预算 / 已用 / 超出 串成一条能对账的链。
+        //
+        // 已用没超、是预留把额度吃穿时，标签加「含预留」—— 「已超支 ¥300」
+        // 与「已用 ¥4,800」（预算 ¥8,000）并排出现，不加这三个字就是自相矛盾。
         if (exceeded)
-          ('超出', formatMoneyMinor(-remaining, currencyCode), false)
+          (
+            summary.isUsedOverBudget ? '超出' : '超出（含预留）',
+            formatMoneyMinor(busted, currencyCode),
+            false,
+          )
         else
           (
             '日均可花',
             formatMoneyMinor(summary.dailyAllowanceMinor, currencyCode),
+            false,
+          ),
+        // 口径对照行：预算的「已用」只统计它自己覆盖的范围与周期
+        // （分类预算只看该分类、账单周期不按自然月、转账不计入预算），
+        // 所以它未必等于首页的「本月支出」。两者不等时把全量数字摆出来，
+        // 用户才能自己看出「我花了 X，为什么卡上说只用了 Y」。
+        if (spending.monthExpenseMinor != summary.usedMinor)
+          (
+            '本月实际支出',
+            formatMoneyMinor(spending.monthExpenseMinor, currencyCode),
             false,
           ),
       ];

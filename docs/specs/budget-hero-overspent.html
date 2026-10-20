@@ -113,6 +113,11 @@ h2{font-size:15px;font-weight:800;margin:32px 0 8px}
     环与进度条都 <b>clamp 到 100%</b>、明细行留一句恒为 0 的「日均可花」、
     分类预算把「已超支」和「接近上限」说成同一件事。
   </p>
+  <p class="lede" style="font-size:13px">
+    还有第二个问题：<b>两处卡片对「有没有超支」用了两套判据</b> —— 首页记账格按「还可花 &lt; 0」判，
+    已经写着「本月已超支」；预算 Hero 只按「已用 / 预算」判，还写着「本月还可花 ¥0.00」。
+    同一个屏幕、同一份数据，两个相反结论。见文末第二节。
+  </p>
 
   <div class="stage">
     <div class="col">
@@ -262,6 +267,64 @@ h2{font-size:15px;font-weight:800;margin:32px 0 8px}
     进度条<b>仍然画到满格</b>。超出部分画成「溢出条」会让条的读法变成两套（0–100% 与 100%+），
     得不偿失；「超了多少」交给环中心的真实百分比和明细行的「超出」去说。
   </p>
+
+  <h2>第二种状态：已用没超，额度被预留吃穿 —— 结论同样是「已超支」</h2>
+  <p class="lede" style="font-size:13px">
+    预算 ¥8,000、已花 ¥4,800，但还有 ¥3,500 的未来义务（自动记账模板、分期期次、待处理流水、
+    账单提醒）—— 还没执行，额度却已经被占住。<b>已用 + 已预留 = ¥8,300，超出 ¥300。</b>
+    额度被吃穿之后，这个月一分钱也再花不出去，结果和真花超了没有区别；差别只在<b>构成</b>。
+  </p>
+  <div class="stage">
+    <div class="col">
+      <div class="cap good"><b>统一口径后</b> · 预算 ¥8,000 / 已用 ¥4,800 / 已预留 ¥3,500</div>
+      <div class="hero">
+        <div class="chiprow">
+          <span class="chip alert">▲ 已超支</span>
+        </div>
+        <div class="mainrow">
+          <div class="l">
+            <div class="lbl">本月已超支</div>
+            <div class="amt">¥300<small>.00</small></div>
+            <div class="bd">
+              <div class="r"><span class="k">预算</span><span class="v">¥8,000.00</span></div>
+              <div class="r"><span class="k">已用</span><span class="v">¥4,800.00</span></div>
+              <div class="r"><span class="k">已预留</span><span class="v">¥3,500.00</span></div>
+              <div class="r"><span class="k">超出（含预留）</span><span class="v hi">¥300.00</span></div>
+              <div class="r"><span class="k">本月实际支出</span><span class="v">¥6,579.00</span></div>
+            </div>
+          </div>
+          <div class="ring" style="--p:100">
+            <i></i>
+            <b><span class="p hi">104%</span><span class="s hi">已超支</span></b>
+          </div>
+        </div>
+        <div class="dual" style="margin-top:14px">
+          <div class="track">
+            <div class="bg"></div>
+            <div class="tm" style="width:52%"></div>
+            <div class="us warn" style="width:100%"></div>
+            <div class="mk" style="left:52%"></div>
+          </div>
+          <div class="lg"><span>时间进度 52%</span><span class="hi">已用+预留 104%</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col" style="width:auto;flex:1;min-width:320px">
+      <p class="lede" style="font-size:13px;margin-bottom:10px">
+        三处必须一起改，否则还是各有各的答案：
+      </p>
+      <ul style="font-size:13px;color:var(--t2);padding-left:18px;line-height:1.9">
+        <li><b>判据</b>统一为「已用 + 已预留 &gt; 预算」。以前记账格按「还可花 &lt; 0」判（已经写着「本月已超支」），
+          Hero 只按「已用 / 预算」判（还写「还可花 ¥0.00」）—— 同一块屏幕上两个相反结论。</li>
+        <li><b>超出金额</b>同样取自「占用 − 预算」。以前取「已用 − 预算」，判据说没超、金额却算得出缺口，
+          一个结论两个来源。</li>
+        <li><b>标签</b>在已用没超时加「含预留」：「已超支 ¥300」与「已用 ¥4,800」（预算 ¥8,000）并排出现，
+          不加这三个字就是自相矛盾。</li>
+        <li><b>本月实际支出 ¥6,579</b> 只在它与「已用 ¥4,800」<b>不相等时</b>才出现。预算的「已用」只统计它覆盖的
+          范围与周期（分类预算只看该分类、账单周期不按自然月、转账不计入预算），两数并列，口径差异一眼可见。</li>
+      </ul>
+    </div>
+  </div>
 </div>
 </body>
 </html>

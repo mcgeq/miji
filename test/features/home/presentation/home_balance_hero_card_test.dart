@@ -322,6 +322,108 @@ void main() {
     expect(find.text('已占用'), findsOneWidget);
   });
 
+  testWidgets('占用恰好等于预算：不算超支，主值读「还可花 ¥0.00」', (tester) async {
+    // 预算 8,000 / 已用 4,800 / 已预留 3,200 → 占用 8,000，一分不剩但不欠。
+    // 超支是「破了」这个终态，只能由严格大于触发；边界上写「已超支 ¥0.00」
+    // 既没信息量，也会让用户怀疑算错了。
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(
+            remainingMinor: 320000,
+            committedMinor: 320000,
+            progress: 0.6,
+          ),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('本月还可花'), findsOneWidget);
+    expect(find.text('本月已超支'), findsNothing);
+    expect(find.text('超出'), findsNothing);
+    expect(find.text('超出（含预留）'), findsNothing);
+    // 未超支 → 仍保留「日均可花」行，只是值是 0。
+    expect(find.text('日均可花'), findsOneWidget);
+    expect(find.text('已预留'), findsOneWidget);
+    // 环画满 100%，中心如实读出 100%（不是超支，也不 clamp 成一个假数字）。
+    expect(find.text('100%'), findsOneWidget);
+    // 主值与「日均可花」各一处 ¥0.00。
+    expect(
+      find.textContaining('¥0.00', findRichText: true),
+      findsNWidgets(2),
+    );
+  });
+
+  testWidgets('已预留吃穿额度：也算超支，明细标明「含预留」', (tester) async {
+    // 预算 8,000 / 已用 4,800 / 已预留 3,500 → 占用 8,300，超出 300。
+    // 这是用户报的那个场景：首页记账卡写着「本月已超支」，Hero 却写
+    // 「还可花 ¥0.00」。两处必须共用「占用」这一个判据。
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(remainingMinor: 320000, committedMinor: 350000),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('本月已超支'), findsOneWidget);
+    expect(find.text('本月还可花'), findsNothing);
+    // 已用只有 4,800（预算 8,000），不加「含预留」三个字就自相矛盾。
+    expect(find.text('超出（含预留）'), findsOneWidget);
+    // 占用 8,300 - 预算 8,000 = 300。主值与明细行各一处。
+    expect(find.textContaining('300.00'), findsNWidgets(2));
+    // 「日均可花」在这里恒为 0，换掉。
+    expect(find.text('日均可花'), findsNothing);
+  });
+
+  testWidgets('预算已用与本月支出口径不同时，把全量数字摆出来', (tester) async {
+    // 分类预算 / 账单周期 / 转账不计入 → 预算「已用」会小于首页「本月支出」。
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(remainingMinor: 320000, committedMinor: 0),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 预算已用 4,800，本月支出 6,579（_spending.monthExpenseMinor）。
+    expect(find.text('本月实际支出'), findsOneWidget);
+    expect(find.textContaining('6,579.00'), findsOneWidget);
+  });
+
+  testWidgets('两个口径一致时不加「本月实际支出」行，卡片不变高', (tester) async {
+    // usedMinor = 800000 - 142100 = 657900，与 _spending.monthExpenseMinor 相等。
+    await tester.pumpWidget(
+      _host(
+        HomeBalanceHeroCard(
+          budget: _budget(remainingMinor: 142100),
+          today: _spending,
+          categoryBudgets: const HomeCategoryBudgetSummary.empty(),
+          isLoading: false,
+          masked: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('本月实际支出'), findsNothing);
+  });
+
   testWidgets('分类预算超支与「接近上限」分开报', (tester) async {
     await tester.pumpWidget(
       _host(
@@ -391,8 +493,8 @@ void main() {
     expect(find.textContaining('420'), findsOneWidget);
   });
 
-  testWidgets('已预留占满额度但还没超支：环满格，标题仍是「还可花」', (tester) async {
-    // 已预留 350,000 → 占用 807,950（101%），但已用只有 57%。
+  testWidgets('预留把额度占到 101%：环满格，标题也转「已超支」', (tester) async {
+    // 已预留 350,000 → 占用 807,950（101%），已用只有 57%。
     await tester.pumpWidget(
       _host(
         HomeBalanceHeroCard(
@@ -407,9 +509,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('101%'), findsOneWidget);
-    expect(find.text('本月还可花'), findsOneWidget);
-    // 超支红线只看已用：预留占满不等于超支。
-    expect(find.text('本月已超支'), findsNothing);
+    expect(find.text('本月已超支'), findsOneWidget);
+    expect(find.text('本月还可花'), findsNothing);
+    // 超出 = 807,950 - 800,000 = 7.95。
+    expect(find.text('超出（含预留）'), findsOneWidget);
   });
 
   testWidgets('breaks the budget detail into one row per metric', (
@@ -498,11 +601,12 @@ void main() {
   });
 
   testWidgets('额度大半被预留时，胶囊说占用、圆点转告警色', (tester) async {
-    // 环已经 96%、日均可花只剩 12.54 的时候，胶囊还说「节奏正常」会自相矛盾。
+    // 占用 95%、日均可花只剩一点的时候，胶囊还说「节奏正常」会自相矛盾。
+    // 必须留在 100% 以内：占用一过线就转「已超支」，这一档就不存在了。
     await tester.pumpWidget(
       _host(
         HomeBalanceHeroCard(
-          budget: _budget(committedMinor: 400000, paceLabel: '额度大半已被预留'),
+          budget: _budget(committedMinor: 300000, paceLabel: '额度大半已被预留'),
           today: _spending,
           categoryBudgets: const HomeCategoryBudgetSummary.empty(),
           isLoading: false,
