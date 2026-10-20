@@ -30,10 +30,18 @@ The ledger selector lives in the top bar (compact screens) or the page toolbar. 
 An account is a place money sits. Types include cash, bank cards, Alipay, WeChat, Huabei, Baitiao, credit cards, loans, investments, and an internal system account. Accounts carry a currency, an initial balance, a current balance and optional credit metadata (limit, statement day, repayment day, budget cycle start day).
 
 - **Assets**: balance is the money you have.
-- **Credit / debt**: balance is the amount used/owed.
+- **Credit / debt**: credit shows available limit, a loan shows the outstanding amount (positive).
 - **Inactive**: hidden from daily use but kept for history.
 
+Cards are rendered by **semantic group**, not by the 16 account types: spendable balance (cash / bank / savings / wallets), prepaid balance, credit limit, debt, holdings. Every group shares one skeleton — icon and name → primary value → side values → progress bar (credit usage rate for credit, repaid ratio for debt) → footer action row. Only the copy and that single progress bar differ, which keeps card height predictable. Loan accounts used to fall into the asset branch and rendered "balance −¥486,200 / initial −¥600,000"; they now render as debt: outstanding, repaid progress, principal (as entered at account creation).
+
 Balances are never edited directly. To make the books match reality, use **balance reconciliation** (see below).
+
+Tapping a card, or the **View transactions** icon in its footer (icon only — a tooltip and semantic label carry the name, since the footer already has one text entry and a second one would squeeze long account names into an ellipsis), opens the same account sheet (overview + filterable transactions) instead of switching panels. The sheet's overview reuses the card's monthly totals (calendar month, completed only, transfers excluded), so its caption states **"excluding transfers"** — filtering the list by account *does* include the two transfer legs (out / in). Bulk re-categorisation and cross-account search still only exist in the full transactions panel, so the sheet keeps that as a secondary **icon** button (`list_alt`, "View all in transactions"); the sheet's only write action, "Add transaction", is an icon too (`add`, filled). Both carry their name through tooltips and semantic labels, matching the card's "View transactions" icon: text buttons wrap at 320dp, and these are object-level entries rather than the primary task of the screen.
+
+**Date ranges become part of a provider family key, so they must be normalised to whole days.** "Last 90 days" originally subtracted 90 days from `DateTime.now()`, whose milliseconds differ every frame — a new key every frame, the provider destroyed and rebuilt over and over, and the list stuck on a spinner. Ranges now start at midnight; the statement period is normalised the same way.
+
+**Masking stops outside the sheet.** "Hide amounts" is a global preference, and each account can override it (explicit show > explicit hide > global). That state applies to **the card only**: the account sheet is a detail view the user deliberately opened, so it always shows real amounts, as does the transaction detail reached from it. Two reasons — the sheet has no eye toggle, so a masked user has no second switch to unmask it; and "I opened it and it is still ••••, and tapping does nothing" reads as a bug. The scope (`MoneyPrivacyScope`) still sits directly under `ProviderScope`, not inside the shell: dialogs live on the root navigator and cannot see a shell-level scope, so they silently fall back to "not masked".
 
 ### Transaction (`MoneyTransaction`)
 

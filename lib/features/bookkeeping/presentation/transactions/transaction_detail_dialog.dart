@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:miji/core/presentation/app_responsive.dart';
 import 'package:miji/core/presentation/components/app_icon_action_button.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/theme/app_design_tokens.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -58,6 +59,13 @@ Future<void> showTransactionDetailDialog({
 Future<void> showTransactionDetailProviderDialog({
   required BuildContext context,
   required MoneyTransactionEntity transaction,
+
+  /// 调用方已知的遮罩状态（例如账户卡片被显式隐藏）。
+  ///
+  /// 为 null 时跟随外层 [MoneyPrivacy]（全局「隐藏金额」开关）。
+  /// 详情里的金额是**拼接字符串**（原金额 / 已退款 / 实际支出 / 分摊），
+  /// 逐处传参会漏；这里在根上包一层作用域，整棵详情树一次生效。
+  bool? isAmountHidden,
   VoidCallback? onEdit,
   VoidCallback? onDelete,
   VoidCallback? onRefund,
@@ -67,13 +75,16 @@ Future<void> showTransactionDetailProviderDialog({
   return showDialog<void>(
     context: context,
     builder: (context) {
-      return _TransactionDetailProviderDialog(
-        transaction: transaction,
-        onEdit: onEdit,
-        onDelete: onDelete,
-        onRefund: onRefund,
-        onDuplicate: onDuplicate,
-        onSetStatus: onSetStatus,
+      return MoneyPrivacy(
+        masked: isAmountHidden ?? MoneyPrivacy.of(context),
+        child: _TransactionDetailProviderDialog(
+          transaction: transaction,
+          onEdit: onEdit,
+          onDelete: onDelete,
+          onRefund: onRefund,
+          onDuplicate: onDuplicate,
+          onSetStatus: onSetStatus,
+        ),
       );
     },
   );

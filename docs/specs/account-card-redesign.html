@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>miji · 账户卡片重设计 + 流水弹窗 · 设计稿</title>
+<style>
+/* ══════════════════════════════════════════════════════════════
+   取色自应用默认配色「靛墨」light（app_palette.dart）
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#F3F3F1; --surface:#FFFFFF; --sunken:#EAE9E5;
+  --line:#DAD9D6; --outline:#8D8C87;
+  --t1:#1B1A17; --t2:#5C5A54; --t3:#8B8880;
+  --primary:#2A3C5C; --primary-solid:#24344F; --on-primary:#FFFFFF;
+  --primary-container:#E5E9F1; --on-primary-container:#28374F;
+  --tertiary:#776950; --tertiary-container:#EFEDEA;
+  --income:#0E7A48; --income-container:#E2F0E8;
+  --expense:#B93A2C; --expense-container:#F9E6E2;
+  --warning:#A9701A; --warning-container:#F3EBDF;
+  --credit:#7C3AED;
+  --shadow:0 1px 2px rgba(27,26,23,.05),0 8px 20px rgba(27,26,23,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{
+  font-family:"PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Hiragino Sans GB",
+    "Noto Sans CJK SC","Source Han Sans SC",Roboto,sans-serif;
+  background:var(--bg);color:var(--t1);line-height:1.5;padding:40px 28px 90px;
+}
+.wrap{max-width:1220px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--t3);text-transform:uppercase}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:8px 0 10px}
+h2{font-size:16px;font-weight:800;margin:34px 0 4px;letter-spacing:0}
+h2 .idx{color:var(--t3);font-weight:800;margin-right:6px}
+h2+.h2sub{font-size:12.5px;color:var(--t2);margin-bottom:12px;max-width:900px}
+.lede{font-size:14px;color:var(--t2);max-width:880px}
+.lede b{color:var(--t1)}
+.lede code,.mono{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;
+  background:var(--sunken);border-radius:4px;padding:1px 5px}
+
+/* ── 版式 ── */
+.stage{display:flex;gap:24px;margin-top:16px;align-items:flex-start;flex-wrap:wrap}
+.screen{
+  width:360px;flex:0 0 360px;background:var(--surface);border:1px solid var(--line);
+  border-radius:26px;box-shadow:var(--shadow);overflow:hidden;
+}
+.screen-cap{font-size:11.5px;color:var(--t3);margin:8px 2px 0;line-height:1.55;width:360px}
+.screen-cap b{color:var(--t2)}
+.notes{flex:1;min-width:300px;display:flex;flex-direction:column;gap:10px}
+.nt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
+.nt .n{font-size:12px;font-weight:800;margin-bottom:5px}
+.nt .t{font-size:12.5px;color:var(--t2);line-height:1.65}
+.nt .t b{color:var(--t1)}
+.nt .t+.t{margin-top:6px}
+.nt ul{margin:0;padding-left:16px}
+.nt li{font-size:12.5px;color:var(--t2);line-height:1.7}
+.nt li b{color:var(--t1)}
+.nt.bad{border-color:#E8CFC9;background:#FDF8F7}
+.nt.bad .n{color:var(--expense)}
+.nt.ok{border-color:#CFE3D6;background:#F8FCF9}
+.nt.ok .n{color:var(--income)}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;border-radius:999px;
+  padding:2px 7px;background:var(--sunken);color:var(--t2)}
+.pill.p{background:var(--primary-container);color:var(--on-primary-container)}
+.pill.g{background:var(--income-container);color:var(--income)}
+.pill.r{background:var(--expense-container);color:var(--expense)}
+.pill.w{background:var(--warning-container);color:var(--warning)}
+
+/* ── 手机内页 ── */
+.pad{padding:0 12px 14px}
+.appbar{display:flex;align-items:center;gap:8px;padding:12px 14px 8px}
+.appbar .ttl{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.appbar .sp{flex:1}
+.ibtn{width:30px;height:30px;border-radius:10px;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--t2);font-size:13px}
+.ibtn.filled{background:var(--primary-solid);border-color:var(--primary-solid);color:var(--on-primary)}
+
+/* 净资产 hero（沿用现状，仅示意上下文） */
+.hero{border-radius:16px;padding:11px 13px;color:#1F2A20;
+  background:linear-gradient(135deg,#E9F0E4 0%,#DCE9DC 100%);
+  border:1px solid #CFDCCC;margin:0 0 10px}
+.hero .l{font-size:10.5px;font-weight:700;opacity:.72}
+.hero .v{font-size:23px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:1px}
+.hero .r{font-size:10.5px;font-weight:700;opacity:.72;text-align:right;line-height:1.5}
+.hero .row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+
+/* ══════════ 账户卡（新） ══════════ */
+.acard{border-radius:14px;border:1px solid var(--line);background:var(--surface);
+  padding:12px 12px 11px;margin-bottom:9px;position:relative}
+.acard .r1{display:flex;align-items:center;gap:11px}
+.acard .ico{width:38px;height:38px;flex:0 0 38px;border-radius:11px;display:grid;place-items:center;
+  font-size:15px;font-weight:800;color:#fff}
+.acard .mid{flex:1;min-width:0}
+.acard .nm{display:flex;align-items:center;gap:5px;font-size:14.5px;font-weight:800;
+  letter-spacing:-.01em;white-space:nowrap;overflow:hidden}
+.acard .nm .t{overflow:hidden;text-overflow:ellipsis}
+.acard .meta{font-size:10.5px;color:var(--t3);font-weight:600;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acard .more{width:26px;height:26px;flex:0 0 26px;border-radius:8px;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--t3);font-size:13px;font-weight:800;letter-spacing:1px}
+.acard .r2{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:9px}
+.acard .main .cl{font-size:10px;font-weight:700;color:var(--t3)}
+.acard .main .cv{font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1.15;
+  font-variant-numeric:tabular-nums;margin-top:1px}
+.acard .main .cv .d{font-size:13px;font-weight:700;color:var(--t2)}
+.acard .side{text-align:right;flex:0 0 auto}
+.acard .side .sl{font-size:9.5px;font-weight:700;color:var(--t3)}
+.acard .side .sv{font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:1px}
+.acard .bar{margin-top:9px}
+.acard .bar .track{height:6px;border-radius:999px;background:var(--sunken);overflow:hidden}
+.acard .bar .track i{display:block;height:100%;border-radius:999px}
+.acard .bar .cap{display:flex;justify-content:space-between;gap:8px;margin-top:4px;
+  font-size:9.5px;font-weight:700;color:var(--t3);font-variant-numeric:tabular-nums}
+.acard .foot{display:flex;align-items:center;gap:8px;margin-top:9px;padding-top:9px;
+  border-top:1px dashed var(--line)}
+.acard .ghost{font-size:10.5px;font-weight:800;color:var(--primary)}
+.acard .sp{flex:1}
+/* 「查看流水」按钮 —— 本稿新增的唯一交互元素 */
+.acard .btn-flow{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;
+  border-radius:999px;border:1px solid var(--primary);background:var(--primary);
+  color:var(--on-primary);font-size:11px;font-weight:800;letter-spacing:.01em}
+.acard .btn-flow .ic{font-size:12px}
+.acard .btn-flow.icon-only{padding:0;width:30px;justify-content:center}
+.acard.off{opacity:.62}
+.acard.off .cv{color:var(--t2)}
+
+/* 深色自定义背景（演示文字前景色规则） */
+.acard.dark{background:linear-gradient(135deg,#1F2A37 0%,#2D3A4B 100%);border-color:#2D3A4B;color:#fff}
+.acard.dark .meta,.acard.dark .main .cl,.acard.dark .bar .cap,.acard.dark .side .sl{color:rgba(255,255,255,.72)}
+.acard.dark .main .cv .d{color:rgba(255,255,255,.82)}
+.acard.dark .bar .track{background:rgba(255,255,255,.24)}
+.acard.dark .foot{border-top-color:rgba(255,255,255,.20)}
+.acard.dark .more{border-color:rgba(255,255,255,.34);color:rgba(255,255,255,.8)}
+.acard.dark .btn-flow{background:#fff;border-color:#fff;color:#1F2A37}
+.acard.dark .ghost{color:rgba(255,255,255,.9)}
+/* 深色卡上的告警色：主题的琥珀（#A9701A）在深底上对比不足，换亮档 */
+.acard.dark .side .sv.warn,.acard.dark .side .sl.warn{color:#FFC66D}
+
+/* 标注气泡 */
+.anno{position:relative}
+.tag{position:absolute;font-size:9px;font-weight:800;color:#fff;background:#B93A2C;
+  border-radius:4px;padding:1px 4px;z-index:9;letter-spacing:.02em}
+
+/* ── 弹窗 ── */
+.sheet{border-radius:22px 22px 0 0;background:var(--surface);border:1px solid var(--line);
+  border-bottom:none;box-shadow:0 -8px 30px rgba(27,26,23,.10);overflow:hidden}
+.sheet .grab{width:34px;height:4px;border-radius:99px;background:var(--line);margin:8px auto 0}
+.sheet .hd{display:flex;align-items:flex-start;gap:10px;padding:10px 14px 0}
+.sheet .hd .ico{width:34px;height:34px;flex:0 0 34px;border-radius:10px;display:grid;place-items:center;
+  color:#fff;font-size:14px;font-weight:800}
+.sheet .hd .nm{font-size:15.5px;font-weight:800;letter-spacing:-.01em;line-height:1.25}
+.sheet .hd .sub{font-size:10.5px;color:var(--t3);font-weight:600;margin-top:1px}
+.sheet .hd .x{margin-left:auto;width:26px;height:26px;border-radius:50%;background:var(--sunken);
+  display:grid;place-items:center;color:var(--t2);font-size:12px}
+.sheet .sum{display:flex;gap:12px;padding:11px 14px 12px;align-items:flex-end}
+.sheet .sum .blk{flex:1;min-width:0}
+.sheet .sum .cl{font-size:9.5px;font-weight:700;color:var(--t3)}
+.sheet .sum .cv{font-size:20px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2}
+.sheet .sum .cv.sm{font-size:13px;font-weight:800;letter-spacing:0}
+.sheet .sum .sub2{font-size:9.5px;color:var(--t3);font-weight:600;margin-top:2px}
+.sheet .tabs{display:flex;gap:6px;padding:0 14px 9px;overflow:hidden}
+.chip{height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--line);
+  background:var(--surface);font-size:10.5px;font-weight:800;color:var(--t2);display:inline-flex;
+  align-items:center;gap:4px;white-space:nowrap}
+.chip.on{background:var(--primary-container);border-color:#B9C4D8;color:var(--on-primary-container)}
+.chip .c{font-size:9.5px;opacity:.7}
+.sheet .divider{height:1px;background:var(--line)}
+/* 账单区块 */
+.bill{margin:0 14px 10px;border:1px solid #E4D6E9;background:#FAF7FC;border-radius:12px;padding:9px 11px}
+.bill .top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.bill .k{font-size:10px;font-weight:800;color:#6B4A80}
+.bill .v{font-size:15px;font-weight:900;color:#4B2D5E;font-variant-numeric:tabular-nums}
+.bill .dt{font-size:10px;font-weight:700;color:#6B4A80}
+.bill .bar{height:5px;border-radius:99px;background:#E9DFEF;margin:7px 0 4px;overflow:hidden}
+.bill .bar i{display:block;height:100%;background:var(--credit);border-radius:99px}
+.bill .cap{display:flex;justify-content:space-between;font-size:9px;font-weight:700;color:#735F80}
+/* 流水列表 */
+.list{padding:0 6px 6px;max-height:322px;overflow:hidden}
+.grp{padding:8px 8px 3px;font-size:9.5px;font-weight:800;color:var(--t3);letter-spacing:.03em}
+.trow{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:11px}
+.trow.on{background:var(--sunken)}
+.trow .di{width:30px;height:30px;flex:0 0 30px;border-radius:9px;display:grid;place-items:center;font-size:12px}
+.trow .mid{flex:1;min-width:0}
+.trow .tt{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:4px;
+  white-space:nowrap;overflow:hidden}
+.trow .ss{font-size:9.5px;color:var(--t3);font-weight:600;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .amt{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right;flex:0 0 auto}
+.trow .amt small{display:block;font-size:8.5px;font-weight:700;color:var(--t3);margin-top:1px}
+.sheet .ft{display:flex;gap:8px;padding:10px 14px 12px;border-top:1px solid var(--line);background:var(--surface)}
+.sheet .ft .b{height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  font-size:11.5px;font-weight:800;gap:5px}
+.sheet .ft .b.primary{flex:1;background:var(--primary-solid);color:var(--on-primary)}
+.sheet .ft .b.ghost{border:1px solid var(--line);color:var(--t2);padding:0 12px}
+
+/* ── 表格 ── */
+table{width:100%;border-collapse:collapse;background:var(--surface);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:12px}
+th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:10.5px;letter-spacing:.04em;color:var(--t3);background:var(--sunken);font-weight:800}
+tr:last-child td{border-bottom:none}
+td b{font-weight:800}
+td .sub{display:block;font-size:10.5px;color:var(--t3);margin-top:2px}
+
+/* ── 对照：现状 vs 新 ── */
+.ba{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px}
+.ba .col{flex:1;min-width:320px}
+.ba .cap{font-size:11px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.ba .cap .k{font-size:9.5px;padding:1px 6px;border-radius:99px;background:var(--sunken);color:var(--t2)}
+
+/* ── 路径图 ── */
+.path{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.path .line{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.path .n{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:9.5px;
+  font-weight:800;color:#fff;flex:0 0 18px}
+.path .n.o{background:var(--expense)}
+.path .n.g{background:var(--income)}
+.path .bx{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 8px;
+  font-size:11px;font-weight:700;color:var(--t2)}
+.path .bx.hi{border-color:var(--primary);color:var(--primary);background:var(--primary-container)}
+.path .ar{color:var(--t3);font-size:11px}
+.path .note{font-size:11px;color:var(--t3)}
+code.blk{display:block;background:#1F2329;color:#E8E6E1;border-radius:10px;padding:10px 12px;
+  font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11px;line-height:1.7;margin-top:8px;
+  white-space:pre-wrap;word-break:break-word}
+code.blk .k{color:#9CC7FF}
+code.blk .c{color:#7E8894}
+code.blk .s{color:#A8D8A8}
+
+/* 决策区选项列表 */
+.opts{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.opts li{font-size:12px;color:var(--t2);line-height:1.6;display:flex;gap:6px;align-items:flex-start}
+.opts li .k{flex:0 0 16px;font-weight:800;color:var(--t3);font-size:11px;line-height:1.6}
+.opts li b{color:var(--t1)}
+.opts li.rec .k{color:var(--income)}
+.opts li .rec-tag{font-size:9px;font-weight:800;color:var(--income);background:var(--income-container);
+  border-radius:3px;padding:0 4px;margin-left:4px;vertical-align:1px}
+
+/* 弹层底页轮廓：让「弹窗盖在账户页上」看得见 */
+.ghostpage{position:absolute;inset:0;padding:14px;opacity:.6}
+.ghostpage .g{height:56px;border-radius:13px;background:#fff;border:1px solid var(--line);margin-bottom:9px}
+.screen.rel{position:relative}
+
+.footer{margin-top:38px;font-size:11.5px;color:var(--t3);border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">miji · Bookkeeping · Accounts</div>
+  <h1>账户卡片重设计 + 账户流水弹窗</h1>
+  <p class="lede">
+    两件事：<b>① 卡片按账户类型说该说的话</b> —— 现在信用卡、贷款、基金、预付卡共用同一套三行结构，
+    只靠「可用额度 / 当前余额」一个判断分支区分，贷款卡因此长得跟现金账户一样；<b>② 点卡片不再跳走</b> ——
+    现在点整卡会切到「流水」面板并挂上账户筛选，用户回账户列表要手动切回来，而卡片上没有任何信号说明会发生这件事。
+    本稿给出新卡片、新弹窗，以及需要拍板的 6 个取舍。<b>不改代码</b>。
+  </p>
+
+  <div class="nt ok" style="margin:0 0 26px">
+    <div class="n">已实现（2026-10-20）</div>
+    <div class="t">
+      6 项取舍全部按推荐方案（A）落地：点卡片与「查看流水」打开<b>同一个</b>弹窗；
+      卡面显示「本月净」；按钮为底部动作行右侧的<b>圆形图标</b>（原稿是带文字的实心 pill，
+      上线后按要求只留图标——卡底已有一行对象级入口文字，再挤一个文字按钮会把长账户名
+      压成省略号；用途靠 tooltip + 语义标签说明）；初始余额移到弹窗概览；
+      贷款按负债渲染；弹窗底部保留「在流水中查看全部」。<br>
+      代码：<code>domain/account_card_info.dart</code>（语义组与派生值）、
+      <code>providers/account_flow_providers.dart</code>（弹窗流水取数）、
+      <code>presentation/accounts/account_detail_sheet.dart</code>（弹窗）、
+      <code>presentation/accounts/money_accounts_section.dart</code>（卡面四槽位骨架）。<br>
+      与稿子的另一处偏离：弹窗概览<b>没有</b>再做一份「筛选后合计」——
+      同一屏出现两个总数会重犯「首页 hero 与记账格口径不一致」那类错，
+      概览只保留卡片同款的自然月合计。<br>
+      修复：「近 90 天」原先把 <code>DateTime.now()</code> 直接减 90 天当查询区间，
+      而区间是 provider 的 family key —— 毫秒每帧都不同，key 每帧都变，列表永远转圈。
+      现在统一归一到当天零点。
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 一 ═══════════════════════ -->
+  <h2><span class="idx">一</span>现状：一条 if 分支承担了 16 种账户类型</h2>
+  <div class="h2sub">
+    左列是现在的三张卡（按 Flutter 侧的实际布局复刻：图标行 / 余额行 / 仅信用类有的额度条）。
+    右列是这次要解决的问题清单，按「用户能感知到的错误」排序，不按代码整洁度排序。
+  </div>
+
+  <div class="stage">
+    <div>
+      <div class="screen">
+        <div class="appbar">
+          <div class="ttl">账户</div><div class="sp"></div>
+          <div class="ibtn">⇅</div><div class="ibtn">⛭</div><div class="ibtn filled">＋</div>
+        </div>
+        <div class="pad">
+          <div class="hero">
+            <div class="row">
+              <div><div class="l">净资产</div><div class="v">¥ 486,231.40</div></div>
+              <div class="r">总资产 ¥ 1,024,431<br>负债 ¥ 538,200</div>
+            </div>
+          </div>
+
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#0EA5E9">🏦</div>
+              <div class="mid">
+                <div class="nm"><span class="t">招商银行</span></div>
+                <div class="meta">银行账户 · CNY</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">当前余额</div>
+                <div class="cv">¥12,345<span class="d">.67</span></div>
+              </div>
+              <div class="side"><div class="sv" style="color:var(--t3)">初始 ¥10,000.00</div></div>
+            </div>
+          </div>
+
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#EC4899">💳</div>
+              <div class="mid">
+                <div class="nm"><span class="t">招行信用卡</span></div>
+                <div class="meta">信用卡 · CNY · 还款日 18 日</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">可用额度</div>
+                <div class="cv" style="color:var(--credit)">¥8,420<span class="d">.00</span></div>
+              </div>
+              <div class="side">
+                <div class="sl">本期应还</div>
+                <div class="sv" style="color:var(--warning)">¥2,180.00</div>
+                <div class="sl" style="color:var(--primary);margin-top:1px">账单 ›</div>
+              </div>
+            </div>
+            <div class="bar">
+              <div class="track"><i style="width:30%;background:var(--credit)"></i></div>
+              <div class="cap"><span>已用 ¥3,580.00</span><span>额度 ¥12,000.00</span></div>
+            </div>
+          </div>
+
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#EF4444">📄</div>
+              <div class="mid">
+                <div class="nm"><span class="t">房贷</span></div>
+                <div class="meta">贷款账户 · CNY</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">当前余额</div>
+                <div class="cv">-¥486,200<span class="d">.00</span></div>
+              </div>
+              <div class="side"><div class="sv" style="color:var(--t3)">初始 ¥-600,000.00</div></div>
+            </div>
+          </div>
+
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#8B5CF6">📈</div>
+              <div class="mid">
+                <div class="nm"><span class="t">基金账户</span></div>
+                <div class="meta">投资账户 · CNY</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">当前余额</div>
+                <div class="cv">¥86,400<span class="d">.00</span></div>
+              </div>
+              <div class="side"><div class="sv" style="color:var(--t3)">初始 ¥80,000.00</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>现状 · 账户列表</b>：银行、贷款、基金三种卡的结构完全一样，
+      只有信用卡多一条额度条与「账单 ›」。贷款卡显示<b>负余额 + 初始负余额</b>，
+      两个数字都不是用户想问的问题（「我还欠多少」「还了多少」）。</div>
+    </div>
+
+    <div class="notes">
+      <div class="nt bad">
+        <div class="n">P1 · 类型差异只体现在「是不是信用类」</div>
+        <div class="t">
+          <code>_AccountTileContent</code> 只有一个分支：<code>if (type.isCreditLike)</code> 画额度条。
+          于是 <b>贷款（loan）</b> 落进了资产分支：主值打「当前余额 −¥486,200」、副值打「初始 −¥600,000」。
+          可它明明在「信用/负债」分组里（分组用的是 <code>isCreditLike || isDebtLike</code>，两处口径不一致）。
+        </div>
+        <div class="t">
+          同类问题：<b>投资账户</b>只有「余额」，没有「本月涨跌」；<b>预付卡</b>只有「余额」，
+          而它真正的心智是「余额会花完」；<b>储蓄</b>与<b>活期</b>在卡上完全无法区分。
+        </div>
+      </div>
+
+      <div class="nt bad">
+        <div class="n">P2 · 点整张卡 = 离开这一页</div>
+        <div class="t">
+          <code>onTap</code> 直接调 <code>_showAccountTransactions</code> →
+          <code>_selectedPanel = transactions</code> + 挂一条 <code>accountId</code> 筛选。
+          用户的真实意图九成是「看一眼这个账户最近花了什么」，代价却是：面板整屏被替换、
+          顶部多一个需要手动清掉的筛选、要看别的账户得先切回来。
+        </div>
+        <div class="t">而且卡面上<b>没有任何「点了会跳走」的提示</b>（没有 chevron），
+        唯一的「查看流水」藏在 ⋯ 菜单里第 2 项。</div>
+      </div>
+
+      <div class="nt">
+        <div class="n">P3 · 三个可点区域互相打架</div>
+        <div class="t">信用卡卡面上同时存在：整卡点击（跳走）、「账单 ›」（开账单对账 sheet）、
+        ⋯ 菜单里「查看流水」、左滑「编辑 / 删除」。同一个矩形里有 4 种手势结果，
+        其中两种的目的地看起来一样。</div>
+      </div>
+
+      <div class="nt">
+        <div class="n">P4 · 算了、传了，但没人用</div>
+        <div class="t">
+          <code>currentUserAccountMonthlySummariesProvider</code> 已经在 section 里取到，并且
+          逐卡传进了 <code>_AccountTile(monthlySummary: …)</code>——但 <code>_AccountTile</code>
+          <b>从头到尾没有读过这个字段</b>（只有 <code>creditBill</code> 被用了）。
+        </div>
+        <div class="t">
+          更浪费的是聚合本身：SQL 的时间窗从<b>上月初</b>一直扫到<b>本月末</b>，
+          只为算出 <code>previousIncomeMinor / previousExpenseMinor</code> 两个<b>全项目无人读取</b>的字段。
+          也就是说每次打开账户页，都在为一个不显示的数字多扫一个月流水。
+          这一版要么把「本月净」用起来，要么连查询窗一起收窄。
+        </div>
+      </div>
+
+      <div class="nt">
+        <div class="n">P5 · 卡片高度不一致，列表参差</div>
+        <div class="t">资产卡 3 行、信用卡 + 额度条、逾期时再加一行提示，
+        同屏卡片高低错落；分页每页 8 张，高度差直接影响「一屏能看几个账户」。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 二 ═══════════════════════ -->
+  <h2><span class="idx">二</span>信息模型：按「用户拿这张卡来回答什么问题」分类</h2>
+  <div class="h2sub">
+    不按 16 个枚举值逐个设计（那样会得到 16 套 UI），而是先归成 4 类语义组，再给每组一套固定骨架。
+    同一个组内只有「状态行」不同，卡片高度因此可控。
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:130px">语义组</th>
+        <th style="width:250px">包含类型</th>
+        <th style="width:86px">主值</th>
+        <th style="width:180px">右侧辅助（1～2 个短值）</th>
+        <th>状态行 / 徽章</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>可花余额</b><span class="sub">「我现在能花多少」</span></td>
+        <td>现金、银行、储蓄、支付宝、微信、云闪付、其他</td>
+        <td>当前余额</td>
+        <td>本月净变化 <span class="pill g">+¥2,000</span> / <span class="pill r">−¥1,240</span></td>
+        <td>无状态行（高度最矮）。非基准币加币种 chip；停用→整卡降透明度。</td>
+      </tr>
+      <tr>
+        <td><b>预付余额</b><span class="sub">「还能刷几次」</span></td>
+        <td>预付卡</td>
+        <td>余额</td>
+        <td>本月已用 ¥44.00（只关心在减少）</td>
+        <td>余额 &lt; 本月均耗 × 3 时给「余额偏低」提示；无字段则不做。</td>
+      </tr>
+      <tr>
+        <td><b>授信额度</b><span class="sub">「我还能刷多少 / 这期还多少」</span></td>
+        <td>信用卡、花呗、白条、美团月付、其他信用</td>
+        <td>可用额度</td>
+        <td>本期应还 + 到期倒计时（<span class="pill r">已逾期</span> / <span class="pill w">9 天后</span>）</td>
+        <td>额度使用率条 + 「已用 / 额度」；≥80% 转琥珀、≥90% 转红。</td>
+      </tr>
+      <tr>
+        <td><b>负债</b><span class="sub">「我还欠多少、还到哪了」</span></td>
+        <td>贷款（当前不可新建，只兼容历史/同步数据）</td>
+        <td>剩余欠款（正数）</td>
+        <td>已还比例（19%）</td>
+        <td>还款进度条 + 「已还 ¥113,800 / 本金 ¥600,000」+ 还款日。</td>
+      </tr>
+      <tr>
+        <td><b>持仓</b><span class="sub">「值多少、涨了没」</span></td>
+        <td>投资</td>
+        <td>当前市值</td>
+        <td>本月净变化 <span class="pill g">+¥1,240</span></td>
+        <td>可选：占总资产 12%（需把净资产总额传进卡片，见第七节）。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="stage">
+    <div class="notes">
+      <div class="nt ok">
+        <div class="n">为什么不是「每张卡都塞满」</div>
+        <div class="t">
+          现有卡片曾经是 8 层信息（名称、类型、账单日、3 个徽章、说明、本月对比长句、余额、额度明细），
+          后来被压到 3 行，注释写得很清楚：<b>「账户一多，一屏只能看 2 张」</b>。
+          所以这一版的目标不是加信息，而是<b>换掉错的信息</b>：贷款卡去掉「初始 −¥600,000」，
+          换成「已还 ¥113,800 / 本金 ¥600,000」——同样的字数量，回答的却是用户真正的问题。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">「初始余额」为什么移出卡面</div>
+        <div class="t">
+          它是建账时的输入值，不是当前状态。日常扫视时它只会和余额抢注意力；
+          而真正需要它的场景（对账、余额校正）本来就要打开弹窗。
+          移走后卡面空出来的位置给了「本月净变化」——这个数每个月都在变，才值得占视觉资源。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 三 ═══════════════════════ -->
+  <h2><span class="idx">三</span>新卡片：四槽位骨架</h2>
+  <div class="h2sub">
+    槽位固定、内容按组替换：<b>①</b> 图标 + 名称 + 徽章 + ⋯ ｜ <b>②</b> 主值（标签 + 金额）
+    ｜ <b>③</b> 右侧 1～2 个辅助值 ｜ <b>④</b> 状态行（进度条 / 提示，可缺省）+ 底部动作行。
+    底部动作行是本稿新增的：左边保留「账单 ›」这类对象级入口，右边是<b>「查看流水」按钮</b>。
+  </div>
+
+  <div class="stage">
+    <!-- 屏 1：资产 -->
+    <div>
+      <div class="screen">
+        <div class="appbar"><div class="ttl">账户</div><div class="sp"></div>
+          <div class="ibtn">⇅</div><div class="ibtn">⛭</div><div class="ibtn filled">＋</div></div>
+        <div class="pad">
+          <div class="hero">
+            <div class="row">
+              <div><div class="l">净资产</div><div class="v">¥ 486,231.40</div></div>
+              <div class="r">总资产 ¥ 1,024,431<br>负债 ¥ 538,200</div>
+            </div>
+          </div>
+
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#0EA5E9">🏦</div>
+              <div class="mid">
+                <div class="nm"><span class="t">招商银行</span><span class="pill p">工资卡</span></div>
+                <div class="meta">银行账户 · CNY</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">当前余额</div>
+                <div class="cv">¥12,345<span class="d">.67</span></div>
+              </div>
+              <div class="side">
+                <div class="sl">本月净</div>
+                <div class="sv" style="color:var(--income)">+¥760.00</div>
+              </div>
+            </div>
+            <div class="foot">
+              <div class="ghost">本月 收 ¥2,000 · 支 ¥1,240</div>
+              <div class="sp"></div>
+              <div class="btn-flow icon-only" title="查看流水"><span class="ic">≡</span></div>
+            </div>
+          </div>
+
+          <div class="acard dark">
+            <div class="r1">
+              <div class="ico" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.26)">💳</div>
+              <div class="mid">
+                <div class="nm"><span class="t">招行信用卡</span></div>
+                <div class="meta">信用卡 · CNY · 18 日还款</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">可用额度</div>
+                <div class="cv">¥8,420<span class="d">.00</span></div>
+              </div>
+              <div class="side">
+                <div class="sl">本期应还</div>
+                <div class="sv">¥2,180.00</div>
+                <div class="sl warn" style="margin-top:1px">9 天后到期</div>
+              </div>
+            </div>
+            <div class="bar">
+              <div class="track"><i style="width:30%;background:#fff"></i></div>
+              <div class="cap"><span>已用 ¥3,580.00</span><span>额度 ¥12,000.00</span></div>
+            </div>
+            <div class="foot">
+              <div class="ghost">账单详情 ›</div>
+              <div class="sp"></div>
+              <div class="btn-flow icon-only" title="查看流水"><span class="ic">≡</span></div>
+            </div>
+          </div>
+
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#EF4444">📄</div>
+              <div class="mid">
+                <div class="nm"><span class="t">房贷</span><span class="pill">每月 5 日</span></div>
+                <div class="meta">贷款账户 · CNY</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">剩余欠款</div>
+                <div class="cv">¥486,200<span class="d">.00</span></div>
+              </div>
+              <div class="side">
+                <div class="sl">已还进度</div>
+                <div class="sv" style="color:var(--expense)">19%</div>
+              </div>
+            </div>
+            <div class="bar">
+              <div class="track"><i style="width:19%;background:var(--expense)"></i></div>
+              <div class="cap"><span>已还 ¥113,800.00</span><span>本金 ¥600,000.00</span></div>
+            </div>
+            <div class="foot">
+              <div class="sp"></div>
+              <div class="btn-flow icon-only" title="查看流水"><span class="ic">≡</span></div>
+            </div>
+          </div>
+
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#8B5CF6">📈</div>
+              <div class="mid">
+                <div class="nm"><span class="t">基金账户</span></div>
+                <div class="meta">投资账户 · CNY</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">当前市值</div>
+                <div class="cv">¥86,400<span class="d">.00</span></div>
+              </div>
+              <div class="side">
+                <div class="sl">本月净</div>
+                <div class="sv" style="color:var(--income)">+¥1,240.00</div>
+              </div>
+            </div>
+            <div class="foot">
+              <div class="ghost">占总资产 8.4%</div>
+              <div class="sp"></div>
+              <div class="btn-flow icon-only" title="查看流水"><span class="ic">≡</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏 1 · 资产组 + 授信 + 负债 + 持仓</b>：四张卡高度约
+      100 / 140 / 140 / 100（dp），差异只来自「有没有额度条 / 进度条」。深色那张演示自定义
+      背景下的文字前景色规则（全部走 <code>AccountCardScope</code>，不写死白色），
+      同时演示深色卡上的告警色要单独取亮档——主题琥珀在深底上对比不足。
+      底部左侧的空槽位是留给「对象级入口」的，没有就不填，不用来塞别的信息。</div>
+    </div>
+
+    <div class="notes">
+      <div class="nt ok">
+        <div class="n">槽位 ①：名称行只放「会变的东西」</div>
+        <div class="t">
+          名称后的 chip 从「类型标签」换成<b>状态</b>：<span class="pill p">工资卡</span>是用户自定义的
+          description 上限截断，其余可能值是 <span class="pill">已停用</span>
+          <span class="pill">共享</span><span class="pill">虚拟</span><span class="pill">USD</span>（非基准币才出现）。
+          类型本身已经在第二行 <code>银行账户 · CNY</code> 里了，不必重复。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">槽位 ②③：主值只有一个，辅助值最多两个</div>
+        <div class="t">
+          主值的口径按组固定（余额 / 可用额度 / 欠款 / 市值），<b>同组内永远同一口径</b>，
+          用户扫视时不用每次都重新解读「这个大字是什么」。
+        </div>
+        <div class="t">
+          辅助值只放「和主值直接相关、且每月会变」的数：资产放本月净、信用放本期应还 + 倒计时、
+          负债放已还比例、持仓放本月净。其余一切（初始余额、账单日、预算周期、开通时间）进弹窗。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">槽位 ④：底部动作行</div>
+        <div class="t">
+          左边是<b>对象级入口</b>（目前只有信用卡有「账单详情 ›」，直接接现有的对账 sheet；
+          贷款暂时没有可去的对象级页面，就留空，不虚构入口），右边是<b>「查看流水」</b>。
+          这一行统一加一条虚线分隔，让「按钮」和「信息」在视觉上分开——现在「账单 ›」是夹在
+          金额右下方的一行小字，又像标签又像链接。
+        </div>
+      </div>
+      <div class="nt bad">
+        <div class="n">「查看流水」为什么做成实心按钮而不是文字链</div>
+        <div class="t">
+          它是这次<b>唯一新增的可交互元素</b>，必须一眼可发现：文字链在深色背景上会被金额压掉，
+          而且和「账单 ›」的视觉权重分不开。<br>
+          <b>落地后按反馈改成只留图标</b>：卡底已经有一行对象级入口文字，再并一个「查看流水」
+          文字按钮，账户名一长就要省略号；用途交给 tooltip 与语义标签，读屏仍念得出「查看流水」。
+        </div>
+        <div class="t">
+          同时把 ⋯ 菜单里的「查看流水」<b>删掉</b>，避免同一动作两个入口。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">仍然保留的差异</div>
+        <div class="t">
+          停用账户：整卡 62% 不透明度 + <span class="pill">已停用</span>，主值转次级色，仍可点开看历史流水（只读）。
+          虚拟账户：不加「余额校正」入口（现状已如此），卡面加 <span class="pill">虚拟</span>。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 三·B ═══════════════════════ -->
+  <h2><span class="idx">三·B</span>状态变体：逾期 / 停用 / 遮罩 / 共享</h2>
+  <div class="h2sub">
+    这些状态现在都已经存在于数据里（<code>isActive</code>、<code>isShared</code>、<code>isVirtual</code>、
+    账单状态机、三态遮罩），但卡面上大多没有表达。新骨架把它们统一收进「名称行 chip + 辅助值颜色」两个位置，
+    不再为每种状态单独改布局。
+  </div>
+
+  <div class="stage">
+    <div>
+      <div class="screen">
+        <div class="pad" style="padding-top:14px">
+          <!-- 逾期 -->
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#EC4899">💳</div>
+              <div class="mid">
+                <div class="nm"><span class="t">招行信用卡</span><span class="pill r">已逾期</span></div>
+                <div class="meta">信用卡 · CNY · 18 日还款</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">可用额度</div>
+                <div class="cv" style="color:var(--credit)">¥960<span class="d">.00</span></div>
+              </div>
+              <div class="side">
+                <div class="sl">本期应还</div>
+                <div class="sv" style="color:var(--expense)">¥2,180.00</div>
+                <div class="sl" style="color:var(--expense);margin-top:1px">逾期 2 天</div>
+              </div>
+            </div>
+            <div class="bar">
+              <div class="track"><i style="width:92%;background:var(--expense)"></i></div>
+              <div class="cap"><span>已用 ¥11,040.00</span><span>额度 ¥12,000.00</span></div>
+            </div>
+            <div class="foot">
+              <div class="ghost">账单详情 ›</div>
+              <div class="sp"></div>
+              <div class="btn-flow icon-only" title="查看流水"><span class="ic">≡</span></div>
+            </div>
+          </div>
+
+          <!-- 停用 -->
+          <div class="acard off">
+            <div class="r1">
+              <div class="ico" style="background:#64748B">🏦</div>
+              <div class="mid">
+                <div class="nm"><span class="t">旧工资卡</span><span class="pill">已停用</span></div>
+                <div class="meta">银行账户 · CNY</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">当前余额</div>
+                <div class="cv">¥0<span class="d">.00</span></div>
+              </div>
+              <div class="side"><div class="sl">本月无收支</div></div>
+            </div>
+            <div class="foot">
+              <div class="ghost" style="color:var(--t3)">只读 · 可查历史</div>
+              <div class="sp"></div>
+              <div class="btn-flow icon-only" title="查看流水"><span class="ic">≡</span></div>
+            </div>
+          </div>
+
+          <!-- 遮罩 -->
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#0EA5E9">🏦</div>
+              <div class="mid">
+                <div class="nm"><span class="t">招商银行</span><span class="pill">已隐藏金额</span></div>
+                <div class="meta">银行账户 · CNY</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">当前余额</div>
+                <div class="cv">••••</div>
+              </div>
+              <div class="side"><div class="sl">本月净</div><div class="sv" style="color:var(--t3)">••••</div></div>
+            </div>
+            <div class="foot">
+              <div class="ghost">本月 收 •••• · 支 ••••</div>
+              <div class="sp"></div>
+              <div class="btn-flow icon-only" title="查看流水"><span class="ic">≡</span></div>
+            </div>
+          </div>
+
+          <!-- 共享 + 虚拟 + 非基准币 -->
+          <div class="acard">
+            <div class="r1">
+              <div class="ico" style="background:#22C55E">👨‍👩‍👧</div>
+              <div class="mid">
+                <div class="nm"><span class="t">家庭账户</span>
+                  <span class="pill">共享</span><span class="pill">虚拟</span><span class="pill">USD</span></div>
+                <div class="meta">储蓄账户 · USD</div>
+              </div>
+              <div class="more">⋯</div>
+            </div>
+            <div class="r2">
+              <div class="main">
+                <div class="cl">当前余额</div>
+                <div class="cv">$3,200<span class="d">.00</span></div>
+              </div>
+              <div class="side"><div class="sl">本月净</div><div class="sv" style="color:var(--income)">+$120.00</div></div>
+            </div>
+            <div class="foot">
+              <div class="ghost">非基准币 · 不参与净资产</div>
+              <div class="sp"></div>
+              <div class="btn-flow icon-only" title="查看流水"><span class="ic">≡</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>屏 2 · 状态变体</b>：逾期只改「辅助值颜色 + 一个红 chip + 进度条转红」，
+      结构不动；停用整卡降透明度并明说「只读 · 可查历史」；遮罩连「本月净」和底部收支一起打码，
+      避免从边角信息反推金额。</div>
+    </div>
+
+    <div class="notes">
+      <div class="nt">
+        <div class="n">为什么不用整卡改色表示状态</div>
+        <div class="t">
+          卡面颜色已经被「自定义背景」占了（纯色 / 图片）。再让状态去改底色，
+          用户自定义的卡面就会被系统悄悄覆盖。<b>状态只走文字与 chip</b>，
+          唯一例外是额度条的填充色——它本来就是数据可视化，不是装饰。
+        </div>
+      </div>
+      <div class="nt bad">
+        <div class="n">遮罩要连「可推断的量」一起挡</div>
+        <div class="t">
+          这张卡原来是「余额打码、本月收支照常显示」。问题是收支一露，用户就能反推余额量级。
+          新规则：<b>卡上任何金额字段都走同一个 hidden 状态</b>，包括底部那行「收 · 支」。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">共享 / 虚拟 / 非基准币：只加 chip，不加区块</div>
+        <div class="t">
+          这三个状态都只影响「怎么理解这个数」，不影响数字本身，所以给 chip 就够；
+          用 chip 也不用给每种组合单独排版（一张卡最多 3 个 chip，超了折行会被名称省略号吃掉，见实现注意）。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 四 ═══════════════════════ -->
+  <h2><span class="idx">四</span>点卡片 = 打开账户弹窗，不再离开这一页</h2>
+  <div class="h2sub">
+    一个弹窗承担「看一眼这个账户」的全部需求：概览口径与卡片完全一致（同一份数据、同一套月度合计算法；
+    金额在弹窗内不遮罩），下面是可筛选的流水，再往下是「在流水中查看全部」这个次要出口（老用户想批量编辑时仍能回去）。
+  </div>
+
+  <div class="stage">
+    <!-- 弹窗 1：资产 -->
+    <div>
+      <div class="screen rel" style="background:#E9E8E4;padding-top:76px">
+        <div class="ghostpage"><div class="g"></div><div class="g"></div><div class="g"></div></div>
+        <div class="sheet" style="position:relative">
+          <div class="grab"></div>
+          <div class="hd">
+            <div class="ico" style="background:#0EA5E9">🏦</div>
+            <div>
+              <div class="nm">招商银行</div>
+              <div class="sub">银行账户 · CNY · 工资卡</div>
+            </div>
+            <div class="x">✕</div>
+          </div>
+          <div class="sum">
+            <div class="blk">
+              <div class="cl">当前余额</div>
+              <div class="cv">¥12,345<span class="d" style="font-size:13px;color:var(--t2)">.67</span></div>
+            </div>
+            <div class="blk" style="text-align:right">
+              <div class="cl">本月（不含转账）</div>
+              <div class="cv sm"><span style="color:var(--income)">+¥2,000</span> <span style="color:var(--expense)">−¥1,240</span></div>
+              <div class="sub2">净 +¥760.00 · 17 笔 · 待确认 2</div>
+            </div>
+          </div>
+          <div class="tabs">
+            <div class="chip on">本月 ▾</div>
+            <div class="chip on">全部</div>
+            <div class="chip">支出</div>
+            <div class="chip">收入</div>
+            <div class="chip">转账</div>
+          </div>
+          <div class="divider"></div>
+          <div class="list">
+            <div class="grp">今天</div>
+            <div class="trow">
+              <div class="di" style="background:#EAE9E5">☕</div>
+              <div class="mid"><div class="tt">瑞幸咖啡</div><div class="ss">餐饮 · 咖啡 · 09:12</div></div>
+              <div class="amt" style="color:var(--expense)">−28.00</div>
+            </div>
+            <div class="trow">
+              <div class="di" style="background:var(--income-container);color:var(--income)">↓</div>
+              <div class="mid"><div class="tt">转账 · 来自微信</div><div class="ss">转账 · 08:40 <span class="pill">转入</span></div></div>
+              <div class="amt" style="color:var(--income)">+500.00</div>
+            </div>
+            <div class="grp">昨天</div>
+            <div class="trow">
+              <div class="di" style="background:#EAE9E5">🛒</div>
+              <div class="mid"><div class="tt">盒马鲜生</div><div class="ss">日用 · 超市 · 19:03</div></div>
+              <div class="amt" style="color:var(--expense)">−186.40</div>
+            </div>
+            <div class="trow">
+              <div class="di" style="background:#EAE9E5">🚇</div>
+              <div class="mid"><div class="tt">地铁出行</div><div class="ss">交通 · 08:15 <span class="pill">待确认</span></div></div>
+              <div class="amt" style="color:var(--t3)">−6.00</div>
+            </div>
+            <div class="grp">10 月 18 日</div>
+            <div class="trow">
+              <div class="di" style="background:var(--income-container);color:var(--income)">¥</div>
+              <div class="mid"><div class="tt">工资</div><div class="ss">职业收入 · 10:00</div></div>
+              <div class="amt" style="color:var(--income)">+8,000.00</div>
+            </div>
+            <div class="trow">
+              <div class="di" style="background:#EAE9E5">🎬</div>
+              <div class="mid"><div class="tt">电影票</div><div class="ss">娱乐 · 20:30</div></div>
+              <div class="amt" style="color:var(--expense)">−98.00</div>
+            </div>
+            <div class="trow" style="justify-content:center;color:var(--t3);font-size:10.5px;font-weight:700">还有 11 笔 · 上滑加载</div>
+          </div>
+          <div class="ft" style="justify-content:space-between">
+            <div class="b ghost" style="flex:0 0 34px;padding:0;font-size:14px" title="在流水中查看全部">☰</div>
+            <div class="b primary" style="flex:0 0 34px;padding:0;font-size:16px" title="记一笔">＋</div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>弹窗 A · 资产账户</b>：概览只用卡片同款口径（余额 + 本月收入/支出/净额），
+      明确标注<b>「不含转账」</b>——因为列表里能看到的转账流水不进这个合计。
+      筛选条把「时间范围」和「类型」分开，转账单独给一个 chip（它不进合计，但用户常用它查还款）。
+      「待确认」<b>不做筛选 chip</b>：由列表里的徽章 + 概览的「待确认 2」承载，
+      否则 360dp 上六个 chip 会溢出（这也是这稿改掉的一处）。</div>
+    </div>
+
+    <!-- 弹窗 2：信用 -->
+    <div>
+      <div class="screen rel" style="background:#E9E8E4;padding-top:40px">
+        <div class="ghostpage"><div class="g"></div><div class="g"></div><div class="g"></div></div>
+        <div class="sheet" style="position:relative">
+          <div class="grab"></div>
+          <div class="hd">
+            <div class="ico" style="background:#EC4899">💳</div>
+            <div>
+              <div class="nm">招行信用卡</div>
+              <div class="sub">信用卡 · CNY · 账单日 19 日 · 还款日 18 日</div>
+            </div>
+            <div class="x">✕</div>
+          </div>
+          <div class="sum">
+            <div class="blk">
+              <div class="cl">可用额度</div>
+              <div class="cv" style="color:var(--credit)">¥8,420<span class="d" style="font-size:13px;color:var(--t2)">.00</span></div>
+            </div>
+            <div class="blk" style="text-align:right">
+              <div class="cl">本期应还</div>
+              <div class="cv sm" style="color:var(--warning)">¥2,180.00</div>
+              <div class="sub2">10 月 28 日 · 还剩 9 天</div>
+            </div>
+          </div>
+
+          <div class="bill">
+            <div class="top">
+              <div><div class="k">本期账单 · 9/20 – 10/19</div>
+                <div class="v">¥2,180.00</div></div>
+              <div style="text-align:right">
+                <div class="dt">最低 ¥218.00</div>
+                <div class="dt">已还 ¥0.00</div>
+              </div>
+            </div>
+            <div class="bar"><i style="width:30%"></i></div>
+            <div class="cap"><span>已用额度 ¥3,580.00 / ¥12,000.00</span><span>30%</span></div>
+          </div>
+
+          <div class="tabs">
+            <div class="chip on">本期 ▾</div>
+            <div class="chip on">全部</div>
+            <div class="chip">消费</div>
+            <div class="chip">还款</div>
+          </div>
+          <div class="divider"></div>
+          <div class="list" style="max-height:238px">
+            <div class="grp">10 月 17 日</div>
+            <div class="trow">
+              <div class="di" style="background:#EAE9E5">👕</div>
+              <div class="mid"><div class="tt">优衣库</div><div class="ss">服饰 · 16:22 <span class="pill">分期 3 期</span></div></div>
+              <div class="amt" style="color:var(--expense)">−899.00<small>每期 300.00</small></div>
+            </div>
+            <div class="trow">
+              <div class="di" style="background:#EAE9E5">🍜</div>
+              <div class="mid"><div class="tt">和府捞面</div><div class="ss">餐饮 · 12:40</div></div>
+              <div class="amt" style="color:var(--expense)">−58.00</div>
+            </div>
+            <div class="grp">10 月 12 日</div>
+            <div class="trow">
+              <div class="di" style="background:var(--income-container);color:var(--income)">↙</div>
+              <div class="mid"><div class="tt">还款</div><div class="ss">转账 · 来自招商银行 <span class="pill">已还</span></div></div>
+              <div class="amt" style="color:var(--income)">+1,200.00</div>
+            </div>
+            <div class="grp">10 月 9 日</div>
+            <div class="trow">
+              <div class="di" style="background:#EAE9E5">🌐</div>
+              <div class="mid"><div class="tt">云服务续费</div><div class="ss">订阅 · 07:00 · 自动记账</div></div>
+              <div class="amt" style="color:var(--expense)">−118.00</div>
+            </div>
+          </div>
+          <div class="ft" style="justify-content:space-between">
+            <div class="b ghost" style="flex:0 0 34px;padding:0;font-size:14px" title="在流水中查看全部">☰</div>
+            <div class="b primary" style="flex:0 0 34px;padding:0;font-size:16px" title="记一笔">＋</div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-cap"><b>弹窗 B · 信用账户</b>：小额账单信息（本期应还、账单区间、最低还款、
+      额度使用率）压成一块，把卡面上原来分散的「本期应还 / 账单 › / 额度条」收进来；
+      对账与还款留在卡面的「账单详情 ›」（接现有的 <code>CreditCardStatementReconciliationSheet</code>），
+      弹窗底部只保留两个通用入口：图标化的「在流水中查看全部」和「记一笔」。</div>
+    </div>
+
+    <div class="notes">
+      <div class="nt ok">
+        <div class="n">弹窗尺寸与形态</div>
+        <div class="t">
+          复用 <code>showAppResponsiveDialog(expandCompactSheet: true)</code>：手机上是
+          <b>圆角顶 + 可拖动、最大 88% 高</b>的 bottom sheet，桌面上是 520dp 对话框。
+          与现有账单对账 sheet、余额校正 sheet 完全一致，不引入新的弹层语法。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">「查看流水」按钮 vs 「点卡片」不是两条路</div>
+        <div class="t">
+          两者打开<b>同一个</b> sheet、同一份数据。区别只在初始焦点：
+          点按钮 → 列表已展开并滚到第一条流水；点卡片 → 落在顶部概览。
+          这样就没有「两个相似弹窗各自维护」的成本，也不会出现「按钮里看到的数和卡片里不一样」。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">为什么底部还留「在流水中查看全部」</div>
+        <div class="t">
+          弹窗只能看、不能批量改（多选批量改分类/账户是流水面板的能力）。
+          老入口的价值在于「批处理」和「跨账户搜索」，所以保留为<b>次要图标按钮</b>（名称走 tooltip），
+          而不是继续让它占据整卡点击这个最高权重的入口。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">底部两个动作都只留图标（已按此实现）</div>
+        <div class="t">
+          「在流水中查看全部」和「记一笔」原来都是文字按钮：320dp 上要换行，
+          而且它们只是对象级入口、不是这一屏的主任务。现在统一为图标 ——
+          左边 <code>list_alt</code>（次要，plain），右边 <code>add</code>（唯一写操作，填充态），
+          名称由 tooltip + 语义标签承担，与卡底「查看流水」同一口径。
+        </div>
+      </div>
+      <div class="nt bad">
+        <div class="n">遮罩只留在卡面，不进弹窗（已按此实现）</div>
+        <div class="t">
+          账户页的隐藏是三态（显式显示 &gt; 显式隐藏 &gt; 全局遮罩），但只在<b>卡片</b>上生效。
+          第一版设计把遮罩也带进了弹窗，实测是反的：弹窗里没有眼睛开关，
+          用户点开看到 •••• 之后没有第二个入口能打开它，只能当成坏了。
+          现在弹窗（以及从弹窗点开的流水详情）一律展示真实金额 ——
+          「卡面遮住、点开才看得见」本身就是这个交互存在的意义。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 五 ═══════════════════════ -->
+  <h2><span class="idx">五</span>点击路径对比</h2>
+  <div class="stage">
+    <div class="notes" style="max-width:640px">
+      <div class="nt bad">
+        <div class="n">现在</div>
+        <div class="path">
+          <div class="line"><span class="n o">1</span><span class="bx">点整张卡</span>
+            <span class="ar">→</span><span class="bx">面板切到「流水」</span>
+            <span class="ar">→</span><span class="bx">挂 accountId 筛选</span></div>
+          <div class="line"><span class="n o">2</span><span class="bx">想回账户页</span>
+            <span class="ar">→</span><span class="bx">手动切面板</span>
+            <span class="ar">→</span><span class="bx">筛选还挂着</span>
+            <span class="note">（下次进来仍是这个账户的流水）</span></div>
+        </div>
+      </div>
+      <div class="nt ok">
+        <div class="n">新</div>
+        <div class="path">
+          <div class="line"><span class="n g">1</span><span class="bx hi">点卡 / 点「查看流水」</span>
+            <span class="ar">→</span><span class="bx">账户弹窗（概览 + 流水）</span>
+            <span class="ar">→</span><span class="bx">✕ / 下滑关闭</span>
+            <span class="note">留在账户页，上下文不丢</span></div>
+          <div class="line"><span class="n g">2</span><span class="bx">弹窗底部「在流水中查看全部」</span>
+            <span class="ar">→</span><span class="bx">老的流水面板 + 筛选</span>
+            <span class="note">仅批处理时使用</span></div>
+          <div class="line"><span class="n g">3</span><span class="bx">信用卡「账单详情 / 账单对账」</span>
+            <span class="ar">→</span><span class="bx">现有对账 sheet</span>
+            <span class="note">不变</span></div>
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">⋯ 菜单的收敛</div>
+        <div class="t">
+          删：<b>查看流水</b>（已上卡面）。
+          留：隐藏金额 / 编辑账户 / 余额校正（仅资产类）/ 停用 / 删除。
+          左滑手势不变（编辑 / 删除）。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 六 ═══════════════════════ -->
+  <h2><span class="idx">六</span>数据来源与实现要点</h2>
+  <div class="h2sub">下面每个数都已经存在，不需要新表、不需要新聚合；唯一要新增的是弹窗的列表分页状态。</div>
+
+  <table>
+    <thead><tr>
+      <th style="width:170px">界面元素</th><th style="width:290px">数据来源</th><th>口径 / 坑</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>主值：余额 / 可用额度 / 欠款 / 市值</td>
+        <td><code>MoneyAccountEntity.displayBalanceMinor</code>（信用是可用额度）、<code>balanceMinor</code>（贷款取 <code>abs()</code>）</td>
+        <td>贷款必须取绝对值 + 换标签，否则出现「−¥486,200」这种负余额。分组的判据要跟着一起改：<code>isCreditLike || isDebtLike</code>。</td>
+      </tr>
+      <tr>
+        <td>本月净 / 本月支出</td>
+        <td><code>currentUserAccountMonthlySummariesProvider</code>（已存在，卡片目前没用）</td>
+        <td>只算 <code>completed</code>、排除转账与 <code>transfer_in</code>、退款按净额。<b>转账不在里面</b>，卡面写「本月净」时不要再写「收支」以免被理解成全量。顺带：这一版终于消费了它；若后续仍不用「上月」两字段，应把 SQL 的 <code>previousStart</code> 一起收窄。</td>
+      </tr>
+      <tr>
+        <td>本期应还 / 到期倒计时</td>
+        <td><code>currentUserCreditCardBillViewProvider(accountId)</code> → <code>toStatement()</code></td>
+        <td>状态机五档（未出账 / 待还款 / 临近 / 逾期 / 已还清），颜色取 error / warning，已经有一套。</td>
+      </tr>
+      <tr>
+        <td>额度使用率</td>
+        <td><code>usedCreditMinor / effectiveCreditLimitMinor</code></td>
+        <td>额度为 0 时不画条（避免除零），显示「未设额度」。</td>
+      </tr>
+      <tr>
+        <td>贷款「已还 / 本金」</td>
+        <td><code>initialBalanceMinor.abs()</code> 当期初本金，<code>1 - |balance| / |initial|</code> 为已还比例</td>
+        <td><b>没有真实「本金」字段</b>，这是用建账初始值反推的近似。文案要写「本金」而不是「总额」，并在弹窗里注明是「建账时录入」。</td>
+      </tr>
+      <tr>
+        <td>流水列表（弹窗）</td>
+        <td><code>repository.listTransactions(userId, MoneyTransactionQuery(accountId: …))</code></td>
+        <td>按 <code>accountId</code> 过滤时<b>会包含转账两条</b>（转出 / 转入各一条，转入带 <code>transfer_in</code> 标记）。所以列表能看到的比概览多，概览必须标「不含转账」。</td>
+      </tr>
+      <tr>
+        <td>弹窗小计（收入/支出/笔数）</td>
+        <td><code>summarizeTransactions(userId, 同一 query)</code></td>
+        <td>与列表必须共用同一个 query 对象，否则「合计 5 笔、列表 7 条」。</td>
+      </tr>
+      <tr>
+        <td>待确认流水</td>
+        <td><code>status == pending</code></td>
+        <td>待确认不占余额、不进汇总。列表里正常显示 + 灰金额 + <span class="pill">待确认</span> 徽章，概览另起一行「另有 2 笔待确认 ¥34.00」。</td>
+      </tr>
+      <tr>
+        <td>遮罩三态</td>
+        <td><code>_isEffectivelyHidden(accountId)</code> + <code>moneyAmountsMaskedProvider</code></td>
+        <td><b>只作用于卡面</b>：弹窗与从弹窗点开的流水详情一律展示真实金额，不再透传遮罩状态（弹窗内没有开关，遮住就等于看不到）。</td>
+      </tr>
+      <tr>
+        <td>时间范围 / 类型筛选</td>
+        <td><code>dateStart / dateEnd / type</code>（<code>MoneyTransactionQuery</code> 已有字段）</td>
+        <td>「近 90 天」用 <code>DateTime.now() - 90d</code>；「本期」直接用账单的 <code>periodStart / periodEndInclusive</code>，与账单对账口径一致。</td>
+      </tr>
+      <tr>
+        <td>多币种</td>
+        <td>账户自身 <code>currencyCode</code></td>
+        <td>不做汇率换算（项目里也没有），弹窗所有金额用账户币种；非账本基准币时卡面与弹窗都要露币种代码。</td>
+      </tr>
+      <tr>
+        <td>性能</td>
+        <td>—</td>
+        <td>卡片<b>不能</b>为「查看流水」预先查数据：按钮只是打开弹窗，列表在弹窗首次 build 时才拉第一页（pageSize 10）。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="stage">
+    <div class="notes">
+      <div class="nt">
+        <div class="n">弹窗内部状态（新增的唯一一处）</div>
+        <code class="blk"><span class="c">// 只活在 sheet 里的一个 StatefulWidget</span>
+<span class="k">class</span> _AccountFlowList <span class="k">extends</span> StatefulWidget {
+  <span class="c">// page / items / hasMore / loading</span>
+  <span class="c">// 任何一次筛选变化：page = 1，items = []</span>
+}
+<span class="c">// 刷新信号：moneyDataRefreshVersionProvider 变化 → 重置到第一页</span>
+<span class="c">// 新增 / 编辑 / 删除流水后：ref.invalidate(moneyDataRefreshVersionProvider)</span>
+</code>
+      </div>
+      <div class="nt bad">
+        <div class="n">一个必须先说清的取舍</div>
+        <div class="t">
+          弹窗里的流水行<b>不复用</b> <code>TransactionCard</code>（它需要 accounts / 分类目录 / 分期 / 成员 / 账本
+          六个依赖，还有左滑、长按多选、批量条三套交互）。弹窗用的是只读紧凑行：
+          图标 + 标题 + 「分类 · 时间」+ 金额 + 状态徽章，<b>点行打开现有的
+          <code>TransactionDetailDialog</code></b>。要编辑就进详情，不在这里做行内动作。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 七 ═══════════════════════ -->
+  <h2><span class="idx">七</span>需要你拍板的 6 个取舍</h2>
+  <div class="stage">
+    <div class="notes" style="max-width:900px">
+      <div class="nt">
+        <div class="n">1 · 点卡片本体做什么？</div>
+        <ul class="opts">
+          <li class="rec"><span class="k">A</span><span><b>打开同一个账户弹窗</b><span class="rec-tag">推荐</span><br>
+            符合「卡片可点」的肌肉记忆，且不产生第二个弹窗。</span></li>
+          <li><span class="k">B</span><span><b>什么都不做</b><br>
+            只有「查看流水」和 ⋯ 菜单可点。最保守，但会让人反复戳卡片却没反应。</span></li>
+          <li><span class="k">C</span><span><b>仍然跳到流水面板</b><br>与本稿目标冲突，不建议。</span></li>
+        </ul>
+      </div>
+      <div class="nt">
+        <div class="n">2 · 卡面显示「本月净变化」吗？</div>
+        <div class="t">
+          数据现成（<code>monthlySummaries</code> 已在 section 里取到了，只是没传给卡片）。
+          代价是每张资产卡都多一个会变的小数字；好处是「这张卡这个月在缩水」一眼可见。
+          <b>推荐：显示，但只在非零时显示</b>——零就换成「本月无收支」或不显示。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">3 · 「查看流水」的形态</div>
+        <ul class="opts">
+          <li class="rec"><span class="k">A</span><span><b>底部动作行右侧的实心 pill</b><span class="rec-tag">推荐</span><br>
+            一眼可发现，与「信息区」用虚线分开。</span></li>
+          <li><span class="k">B</span><span><b>主值右侧一个「≡」图标按钮</b><br>更省横向空间，但识别度差。</span></li>
+          <li><span class="k">C</span><span><b>整卡右下角箭头 chevron</b><br>最轻，但与「点卡片跳走」的旧心智容易混。</span></li>
+        </ul>
+      </div>
+      <div class="nt">
+        <div class="n">4 · 「初始余额」从卡面移走，接受吗？</div>
+        <div class="t">
+          移到弹窗概览的最下面一行。卡面空出的位置给「本月净」。
+          如果你希望卡面仍然能对账，可以保留进 ⋯ 菜单，但<b>不建议</b>占主视觉——
+          它是建账时的输入值，不是当前状态。
+        </div>
+      </div>
+      <div class="nt">
+        <div class="n">5 · 贷款账户要不要按「负债」单独处理？</div>
+        <ul class="opts">
+          <li class="rec"><span class="k">A</span><span><b>按负债卡渲染</b>（剩余欠款 + 已还比例）<span class="rec-tag">推荐</span><br>
+            它已经不能新建（<code>visibleMoneyAccountTypes</code> 里没有 loan），只可能是历史或同步进来的数据；
+            成本很低，且能同时修掉「负余额」这个明显错误。</span></li>
+          <li><span class="k">B</span><span><b>暂不处理</b><br>只保证不崩——但那样它还是会显示「−¥486,200」。</span></li>
+        </ul>
+      </div>
+      <div class="nt">
+        <div class="n">6 · 弹窗底部保留「在流水中查看全部」吗？</div>
+        <ul class="opts">
+          <li class="rec"><span class="k">A</span><span><b>保留为次要文字按钮</b><span class="rec-tag">推荐</span><br>
+            批处理、跨账户搜索仍需老面板，成本只是底部一行。</span></li>
+          <li><span class="k">B</span><span><b>去掉</b><br>弹窗成为唯一入口，路径更短，但批量编辑能力就没有入口了。</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    设计稿 · 2026-10-20 · 未改任何 Dart 代码。落地顺序建议：
+    ① 卡片按类型分组渲染（含贷款修正）→ ② 底部动作行 + 「查看流水」按钮 → ③ 账户弹窗（概览 + 只读流水）
+    → ④ 弹窗内筛选与分页 → ⑤ 删掉 ⋯ 菜单里的「查看流水」与整卡跳转，同步改测试。
+  </div>
+</div>
+</body>
+</html>

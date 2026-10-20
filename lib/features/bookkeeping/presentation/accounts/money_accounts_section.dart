@@ -19,18 +19,21 @@ import 'package:miji/core/presentation/components/app_list_item.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/account_icon_catalog.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_card_background.dart';
 import 'package:miji/core/presentation/components/app_responsive_dialog.dart';
-import 'package:miji/core/presentation/components/money_amount_text.dart';
+import 'package:miji/core/presentation/components/money_text.dart';
 import 'package:miji/core/presentation/components/paged_load_more_list.dart';
 import 'package:miji/core/preferences/providers/preferences_providers.dart';
 import 'package:miji/shared/widgets/form_dropdown.dart';
 
 import 'package:miji/features/bookkeeping/application/money_amount_formatter.dart';
+import 'package:miji/features/bookkeeping/domain/account_card_info.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_credit_card_statement_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/account_form_dialog.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/account_detail_sheet.dart';
+import 'package:miji/features/bookkeeping/presentation/accounts/components/account_progress_bar.dart';
 import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_panel_header.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/account_balance_adjustment_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/account_presentation_helpers.dart';
@@ -75,6 +78,11 @@ enum MoneyAccountSortField {
 class MoneyAccountsSection extends ConsumerWidget {
   const MoneyAccountsSection({super.key, this.onViewTransactions});
 
+  /// 「在流水中查看全部」：切到流水面板并按账户筛选。
+  ///
+  /// 点卡片 / 点「查看流水」都不再走这里 —— 它们打开账户弹窗。
+  /// 这个出口只保留给弹窗底部的次要按钮：批量改分类、跨账户搜索仍然
+  /// 只有老的流水面板能做。
   final ValueChanged<MoneyAccountEntity>? onViewTransactions;
 
   @override
@@ -1636,7 +1644,10 @@ class _AccountTile extends ConsumerWidget {
     final creditStatement = creditBill?.toStatement();
     final colorScheme = Theme.of(context).colorScheme;
     return AppSwipeActionTile(
-      onTap: onViewTransactions,
+      // 点卡片本体 = 打开账户弹窗（概览 + 流水），不再切走面板。
+      // 原来的行为是「点一下把整页换成流水列表」，回来时筛选还挂在
+      // 这个账户上 —— 想回账户列表反而要多点一次。
+      onTap: () => _openDetailSheet(context, ref),
       // 左滑只留「编辑 / 删除」，与预算卡片保持同一口径。
       // 「停用 / 启用」收进右上角 ⋯ 菜单 —— 它本来就低频，而左滑条在手机上
       // 一次只露得出 2~3 个按钮，塞第三个的代价是前两个也要滑一下才看清。
@@ -1659,12 +1670,12 @@ class _AccountTile extends ConsumerWidget {
       child: _AccountTileContent(
         account: account,
         creditStatement: creditStatement,
+        monthlySummary: monthlySummary,
         isAmountHidden: isAmountHidden,
         actionsMenu: _AccountActionsMenu(
           account: account,
           isAmountHidden: isAmountHidden,
           onToggleAmountHidden: onToggleAmountHidden,
-          onViewTransactions: onViewTransactions,
           onEdit: onEdit,
           onAdjustBalance: onAdjustBalance,
           onToggleActive: onToggleActive,
@@ -1678,7 +1689,16 @@ class _AccountTile extends ConsumerWidget {
                 account,
                 creditStatement,
               ),
+        onViewFlows: () => _openDetailSheet(context, ref),
       ),
+    );
+  }
+
+  Future<void> _openDetailSheet(BuildContext context, WidgetRef ref) async {
+    await showAccountDetailSheet(
+      context: context,
+      account: account,
+      onOpenFullTransactions: onViewTransactions,
     );
   }
 
@@ -1691,13 +1711,17 @@ class _AccountTile extends ConsumerWidget {
     final action = await showAppResponsiveDialog<_CreditCardStatementAction>(
       context: context,
       expandCompactSheet: true,
-      builder: (sheetContext) => CreditCardStatementReconciliationSheet(
-        account: account,
-        statement: statement,
-        onAdjust: () =>
-            Navigator.of(sheetContext).pop(_CreditCardStatementAction.adjust),
-        onRepay: () =>
-            Navigator.of(sheetContext).pop(_CreditCardStatementAction.repay),
+      builder: (sheetContext) => MoneyPrivacy(
+        // 账单对账里的每一行金额都走 maskedMoneyOr，读的就是这个作用域。
+        masked: isAmountHidden,
+        child: CreditCardStatementReconciliationSheet(
+          account: account,
+          statement: statement,
+          onAdjust: () =>
+              Navigator.of(sheetContext).pop(_CreditCardStatementAction.adjust),
+          onRepay: () =>
+              Navigator.of(sheetContext).pop(_CreditCardStatementAction.repay),
+        ),
       ),
     );
     if (!context.mounted || action == null) {
@@ -1818,28 +1842,38 @@ MoneyPaymentMethod _paymentMethodForCreditAccount(MoneyAccountEntity account) {
   };
 }
 
-/// 账户卡内容：主行（图标 + 名称 + ⋯）/ 余额行 / 额度条（仅信用）。
+/// 账户卡内容：四槽位骨架。
 ///
-/// 原来是 8 层信息堆叠（名称、类型、账单日、3 个徽章、说明、本月对比长句、
-/// 余额、额度明细），账户一多一屏只能看 2 张。这里压到 3 行，并把
-/// 「本月收支」交给详情页，卡片只回答「这个账户现在有多少钱」。
+/// 槽位固定、内容按语义组替换：
+/// ① 图标 + 名称 + 状态徽章 + ⋯ ｜ ② 主值（标签 + 金额）
+/// ｜ ③ 右侧 1～2 个辅助值 ｜ ④ 进度条 + 底部动作行。
+///
+/// 为什么不给 16 种类型各写一套：账户一多一屏只放得下两三张，骨架一致
+/// 才能靠「位置」扫视；组间差异全部落在文案与那一行进度上。原来那版把
+/// 贷款账户当成资产渲染（显示「当前余额 −¥486,200 / 初始 −¥600,000」），
+/// 就是因为只有一条 `if (isCreditLike)` 分支。
 class _AccountTileContent extends StatelessWidget {
   const _AccountTileContent({
     required this.account,
     required this.creditStatement,
+    required this.monthlySummary,
     required this.isAmountHidden,
     required this.actionsMenu,
     required this.onViewStatement,
+    required this.onViewFlows,
   });
 
   final MoneyAccountEntity account;
   final MoneyCreditCardStatement? creditStatement;
+  final MoneyAccountMonthlySummary? monthlySummary;
   final bool isAmountHidden;
   final Widget actionsMenu;
   final VoidCallback? onViewStatement;
+  final VoidCallback onViewFlows;
 
   @override
   Widget build(BuildContext context) {
+    final semantic = accountCardSemanticOf(account);
     // 背景容器按账户设置渲染 默认 / 纯色 / 图片 三种外观；默认外观与
     // 原 AppListItemPanel 逐像素一致（内边距 12 也搬进了容器）。
     return AccountCardBackground(
@@ -1856,57 +1890,541 @@ class _AccountTileContent extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          _AccountBalance(
+          _AccountPrimaryRow(
             account: account,
+            semantic: semantic,
             creditStatement: creditStatement,
+            monthlySummary: monthlySummary,
             isAmountHidden: isAmountHidden,
-            onViewStatement: onViewStatement,
           ),
-          if (account.type.isCreditLike) ...[
+          if (semantic.hasProgressBar) ...[
             const SizedBox(height: 10),
-            _CreditLimitBar(account: account, isAmountHidden: isAmountHidden),
+            _AccountProgressSection(
+              account: account,
+              semantic: semantic,
+              isAmountHidden: isAmountHidden,
+            ),
           ],
-          if (_dueHint(context, creditStatement) case final hint?) ...[
-            const SizedBox(height: 9),
-            hint,
-          ],
+          const SizedBox(height: 6),
+          _AccountFooterRow(
+            ghost: _ghost,
+            onGhostTap: onViewStatement,
+            onViewFlows: onViewFlows,
+          ),
         ],
       ),
     );
   }
 
-  Widget? _dueHint(BuildContext context, MoneyCreditCardStatement? statement) {
-    if (statement == null) {
-      return null;
+  /// 底部动作行左侧那一小段文字。
+  ///
+  /// 左边是**对象级入口**（现在只有信用卡有「账单详情」，其余组留空，
+  /// 宁可空着也不塞别的信息占位），右边是「查看流水」按钮。
+  ({String text, bool tappable})? get _ghost {
+    final semantic = accountCardSemanticOf(account);
+    switch (semantic) {
+      case AccountCardSemantic.credit:
+        if (onViewStatement == null) {
+          return null;
+        }
+        return (text: '账单详情 ›', tappable: true);
+      case AccountCardSemantic.spendable:
+      case AccountCardSemantic.holding:
+        final summary = monthlySummary;
+        if (summary == null || !summary.hasCurrentActivity) {
+          return null;
+        }
+        final income = _money(summary.currentIncomeMinor);
+        final expense = _money(summary.currentExpenseMinor);
+        return (text: '本月 收 $income · 支 $expense', tappable: false);
+      case AccountCardSemantic.debt:
+        final progress = accountDebtProgressOf(account);
+        if (!progress.hasProgress) {
+          return null;
+        }
+        // 项目里没有「贷款总额」字段，本金是建账时录入的初始值，
+        // 文案必须标明来源，否则对不上真实合同时会被当成 bug。
+        return (
+          text: '本金 ${_money(progress.principalMinor)}（建账时录入）',
+          tappable: false,
+        );
+      case AccountCardSemantic.prepaid:
+        return null;
     }
-    final isOverdue = statement.state == MoneyCreditCardStatementState.overdue;
-    final isDueSoon = statement.state == MoneyCreditCardStatementState.dueSoon;
-    if (!isOverdue && !isDueSoon) {
-      return null;
+  }
+
+  String _money(int minor) {
+    if (isAmountHidden) {
+      return '••••';
     }
+    return formatMoneyMinor(minor, account.currencyCode);
+  }
+}
+
+/// 主值行：左侧「标签 + 金额」，右侧 1～2 个辅助值。
+class _AccountPrimaryRow extends StatelessWidget {
+  const _AccountPrimaryRow({
+    required this.account,
+    required this.semantic,
+    required this.creditStatement,
+    required this.monthlySummary,
+    required this.isAmountHidden,
+  });
+
+  final MoneyAccountEntity account;
+  final AccountCardSemantic semantic;
+  final MoneyCreditCardStatement? creditStatement;
+  final MoneyAccountMonthlySummary? monthlySummary;
+  final bool isAmountHidden;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = isOverdue
-        ? theme.colorScheme.error
-        : theme.moneyColors.warning;
-    return Text(
-      isOverdue
-          ? '已逾期 · ${statement.repaymentDate.month}月${statement.repaymentDate.day}日应还'
-          : '${statement.repaymentDate.month}月${statement.repaymentDate.day}日还款 · 还剩 ${_daysUntil(statement.repaymentDate)} 天',
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: theme.textTheme.labelSmall?.copyWith(
-        color: color,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 0,
-      ),
+    final colorScheme = theme.colorScheme;
+    final isInactive = !account.isActive;
+    final primaryAmount = accountCardPrimaryAmountMinor(account);
+    // 自定义背景上金额与标签走卡片前景色（credit 语气色可能与背景冲突）。
+    final onSurface = AccountCardScope.textColorOf(
+      context,
+      fallback: colorScheme.onSurface,
+    );
+    final onVariant = AccountCardScope.textColorOf(
+      context,
+      fallback: colorScheme.onSurfaceVariant,
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                semantic.primaryLabel,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: onVariant.withValues(
+                    alpha: AccountCardScope.secondaryOpacity,
+                  ),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
+              const SizedBox(height: 2),
+              MoneyAmountText(
+                amountMinor: primaryAmount,
+                currencyCode: account.currencyCode,
+                hidden: isAmountHidden,
+                tone: _tone(primaryAmount),
+                color: isInactive
+                    ? onVariant
+                    : AccountCardScope.maybeOf(context) == null
+                    ? null
+                    : onSurface,
+                textStyle: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        _side(context),
+      ],
     );
   }
 
-  int _daysUntil(DateTime date) {
+  MoneyAmountTone _tone(int primaryAmount) {
+    if (semantic == AccountCardSemantic.credit) {
+      return MoneyAmountTone.credit;
+    }
+    // 资产类账户余额为负（透支 / 记账错向）时不该还是中性色。
+    if (semantic != AccountCardSemantic.debt && primaryAmount < 0) {
+      return MoneyAmountTone.expense;
+    }
+    return MoneyAmountTone.neutral;
+  }
+
+  Widget _side(BuildContext context) {
+    final theme = Theme.of(context);
+    final onVariant = AccountCardScope.textColorOf(
+      context,
+      fallback: theme.colorScheme.onSurfaceVariant,
+    );
+    final labelStyle = theme.textTheme.labelSmall?.copyWith(
+      color: onVariant.withValues(alpha: AccountCardScope.secondaryOpacity),
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0,
+    );
+
+    switch (semantic) {
+      case AccountCardSemantic.credit:
+        final statement = creditStatement;
+        final due =
+            statement?.amountDueMinor ?? account.effectivePostedDebtMinor;
+        final color = _statementColor(context, statement);
+        return _SideColumn(
+          label: '本期应还',
+          labelStyle: labelStyle,
+          value: MoneyAmountText(
+            amountMinor: due,
+            currencyCode: account.currencyCode,
+            hidden: isAmountHidden,
+            color: color,
+            textStyle: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+          hint: _statementHint(statement),
+          hintColor: color,
+        );
+      case AccountCardSemantic.debt:
+        final progress = accountDebtProgressOf(account);
+        return _SideColumn(
+          label: '已还进度',
+          labelStyle: labelStyle,
+          value: Text(
+            '${(progress.ratio * 100).round()}%',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: isAmountHidden ? onVariant : theme.moneyColors.expense,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+        );
+      case AccountCardSemantic.prepaid:
+        return _SideColumn(
+          label: '本月支出',
+          labelStyle: labelStyle,
+          value: MoneyAmountText(
+            amountMinor: monthlySummary?.currentExpenseMinor ?? 0,
+            currencyCode: account.currencyCode,
+            hidden: isAmountHidden,
+            tone: MoneyAmountTone.expense,
+            textStyle: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+        );
+      case AccountCardSemantic.spendable:
+      case AccountCardSemantic.holding:
+        final summary = monthlySummary;
+        // 本月没有收支就不占右侧：一个恒为 0 的数字只会和余额抢注意力。
+        if (summary == null || !summary.hasCurrentActivity) {
+          return const SizedBox.shrink();
+        }
+        final net = summary.currentNetMinor;
+        return _SideColumn(
+          label: '本月净',
+          labelStyle: labelStyle,
+          value: MoneyAmountText(
+            amountMinor: net,
+            currencyCode: account.currencyCode,
+            hidden: isAmountHidden,
+            tone: net > 0
+                ? MoneyAmountTone.income
+                : (net < 0 ? MoneyAmountTone.expense : MoneyAmountTone.neutral),
+            showSign: true,
+            textStyle: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+        );
+    }
+  }
+
+  Color _statementColor(
+    BuildContext context,
+    MoneyCreditCardStatement? statement,
+  ) {
+    final theme = Theme.of(context);
+    return switch (statement?.state) {
+      MoneyCreditCardStatementState.overdue => theme.colorScheme.error,
+      MoneyCreditCardStatementState.dueSoon => theme.moneyColors.warning,
+      _ => AccountCardScope.textColorOf(
+        context,
+        fallback: theme.colorScheme.onSurface,
+      ),
+    };
+  }
+
+  String? _statementHint(MoneyCreditCardStatement? statement) {
+    if (statement == null) {
+      return null;
+    }
+    final date = statement.repaymentDate;
+    final dateText = '${date.month}月${date.day}日';
+    if (statement.state == MoneyCreditCardStatementState.overdue) {
+      return '已逾期 · $dateText应还';
+    }
+    if (statement.state == MoneyCreditCardStatementState.settled) {
+      return '本期已还清';
+    }
+    final days = DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).difference(_today()).inDays;
+    if (days < 0) {
+      return '$dateText还款';
+    }
+    if (days == 0) {
+      return '今天还款';
+    }
+    return '$dateText还款 · 还剩 $days 天';
+  }
+
+  DateTime _today() {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(date.year, date.month, date.day);
-    return target.difference(today).inDays;
+    return DateTime(now.year, now.month, now.day);
+  }
+}
+
+/// 右侧「标签 + 值 + 可选提示」。
+class _SideColumn extends StatelessWidget {
+  const _SideColumn({
+    required this.label,
+    required this.labelStyle,
+    required this.value,
+    this.hint,
+    this.hintColor,
+  });
+
+  final String label;
+  final TextStyle? labelStyle;
+  final Widget value;
+  final String? hint;
+  final Color? hintColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: labelStyle),
+        const SizedBox(height: 2),
+        value,
+        if (hint != null) ...[
+          const SizedBox(height: 1),
+          Text(
+            hint!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: hintColor ?? theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// 状态行：授信看额度使用率，负债看已还比例。
+class _AccountProgressSection extends StatelessWidget {
+  const _AccountProgressSection({
+    required this.account,
+    required this.semantic,
+    required this.isAmountHidden,
+  });
+
+  final MoneyAccountEntity account;
+  final AccountCardSemantic semantic;
+  final bool isAmountHidden;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final inScope = AccountCardScope.maybeOf(context) != null;
+    final textColor = AccountCardScope.textColorOf(
+      context,
+      fallback: theme.colorScheme.onSurfaceVariant,
+    );
+    final isCredit = semantic == AccountCardSemantic.credit;
+    final usage = accountCreditUsageOf(account);
+    final debt = accountDebtProgressOf(account);
+
+    final color = isCredit
+        ? switch (usage.level) {
+            AccountCreditUsageLevel.critical => theme.colorScheme.error,
+            AccountCreditUsageLevel.warning => theme.moneyColors.warning,
+            AccountCreditUsageLevel.normal => AccountCardScope.textColorOf(
+              context,
+              fallback: theme.moneyColors.credit,
+            ),
+          }
+        : theme.moneyColors.expense;
+
+    final caption = isAmountHidden
+        ? (isCredit ? '已用 *** / 额度 ***' : '已还 *** / 本金 ***')
+        : isCredit
+        ? '已用 ${formatMoneyMinor(usage.usedMinor, account.currencyCode)}'
+              ' / 额度 ${formatMoneyMinor(usage.limitMinor, account.currencyCode)}'
+        : '已还 ${formatMoneyMinor(debt.repaidMinor, account.currencyCode)}'
+              ' / 本金 ${formatMoneyMinor(debt.principalMinor, account.currencyCode)}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AccountProgressBar(
+          value: isCredit ? usage.ratio : debt.ratio,
+          color: color,
+          // 自定义背景上轨道用前景色淡染（原语义色淡底可能与背景打架）。
+          trackColor: inScope
+              ? textColor.withValues(alpha: 0.18)
+              : color.withValues(alpha: 0.14),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          caption,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: textColor.withValues(
+              alpha: AccountCardScope.secondaryOpacity,
+            ),
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 底部动作行：左侧对象级入口（可缺省），右侧「查看流水」。
+class _AccountFooterRow extends StatelessWidget {
+  const _AccountFooterRow({
+    required this.ghost,
+    required this.onGhostTap,
+    required this.onViewFlows,
+  });
+
+  final ({String text, bool tappable})? ghost;
+  final VoidCallback? onGhostTap;
+  final VoidCallback onViewFlows;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final inScope = AccountCardScope.maybeOf(context) != null;
+    final ghost = this.ghost;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Divider(
+          height: 1,
+          thickness: 1,
+          color: inScope
+              ? AccountCardScope.textColorOf(
+                  context,
+                  fallback: colorScheme.onSurface,
+                ).withValues(alpha: 0.22)
+              : colorScheme.outlineVariant.withValues(alpha: 0.34),
+        ),
+        const SizedBox(height: 5),
+        Row(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ghost == null
+                    ? const SizedBox.shrink()
+                    : InkWell(
+                        onTap: ghost.tappable ? onGhostTap : null,
+                        borderRadius: BorderRadius.circular(
+                          theme.radiusTokens.sm,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Text(
+                            ghost.text,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: ghost.tappable
+                                  ? AccountCardScope.textColorOf(
+                                      context,
+                                      fallback: colorScheme.primary,
+                                    )
+                                  : AccountCardScope.textColorOf(
+                                      context,
+                                      fallback: colorScheme.onSurfaceVariant,
+                                    ).withValues(
+                                      alpha: AccountCardScope.secondaryOpacity,
+                                    ),
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _FlowActionButton(onPressed: onViewFlows),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// 「查看流水」按钮。
+///
+/// 与点卡片打开同一个弹窗 —— 它是那条路径的显式入口，不是第二条路；
+/// 所以点按钮和点卡片看到的数据必须完全一致（包括遮罩状态）。
+///
+/// 只留图标：卡底已经有「账单详情 ›」一行文字，再并一个「查看流水」文字
+/// 按钮会把动作行挤满，账户名一长就要省略号。图标靠 tooltip 与语义标签
+/// 说明用途，读屏仍能念出「查看流水」。
+class _FlowActionButton extends StatelessWidget {
+  const _FlowActionButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final scope = AccountCardScope.maybeOf(context);
+    final foreground = scope == null ? colorScheme.primary : scope.onColor;
+    final background = scope == null
+        ? colorScheme.primary.withValues(alpha: 0.10)
+        : scope.onColor.withValues(alpha: 0.16);
+
+    return Tooltip(
+      message: '查看流水',
+      child: Material(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const StadiumBorder(),
+          child: SizedBox(
+            width: 28,
+            height: 24,
+            child: Icon(
+              Icons.receipt_long_rounded,
+              size: 15,
+              color: foreground,
+              semanticLabel: '查看流水',
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1947,9 +2465,9 @@ class _AccountIdentity extends StatelessWidget {
                 ),
               ),
             ),
-            if (isInactive) ...[
+            for (final chip in _chips) ...[
               const SizedBox(width: 6),
-              _StatusChip(label: '已停用'),
+              _StatusChip(label: chip),
             ],
           ],
         ),
@@ -1971,6 +2489,21 @@ class _AccountIdentity extends StatelessWidget {
     );
   }
 
+  /// 名称后的徽章只放「会变的状态」。
+  ///
+  /// 类型标签已经在第二行 `银行账户 · CNY` 里了，不该在名字后面再重复一遍；
+  /// 用户自定义的说明（如「工资卡」）和停用 / 共享 / 虚拟这些状态才是
+  /// 扫视时真正需要的区分信息。最多两枚，多了一行挤不下。
+  List<String> get _chips {
+    final description = account.description?.trim();
+    return <String>[
+      if (description != null && description.isNotEmpty) description,
+      if (!account.isActive) '已停用',
+      if (account.isShared) '共享',
+      if (account.isVirtual) '虚拟',
+    ].take(2).toList(growable: false);
+  }
+
   String _metaText() {
     final parts = <String>[account.type.label, account.currencyCode];
     if (account.type.isCreditLike && account.hasBillingCycle) {
@@ -1980,272 +2513,18 @@ class _AccountIdentity extends StatelessWidget {
   }
 }
 
-/// 余额行：左侧主金额，右侧补充信息（初始余额 / 本期应还）。
-class _AccountBalance extends StatelessWidget {
-  const _AccountBalance({
-    required this.account,
-    required this.creditStatement,
-    required this.isAmountHidden,
-    required this.onViewStatement,
-  });
-
-  final MoneyAccountEntity account;
-  final MoneyCreditCardStatement? creditStatement;
-  final bool isAmountHidden;
-  final VoidCallback? onViewStatement;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isInactive = !account.isActive;
-    final isCredit = account.type.isCreditLike;
-    final primaryAmount = isCredit
-        ? account.availableCreditMinor
-        : account.balanceMinor;
-    // 自定义背景上金额与标签走卡片前景色（credit 语气色可能与背景冲突）。
-    final onSurface = AccountCardScope.textColorOf(
-      context,
-      fallback: colorScheme.onSurface,
-    );
-    final onVariant = AccountCardScope.textColorOf(
-      context,
-      fallback: colorScheme.onSurfaceVariant,
-    );
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                isCredit ? '可用额度' : '当前余额',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: onVariant.withValues(
-                    alpha: AccountCardScope.secondaryOpacity,
-                  ),
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
-                ),
-              ),
-              const SizedBox(height: 2),
-              MoneyAmountText(
-                amountMinor: primaryAmount,
-                currencyCode: account.currencyCode,
-                hidden: isAmountHidden,
-                tone: isCredit
-                    ? MoneyAmountTone.credit
-                    : MoneyAmountTone.neutral,
-                color: isInactive
-                    ? onVariant
-                    : AccountCardScope.maybeOf(context) == null
-                    ? null
-                    : onSurface,
-                textStyle: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (isCredit) _statementSide(context) else _initialSide(context),
-      ],
-    );
-  }
-
-  Widget _initialSide(BuildContext context) {
-    final theme = Theme.of(context);
-    return Text(
-      isAmountHidden
-          ? '初始 ***'
-          : '初始 ${formatMoneyMinor(account.initialBalanceMinor, account.currencyCode)}',
-      style: theme.textTheme.labelSmall?.copyWith(
-        color: AccountCardScope.textColorOf(
-          context,
-          fallback: theme.colorScheme.onSurfaceVariant,
-        ).withValues(alpha: AccountCardScope.secondaryOpacity),
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0,
-      ),
-    );
-  }
-
-  Widget _statementSide(BuildContext context) {
-    final theme = Theme.of(context);
-    final statement = creditStatement;
-    if (statement == null) {
-      return Text(
-        isAmountHidden
-            ? '已用 ***'
-            : '已用 ${formatMoneyMinor(account.effectivePostedDebtMinor, account.currencyCode)}',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: AccountCardScope.textColorOf(
-            context,
-            fallback: theme.colorScheme.onSurfaceVariant,
-          ).withValues(alpha: AccountCardScope.secondaryOpacity),
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0,
-        ),
-      );
-    }
-
-    final color = switch (statement.state) {
-      MoneyCreditCardStatementState.overdue => theme.colorScheme.error,
-      MoneyCreditCardStatementState.dueSoon => theme.moneyColors.warning,
-      _ => AccountCardScope.textColorOf(
-        context,
-        fallback: theme.colorScheme.onSurface,
-      ),
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '本期应还',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: AccountCardScope.textColorOf(
-              context,
-              fallback: theme.colorScheme.onSurfaceVariant,
-            ).withValues(alpha: AccountCardScope.secondaryOpacity),
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0,
-          ),
-        ),
-        const SizedBox(height: 2),
-        MoneyAmountText(
-          amountMinor: statement.amountDueMinor,
-          currencyCode: statement.currencyCode,
-          hidden: isAmountHidden,
-          color: color,
-          textStyle: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0,
-          ),
-        ),
-        if (onViewStatement != null)
-          GestureDetector(
-            onTap: onViewStatement,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                '账单 ›',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: AccountCardScope.textColorOf(
-                    context,
-                    fallback: theme.colorScheme.primary,
-                  ),
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// 信用额度使用进度条。原来「额度 / 已入账 / 冻结」挤在一行 11px 小字里，
-/// 用户算不出用了多少。
-class _CreditLimitBar extends StatelessWidget {
-  const _CreditLimitBar({required this.account, required this.isAmountHidden});
-
-  final MoneyAccountEntity account;
-  final bool isAmountHidden;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final limit = account.effectiveCreditLimitMinor;
-    final used = account.usedCreditMinor;
-    final ratio = limit <= 0 ? 0.0 : (used / limit).clamp(0.0, 1.0);
-
-    final inScope = AccountCardScope.maybeOf(context) != null;
-    final textColor = AccountCardScope.textColorOf(
-      context,
-      fallback: theme.colorScheme.onSurfaceVariant,
-    );
-
-    final color = ratio >= 0.9
-        ? theme.colorScheme.error
-        : ratio >= 0.8
-        ? theme.moneyColors.warning
-        : AccountCardScope.textColorOf(
-            context,
-            fallback: theme.moneyColors.credit,
-          );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(
-            value: ratio,
-            minHeight: 8,
-            color: color,
-            // 自定义背景上轨道用前景色淡染（原语义色淡底可能与背景打架）。
-            backgroundColor: inScope
-                ? textColor.withValues(alpha: 0.18)
-                : color.withValues(alpha: 0.14),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                isAmountHidden
-                    ? '已用 *** / 额度 ***'
-                    : '已用 ${formatMoneyMinor(used, account.currencyCode)}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: textColor.withValues(
-                    alpha: AccountCardScope.secondaryOpacity,
-                  ),
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
-                ),
-              ),
-            ),
-            Text(
-              isAmountHidden
-                  ? '***'
-                  : '额度 ${formatMoneyMinor(limit, account.currencyCode)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: textColor.withValues(
-                  alpha: AccountCardScope.secondaryOpacity,
-                ),
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 /// 账户操作菜单。
 ///
-/// 左滑手势保留为快捷方式，但点整行是「看流水」，如果编辑只藏在左滑里，
-/// 第一次用的人根本找不到。
+/// 左滑手势保留为快捷方式，但点整行会打开账户弹窗 —— 如果编辑只藏在
+/// 左滑里，第一次用的人根本找不到。
+///
+/// 「查看流水」从菜单里删掉了：它现在是卡底动作行的可见按钮，
+/// 同一个动作放两处只会让人猜这两处是不是不一样。
 class _AccountActionsMenu extends StatelessWidget {
   const _AccountActionsMenu({
     required this.account,
     required this.isAmountHidden,
     required this.onToggleAmountHidden,
-    required this.onViewTransactions,
     required this.onEdit,
     required this.onToggleActive,
     required this.onDelete,
@@ -2255,7 +2534,6 @@ class _AccountActionsMenu extends StatelessWidget {
   final MoneyAccountEntity account;
   final bool isAmountHidden;
   final VoidCallback onToggleAmountHidden;
-  final VoidCallback? onViewTransactions;
   final VoidCallback onEdit;
   final VoidCallback onToggleActive;
   final VoidCallback onDelete;
@@ -2277,8 +2555,6 @@ class _AccountActionsMenu extends StatelessWidget {
         switch (action) {
           case _AccountMenuAction.toggleAmount:
             onToggleAmountHidden();
-          case _AccountMenuAction.viewTransactions:
-            onViewTransactions?.call();
           case _AccountMenuAction.edit:
             onEdit();
           case _AccountMenuAction.adjustBalance:
@@ -2298,13 +2574,6 @@ class _AccountActionsMenu extends StatelessWidget {
               : Icons.visibility_off_rounded,
           label: isAmountHidden ? '显示金额' : '隐藏金额',
         ),
-        if (onViewTransactions != null)
-          _menuItem(
-            context,
-            value: _AccountMenuAction.viewTransactions,
-            icon: Icons.receipt_long_rounded,
-            label: '查看流水',
-          ),
         _menuItem(
           context,
           value: _AccountMenuAction.edit,
@@ -2393,7 +2662,6 @@ class _AccountActionsMenu extends StatelessWidget {
 
 enum _AccountMenuAction {
   toggleAmount,
-  viewTransactions,
   edit,
   adjustBalance,
   toggleActive,

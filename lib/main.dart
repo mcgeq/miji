@@ -46,10 +46,11 @@ void main() async {
   SemanticsBinding.instance.ensureSemantics();
   runApp(
     const ProviderScope(
-      // 收入遮罩挂在 ProviderScope 正下方，而不是 Shell 里：
-      // 记账表单 / 预算分配等对话框挂在根导航器上，拿不到 Shell 内的作用域，
-      // 而收入金额要在这些对话框里也能读、也能点。
-      child: IncomePrivacyScope(child: MijiApp()),
+      // 两套遮罩都挂在 ProviderScope 正下方，而不是 Shell 里：
+      // 记账表单 / 预算分配 / 流水详情等对话框挂在根导航器上，拿不到 Shell
+      // 内的作用域，读不到就会退回「不遮」的兜底值 —— 表现为卡面是 ••••，
+      // 点开任何一层弹窗金额全露。
+      child: IncomePrivacyScope(child: MoneyPrivacyScope(child: MijiApp())),
     ),
   );
 }

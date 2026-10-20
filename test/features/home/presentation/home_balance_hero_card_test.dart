@@ -353,10 +353,7 @@ void main() {
     // 环画满 100%，中心如实读出 100%（不是超支，也不 clamp 成一个假数字）。
     expect(find.text('100%'), findsOneWidget);
     // 主值与「日均可花」各一处 ¥0.00。
-    expect(
-      find.textContaining('¥0.00', findRichText: true),
-      findsNWidgets(2),
-    );
+    expect(find.textContaining('¥0.00', findRichText: true), findsNWidgets(2));
   });
 
   testWidgets('已预留吃穿额度：也算超支，明细标明「含预留」', (tester) async {

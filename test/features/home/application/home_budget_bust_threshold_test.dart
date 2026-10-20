@@ -87,10 +87,7 @@ void main() {
     test('isBusted 与「还可花 < 0」等价（Hero 与记账卡共用结论）', () {
       for (final used in [0, 400000, 800000, 800001, 900000]) {
         for (final committed in [0, 300000, 800000, 900000]) {
-          final summary = _summary(
-            usedMinor: used,
-            committedMinor: committed,
-          );
+          final summary = _summary(usedMinor: used, committedMinor: committed);
           expect(
             summary.isBusted,
             summary.availableMinor < 0,
