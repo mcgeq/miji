@@ -56,6 +56,8 @@ A transaction also has a status: **completed**, **pending** (recorded but not ye
 
 Two levels: a top-level category and sub-categories. Each has a name, colour and icon. There are built-in seed categories, plus user-defined ones. Categories can be deactivated instead of deleted.
 
+The **categories panel** (under "More") is a full-screen category list with a docked entry bar; its header holds only the expense/income segmented control, search and category management — no title and no back button. It is a panel within the module: the panel name is already shown by the toolbar chip on wide screens and the two-state picker in the bottom bar on narrow ones, and switching panels happens there too, so duplicating them here only costs a line of vertical space (the old "Categories" + back header did exactly that). Expanding search reuses the empty middle slot rather than adding a row.
+
 ### Tags
 
 Transactions can carry tags. **Expense transactions are single-tag** (one tag string), which keeps tag-based budgets unambiguous. Tag candidates come from past transactions and existing budget tags, so you can pick instead of typing.
@@ -78,6 +80,12 @@ A plan freezes a principal on a credit account and generates one expense per per
 ### Auto-posting template (`MoneyAutoPostingTemplate`)
 
 A template generates a transaction on a schedule (e.g. rent on the 1st). If a plan ends up double-recording the same repayment, the template can be **taken over** by the installment (deactivated), and Miji flags the conflict.
+
+**The instalment and auto-posting panels keep nothing pinned at the top.** That row used to hold just a search and a create button, centred and floating at the top — a 62px empty band pushing an already short list further down. Both actions now live in a **draggable floating bar** (`BookkeepingFloatingActions`) that is **collapsed against the edge by default**:
+
+- **Collapsed**: only a 22×40 handle flush with the screen edge. Tap it to pull the bar out, tap again to push it back; the chevron points where the bar will go. These lists are usually a few rows long, so a permanently visible 100-plus-px bar covers content, not whitespace.
+- **Dragging**: hold anywhere (including the handle) to move it; release and it snaps to the nearest left/right edge (vertical position is left alone — that is the user's choice). Kept in memory only, never persisted: it is a "where do I want it right now" preference. The default spot is bottom-right, deliberately clear of the global quick-add FAB (docked centre on narrow screens, bottom-right on wide ones, where the bar sits higher).
+- **Search is a toggle**: tapping the magnifier reveals the search field at the top of the page, tapping it again collapses it **and clears the keyword** — a filter that keeps filtering after the field is gone is the hardest kind of "why is my list short" to diagnose. The magnifier inside the field does the same thing; the two tooltips differ by one word ("Collapse search bar" / "Collapse search") on purpose, because identical tooltips turn "either one works" into an ambiguous tap target.
 
 ### Bill reminder (`MoneyBillReminder`)
 

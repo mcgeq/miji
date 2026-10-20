@@ -104,7 +104,7 @@ void main() {
     expect(router.state.uri.queryParameters['section'], 'transactions');
   });
 
-  testWidgets('分类页仍是整屏，返回回到进来时的那个面板', (tester) async {
+  testWidgets('分类页不再自带标题与返回，切面板走工具行 chip', (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
@@ -125,14 +125,14 @@ void main() {
     await pick('budgets');
     await pick('categories');
 
-    // 分类页自带顶栏（返回 + 标题 + 分类管理），整屏留给列表与吸底记账条。
-    expect(find.text('分类记账'), findsOneWidget);
+    // 分类页是模块内的一个面板：整屏留给列表与吸底记账条，顶栏不再重复
+    // 「分类记账」标题，也不再造一个返回 —— 出口是工具行那个 chip。
+    expect(find.text('分类记账'), findsNothing);
+    expect(find.byTooltip('返回'), findsNothing);
     expect(find.byTooltip('分类管理'), findsOneWidget);
-    expect(find.byTooltip('返回'), findsOneWidget);
     expect(router.state.uri.queryParameters['section'], 'categories');
 
-    await tester.tap(find.byTooltip('返回'));
-    await tester.pumpAndSettle();
+    await pick('budgets');
     expect(router.state.uri.queryParameters['section'], 'budgets');
   });
 

@@ -11,6 +11,7 @@ import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:miji/features/bookkeeping/presentation/auto_posting/money_auto_postings_section.dart';
+import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_floating_actions.dart';
 
 void main() {
   testWidgets('merges the reminder banners into one collapsed row', (
@@ -65,7 +66,7 @@ void main() {
     expect(find.textContaining('个分期计划到期自动入账'), findsNothing);
   });
 
-  testWidgets('搜索默认折叠成图标，与新增同排居中，点开才展开', (tester) async {
+  testWidgets('悬浮条默认靠边收起：展开后点搜索，再点一次收起', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -76,33 +77,42 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 默认只有一枚搜索图标：输入框不再独占一行。
+    // 顶部不再常驻操作行：搜索框默认根本不在树上；悬浮条也默认收成贴边的手柄。
     expect(find.byType(TextField), findsNothing);
-    final searchButton = find.byTooltip('搜索自动记账');
-    expect(searchButton, findsOneWidget);
+    expect(find.byTooltip('展开操作条'), findsOneWidget);
+    expect(find.byTooltip('搜索自动记账'), findsNothing);
+    expect(find.byTooltip('新增自动记账'), findsNothing);
 
-    // 两枚按钮同排（同一水平中轴），顺序是 搜索 / 新增。
-    final searchRect = tester.getRect(searchButton);
-    final addRect = tester.getRect(find.byTooltip('新增自动记账'));
-    expect(searchRect.center.dy, closeTo(addRect.center.dy, 0.5));
-    expect(searchRect.right, lessThan(addRect.left));
+    final collapsed = tester.getRect(
+      find.byKey(BookkeepingFloatingActions.pillKey),
+    );
+    expect(collapsed.right, closeTo(390, 1));
+    expect(collapsed.width, lessThan(28));
 
-    await tester.tap(searchButton);
+    await tester.tap(find.byTooltip('展开操作条'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('搜索自动记账'), findsOneWidget);
+    expect(find.byTooltip('新增自动记账'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('搜索自动记账'));
     await tester.pumpAndSettle();
 
+    // 点开：输入框出现在页面顶部，而不是悬浮条那一行里。
     expect(find.byType(TextField), findsOneWidget);
-    expect(
-      tester.getRect(find.byTooltip('新增自动记账')).left,
-      greaterThan(addRect.left),
-      reason: '展开后新增按钮要让位到右边',
-    );
+    expect(tester.getRect(find.byType(TextField)).top, lessThan(60));
 
-    // 展开的输入框仍然是模板过滤器。
+    // 输入框仍然是模板过滤器。
     await tester.enterText(find.byType(TextField), '车贷');
     await tester.pumpAndSettle();
     expect(find.text('没有匹配的模板'), findsOneWidget);
-    // 搜空了也要留着搜索行，否则连搜索词都清不掉。
+    // 搜空了也要留着搜索框，否则连搜索词都清不掉。
     expect(find.byType(TextField), findsOneWidget);
+
+    // 再点一次收起，并把关键词一起清掉：否则列表少了几条却没有任何提示。
+    await tester.tap(find.byTooltip('收起搜索框'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('房租'), findsOneWidget);
   });
 
   testWidgets('sinks the installment preview into a one-line related link', (

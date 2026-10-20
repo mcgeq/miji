@@ -30,6 +30,7 @@ import 'package:miji/features/bookkeeping/presentation/accounts/account_form_dia
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
 import 'package:miji/features/bookkeeping/presentation/auto_posting/auto_posting_conflict_sheet.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_floating_actions.dart';
 import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_panel_header.dart';
 import 'package:miji/features/bookkeeping/presentation/transactions/transaction_detail_dialog.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
@@ -279,10 +280,27 @@ class _MoneyInstallmentsContentState extends State<_MoneyInstallmentsContent> {
   final _searchController = TextEditingController();
   String _keyword = '';
 
+  /// 顶部搜索框只在点了悬浮条上的放大镜之后才出现，默认不占位置。
+  bool _searchVisible = false;
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// 顶部搜索框的开关：再点一次收起，顺手清空关键词。
+  ///
+  /// 不清空就会留下一个看不见的过滤条件：输入框没了、列表却少了几条，
+  /// 用户只会以为数据丢了。
+  void _toggleSearch() {
+    setState(() {
+      _searchVisible = !_searchVisible;
+      if (!_searchVisible) {
+        _searchController.clear();
+        _keyword = '';
+      }
+    });
   }
 
   @override
@@ -297,103 +315,90 @@ class _MoneyInstallmentsContentState extends State<_MoneyInstallmentsContent> {
     // 判定用的是**未过滤**的计划（下面 `_keyword` 只会过滤列表内容）：
     // 搜出「没有匹配」时搜索行必须还在，否则连搜索词都清不掉。
     final showList = canCreate && widget.plans.isNotEmpty;
-    final createButton = AppIconActionButton(
-      tooltip: canCreate ? '新增分期' : '需要先有信用账户和支出分类',
-      onPressed: canCreate
+
+    // 顶部不再常驻操作行：那一行只挂「搜索 + 新增」两枚按钮，居中悬在顶端，
+    // 62px 的空白带把列表又往下顶了一截。操作收进可拖动的悬浮条（见
+    // BookkeepingFloatingActions），搜索只在点了放大镜之后才在顶部出现。
+    return BookkeepingFloatingActions(
+      onCreate: canCreate
           ? () => widget.onCreate(widget.accounts, widget.categoryCatalog)
           : null,
-      icon: Icons.add_rounded,
-      variant: AppIconActionVariant.filled,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 6),
-        // 常驻新增入口。
-        //
-        // 原来 _MoneyInstallmentsContent 声明了 required onCreate，
-        // 但 build 里从未引用，页面实际没有任何新增入口。
-        //
-        // 搜索框从列表内部上提到页头：分期原来是唯一把搜索放在面板**内容**
-        // 里的面板，与流水 / 预算 / 分类 / 自动记账不一致（见
-        // BookkeepingPanelHeader 的注释：搜索在最上、工具行其次）。
-        //
-        // 有列表时搜索与新增合成**一行**：搜索默认折叠成一枚图标，两枚按钮
-        // 水平居中；点搜索图标在**本行内**原地展开、新增被推到最右
-        // （与预算同款，见 BookkeepingPanelExpandableSearchRow）。
-        // 没有列表时不挂搜索图标 —— 空态自身就有主行动按钮，搜索空列表没有
-        // 意义；此时新增按钮单独靠右，与改造前一致。
-        BookkeepingPanelHeader(
-          searchRow: showList
-              ? BookkeepingPanelExpandableSearchRow(
-                  controller: _searchController,
-                  hintText: '搜索分期名称 / 分类 / 账户',
-                  searchTooltip: '搜索分期',
-                  onChanged: (value) =>
-                      setState(() => _keyword = value.trim().toLowerCase()),
-                  actions: [createButton],
-                )
-              : null,
-          actions: showList ? const <Widget>[] : [createButton],
-        ),
-        const SizedBox(height: 10),
-        // 分期自己会到期自动入账；用户若又为同一笔还款建了自动记账模板，
-        // 到期当天会记两遍账。两个页面都放提示，从哪边进来都能看到。
-        _InstallmentConflictBanner(),
-        if (creditAccounts.isEmpty)
-          Expanded(
-            child: AppEmptyState(
-              title: '还没有可用信用账户',
-              message: '分期只能挂在信用卡、花呗、白条等信用账户上',
-              icon: Icons.credit_card_rounded,
-              action: FilledButton.icon(
-                onPressed: widget.onCreateAccount,
-                icon: const Icon(Icons.add_card_rounded, size: 18),
-                label: const Text('新建信用账户'),
+      // 禁用时把原因写进 tooltip：点了没反应又不说为什么，比没有按钮更糟。
+      createTooltip: canCreate ? '新增分期' : '需要先有信用账户和支出分类',
+      onSearch: showList ? _toggleSearch : null,
+      searchTooltip: '搜索分期',
+      searchExpanded: _searchVisible,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 6),
+          // 点了悬浮条上的放大镜才出现，再点一次（或点输入框左端的放大镜）收起。
+          if (_searchVisible && showList)
+            BookkeepingPanelSearchField(
+              controller: _searchController,
+              hintText: '搜索分期名称 / 分类 / 账户',
+              onChanged: (value) =>
+                  setState(() => _keyword = value.trim().toLowerCase()),
+              onCollapse: _toggleSearch,
+            ),
+          const SizedBox(height: 10),
+          // 分期自己会到期自动入账；用户若又为同一笔还款建了自动记账模板，
+          // 到期当天会记两遍账。两个页面都放提示，从哪边进来都能看到。
+          _InstallmentConflictBanner(),
+          if (creditAccounts.isEmpty)
+            Expanded(
+              child: AppEmptyState(
+                title: '还没有可用信用账户',
+                message: '分期只能挂在信用卡、花呗、白条等信用账户上',
+                icon: Icons.credit_card_rounded,
+                action: FilledButton.icon(
+                  onPressed: widget.onCreateAccount,
+                  icon: const Icon(Icons.add_card_rounded, size: 18),
+                  label: const Text('新建信用账户'),
+                ),
+              ),
+            )
+          else if (widget.categoryCatalog.categories.isEmpty)
+            Expanded(
+              child: AppEmptyState(
+                title: '还没有支出分类',
+                message: '先创建支出分类，再回来设置分期',
+                icon: Icons.category_rounded,
+                action: OutlinedButton.icon(
+                  onPressed: widget.onManageCategories,
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: const Text('去管理分类'),
+                ),
+              ),
+            )
+          else if (widget.plans.isEmpty)
+            Expanded(
+              child: AppEmptyState(
+                title: '还没有分期计划',
+                message: '新增分期后会冻结信用账户本金，并按期生成支出',
+                icon: Icons.calendar_month_rounded,
+                action: FilledButton.icon(
+                  onPressed: () =>
+                      widget.onCreate(widget.accounts, widget.categoryCatalog),
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('新增分期'),
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: _InstallmentPlanList(
+                plans: widget.plans,
+                keyword: _keyword,
+                accountForPlan: _accountForPlan,
+                categoryText: _categoryText,
+                onPostDetail: widget.onPostDetail,
+                onCancel: widget.onCancel,
+                onRefresh: widget.onRefresh,
               ),
             ),
-          )
-        else if (widget.categoryCatalog.categories.isEmpty)
-          Expanded(
-            child: AppEmptyState(
-              title: '还没有支出分类',
-              message: '先创建支出分类，再回来设置分期',
-              icon: Icons.category_rounded,
-              action: OutlinedButton.icon(
-                onPressed: widget.onManageCategories,
-                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: const Text('去管理分类'),
-              ),
-            ),
-          )
-        else if (widget.plans.isEmpty)
-          Expanded(
-            child: AppEmptyState(
-              title: '还没有分期计划',
-              message: '新增分期后会冻结信用账户本金，并按期生成支出',
-              icon: Icons.calendar_month_rounded,
-              action: FilledButton.icon(
-                onPressed: () =>
-                    widget.onCreate(widget.accounts, widget.categoryCatalog),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('新增分期'),
-              ),
-            ),
-          )
-        else
-          Expanded(
-            child: _InstallmentPlanList(
-              plans: widget.plans,
-              keyword: _keyword,
-              accountForPlan: _accountForPlan,
-              categoryText: _categoryText,
-              onPostDetail: widget.onPostDetail,
-              onCancel: widget.onCancel,
-              onRefresh: widget.onRefresh,
-            ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -549,7 +554,8 @@ class _InstallmentPlanListState extends ConsumerState<_InstallmentPlanList> {
       onRefresh: widget.onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 12),
+        // 底部留出悬浮操作条的地盘：否则滚到底时最后一张卡永远压在它下面。
+        padding: const EdgeInsets.only(bottom: 72),
         children: [
           // 逾期优先：不用逐个卡片翻，顶部直接给结论。
           if (overdue.detailCount > 0) ...[

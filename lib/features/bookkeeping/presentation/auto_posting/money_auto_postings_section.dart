@@ -22,6 +22,7 @@ import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_repository.dart';
 import 'package:miji/features/bookkeeping/domain/money_transaction_entity.dart';
 import 'package:miji/features/bookkeeping/presentation/accounts/components/account_selector.dart';
+import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_floating_actions.dart';
 import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_panel_header.dart';
 import 'package:miji/features/bookkeeping/presentation/categories/components/category_selector.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
@@ -51,10 +52,27 @@ class _MoneyAutoPostingsSectionState
   final _searchController = TextEditingController();
   String _keyword = '';
 
+  /// 顶部搜索框只在点了悬浮条上的放大镜之后才出现，默认不占位置。
+  bool _searchVisible = false;
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// 顶部搜索框的开关：再点一次收起，顺手清空关键词（与分期同口径）。
+  ///
+  /// 不清空就会留下一个看不见的过滤条件：输入框没了、列表却少了几条，
+  /// 用户只会以为模板丢了。
+  void _toggleSearch() {
+    setState(() {
+      _searchVisible = !_searchVisible;
+      if (!_searchVisible) {
+        _searchController.clear();
+        _keyword = '';
+      }
+    });
   }
 
   @override
@@ -89,123 +107,117 @@ class _MoneyAutoPostingsSectionState
     // 否则连搜索词都清不掉。
     final showList =
         currentLedger != null && (templates.asData?.value.isNotEmpty ?? false);
-    final createButton = AppIconActionButton(
-      tooltip: '新增自动记账',
-      onPressed: currentLedger == null ? null : () => _openTemplateDialog(),
-      icon: Icons.add_rounded,
-      variant: AppIconActionVariant.filled,
-    );
+    // 顶部不再常驻操作行（与分期同款，见 BookkeepingFloatingActions）：
+    // 搜索与新增收进可拖动的悬浮条，搜索框只在这之后才在顶部出现。
+    return BookkeepingFloatingActions(
+      onCreate: currentLedger == null ? null : () => _openTemplateDialog(),
+      createTooltip: '新增自动记账',
+      onSearch: showList ? _toggleSearch : null,
+      searchTooltip: '搜索自动记账',
+      searchExpanded: _searchVisible,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 6),
+          if (_searchVisible && showList)
+            BookkeepingPanelSearchField(
+              controller: _searchController,
+              hintText: '搜索模板名称 / 描述',
+              onChanged: (value) =>
+                  setState(() => _keyword = value.trim().toLowerCase()),
+              onCollapse: _toggleSearch,
+            ),
+          const SizedBox(height: 10),
+          // 冲突与接管失效合并成一行，默认折叠。两者都是「提醒」，不是页面主体；
+          // 分开铺开时任意两层同时出现就能把模板列表顶出首屏。
+          _AutoPostingAttentionPanel(
+            onOpenConflicts: () => showAutoPostingConflictSheet(context),
+            onReleaseStale: (items) => _confirmReleaseStaleTakeOver(items),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: templates.when(
+              data: (items) {
+                if (currentLedger == null) {
+                  return const AppEmptyState(
+                    title: '请先选择账本',
+                    message: '自动记账模板会保存到当前账本。',
+                    icon: Icons.menu_book_rounded,
+                  );
+                }
+                if (items.isEmpty) {
+                  return AppEmptyState(
+                    title: '暂无自动记账模板',
+                    message: '可以添加房贷、车贷、会员订阅等固定流水。',
+                    icon: Icons.event_repeat_rounded,
+                    action: FilledButton.icon(
+                      onPressed: () => _openTemplateDialog(),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('新增自动记账'),
+                    ),
+                  );
+                }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 6),
-        // 有列表时搜索与新增合成**一行**：搜索默认折叠成一枚图标，两枚按钮
-        // 水平居中；点搜索图标在**本行内**原地展开、新增被推到最右
-        // （与预算 / 分期同款，见 BookkeepingPanelExpandableSearchRow）。
-        BookkeepingPanelHeader(
-          searchRow: showList
-              ? BookkeepingPanelExpandableSearchRow(
-                  controller: _searchController,
-                  hintText: '搜索模板名称 / 描述',
-                  searchTooltip: '搜索自动记账',
-                  onChanged: (value) =>
-                      setState(() => _keyword = value.trim().toLowerCase()),
-                  actions: [createButton],
-                )
-              : null,
-          // 没有列表（未选账本 / 暂无模板）时新增按钮单独靠右，与改造前一致。
-          actions: showList ? const <Widget>[] : [createButton],
-        ),
-        const SizedBox(height: 10),
-        // 冲突与接管失效合并成一行，默认折叠。两者都是「提醒」，不是页面主体；
-        // 分开铺开时任意两层同时出现就能把模板列表顶出首屏。
-        _AutoPostingAttentionPanel(
-          onOpenConflicts: () => showAutoPostingConflictSheet(context),
-          onReleaseStale: (items) => _confirmReleaseStaleTakeOver(items),
-        ),
-        const SizedBox(height: 10),
-        Expanded(
-          child: templates.when(
-            data: (items) {
-              if (currentLedger == null) {
-                return const AppEmptyState(
-                  title: '请先选择账本',
-                  message: '自动记账模板会保存到当前账本。',
-                  icon: Icons.menu_book_rounded,
-                );
-              }
-              if (items.isEmpty) {
-                return AppEmptyState(
-                  title: '暂无自动记账模板',
-                  message: '可以添加房贷、车贷、会员订阅等固定流水。',
-                  icon: Icons.event_repeat_rounded,
-                  action: FilledButton.icon(
-                    onPressed: () => _openTemplateDialog(),
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('新增自动记账'),
+                final visibleItems = _keyword.isEmpty
+                    ? items
+                    : items.where((item) {
+                        final haystack = [
+                          item.name,
+                          item.description,
+                          item.merchant,
+                          item.notes,
+                        ].join(' ').toLowerCase();
+                        return haystack.contains(_keyword);
+                      }).toList();
+                if (visibleItems.isEmpty) {
+                  return const AppEmptyState(title: '没有匹配的模板');
+                }
+                return RefreshIndicator(
+                  onRefresh: () => refreshMoneyData(ref),
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    // 底部留出悬浮操作条的地盘：否则滚到底时最后一张卡永远压在它下面。
+                    padding: const EdgeInsets.only(bottom: 72),
+                    itemCount:
+                        visibleItems.length + (activePlanCount > 0 ? 1 : 0),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      if (index == visibleItems.length) {
+                        return _RelatedInstallmentsLink(
+                          count: activePlanCount,
+                          onTap: widget.onOpenInstallments,
+                        );
+                      }
+                      final template = visibleItems[index];
+                      return _AutoPostingTemplateCard(
+                        template: template,
+                        account: _accountById(accountRows, template.accountId),
+                        categoryText: _categoryText(
+                          template,
+                          expenseCategories,
+                          incomeCategories,
+                        ),
+                        onEdit: () => _openTemplateDialog(template),
+                        onDelete: () => _confirmDelete(template),
+                        onRunNow: () => _runTemplateNow(template),
+                        onReleaseTakeOver: () =>
+                            _confirmReleaseTakeOver(template),
+                      );
+                    },
                   ),
                 );
-              }
-
-              final visibleItems = _keyword.isEmpty
-                  ? items
-                  : items.where((item) {
-                      final haystack = [
-                        item.name,
-                        item.description,
-                        item.merchant,
-                        item.notes,
-                      ].join(' ').toLowerCase();
-                      return haystack.contains(_keyword);
-                    }).toList();
-              if (visibleItems.isEmpty) {
-                return const AppEmptyState(title: '没有匹配的模板');
-              }
-              return RefreshIndicator(
-                onRefresh: () => refreshMoneyData(ref),
-                child: ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 12),
-                  itemCount:
-                      visibleItems.length + (activePlanCount > 0 ? 1 : 0),
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    if (index == visibleItems.length) {
-                      return _RelatedInstallmentsLink(
-                        count: activePlanCount,
-                        onTap: widget.onOpenInstallments,
-                      );
-                    }
-                    final template = visibleItems[index];
-                    return _AutoPostingTemplateCard(
-                      template: template,
-                      account: _accountById(accountRows, template.accountId),
-                      categoryText: _categoryText(
-                        template,
-                        expenseCategories,
-                        incomeCategories,
-                      ),
-                      onEdit: () => _openTemplateDialog(template),
-                      onDelete: () => _confirmDelete(template),
-                      onRunNow: () => _runTemplateNow(template),
-                      onReleaseTakeOver: () =>
-                          _confirmReleaseTakeOver(template),
-                    );
-                  },
-                ),
-              );
-            },
-            loading: () => const AppSkeletonList(),
-            error: (error, stackTrace) => AppErrorState(
-              title: '读取自动记账失败',
-              onRetry: () =>
-                  ref.invalidate(currentUserAutoPostingTemplatesProvider),
+              },
+              loading: () => const AppSkeletonList(),
+              error: (error, stackTrace) => AppErrorState(
+                title: '读取自动记账失败',
+                onRetry: () =>
+                    ref.invalidate(currentUserAutoPostingTemplatesProvider),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

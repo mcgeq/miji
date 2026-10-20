@@ -7,7 +7,14 @@ import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_installment_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_split_entity.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
+import 'package:miji/features/bookkeeping/presentation/components/bookkeeping_floating_actions.dart';
 import 'package:miji/features/bookkeeping/presentation/installments/money_installments_section.dart';
+
+/// 悬浮条默认收成贴边的一枚手柄，先点手柄才能点到里面的按钮。
+Future<void> _expandActions(WidgetTester tester) async {
+  await tester.tap(find.byTooltip('展开操作条'));
+  await tester.pumpAndSettle();
+}
 
 void main() {
   testWidgets('offers to create a credit account when none exists', (
@@ -23,7 +30,8 @@ void main() {
     // 空态 CTA 在批次三换成了带文字的 FilledButton，所以断文字而不是 tooltip。
     expect(find.text('还没有可用信用账户'), findsOneWidget);
     expect(find.text('新建信用账户'), findsOneWidget);
-    // 前置条件不满足时，头部的新增入口禁用并说明原因。
+    // 前置条件不满足时，悬浮条里的新增入口禁用并说明原因。
+    await _expandActions(tester);
     expect(find.byTooltip('需要先有信用账户和支出分类'), findsOneWidget);
   });
 
@@ -39,6 +47,7 @@ void main() {
     expect(find.text('还没有分期计划'), findsOneWidget);
     // 回归：_MoneyInstallmentsContent 声明了 onCreate 却从未使用，
     // 页面实际上没有任何新增入口。
+    await _expandActions(tester);
     expect(find.byTooltip('新增分期'), findsWidgets);
   });
 
@@ -195,7 +204,7 @@ void main() {
     expect(find.text('已完成的分期'), findsOneWidget);
   });
 
-  testWidgets('搜索默认折叠成图标，与新增同排居中，点开才展开', (tester) async {
+  testWidgets('悬浮条默认靠边收起：只有一枚贴边的手柄，按钮不在树上', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -207,27 +216,114 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 默认只有一枚搜索图标：输入框不再独占一行。
+    // 顶部不再常驻操作行，搜索框默认根本不在树上。
     expect(find.byType(TextField), findsNothing);
-    final searchButton = find.byTooltip('搜索分期');
-    expect(searchButton, findsOneWidget);
+    // 收起态只剩手柄：两枚按钮都在里面，没展开就点不到。
+    expect(find.byTooltip('展开操作条'), findsOneWidget);
+    expect(find.byTooltip('搜索分期'), findsNothing);
+    expect(find.byTooltip('新增分期'), findsNothing);
 
-    // 两枚按钮同排（同一水平中轴），顺序是 搜索 / 新增。
-    final searchRect = tester.getRect(searchButton);
-    final addRect = tester.getRect(find.byTooltip('新增分期'));
-    expect(searchRect.center.dy, closeTo(addRect.center.dy, 0.5));
-    expect(searchRect.right, lessThan(addRect.left));
+    final collapsed = tester.getRect(
+      find.byKey(BookkeepingFloatingActions.pillKey),
+    );
+    // 「靠边收起来」：贴着右边缘、不留缝，宽度只够放一枚手柄。
+    expect(collapsed.right, closeTo(390, 1));
+    expect(collapsed.width, lessThan(28));
+    expect(collapsed.center.dy, greaterThan(900 / 2));
 
-    await tester.tap(searchButton);
+    await _expandActions(tester);
+
+    final expanded = tester.getRect(
+      find.byKey(BookkeepingFloatingActions.pillKey),
+    );
+    expect(find.byTooltip('搜索分期'), findsOneWidget);
+    expect(find.byTooltip('新增分期'), findsOneWidget);
+    // 展开后变宽，并退到 12 的边距里。
+    expect(expanded.width, greaterThan(collapsed.width));
+    expect(expanded.right, closeTo(390 - 12, 1));
+
+    // 再点手柄推回边缘。
+    await tester.tap(find.byTooltip('收起操作条'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byKey(BookkeepingFloatingActions.pillKey)).right,
+      closeTo(390, 1),
+    );
+    expect(find.byTooltip('新增分期'), findsNothing);
+  });
+
+  testWidgets('再点一次搜索图标：收起顶部搜索框并清空关键词', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _wrap(
+        accounts: [_creditAccount],
+        plans: [
+          _plan(name: 'iPhone 15 Pro'),
+          _plan(name: 'MacBook Air'),
+        ],
+      ),
+    );
     await tester.pumpAndSettle();
 
-    // 点开：输入框在同一行展开，新增被推到右侧。
+    await _expandActions(tester);
+    await tester.tap(find.byTooltip('搜索分期'));
+    await tester.pumpAndSettle();
+
+    // 点开：输入框出现在页面顶部，而不是悬浮条那一行里。
     expect(find.byType(TextField), findsOneWidget);
-    expect(
-      tester.getRect(find.byTooltip('新增分期')).left,
-      greaterThan(addRect.left),
-      reason: '展开后新增按钮要让位到右边',
+    expect(tester.getRect(find.byType(TextField)).top, lessThan(60));
+
+    await tester.enterText(find.byType(TextField), 'macbook');
+    await tester.pumpAndSettle();
+    expect(find.text('MacBook Air'), findsOneWidget);
+    expect(find.text('iPhone 15 Pro'), findsNothing);
+
+    // 展开状态下这枚图标的说明变成「收起搜索框」——再点一次就收回去。
+    await tester.tap(find.byTooltip('收起搜索框'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextField), findsNothing);
+    // 收起即清空：输入框没了却还过滤着列表，等于凭空少了几条。
+    expect(find.text('iPhone 15 Pro'), findsOneWidget);
+    expect(find.text('MacBook Air'), findsOneWidget);
+    expect(find.byTooltip('搜索分期'), findsOneWidget);
+  });
+
+  testWidgets('悬浮操作条可拖动，松手吸附到最近的边缘', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _wrap(
+        accounts: [_creditAccount],
+        plans: [_plan(name: 'iPhone 15 Pro')],
+      ),
     );
+    await tester.pumpAndSettle();
+
+    final pill = find.byKey(BookkeepingFloatingActions.pillKey);
+    final before = tester.getRect(pill);
+
+    // 从手柄上起手拖：收起态也能拖，悬浮条整体跟着走，不是只有按钮动。
+    await tester.drag(find.byTooltip('展开操作条'), const Offset(-220, -320));
+    await tester.pumpAndSettle();
+
+    final after = tester.getRect(pill);
+    // 跟手：拖到哪就在哪（左上方向）。
+    expect(after.center.dx, lessThan(before.center.dx));
+    expect(after.center.dy, lessThan(before.center.dy));
+    // 收起态吸附时贴到边缘，不留边距；纵向保持用户拖到的高度。
+    expect(after.left, closeTo(0, 1));
+    expect(after.center.dy, isNot(closeTo(before.center.dy, 1)));
+
+    // 展开态同样吸附，但留出 12 的边距。
+    await tester.tap(find.byTooltip('展开操作条'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byTooltip('新增分期'), const Offset(-300, 0));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(pill).left, closeTo(12, 1));
   });
 
   testWidgets('filters plans by keyword', (tester) async {
@@ -245,7 +341,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 搜索默认是折叠的图标，得先点开才有输入框。
+    // 悬浮条默认收起，先拉出来，再点搜索才有输入框。
+    await _expandActions(tester);
     await tester.tap(find.byTooltip('搜索分期'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'macbook');

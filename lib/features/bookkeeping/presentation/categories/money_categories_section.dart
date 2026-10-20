@@ -42,13 +42,7 @@ import 'package:flutter/services.dart';
 /// 分类的**整理**（新增 / 编辑 / 拖拽子分类 / 停用 / 标签）不是高频动作，
 /// 收进右上角「分类管理」弹窗，全部状态与交互留在 [CategoryManagerPanel] 里。
 class MoneyCategoriesSection extends ConsumerStatefulWidget {
-  const MoneyCategoriesSection({super.key, this.onExit});
-
-  /// 退出分类页、回到进来的那个面板。
-  ///
-  /// 这一页会把记账模块的一级导航（流水 / 账户 / 预算 / 统计）整排收起来，
-  /// 换出分类列表与键盘的空间；收了就得给一条回去的路，否则用户被困在这一页。
-  final VoidCallback? onExit;
+  const MoneyCategoriesSection({super.key});
 
   @override
   ConsumerState<MoneyCategoriesSection> createState() =>
@@ -93,7 +87,6 @@ class _MoneyCategoriesSectionState
           kind: _kind,
           onKindChanged: _switchKind,
           onManage: () => _openManager(context),
-          onExit: widget.onExit,
           searchExpanded: _searchExpanded,
           searchController: _searchController,
           onSearchChanged: (value) =>
@@ -182,12 +175,15 @@ class _MoneyCategoriesSectionState
   }
 }
 
-/// 分类页顶栏：返回 + 标题（或搜索框）+ 收支分段 + 搜索 + 分类管理。
+/// 分类页顶栏：收支分段 + 搜索（展开时占中间）+ 分类管理。
 ///
-/// 它顶替了被收起的一级导航，所以**必须有返回**——否则这一页没有出口。
+/// 这一栏**没有标题也没有返回**：它是记账模块里的一个面板，不是独立的一屏 ——
+/// 面板名由宽屏工具行的 chip、窄屏底栏的两态选择器各自显示着，再写一遍
+/// 「分类记账」只是重复；出口同理，切换面板从来都走那两处，不需要这一页
+/// 自己再造一个返回（以前造过，代价是纵向多一行、且和底栏的返回语义打架）。
 ///
-/// 搜索收起时显示标题，展开时标题的位置换成输入框：**展开不额外占一行**，
-/// 因为这一页的纵向预算被分类列表与吸底键盘两头夹着，多一行就少一张分类卡。
+/// 搜索展开时输入框占的是中间那块空位：**展开不额外占一行**，因为这一页的
+/// 纵向预算被分类列表与吸底键盘两头夹着，多一行就少一张分类卡。
 class _EntryHeader extends StatelessWidget {
   const _EntryHeader({
     required this.kind,
@@ -197,7 +193,6 @@ class _EntryHeader extends StatelessWidget {
     required this.searchController,
     required this.onSearchChanged,
     required this.onToggleSearch,
-    this.onExit,
   });
 
   final MoneyCategoryKind kind;
@@ -207,43 +202,15 @@ class _EntryHeader extends StatelessWidget {
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onToggleSearch;
-  final VoidCallback? onExit;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Container(
-      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: Row(
         children: [
-          IconButton(
-            tooltip: '返回',
-            onPressed: onExit,
-            icon: const Icon(Icons.arrow_back_rounded, size: 22),
-          ),
-          const SizedBox(width: 2),
-          if (searchExpanded)
-            Expanded(
-              child: _SearchField(
-                controller: searchController,
-                autofocus: true,
-                onChanged: onSearchChanged,
-              ),
-            )
-          else ...[
-            Text(
-              '分类记账',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0,
-              ),
-            ),
-            const Spacer(),
-          ],
-          const SizedBox(width: 8),
+          // 分段控件固定在左端：收支切换在这一页是「换一整套分类」，位置不能
+          // 随搜索展开而移动。
           SizedBox(
             width: 140,
             child: AppSlidingSegmentedControl<MoneyCategoryKind>(
@@ -259,6 +226,18 @@ class _EntryHeader extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          // 展开时输入框吃掉的正是收起时的空位，两个状态共用同一块横向预算。
+          if (searchExpanded)
+            Expanded(
+              child: _SearchField(
+                controller: searchController,
+                autofocus: true,
+                onChanged: onSearchChanged,
+              ),
+            )
+          else
+            const Spacer(),
           AppIconActionButton(
             tooltip: searchExpanded ? '关闭搜索' : '搜索分类',
             onPressed: onToggleSearch,

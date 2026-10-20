@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/auth/domain/auth_session.dart';
 import 'package:miji/core/theme/app_theme.dart';
+import 'package:miji/core/presentation/components/app_sliding_segmented_control.dart';
 import 'package:miji/features/bookkeeping/application/transaction_entry_defaults_store.dart';
 import 'package:miji/features/bookkeeping/domain/money_account_entity.dart';
 import 'package:miji/features/bookkeeping/domain/money_category_entity.dart';
@@ -255,9 +256,12 @@ void main() {
     // 记账条吸底，键盘常驻、右下是保存。
     expect(find.byKey(const ValueKey('quick-entry-dock')), findsOneWidget);
     expect(find.text('保存'), findsOneWidget);
-    // 顶栏自带返回、标题与分类管理——一级导航被收起后它是唯一出口。
-    expect(find.text('分类记账'), findsOneWidget);
-    expect(find.byTooltip('返回'), findsOneWidget);
+    // 顶栏只剩收支分段 + 搜索 + 分类管理：它是模块内的一个面板，标题与返回
+    // 由工具行 chip / 底栏选择器承担，不在这里重复一遍。
+    expect(find.text('分类记账'), findsNothing);
+    expect(find.byTooltip('返回'), findsNothing);
+    expect(find.text('支出'), findsWidgets);
+    expect(find.byTooltip('搜索分类'), findsOneWidget);
     expect(find.byTooltip('分类管理'), findsOneWidget);
   });
 
@@ -277,18 +281,7 @@ void main() {
     );
   });
 
-  testWidgets('顶栏「返回」把退出交给外层', (tester) async {
-    var exited = 0;
-    await tester.pumpWidget(_wrapSection(onExit: () => exited++));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip('返回'));
-    await tester.pumpAndSettle();
-
-    expect(exited, 1);
-  });
-
-  testWidgets('搜索默认收起，展开后顶替标题而不多占一行', (tester) async {
+  testWidgets('搜索默认收起，展开后占中间空位而不多占一行', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);
     addTearDown(tester.view.reset);
@@ -298,14 +291,25 @@ void main() {
 
     // 默认没有输入框：这一页的纵向预算被分类列表与吸底键盘两头夹着。
     expect(find.byType(TextField), findsNothing);
-    expect(find.text('分类记账'), findsOneWidget);
+
+    final segmentFinder = find.byType(
+      AppSlidingSegmentedControl<MoneyCategoryKind>,
+    );
+    final segmentCenterBefore = tester.getCenter(segmentFinder);
 
     await tester.tap(find.byTooltip('搜索分类'));
     await tester.pumpAndSettle();
 
-    // 展开时输入框占的是标题的位置，不是新的一行。
+    // 展开占的是原来空着的那块横向位置：输入框与收支分段仍在同一行，
+    // 行高不变（这一页多一行就少一张分类卡）。
     expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('分类记账'), findsNothing);
+    final segmentCenterAfter = tester.getCenter(segmentFinder);
+    expect((segmentCenterAfter.dy - segmentCenterBefore.dy).abs(), lessThan(8));
+    expect(
+      (tester.getCenter(find.byType(TextField)).dy - segmentCenterAfter.dy)
+          .abs(),
+      lessThan(8),
+    );
 
     await tester.enterText(find.byType(TextField), '早餐');
     await tester.pumpAndSettle();
@@ -316,7 +320,6 @@ void main() {
     await tester.tap(find.byTooltip('关闭搜索'));
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNothing);
-    expect(find.text('分类记账'), findsOneWidget);
     expect(find.text('交通'), findsOneWidget);
   });
 
@@ -357,7 +360,7 @@ void main() {
 }
 
 /// 整个分类 tab（分类列表 + 吸底记账条 + 管理入口）的脚手架。
-Widget _wrapSection({VoidCallback? onExit}) {
+Widget _wrapSection() {
   return ProviderScope(
     overrides: [
       currentUserCategoryManagementCatalogProvider.overrideWith(
@@ -389,7 +392,7 @@ Widget _wrapSection({VoidCallback? onExit}) {
     ],
     child: MaterialApp(
       theme: AppTheme.light(),
-      home: Scaffold(body: MoneyCategoriesSection(onExit: onExit)),
+      home: const Scaffold(body: MoneyCategoriesSection()),
     ),
   );
 }

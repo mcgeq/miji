@@ -57,13 +57,6 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
   MoneyTransactionFilterContext? _transactionFilterContext;
   bool _initialActionConsumed = false;
 
-  /// 进分类页之前的那个面板。
-  ///
-  /// 分类页是整屏的分类列表 + 吸底记账条，自带返回顶栏；退出来要回到用户
-  /// 进来时看的那个面板（直接带 `?section=categories` 进来时没有「上一个」，
-  /// 退回流水）。
-  _BookkeepingPanel? _panelBeforeCategories;
-
   @override
   void initState() {
     super.initState();
@@ -202,9 +195,9 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
       _BookkeepingPanel.statistics => MoneyStatisticsSection(
         onOpenTransactions: _showTransactionsFromStatistics,
       ),
-      _BookkeepingPanel.categories => MoneyCategoriesSection(
-        onExit: _exitCategories,
-      ),
+      // 分类页没有自己的返回：切面板一律走宽屏工具行的 chip 或窄屏底栏的
+      // 两态选择器，那一处已经写着当前面板名、也能换到任意面板。
+      _BookkeepingPanel.categories => const MoneyCategoriesSection(),
       _BookkeepingPanel.budgets => MoneyBudgetsSection(
         onViewTransactions: _showBudgetTransactions,
       ),
@@ -226,18 +219,10 @@ class _BookkeepingPageState extends ConsumerState<BookkeepingPage> {
     // 切换一级面板给一次轻微触感，移动端「操作被接住」的感觉主要来自这里。
     unawaited(HapticFeedback.selectionClick());
     setState(() {
-      if (panel == _BookkeepingPanel.categories) {
-        _panelBeforeCategories = _selectedPanel;
-      }
       _selectedPanel = panel;
       _loadedPanels.add(panel);
     });
     _syncPanelToUrl(panel);
-  }
-
-  /// 分类页顶栏的「返回」：回到进来时的那个面板。
-  void _exitCategories() {
-    _selectPanel(_panelBeforeCategories ?? _BookkeepingPanel.transactions);
   }
 
   /// 把当前面板写回 URL。
