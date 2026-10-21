@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  满宽「今日支出」小组件：**横贯一整行**，高 2 格。
+
+  尺寸口径 —— Android 的换算公式是 70 × 格数 − 30：
+  - 高 2 格 = 110dp；
+  - 宽 **5 格 = 320dp**。
+
+  为什么宽度按 5 格算而不是 4 格：**MIUI / ColorOS 这类 Android 11 及以下的启动器
+  不认 targetCellWidth**（那是 API 31 才有的属性），只拿 minWidth 套公式
+  `格数 = ⌈(minWidth + 30) / 70⌉`。写 250dp 就是 4 格 —— 在 5 列桌面上只占 4/5，
+  右边固定空一条（小米 9 SE 就是这样）。
+
+  写 320dp 则两头都对：
+  - 5 列桌面（1080/440dpi ≈ 393dp 宽）→ 5 格，正好满宽；
+  - 4 列桌面 → 公式算出 5 格 > 4 列，启动器**夹回 4 格** = 满宽。
+
+  targetCellWidth 仍保留 5，给 Android 12+ 的启动器用（Pixel / 新版 MIUI 会优先读它）。
+
+  minResizeWidth 留在 250dp：默认满宽，但允许用户自己拖窄一点 —— 拖到 250dp 时
+  30sp 的金额仍然放得下。
+
+  updatePeriodMillis = 30 分钟是系统允许的下限，且 doze 下不保证；真正的刷新
+  靠 app 侧 push（见 money_home_widget.dart）。这里留一个周期刷新是为了
+  「跨天」场景 —— provider 会把 `mw_date` 和今天比对，改成「截至 X」。
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/money_widget_description"
+    android:initialLayout="@layout/money_widget"
+    android:minHeight="110dp"
+    android:minResizeHeight="110dp"
+    android:minResizeWidth="250dp"
+    android:minWidth="320dp"
+    android:previewLayout="@layout/money_widget"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="5"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

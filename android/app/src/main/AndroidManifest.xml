@@ -28,6 +28,19 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- 桌面小组件「今日支出」：数据由 Dart 侧投影后写入 SharedPreferences，
+             provider 只负责画和跳转（见 widget/MoneyWidgetProvider.kt）。 -->
+        <receiver
+            android:name=".widget.MoneyWidgetProvider"
+            android:exported="true"
+            android:label="@string/money_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/money_widget_info"/>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

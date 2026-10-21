@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="money_widget_bg">#FF1C1C1E</color>
+    <color name="money_widget_stroke">#26FFFFFF</color>
+    <color name="money_widget_fg">#FFF2F3F4</color>
+    <color name="money_widget_muted">#FFA8ACB0</color>
+    <color name="money_widget_accent">#FF7CC0F0</color>
+    <!-- 深色档的主色是亮蓝，按钮上必须用近黑文字才够对比度。 -->
+    <color name="money_widget_on_accent">#FF10161B</color>
+</resources>

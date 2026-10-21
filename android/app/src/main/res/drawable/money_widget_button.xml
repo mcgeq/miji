@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  「＋ 记一笔」按钮底：实心主色 + 全圆角（高 48dp，圆角 24dp = 胶囊）。
+
+  用 drawable 而不是 MaterialButton：RemoteViews 里 Material 组件的
+  style / 涟漪 / 内边距都不可控，一个纯 shape 反而在各家启动器上表现一致。
+  按下态不做：小组件里跨进程按下反馈基本看不到，加了也只是多一份资源。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/money_widget_accent" />
+    <corners android:radius="24dp" />
+</shape>

@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  满宽「今日支出」小组件（默认 5 格宽 × 2 格高，横贯屏幕）。
+
+  RemoteViews 只允许带 @RemoteView 注解的那几个类（FrameLayout / LinearLayout /
+  RelativeLayout / GridLayout / TextView / ImageView / Button / ProgressBar /
+  ViewFlipper 等）。**列表之外的标签一律 inflate 失败**，启动器上表现为
+  「载入窗口小部件时出现问题」—— 裸 `<View>`、`Space`、`CardView`、
+  `ConstraintLayout` 都不能用，画一条线也要用 ImageView。
+
+  ── 四段结构（横向铺满）────────────────────────────────────────
+    今日支出 ...................................... 6 笔 · 收入 ¥0.00
+    ¥128.50                                    [ ＋ 记一笔 ]  ← 48dp 胶囊
+    ─────────────────────────────────────────────────────────
+    本周               本月               日均
+    ¥2,340.00          ¥8,900.00         ¥45.20
+  ────────────────────────────────────────────────────────────
+
+  为什么全部用 layout_weight 撑高、而不是清一色 wrap_content：
+  2 格高在真实桌面上**不是 110dp**——110dp 只是 Android 用来「算格子」的下限公式，
+  MIUI 5x6、各家 4x6 的格子普遍 100~130dp，两格实际给到 200dp 上下。
+  如果内容全是 wrap_content，多出来的高度会全部堆在底部，就是「卡片很大、底部一片空白」。
+  这里把一个弹性带（金额区）和统计区分别给 weight，多出来的高度被两者均摊到
+  各自内部的居中留白里，上下左右都是对称的呼吸感，而不是底部空一块。
+
+  为什么按钮要单独做：一行蓝色的「记一笔 ›」看着像提示文字，手指按上去只有十几 dp。
+  现在是一个 124×48dp 的实心胶囊；整块卡片可点（打开 app 首页），按钮点开「记一笔」。
+  → 两个不同的 PendingIntent，见 MoneyWidgetProvider.buildViews。
+
+  默认文本（预览与首帧）刻意写成占位而不是 ¥0.00：picker 里的预览没有真实数据，
+  显示 0 会让人以为「今天一分没花」。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/money_widget_background"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="10dp">
+
+    <!-- ① 口径 + 笔数 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="@string/money_widget_label_text"
+            android:textColor="@color/money_widget_muted"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/widget_meta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="@string/money_widget_meta_placeholder"
+            android:textColor="@color/money_widget_muted"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- ② 主数字 + 记一笔按钮（本带吃 weight，多出来的高度变成数字上下的留白） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_amount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="@string/money_widget_amount_placeholder"
+            android:textColor="@color/money_widget_fg"
+            android:textSize="34sp"
+            android:textStyle="bold" />
+
+        <!--
+          按钮本体是 TextView 而不是 Button：Button 自带 minWidth / inset，
+          在 48dp 高里会被撑变形；TextView + shape 背景尺寸完全由我们说了算。
+          点击目标由 provider 里的 setOnClickPendingIntent(widget_action) 绑定，
+          和整块卡片的跳转**不是同一个**（卡片 → 首页，按钮 → 记一笔）。
+        -->
+        <TextView
+            android:id="@+id/widget_action"
+            android:layout_width="124dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/money_widget_button"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="@string/money_widget_action"
+            android:textColor="@color/money_widget_on_accent"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- ③ 分割线：小组件里画线只能用 ImageView（裸 View 没有 @RemoteView 注解） -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@color/money_widget_stroke"
+        android:contentDescription="@null" />
+
+    <!-- ④ 本周 / 本月 / 日均：三等分，标签在上、数值在下 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/money_widget_week_label"
+                android:textColor="@color/money_widget_muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/widget_week"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/money_widget_amount_compact_placeholder"
+                android:textColor="@color/money_widget_fg"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/money_widget_month_label"
+                android:textColor="@color/money_widget_muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/widget_month"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/money_widget_amount_compact_placeholder"
+                android:textColor="@color/money_widget_fg"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/money_widget_daily_label"
+                android:textColor="@color/money_widget_muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/widget_daily"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/money_widget_amount_compact_placeholder"
+                android:textColor="@color/money_widget_fg"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 桌面 widget picker 里显示的卡片标题。 -->
+    <string name="money_widget_name">今日支出</string>
+    <string name="money_widget_description">今天花了多少；点按钮记一笔，点卡片看账本</string>
+    <string name="money_widget_label_text">今日支出</string>
+    <string name="money_widget_action">＋ 记一笔</string>
+    <!-- 右栏两周期的标签：卡片满宽之后，右侧空着不如把「本周 / 本月」摊开。 -->
+    <string name="money_widget_week_label">本周</string>
+    <string name="money_widget_month_label">本月</string>
+    <string name="money_widget_daily_label">日均</string>
+    <!-- 预览态刻意不写 ¥0.00：预览没有真实数据，0 会被当成「今天一分没花」。 -->
+    <string name="money_widget_amount_placeholder">¥ --</string>
+    <string name="money_widget_amount_compact_placeholder">--</string>
+    <string name="money_widget_meta_placeholder">点开记一笔</string>
+    <!-- 跨天：app 没在当天更新过，写清楚这份数字属于哪一天。 -->
+    <string name="money_widget_stale_label">截至 %1$s</string>
+    <string name="money_widget_stale_meta">该更新了 · 点开刷新</string>
+</resources>

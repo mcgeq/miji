@@ -67,6 +67,9 @@ dependencies:
   google_mlkit_text_recognition: ^0.17.1
   timezone: ^0.11.1
   flutter_timezone: ^5.1.0
+  # 桌面小组件：只提供「Dart → 原生」的数据通道与刷新触发，
+  # 小组件本体是原生实现的（见 docs/specs/home-screen-widget.md）。
+  home_widget: ^0.10.0
 
 dev_dependencies:
   flutter_test:

@@ -5,6 +5,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:miji/core/auth/application/auth_session_controller.dart';
 import 'package:miji/core/database/seed/seed_providers.dart';
 import 'package:miji/core/notifications/notification_providers.dart';
@@ -16,6 +17,7 @@ import 'package:miji/core/router/app_routes.dart';
 import 'package:miji/core/sync/webdav/webdav_providers.dart';
 import 'package:miji/core/theme/app_palette_providers.dart';
 import 'package:miji/core/theme/app_theme.dart';
+import 'package:miji/features/bookkeeping/application/money_home_widget.dart';
 import 'package:miji/features/bookkeeping/providers/bookkeeping_providers.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -64,6 +66,13 @@ class MijiApp extends ConsumerStatefulWidget {
 
 class _MijiAppState extends ConsumerState<MijiApp> with WidgetsBindingObserver {
   StreamSubscription<String>? _tapSubscription;
+  StreamSubscription<Uri?>? _homeWidgetTapSubscription;
+
+  /// 小组件点击时应用还锁着，就把目标存下来，等解锁后再跳。
+  ///
+  /// 不存这份「待办跳转」的话：`go()` 会被 router 的 redirect 送去 `/auth`，
+  /// 用户解锁后落回首页 —— 「点小组件直达记一笔」这一步就白点了。
+  String? _pendingHomeWidgetLocation;
 
   @override
   void initState() {
@@ -73,14 +82,74 @@ class _MijiAppState extends ConsumerState<MijiApp> with WidgetsBindingObserver {
         .read(notificationTapBusProvider)
         .taps
         .listen(_handleNotificationPayload);
+    if (MoneyWidgetSnapshot.isSupported) {
+      _homeWidgetTapSubscription = HomeWidget.widgetClicked.listen(
+        _handleHomeWidgetUri,
+      );
+      unawaited(_consumeInitialHomeWidgetLaunch());
+    }
   }
 
   @override
   void dispose() {
     unawaited(_tapSubscription?.cancel());
     _tapSubscription = null;
+    unawaited(_homeWidgetTapSubscription?.cancel());
+    _homeWidgetTapSubscription = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  /// 冷启动：进程是被小组件点起来的，这一下点击不在 stream 里。
+  Future<void> _consumeInitialHomeWidgetLaunch() async {
+    try {
+      _handleHomeWidgetUri(await HomeWidget.initiallyLaunchedFromHomeWidget());
+    } catch (error) {
+      // 没有小组件实例 / 系统没给 intent，都是正常情况。
+      debugPrint('HomeWidget initial launch unavailable: $error');
+    }
+  }
+
+  /// 小组件点击 → 路由。
+  ///
+  /// 小组件那边给的是 `miji:///app/bookkeeping?action=expense`（三斜线，
+  /// 避免 host 吃掉路径的一段）。这里只取 path + query 交给 go_router，
+  /// 不重新拼业务参数：`action=expense` 的语义在 BookkeepingPage 里。
+  void _handleHomeWidgetUri(Uri? uri) {
+    if (uri == null) {
+      return;
+    }
+    final path = uri.host.isEmpty ? uri.path : '/${uri.host}${uri.path}';
+    if (path.isEmpty || path == '/') {
+      return;
+    }
+    final location = uri.hasQuery ? '$path?${uri.query}' : path;
+
+    final session = ref.read(authSessionControllerProvider);
+    if (!session.isUnlocked || session.userId == null) {
+      _pendingHomeWidgetLocation = location;
+      return;
+    }
+    _goDeferred(location);
+  }
+
+  void _goDeferred(String location) {
+    // 冷启动时这一下可能早于 MaterialApp 把 Router 挂上，推到下一帧更稳。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ref.read(appRouterProvider).go(location);
+    });
+  }
+
+  void _flushPendingHomeWidgetLocation() {
+    final location = _pendingHomeWidgetLocation;
+    if (location == null) {
+      return;
+    }
+    _pendingHomeWidgetLocation = null;
+    _goDeferred(location);
   }
 
   /// 通知点击 → 路由。
@@ -118,6 +187,8 @@ class _MijiAppState extends ConsumerState<MijiApp> with WidgetsBindingObserver {
         return;
       }
       ref.read(webDavAutoSyncControllerProvider.notifier).refresh();
+      // 桌面小组件只在 app 活着时才被推送，回到前台是最可靠的一次对齐。
+      unawaited(ref.read(moneyWidgetPusherProvider).push());
       unawaited(
         ref.read(currentUserBudgetAlertNotificationActionsProvider).scanNow(),
       );
@@ -150,10 +221,13 @@ class _MijiAppState extends ConsumerState<MijiApp> with WidgetsBindingObserver {
     // 长期 watch：提醒中心的待处理项 / 提醒设置 / 当天流水任一变化都会
     // 自动重排系统级预约通知，不打开记账模块也能按时收到账单项。
     ref.watch(moneyReminderScheduleSyncProvider);
+    // 记账数据一变就重推小组件（内部 500ms 防抖），见 money_home_widget.dart。
+    ref.watch(moneyWidgetAutoSyncProvider);
 
     ref.listen(authSessionControllerProvider, (_, next) {
       if (next.isUnlocked && next.userId != null) {
         _seedCurrentUserAfterFirstFrame();
+        _flushPendingHomeWidgetLocation();
         unawaited(
           ref.read(currentUserBudgetAlertNotificationActionsProvider).scanNow(),
         );

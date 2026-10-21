@@ -93,6 +93,24 @@ A template generates a transaction on a schedule (e.g. rent on the 1st). If a pl
 
 Recurring reminders for credit-card repayments and other bills. Completing a reminder can post a transaction; the reminder centre aggregates everything due.
 
+### Home screen widget (Android)
+
+A **full-width** card (2 cells tall, spanning the whole row) has four bands: the label with "3 transactions · income ¥20.00" on the right; the amount in large type with a solid **"＋ 记录一笔" pill button (124×48dp)**; a hairline divider; and **this week / this month / daily average** in three equal columns (amounts above 1,000 use the compact `2.3k` form).
+
+Taps go to two different targets: the **button records a transaction** (`/app/bookkeeping?action=expense`, the same route notifications use), while **the rest of the card opens the app home** (`/app/home`). Checking the ledger and recording an entry are different intents.
+
+The bands use `layout_weight` rather than plain `wrap_content`: two grid cells are usually around 200dp tall on real launchers (110dp is only the launcher's cell-sizing floor), and `wrap_content` would dump all that surplus into the bottom of the card.
+
+It reads the **same source as the home dashboard's money cell** (`homeTodaySpendingSummaryProvider` + `formatMoneyMinor`); the widget never computes anything itself. Amount, count, masking and lock state are all resolved in Dart and written as text, so the native side only lays it out — the home screen and the home-tab cell can't drift apart.
+
+Three hard rules:
+
+1. **Masked means `••••` plus "金额已隐藏"** — otherwise it reads as broken. The real number is never written to `SharedPreferences` (plain text).
+2. **A locked app is masked too**, with "点开解锁". Widgets can be visible on the lock screen, and the app itself is locked.
+3. **Crossing midnight always shows the date.** The snapshot carries `mw_date`; the provider compares it with today and, on mismatch, relabels the card "截至 10-20" with "该更新了 · 点开刷新". Yesterday's number never poses as today's.
+
+Refresh only happens from the app: launch, resume, data change (500ms debounce), ledger switch, mask toggle. The system's `updatePeriodMillis` (30 minutes) exists solely to catch the midnight case. See `lib/features/bookkeeping/application/money_home_widget.dart` and the design notes in `docs/specs/home-screen-widget.md`.
+
 ### Split (`MoneySplit`)
 
 For family ledgers, an expense can be split among members with equal / fixed / percentage / weighted / custom rules.

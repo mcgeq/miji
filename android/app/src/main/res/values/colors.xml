@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      小组件用的是原生 RemoteViews，读不到 Flutter 的 ThemeData，
+      所以这套中性色单独维护；深色档在 values-night/colors.xml。
+      文字与主色都过 4.5:1（与 app_theme_contrast_test 同一口径）。
+    -->
+    <color name="money_widget_bg">#FFFFFFFF</color>
+    <color name="money_widget_stroke">#1FD9DDE1</color>
+    <color name="money_widget_fg">#FF15171A</color>
+    <color name="money_widget_muted">#FF585B5E</color>
+    <color name="money_widget_accent">#FF006AB1</color>
+    <!-- 「＋ 记一笔」实心按钮上的文字色：浅色档用白，深色档在 values-night 里翻成近黑。 -->
+    <color name="money_widget_on_accent">#FFFFFFFF</color>
+</resources>
