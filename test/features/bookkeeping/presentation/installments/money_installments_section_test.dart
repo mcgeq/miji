@@ -326,6 +326,80 @@ void main() {
     expect(tester.getRect(pill).left, closeTo(12, 1));
   });
 
+  testWidgets('金额汇总默认收起，点开关才展开（进行中）', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final plan = _plan(name: 'iPhone 15 Pro');
+    await tester.pumpWidget(_wrap(accounts: [_creditAccount], plans: [plan]));
+    await tester.pumpAndSettle();
+
+    // 5 格汇总默认不在卡面上：这些数字建计划那天就定死了，「剩余」又与进度条
+    // 重复；常驻要占窄屏三行格子，一张卡就吃掉一屏。
+    expect(find.text('总应还'), findsNothing);
+    expect(find.text('每期'), findsNothing);
+    expect(find.text('剩余'), findsNothing);
+    expect(find.text('本金'), findsNothing);
+    expect(find.text('利息'), findsNothing);
+
+    // 但「下一期」必须留着：它是这张卡上唯一能动手的地方。
+    expect(find.textContaining('下一期'), findsWidgets);
+    expect(find.text('已入账 0/${plan.totalPeriods} 期'), findsOneWidget);
+
+    // 卡头只留「查看明细」：金额开关搬到进度行上，不再并排两枚图标。
+    expect(find.byTooltip('查看明细'), findsOneWidget);
+    expect(find.byTooltip('展开金额'), findsOneWidget);
+
+    // 点进度行（不是卡头上那枚图标）就展开。
+    await tester.tap(find.text('已入账 0/${plan.totalPeriods} 期'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('总应还'), findsOneWidget);
+    expect(find.text('每期'), findsOneWidget);
+    expect(find.text('剩余'), findsOneWidget);
+    expect(find.text('本金'), findsOneWidget);
+    expect(find.text('利息'), findsOneWidget);
+    // 开关本身还在，而且换成了「收起」。
+    expect(find.byTooltip('收起金额'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('收起金额'));
+    await tester.pumpAndSettle();
+    expect(find.text('总应还'), findsNothing);
+  });
+
+  testWidgets('金额汇总默认收起（已结束）：没有「下一期」，靠开关展开', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _wrap(
+        accounts: [_creditAccount],
+        plans: [
+          _plan(
+            name: 'MacBook Air',
+            status: MoneyInstallmentPlanStatus.completed,
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 已完成的分期折在「已结束」里，先展开这一组。
+    await tester.tap(find.text('已结束 1 个'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('MacBook Air'), findsOneWidget);
+    expect(find.text('总应还'), findsNothing);
+    // 已结束的卡没有「下一期」——它不欠任何东西了。
+    expect(find.textContaining('下一期'), findsNothing);
+
+    await tester.tap(find.byTooltip('展开金额'));
+    await tester.pumpAndSettle();
+    expect(find.text('总应还'), findsOneWidget);
+    expect(find.text('本金'), findsOneWidget);
+    expect(find.text('利息'), findsOneWidget);
+  });
+
   testWidgets('filters plans by keyword', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));

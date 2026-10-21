@@ -794,6 +794,12 @@ class _InstallmentPlanCard extends ConsumerStatefulWidget {
 }
 
 class _InstallmentPlanCardState extends ConsumerState<_InstallmentPlanCard> {
+  /// 金额明细（总应还 / 每期 / 剩余 / 本金 / 利息）**默认收起**。
+  ///
+  /// 这些数字一个都不变：「每期」「总应还」「本金」「利息」在建计划那天就定死了，
+  /// 「剩余」等价于进度条旁边的 `已入账 2/12 期`。常驻要占掉窄屏三行格子（约
+  /// 190dp），把列表压成「一张卡一屏」。真正会变、也真正要动手的「下一期（日期 +
+  /// 本期应还 + 去入账）」留在卡面，所以收起之后卡片仍然回答「现在该干什么」。
   bool _expanded = false;
 
   @override
@@ -831,11 +837,9 @@ class _InstallmentPlanCardState extends ConsumerState<_InstallmentPlanCard> {
             details: rows,
             onOpenDetails: () => _showDetails(context),
             onPostDetail: widget.onPostDetail,
-            showMetrics: !terminal || _expanded,
+            showMetrics: _expanded,
             terminalMode: terminal,
-            onToggleMetrics: terminal
-                ? () => setState(() => _expanded = !_expanded)
-                : null,
+            onToggleMetrics: () => setState(() => _expanded = !_expanded),
           ),
           loading: () => _InstallmentPlanSummary(
             plan: plan,
@@ -844,11 +848,9 @@ class _InstallmentPlanCardState extends ConsumerState<_InstallmentPlanCard> {
             details: null,
             onOpenDetails: () => _showDetails(context),
             loadingDetails: true,
-            showMetrics: !terminal || _expanded,
+            showMetrics: _expanded,
             terminalMode: terminal,
-            onToggleMetrics: terminal
-                ? () => setState(() => _expanded = !_expanded)
-                : null,
+            onToggleMetrics: () => setState(() => _expanded = !_expanded),
           ),
           error: (error, stackTrace) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -859,11 +861,9 @@ class _InstallmentPlanCardState extends ConsumerState<_InstallmentPlanCard> {
                 categoryText: widget.categoryText,
                 details: null,
                 onOpenDetails: () => _showDetails(context),
-                showMetrics: !terminal || _expanded,
+                showMetrics: _expanded,
                 terminalMode: terminal,
-                onToggleMetrics: terminal
-                    ? () => setState(() => _expanded = !_expanded)
-                    : null,
+                onToggleMetrics: () => setState(() => _expanded = !_expanded),
               ),
               const SizedBox(height: 8),
               Text(
@@ -888,6 +888,43 @@ class _InstallmentPlanCardState extends ConsumerState<_InstallmentPlanCard> {
         account: widget.account,
         categoryText: widget.categoryText,
         onPostDetail: widget.onPostDetail,
+      ),
+    );
+  }
+}
+
+/// 把「进度行」变成金额汇总的开关。
+///
+/// 卡头原来并排「查看明细」「展开金额」两枚图标，窄屏上把标题挤到只剩三四个字；
+/// 而进度行本身没有任何交互，拿它当开关既不额外占地方，也比卡头一枚 40dp 的小
+/// 图标好点。`onTap == null` 时原样返回，不挂提示、也不挂水波纹。
+class _MetricsToggle extends StatelessWidget {
+  const _MetricsToggle({
+    required this.expanded,
+    required this.onTap,
+    required this.child,
+  });
+
+  final bool expanded;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final onTap = this.onTap;
+    if (onTap == null) return child;
+
+    // 上下补 4：热区不能只有一行小字那么高。调用处已经把上面的间距从 12 收到 8，
+    // 所以整张卡的高度不变。
+    return Tooltip(
+      message: expanded ? '收起金额' : '展开金额',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: child,
+        ),
       ),
     );
   }
@@ -990,58 +1027,90 @@ class _InstallmentPlanSummary extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
+                // 卡头只留一枚：金额汇总的开关搬到下面的进度行上（见 _MetricsToggle）。
+                // 两枚图标并排在窄屏会把标题挤到只剩三四个字。
                 AppIconActionButton(
                   tooltip: '查看明细',
                   onPressed: onOpenDetails,
                   icon: Icons.format_list_bulleted_rounded,
                   iconSize: 18,
                 ),
-                if (onToggleMetrics != null) ...[
-                  const SizedBox(width: 4),
-                  AppIconActionButton(
-                    tooltip: showMetrics ? '收起金额' : '展开金额',
-                    onPressed: onToggleMetrics,
-                    icon: showMetrics
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
-                    iconSize: 18,
-                    variant: AppIconActionVariant.outlined,
-                  ),
-                ],
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '已入账 $postedCount/$totalPeriods 期',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0,
+            const SizedBox(height: 8),
+            // 进度行兼作「展开 / 收起金额」的开关：它本身没有任何交互，而「点它
+            // 看那几个数字」是列表里最自然的期待；纵向补 4 让热区不至于只有
+            // 一行小字那么高，右侧箭头跟着状态翻面做提示。
+            _MetricsToggle(
+              expanded: showMetrics,
+              onTap: onToggleMetrics,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '已入账 $postedCount/$totalPeriods 期',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${(progress * 100).round()}%',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      if (onToggleMetrics != null) ...[
+                        const SizedBox(width: 2),
+                        Icon(
+                          showMetrics
+                              ? Icons.expand_less_rounded
+                              : Icons.expand_more_rounded,
+                          size: 16,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      minHeight: 7,
+                      value: loadingDetails ? null : progress,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
                     ),
                   ),
-                ),
-                Text(
-                  '${(progress * 100).round()}%',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                minHeight: 7,
-                value: loadingDetails ? null : progress,
-                backgroundColor: colorScheme.surfaceContainerHighest,
+                ],
               ),
             ),
+            // 金额明细默认收起（所有状态一致，见 _InstallmentPlanCard 的注释）。
+            // 「下一期」不跟着收：它是这张卡上唯一能动手的东西（日期 + 本期应还 +
+            // 去入账），收起来就只剩一条进度条，卡片读不出「现在该干什么」。
+            if (!terminalMode) ...[
+              const SizedBox(height: 12),
+              _InstallmentDueBanner(
+                status: status,
+                detail: nextDetail,
+                pendingCount: pendingCount,
+                totalPayableMinor: plan.totalPayableMinor,
+                currencyCode: plan.currencyCode,
+                loading: loadingDetails,
+                onPost:
+                    status == MoneyInstallmentPlanStatus.active &&
+                        nextDetail != null &&
+                        onPostDetail != null
+                    ? () => onPostDetail!(nextDetail)
+                    : null,
+              ),
+            ],
             if (showMetrics) ...[
               const SizedBox(height: 12),
               if (terminalMode)
@@ -1071,25 +1140,7 @@ class _InstallmentPlanSummary extends StatelessWidget {
                   ],
                 )
               else ...[
-                // 「下一期」原来是指标格里的一小格（宽屏写死 132px、紧凑屏半行），
-                // 值是 `2026-10-03 · 已逾期` 这种复合长串，单行省略号一截就只剩
-                // `2026-10-03 · 已..`。这里把它提升成独立一行：日期与相对时间分
-                // 两段表述、必要时可换行，顺带把「去入账」放到手边。
-                _InstallmentDueBanner(
-                  status: status,
-                  detail: nextDetail,
-                  pendingCount: pendingCount,
-                  totalPayableMinor: plan.totalPayableMinor,
-                  currencyCode: plan.currencyCode,
-                  loading: loadingDetails,
-                  onPost:
-                      status == MoneyInstallmentPlanStatus.active &&
-                          nextDetail != null &&
-                          onPostDetail != null
-                      ? () => onPostDetail!(nextDetail)
-                      : null,
-                ),
-                const SizedBox(height: 10),
+                // 指标格只在展开时出现；「下一期」已经提到上面常驻了。
                 _metricsGrid(
                   theme: theme,
                   status: status,
