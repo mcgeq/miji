@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.view.View
 import android.widget.RemoteViews
 import com.mcgeq.miji.MainActivity
 import com.mcgeq.miji.R
@@ -20,8 +21,8 @@ import java.time.LocalDate
  * `targetCellWidth=5` 给 Android 12+；布局 match_parent 铺满，所以这里
  * 不需要（也不该）用 `onAppWidgetOptionsChanged` 手动算宽高。
  *
- * 版面四段：今日支出 + 笔数 / 大号金额 + 记一笔按钮 / 分割线 / 本周·本月·日均
- * （见 layout 里的注释）。
+ * 版面五段：今日支出 + 笔数 / 大号金额 + 记一笔按钮 / 预算进度条 / 预算文案 /
+ * 本周·本月·日均（见 layout 里的注释）。
  *
  * 这里**不做任何业务判断**：金额、笔数、遮罩、登录态全部由 Dart 侧算好写成文本
  * （见 `lib/features/bookkeeping/application/money_home_widget.dart`）。
@@ -88,6 +89,30 @@ class MoneyWidgetProvider : HomeWidgetProvider() {
         views.setTextViewText(R.id.widget_month, monthExpense)
         views.setTextViewText(R.id.widget_daily, dailyExpense)
 
+        // 预算块：没配预算时整块收起。收起后省下的高度由上下两个 weight 带
+        // 均摊，卡面不会被「挖掉一块」。
+        //
+        // 进度条只传数值不传画刷：RemoteViews 没有可用的 setProgressDrawable，
+        // 所以「快满了 / 超支了」只能靠下面那行文字的颜色表达。
+        val budgetVisible = widgetData.getString(KEY_BUDGET_VISIBLE, "0") == "1"
+        if (budgetVisible) {
+            val percent = widgetData.getString(KEY_BUDGET_PERCENT, "0")?.toIntOrNull() ?: 0
+            val alert = widgetData.getString(KEY_BUDGET_ALERT, "0") == "1"
+            views.setTextViewText(
+                R.id.widget_budget_text,
+                widgetData.getString(KEY_BUDGET_TEXT, "") ?: "",
+            )
+            views.setTextViewText(
+                R.id.widget_budget_total,
+                widgetData.getString(KEY_BUDGET_TOTAL, "") ?: "",
+            )
+            views.setProgressBar(R.id.widget_budget_bar, 100, percent.coerceIn(0, 100), false)
+            views.setTextColor(R.id.widget_budget_text, budgetTextColor(context, alert))
+        } else {
+            views.setViewVisibility(R.id.widget_budget_bar, View.GONE)
+            views.setViewVisibility(R.id.widget_budget_row, View.GONE)
+        }
+
         // 两个点击目标，两个 PendingIntent（requestCode 必须不同，否则会互相覆盖）：
         // - 整块卡片 → 首页：用户想「看一眼就走」时不该被硬塞进记账表单；
         // - 按钮 → 记一笔：这是卡片唯一的动作按钮，必须一击直达。
@@ -101,6 +126,18 @@ class MoneyWidgetProvider : HomeWidgetProvider() {
         )
         return views
     }
+
+    /**
+     * 预算那行的文字色：正常是次要灰，超支换成警示色。
+     *
+     * 用 `resources.getColor` 而不是 `context.getColor`：后者要 API 23，
+     * 而这里没有声明更高的 minSdk，压到 21 会有 lint 报错。
+     */
+    @Suppress("DEPRECATION")
+    private fun budgetTextColor(context: Context, alert: Boolean): Int =
+        context.resources.getColor(
+            if (alert) R.color.money_widget_danger else R.color.money_widget_muted,
+        )
 
     /**
      * 点一下 → 打开 app 内某条路由。
@@ -140,6 +177,15 @@ class MoneyWidgetProvider : HomeWidgetProvider() {
         const val KEY_WEEK = "mw_week"
         const val KEY_MONTH = "mw_month"
         const val KEY_DAILY = "mw_daily"
+
+        // 预算块：可见性、两段文案、进度百分比、是否超支。
+        // Dart 侧一律写成字符串（saveWidgetData<String> 是两端都稳的唯一类型）。
+        const val KEY_BUDGET_VISIBLE = "mw_budget_visible"
+        const val KEY_BUDGET_TEXT = "mw_budget_text"
+        const val KEY_BUDGET_TOTAL = "mw_budget_total"
+        const val KEY_BUDGET_PERCENT = "mw_budget_percent"
+        const val KEY_BUDGET_ALERT = "mw_budget_alert"
+
         const val KEY_DATE = "mw_date"
 
         /** 与 `lib/core/router/app_routes.dart` 的 `AppRoutes.home` 保持一致。 */

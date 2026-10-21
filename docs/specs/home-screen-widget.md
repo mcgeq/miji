@@ -14,10 +14,29 @@
 | 布局 / 配置 / 颜色 | `res/layout/money_widget.xml`、`res/xml/money_widget_info.xml`、`res/values{,-night}/colors.xml` |
 | 测试 | `test/features/bookkeeping/application/money_home_widget_test.dart` |
 
-**版面（四段，纵向按 weight 撑满）**：① 口径「今日支出」+ 右侧「N 笔 · 收入 ¥x」；
-② 34sp 金额 + **124×48dp 的实心胶囊「＋ 记一笔」**；③ 一条发丝分割线（`ImageView`，
-不能用裸 `View`）；④ 底部三等分**本周 / 本月 / 日均支出**（`formatMoneyMinorCompact`，
-即 `¥2.3k` 这种）。`includeFontPadding="false"` 是为了让大字号不被行距撑爆。
+**版面（五段，纵向按 weight 撑满）**：① 口径「今日支出」+ 右侧「N 笔 · 收入 ¥x」；
+② 34sp 金额 + **124×48dp 的实心胶囊「＋ 记一笔」**；③ 4dp 预算进度条（同时充当分割线）；
+④ 预算文案「预算剩 ¥1,234.56」+ 行尾「/ ¥3,000.00」；⑤ 底部三等分**本周 / 本月 / 日均支出**
+（`formatMoneyMinorCompact`，即 `¥2.3k` 这种）。`includeFontPadding="false"` 是为了让
+大字号不被行距撑爆。
+
+**预算块（③④）的三个约束**：
+
+- **进度口径是「占用」**（已用 + 已预留），取值 `HomeMonthBudgetSummary.occupiedProgress`，
+  判超支也用它派生的 `isBusted`。用「已用」单独画会出现「环才走 17%、却告诉你还可花 ¥0」
+  的自相矛盾；首页预算卡也是这个结论，两处必须一致。
+- **超支给的是「超出多少」**，不是负数的「还剩」：`bustedMinor` 而非 `availableMinor`，
+  左半句整句换成「预算超支 ¥120.00」并染 `money_widget_danger`。
+- **没有预算就整块 `GONE`**，不是显示空条：省下的高度由上下两个 weight 带均摊，
+  卡面不会被「挖掉一块」。遮罩时保留位置只打码（`预算 ••••`），否则一开遮罩高度会跳。
+  应用锁着时整块收起 —— 连「有没有配预算」也不必暴露在锁屏上。
+
+**进度条为什么只传数值**：RemoteViews 没有可用的 `setProgressDrawable`（不是
+`@RemotableViewMethod`），所以画刷在 XML 里一次成型（`money_widget_budget_progress.xml`，
+轨道复用 `money_widget_stroke`、填充用主色），运行时只能
+`setProgressBar(id, 100, percent, false)`。「快满了 / 超支了」只体现在文字颜色上。
+`style="?android:attr/progressBarStyleHorizontal"` 必须显式写：默认样式是转圈动画，
+4dp 高会被裁成一条怪线。
 
 **为什么金额区和统计区都要 `layout_weight`**：`minHeight=110dp` 只是启动器算格子的
 下限公式，真实 2 格在 MIUI 5x6 / 各家 4x6 上普遍有 200dp 上下。全用 `wrap_content`
@@ -239,9 +258,14 @@ Future<void> pushMoneyWidget(WidgetRef ref) async {
 | 时机 | 做法 | 备注 |
 | --- | --- | --- |
 | app 启动 / 回前台 | `AppLifecycleState.resumed` 时推一次 | 覆盖 90% 场景 |
-| 数据变更 | 监听流水 / 预算 provider，**debounce 500ms** 再写 | 不要每次 insert 都写盘 |
+| 数据变更 | 监听流水 **和预算** provider，**debounce 500ms** 再写 | 不要每次 insert 都写盘 |
 | 系统定时 | `updatePeriodMillis = 1800000` | 系统会合并、doze 下不保证 |
 | 跨天 | provider 渲染时比对 `mw_date` 与今天 | **不要承诺 0 点准时换数** |
+
+预算有独立的失效源（改额度、改自动记账模板、分期计划），不一定伴随
+`moneyDataRefreshVersion` 自增，所以 `homeMonthBudgetSummaryProvider` 被单独 listen 一份；
+它是 `FutureProvider`，解锁与算出结果时各发一次，500ms 防抖会合并成一次推送。
+预算查询（要额外算「已预留」）失败时**不阻断整次推送**：少一条预算条，也好过今日支出停在旧值。
 
 跨天这条必须做进 UI：`isStale` 时显示「数据截至昨天 · 点开更新」，而不是把昨天的数字当成今天。国产 ROM 会杀后台，WorkManager / AlarmManager 都不值得押注。
 
@@ -261,7 +285,7 @@ Future<void> pushMoneyWidget(WidgetRef ref) async {
 | 2 | 4x2 预算 | 剩余额度 + 进度条 + 已用/预算（沿用"等于不算超支"的口径） | 记账后 / 改预算 / 跨月 | 中 |
 | 3 | 4x2 今日待办 / 打卡 | 3 条 + 勾选 | 需后台 Dart 或直写库 | **高，放最后** |
 
-先做 1，验证链路；2 是记账用户的刚需；3 涉及"小组件里写库"，只有接受 1~2 秒延迟才做。
+先做 1，验证链路；2 是记账用户的刚需（现已**并入 1** 成为卡上的预算条，不再单独占一张卡）；3 涉及"小组件里写库"，只有接受 1~2 秒延迟才做。
 
 ## 8. iOS 与 Android 的差异（一页看完）
 

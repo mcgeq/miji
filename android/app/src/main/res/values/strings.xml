@@ -13,6 +13,9 @@
     <string name="money_widget_amount_placeholder">¥ --</string>
     <string name="money_widget_amount_compact_placeholder">--</string>
     <string name="money_widget_meta_placeholder">点开记一笔</string>
+    <!-- 预算行的预览占位：与主金额同理，不写 ¥0.00，否则会被当成「预算用完了」。 -->
+    <string name="money_widget_budget_placeholder">预算剩 ¥ --</string>
+    <string name="money_widget_budget_total_placeholder">/ ¥ --</string>
     <!-- 跨天：app 没在当天更新过，写清楚这份数字属于哪一天。 -->
     <string name="money_widget_stale_label">截至 %1$s</string>
     <string name="money_widget_stale_meta">该更新了 · 点开刷新</string>

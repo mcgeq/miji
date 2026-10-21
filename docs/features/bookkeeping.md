@@ -95,7 +95,9 @@ Recurring reminders for credit-card repayments and other bills. Completing a rem
 
 ### Home screen widget (Android)
 
-A **full-width** card (2 cells tall, spanning the whole row) has four bands: the label with "3 transactions · income ¥20.00" on the right; the amount in large type with a solid **"＋ 记录一笔" pill button (124×48dp)**; a hairline divider; and **this week / this month / daily average** in three equal columns (amounts above 1,000 use the compact `2.3k` form).
+A **full-width** card (2 cells tall, spanning the whole row) has five bands: the label with "3 transactions · income ¥20.00" on the right; the amount in large type with a solid **"＋ 记录一笔" pill button (124×48dp)**; a **4dp budget progress bar** with a "remaining ¥1,234.56 / ¥3,000.00" line under it (which becomes "over by ¥120.00" in the warning colour once the budget breaks); and **this week / this month / daily average** in three equal columns (amounts above 1,000 use the compact `2.3k` form).
+
+The budget bar reads the same figures as the home budget card: both the fill and the "busted" verdict use **occupied** (spent plus committed), not spent alone — when future obligations eat the whole allowance, the outcome is the same as overspending. With no budget configured the whole band collapses instead of leaving an empty groove.
 
 Taps go to two different targets: the **button records a transaction** (`/app/bookkeeping?action=expense`, the same route notifications use), while **the rest of the card opens the app home** (`/app/home`). Checking the ledger and recording an entry are different intents.
 

@@ -7,4 +7,6 @@
     <color name="money_widget_accent">#FF7CC0F0</color>
     <!-- 深色档的主色是亮蓝，按钮上必须用近黑文字才够对比度。 -->
     <color name="money_widget_on_accent">#FF10161B</color>
+    <!-- 深色底上的超支色不能用正红（#C62828 压在 #1C1C1E 上只有 2.4:1），改亮一档。 -->
+    <color name="money_widget_danger">#FFFFB4AB</color>
 </resources>

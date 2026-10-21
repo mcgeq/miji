@@ -23,14 +23,38 @@ HomeTodaySpendingSummary _summary({
   );
 }
 
+HomeMonthBudgetSummary _budget({
+  int totalMinor = 300000,
+  int usedMinor = 100000,
+  int committedMinor = 0,
+}) {
+  return HomeMonthBudgetSummary(
+    hasBudget: true,
+    currencyCode: 'CNY',
+    budgetId: 'b1',
+    budgetName: '日常',
+    totalMinor: totalMinor,
+    usedMinor: usedMinor,
+    remainingMinor: totalMinor - usedMinor,
+    committedMinor: committedMinor,
+    progress: totalMinor <= 0 ? 0 : usedMinor / totalMinor,
+    periodProgress: 0.5,
+    paceRatio: 1,
+    paceLabel: '正常',
+    remainingDays: 10,
+  );
+}
+
 MoneyWidgetSnapshot _snapshot({
   HomeTodaySpendingSummary? summary,
+  HomeMonthBudgetSummary? budget,
   bool masked = false,
   bool unlocked = true,
   DateTime? now,
 }) {
   return MoneyWidgetSnapshot.fromTodaySummary(
     summary: summary ?? _summary(),
+    budget: budget,
     masked: masked,
     unlocked: unlocked,
     ledgerName: '日常',
@@ -118,12 +142,26 @@ void main() {
           'mw_week',
           'mw_month',
           'mw_daily',
+          'mw_budget_visible',
+          'mw_budget_text',
+          'mw_budget_total',
+          'mw_budget_percent',
+          'mw_budget_alert',
           'mw_date',
           'mw_ledger',
         ]),
       );
       expect(data['mw_date'], '2026-10-21');
       expect(data['mw_ledger'], '日常');
+    });
+
+    test('预算布尔与百分比都写成字符串，避免 Kotlin 侧 getString 抛类型转换', () {
+      final data = _snapshot(budget: _budget()).toWidgetData();
+
+      expect(data['mw_budget_visible'], '1');
+      expect(data['mw_budget_alert'], '0');
+      expect(data['mw_budget_percent'], '33');
+      expect(data['mw_budget_percent'], isA<String>());
     });
 
     test('底部的本周 / 本月 / 日均用 compact 格式，避免窄列里被截断', () {
@@ -202,6 +240,78 @@ void main() {
         MoneyWidgetSnapshot.androidProviderName,
         endsWith('.widget.MoneyWidgetProvider'),
       );
+    });
+  });
+
+  group('MoneyWidgetSnapshot 预算', () {
+    test('没配预算：整块不出现，卡面退回今日支出', () {
+      final snapshot = _snapshot(summary: _summary(expenseMinor: 12850));
+
+      expect(snapshot.budgetVisible, isFalse);
+      expect(snapshot.budgetText, '');
+      expect(snapshot.budgetPercent, 0);
+    });
+
+    test('正常预算：给「还剩多少」和总量，进度按占用算', () {
+      final snapshot = _snapshot(
+        summary: _summary(expenseMinor: 12850, count: 1),
+        budget: _budget(totalMinor: 300000, usedMinor: 100000),
+      );
+
+      expect(snapshot.budgetVisible, isTrue);
+      expect(snapshot.budgetText, '预算剩 ¥2,000.00');
+      expect(snapshot.budgetTotal, '/ ¥3,000.00');
+      expect(snapshot.budgetPercent, 33);
+      expect(snapshot.budgetAlert, isFalse);
+    });
+
+    test('已花超：说的是「超支多少」而不是负数的「还剩」', () {
+      final snapshot = _snapshot(
+        budget: _budget(totalMinor: 300000, usedMinor: 320000),
+      );
+
+      expect(snapshot.budgetText, '预算超支 ¥200.00');
+      expect(snapshot.budgetAlert, isTrue);
+      // 进度条封顶 100，不会画出 106% 这种溢出宽度。
+      expect(snapshot.budgetPercent, 100);
+    });
+
+    test('已用没超、但预留把额度占满，同样算破预算', () {
+      // 与首页预算卡同一判据（占用 = 已用 + 已预留）：未来义务占满额度时，
+      // 「还能花多少」和真超支没有区别。
+      final snapshot = _snapshot(
+        budget: _budget(
+          totalMinor: 300000,
+          usedMinor: 120000,
+          committedMinor: 200000,
+        ),
+      );
+
+      expect(snapshot.budgetText, '预算超支 ¥200.00');
+      expect(snapshot.budgetAlert, isTrue);
+    });
+
+    test('遮罩开启：预算只打码，不改变这块的可见性', () {
+      final snapshot = _snapshot(
+        summary: _summary(expenseMinor: 12850, count: 3),
+        budget: _budget(totalMinor: 300000, usedMinor: 100000),
+        masked: true,
+      );
+
+      expect(snapshot.budgetVisible, isTrue);
+      expect(snapshot.budgetText, '预算 ••••');
+      expect(snapshot.budgetTotal, '••••');
+      expect(snapshot.budgetText.contains('2,000'), isFalse);
+    });
+
+    test('应用锁着：连「有没有预算」都不暴露', () {
+      final snapshot = _snapshot(
+        budget: _budget(totalMinor: 300000, usedMinor: 100000),
+        unlocked: false,
+      );
+
+      expect(snapshot.budgetVisible, isFalse);
+      expect(snapshot.budgetText, '');
     });
   });
 }

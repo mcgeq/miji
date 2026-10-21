@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  预算进度条：一次成型，运行时**不能**换（RemoteViews 没有 setProgressDrawable
+  这类 @RemotableViewMethod），所以颜色是固定的主色，超支只靠文字颜色表达。
+
+  轨道复用 money_widget_stroke（和原来那条 1dp 分割线同一档灰），
+  这样深色模式不需要额外维护一组轨道色。
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <corners android:radius="2dp" />
+            <solid android:color="@color/money_widget_stroke" />
+        </shape>
+    </item>
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <corners android:radius="2dp" />
+                <solid android:color="@color/money_widget_accent" />
+            </shape>
+        </clip>
+    </item>
+</layer-list>

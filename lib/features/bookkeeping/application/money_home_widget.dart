@@ -32,6 +32,11 @@ class MoneyWidgetSnapshot {
     required this.dailyExpense,
     required this.dateKey,
     required this.ledgerName,
+    this.budgetVisible = false,
+    this.budgetText = '',
+    this.budgetTotal = '',
+    this.budgetPercent = 0,
+    this.budgetAlert = false,
   });
 
   /// 卡面左上角的口径说明。跨天后由原生改写为「截至 10-20」。
@@ -61,6 +66,22 @@ class MoneyWidgetSnapshot {
   /// 当前账本名；多账本时不加这一行会分不清看的是哪个账本的钱。
   final String ledgerName;
 
+  /// 本月支出预算这一块是否要出现在卡上（没配预算时整块收起）。
+  final bool budgetVisible;
+
+  /// 预算左半句：`预算剩 ¥1,234.56` 或 `预算超支 ¥120.00`。
+  final String budgetText;
+
+  /// 预算右半句：`/ ¥3,000.00`。只剩总量，是为了让左半句的「还剩多少」
+  /// 始终贴着左边、读起来是一句话，而不是两个独立数字。
+  final String budgetTotal;
+
+  /// 进度条百分比（0~100），口径是**占用**（已用 + 已预留），与首页预算卡同一判据。
+  final int budgetPercent;
+
+  /// 是否已经破了预算：为真时原生把左半句染成警示色。
+  final bool budgetAlert;
+
   /// Receiver 的**全限定类名**（`home_widget` 拿到后直接 `Class.forName`）。
   ///
   /// 这里踩过一次坑：最初的写法是 `updateWidget(androidName: 'MoneyWidgetProvider')`，
@@ -87,6 +108,11 @@ class MoneyWidgetSnapshot {
   static const _kWeek = 'mw_week';
   static const _kMonth = 'mw_month';
   static const _kDaily = 'mw_daily';
+  static const _kBudgetVisible = 'mw_budget_visible';
+  static const _kBudgetText = 'mw_budget_text';
+  static const _kBudgetTotal = 'mw_budget_total';
+  static const _kBudgetPercent = 'mw_budget_percent';
+  static const _kBudgetAlert = 'mw_budget_alert';
   static const _kDate = 'mw_date';
   static const _kLedger = 'mw_ledger';
 
@@ -104,11 +130,15 @@ class MoneyWidgetSnapshot {
     required bool unlocked,
     required String ledgerName,
     required DateTime now,
+    HomeMonthBudgetSummary? budget,
   }) {
     final dateKey = _dateKeyOf(now);
 
     // 锁着的时候连"今天花了多少钱"都不该出现在桌面上：小组件在锁屏上
     // 也可能可见，而应用本身是有锁的。
+    //
+    // 预算同理，而且这里连「有没有配预算」都不必暴露（那本身也是一种信息），
+    // 所以整块直接收起，而不是显示一排 •••• 占位。
     if (!unlocked) {
       return MoneyWidgetSnapshot(
         label: '记账',
@@ -124,6 +154,7 @@ class MoneyWidgetSnapshot {
 
     if (masked) {
       final count = summary.todayTransactionCount;
+      final hasBudget = budget?.hasBudget ?? false;
       return MoneyWidgetSnapshot(
         label: '今日支出',
         amount: '••••',
@@ -134,6 +165,10 @@ class MoneyWidgetSnapshot {
         dailyExpense: '••••',
         dateKey: dateKey,
         ledgerName: ledgerName,
+        // 保留这一块的位置（只打码数字），否则遮罩一开卡面高度会跳。
+        budgetVisible: hasBudget,
+        budgetText: hasBudget ? '预算 ••••' : '',
+        budgetTotal: hasBudget ? '••••' : '',
       );
     }
 
@@ -145,6 +180,13 @@ class MoneyWidgetSnapshot {
     final income = summary.todayIncomeMinor > 0
         ? ' · 收入 ${formatMoneyMinor(summary.todayIncomeMinor, summary.currencyCode)}'
         : '';
+
+    // 预算：`budget` 为 null 表示这一屏没有可用预算（没配、或只有已归档的），
+    // 此时整块收起。判「破没破」用 isBusted（占用 = 已用 + 已预留），
+    // 不用 used > total：未来义务占满额度时和真花超了没有区别，
+    // 首页预算卡也是这个结论，两处不能各说各话。
+    final monthlyBudget = (budget?.hasBudget ?? false) ? budget : null;
+    final busted = monthlyBudget?.isBusted ?? false;
 
     return MoneyWidgetSnapshot(
       label: '今日支出',
@@ -164,6 +206,20 @@ class MoneyWidgetSnapshot {
       ),
       dateKey: dateKey,
       ledgerName: ledgerName,
+      budgetVisible: monthlyBudget != null,
+      budgetText: monthlyBudget == null
+          ? ''
+          // 超支时给「超出多少」而不是负数的「还剩」：负数得在脑子里再换算一次。
+          : busted
+          ? '预算超支 ${formatMoneyMinor(monthlyBudget.bustedMinor, monthlyBudget.currencyCode)}'
+          : '预算剩 ${formatMoneyMinor(monthlyBudget.availableMinor, monthlyBudget.currencyCode)}',
+      budgetTotal: monthlyBudget == null
+          ? ''
+          : '/ ${formatMoneyMinor(monthlyBudget.totalMinor, monthlyBudget.currencyCode)}',
+      budgetPercent: monthlyBudget == null
+          ? 0
+          : (monthlyBudget.occupiedProgress * 100).clamp(0, 100).round(),
+      budgetAlert: busted,
     );
   }
 
@@ -174,6 +230,13 @@ class MoneyWidgetSnapshot {
     _kWeek: weekExpense,
     _kMonth: monthExpense,
     _kDaily: dailyExpense,
+    // 布尔和整数都转成字符串：`saveWidgetData<String>` 是唯一在两端都稳的类型，
+    // 混着写 Int 会在 Kotlin 侧 getString 抛 ClassCastException。
+    _kBudgetVisible: budgetVisible ? '1' : '0',
+    _kBudgetText: budgetText,
+    _kBudgetTotal: budgetTotal,
+    _kBudgetPercent: '$budgetPercent',
+    _kBudgetAlert: budgetAlert ? '1' : '0',
     _kDate: dateKey,
     _kLedger: ledgerName,
   };
@@ -225,6 +288,7 @@ class MoneyWidgetPusher {
     final unlocked = session.isUnlocked && session.userId != null;
 
     var summary = const HomeTodaySpendingSummary.empty();
+    HomeMonthBudgetSummary? budget;
     if (unlocked) {
       try {
         // 数据还没准备好（刚启动、正在 seed）时直接放弃这一次：
@@ -234,6 +298,15 @@ class MoneyWidgetPusher {
         debugPrint('MoneyWidget summary unavailable: $error');
         return;
       }
+
+      // 预算单独 try：它要额外查「已预留」（自动记账 / 分期），失败概率比
+      // 主数字高，但预算挂了不该让整张卡停在旧值上 —— 少一条预算条，
+      // 也比今日支出不更新好。
+      try {
+        budget = await _ref.read(homeMonthBudgetSummaryProvider.future);
+      } catch (error) {
+        debugPrint('MoneyWidget budget unavailable: $error');
+      }
     }
 
     final snapshot = MoneyWidgetSnapshot.fromTodaySummary(
@@ -242,6 +315,7 @@ class MoneyWidgetPusher {
       unlocked: unlocked,
       ledgerName: _ref.read(currentUserCurrentLedgerValueProvider)?.name ?? '',
       now: DateTime.now(),
+      budget: budget,
     );
     await snapshot.push();
   }
@@ -272,6 +346,10 @@ final moneyWidgetAutoSyncProvider = Provider<void>((ref) {
   ref.listen(moneyAmountsMaskedProvider, (_, _) => schedule());
   ref.listen(moneyDataRefreshVersionProvider, (_, _) => schedule());
   ref.listen(currentMoneyLedgerIdProvider, (_, _) => schedule());
+  // 预算有独立的失效源（改额度、改自动记账模板、分期计划），不一定伴随
+  // moneyDataRefreshVersion 自增，所以单独听一份。它是 FutureProvider，
+  // 解锁 / 计算完成时各发一次，防抖会把它们合并成一次推送。
+  ref.listen(homeMonthBudgetSummaryProvider, (_, _) => schedule());
   ref.onDispose(() => timer?.cancel());
 
   // 启动即对齐一次：装完小组件 / 换机恢复后，不需要等用户先记一笔。

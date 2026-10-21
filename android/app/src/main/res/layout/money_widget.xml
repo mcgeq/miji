@@ -8,10 +8,11 @@
   「载入窗口小部件时出现问题」—— 裸 `<View>`、`Space`、`CardView`、
   `ConstraintLayout` 都不能用，画一条线也要用 ImageView。
 
-  ── 四段结构（横向铺满）────────────────────────────────────────
+  ── 五段结构（横向铺满）────────────────────────────────────────
     今日支出 ...................................... 6 笔 · 收入 ¥0.00
     ¥128.50                                    [ ＋ 记一笔 ]  ← 48dp 胶囊
-    ─────────────────────────────────────────────────────────
+    ▔▔▔▔▔▔▔▔▔▔▔▔▔▔░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ← 4dp 预算进度
+    预算剩 ¥1,234.56                        / ¥3,000.00
     本周               本月               日均
     ¥2,340.00          ¥8,900.00         ¥45.20
   ────────────────────────────────────────────────────────────
@@ -115,20 +116,70 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- ③ 分割线：小组件里画线只能用 ImageView（裸 View 没有 @RemoteView 注解） -->
-    <ImageView
+    <!--
+      ③ 预算进度条：这一条同时充当分割线 —— 4dp 的圆角条比一条 1dp 灰线
+      信息量大得多，也就不必再额外占一行高度。
+      RemoteViews 的 ProgressBar 在 @RemoteView 白名单里，进度通过
+      `setProgressBar(id, 100, percent, false)` 传，不能运行时换 drawable，
+      所以配色（近满 / 超支）只体现在下面那行文字的颜色上。
+      style 必须显式给横向样式：默认 ProgressBar 是转圈动画，4dp 高会被裁成一条怪线。
+    -->
+    <ProgressBar
+        android:id="@+id/widget_budget_bar"
+        style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="1dp"
+        android:layout_height="4dp"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:background="@color/money_widget_stroke"
-        android:contentDescription="@null" />
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="0"
+        android:progressDrawable="@drawable/money_widget_budget_progress" />
 
-    <!-- ④ 本周 / 本月 / 日均：三等分，标签在上、数值在下 -->
+    <!--
+      ④ 预算文案：左边「预算剩 ¥1,234.56」、右边「/ ¥3,000.00」。
+      拆成两个 TextView 而不是拼一句，是为了让「还剩多少」始终贴左边，
+      总量退到行尾做参照；超支时左边整句换成「预算超支 ¥120.00」并染警示色。
+      没有预算时这一行和上面的进度条一起 GONE（由 provider 设可见性）。
+    -->
+    <LinearLayout
+        android:id="@+id/widget_budget_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_budget_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="@string/money_widget_budget_placeholder"
+            android:textColor="@color/money_widget_muted"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/widget_budget_total"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="@string/money_widget_budget_total_placeholder"
+            android:textColor="@color/money_widget_muted"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- ⑤ 本周 / 本月 / 日均：三等分，标签在上、数值在下 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:layout_marginTop="6dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
